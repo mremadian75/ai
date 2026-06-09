@@ -1,0 +1,8 @@
+future-island-deep-trend-finder-addon.php
+includes/class-fidtf-admin.php
+includes/class-fidtf-source-job-service.php
+includes/class-fidtf-run-service.php
+assets/js/fidtf-frontend.js
+docs/CHANGELOG_deep-trend-finder-addon-v0.3.15-tiktok-live-skip-diagnostic-fix.md
+docs/FILES_CHANGED_deep-trend-finder-addon-v0.3.15-tiktok-live-skip-diagnostic-fix.txt
+tests/test-fidtf-v0315-tiktok-live-skip-diagnostic-fix.php

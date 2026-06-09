@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "VES Report Core",
+  "type": "object",
+  "required": ["title", "platform", "summary", "evidence"],
+  "additionalProperties": true,
+  "properties": {
+    "title": {"type": "string"},
+    "subtitle": {"type": "string"},
+    "platform": {"type": "string"},
+    "source_family": {"type": "string"},
+    "summary": {"type": "object"},
+    "evidence": {"type": "array"},
+    "insights": {"type": "array"},
+    "opportunities": {"type": "array"},
+    "next_actions": {"type": "array"},
+    "sample_mode": {"type": "boolean"}
+  }
+}

@@ -1,0 +1,17 @@
+future-island-deep-trend-finder-addon.php
+README.md
+includes/class-fidtf-ai-bridge.php
+includes/class-fidtf-ai-planner.php
+includes/class-fidtf-admin.php
+includes/class-fidtf-plugin.php
+includes/class-fidtf-report-service.php
+includes/class-fidtf-rest-controller.php
+includes/class-fidtf-settings.php
+tests/test-fidtf-v012-foundation-corrections.php
+tests/test-fidtf-v013-async-readiness.php
+tests/test-fidtf-v014-bridge-safety.php
+tests/test-fidtf-v020-ai-planner-bridge.php
+docs/ADDON_ARCHITECTURE_v0.2.0.md
+docs/CHANGELOG_deep-trend-finder-addon-v0.2.0-ai-planner-bridge.md
+docs/FILES_CHANGED_deep-trend-finder-addon-v0.2.0-ai-planner-bridge.txt
+docs/MANUAL_QA_deep-trend-finder-addon-v0.2.0.md

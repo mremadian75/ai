@@ -1,0 +1,6 @@
+future-island-deep-trend-finder-addon.php
+includes/class-fidtf-relevance-filter.php
+includes/class-fidtf-report-service.php
+tests/test-fidtf-v0351-live-entity-collision-and-spain-fit.php
+docs/CHANGELOG_deep-trend-finder-addon-v0.3.51-live-entity-collision-and-spain-fit-hardening.md
+docs/FILES_CHANGED_deep-trend-finder-addon-v0.3.51-live-entity-collision-and-spain-fit-hardening.txt

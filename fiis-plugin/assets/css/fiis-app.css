@@ -1,0 +1,1292 @@
+/* =============================================================
+   Future Island Intelligence Suite — Unified App Design System
+   v1.1.0  ·  scope: .ves-wrap / .fiis-app  (no host-theme leakage)
+   —
+   SINGLE app-level layer. Replaces the previous ves-ux-enhancements.css
+   + ves-saas-shell.css stack (both deleted). It does NOT define a second
+   token system: it consumes the existing design tokens (--em, --card,
+   --bdr, --t1 …) so there is one palette across shell + module internals.
+   ves-frontend.css is retained ONLY for legacy/module internals (the
+   markup the JS injects: result cards, evidence, tables, forms).
+
+   Organisation:
+     1 tokens (consumed, not redefined)   8 forms
+     2 reset / scope                      9 buttons
+     3 shell (de-box, canvas)            10 cards
+     4 sidebar                           11 tables / results
+     5 header                            12 states
+     6 layout / page templates          13 responsive
+     7 dashboard / sections              14 utilities
+   ============================================================= */
+
+/* =============================================================
+   §11–12  RESULTS / TABLES / STATES  ·  dense-data safety
+   —
+   Dense data (results, evidence, reports, tables, raw text, long
+   URLs/usernames/JSON) can never break the layout; consistent
+   accessible controls; calm loading / empty / error surfaces.
+   Every rule is scoped under .ves-wrap / .fiis-app / .fidtf-shell
+   and consumes the existing design tokens.
+   ============================================================= */
+
+/* ── Overflow safety — dynamic-text containers ─────────────────
+   Any flex/grid child that holds scraped/AI/long text must be
+   allowed to shrink (min-width:0) and wrap hard strings. */
+.ves-wrap .ves-results,
+.ves-wrap .ves-result-section,
+.ves-wrap .ves-result-card,
+.ves-wrap .ves-result-card-seo,
+.ves-wrap .ves-evidence-list,
+.ves-wrap .ves-evidence-card,
+.ves-wrap .ves-evidence-card-grid,
+.ves-wrap .ves-report-container,
+.ves-wrap .ves-card,
+.ves-wrap .ves-page-inner,
+.ves-wrap .ves-main-col {
+  min-width: 0;
+}
+
+/* Long titles / descriptions / URLs / handles inside result and
+   evidence cards must wrap rather than push the card wider. */
+.ves-wrap .ves-result-card,
+.ves-wrap .ves-evidence-card,
+.ves-wrap .ves-card-title,
+.ves-wrap .ves-card-meta,
+.ves-wrap .ves-evidence-meta,
+.ves-wrap .ves-evidence-ref-row,
+.ves-wrap .ves-results,
+.ves-wrap .ves-report-container {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* URLs / mono strings get the most aggressive breaking so a single
+   200-char token can't blow out the column. */
+.ves-wrap .ves-result-card a[href],
+.ves-wrap .ves-evidence-card a[href],
+.ves-wrap .ves-evidence-ref-row a[href],
+.ves-wrap .ves-card-meta a[href] {
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+/* Grid children that contain dynamic text — defensive min-width:0
+   so report/result grids stay inside the viewport. */
+.ves-wrap .ves-evidence-card-grid > *,
+.ves-wrap .ves-report-grid > *,
+.ves-wrap .ves-report-cards > *,
+.ves-wrap .ves-report-flow > *,
+.ves-wrap .ves-knowledge-grid-2col > * {
+  min-width: 0;
+}
+
+/* ── 2. RAW / VERBOSE OUTPUT — bounded, scrollable, never global ──
+   Raw evidence, debug JSON and AI raw blocks scroll inside a
+   max-height box instead of stretching the page. */
+.ves-wrap .ves-evidence-raw-host,
+.ves-wrap .ves-evidence-debug,
+.ves-wrap .ves-raw-analysis-details,
+.ves-wrap .ves-evidence-db-panel,
+.ves-wrap .ves-error-box pre {
+  max-width: 100%;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ves-wrap .ves-evidence-raw-host pre,
+.ves-wrap .ves-raw-analysis-details pre,
+.ves-wrap .ves-evidence-debug pre {
+  max-height: 420px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* ── 3. TABLES — always wrapped + horizontally scrollable ────────
+   The JS already wraps SEO tables in .ves-seo-table-wrap; this
+   guarantees the behaviour for every table the suite can emit
+   (SEO, admin detail, ad hoc report tables). */
+.ves-wrap .ves-seo-table-wrap,
+.ves-wrap .ves-table-scroll,
+.ves-wrap .ves-results table,
+.ves-wrap .ves-report-container table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ves-wrap .ves-seo-table,
+.ves-wrap .ves-admin-detail-table,
+.ves-wrap .ves-results table,
+.ves-wrap .ves-report-container table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ves-wrap .ves-seo-table th,
+.ves-wrap .ves-seo-table td,
+.ves-wrap .ves-admin-detail-table th,
+.ves-wrap .ves-admin-detail-table td {
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+/* Cells that hold prose / URLs may wrap and are width-capped so
+   one verbose cell does not dominate the table. */
+.ves-wrap .ves-seo-table td[data-wrap],
+.ves-wrap .ves-admin-detail-table td[data-wrap] {
+  white-space: normal;
+  max-width: 360px;
+  overflow-wrap: anywhere;
+}
+
+/* Sticky header only where it is safe (block-scroll tables). */
+.ves-wrap .ves-seo-table-wrap thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--card, #14243A);
+}
+
+/* ── 4. FORM CONTROLS / DROPDOWNS — consistent + accessible ──────
+   Scoped only; never touches the host theme's selects. Keeps the
+   native control fully functional (progressive enhancement). */
+.ves-wrap select.ves-input,
+.ves-wrap select.ves-select,
+.ves-wrap .ves-field select,
+.ves-wrap .ves-control select {
+  width: 100%;
+  min-height: 40px;
+  max-width: 100%;
+  padding: 9px 34px 9px 12px;
+  border: 1px solid var(--bdr, #1F3550);
+  border-radius: var(--r2, 6px);
+  background-color: var(--card, #14243A);
+  color: var(--t1, #F1F5F9);
+  font: inherit;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23A7B0C0' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  cursor: pointer;
+}
+
+.ves-wrap select.ves-input:hover,
+.ves-wrap .ves-field select:hover {
+  border-color: var(--bdr2, #315173);
+}
+
+.ves-wrap select.ves-input:focus-visible,
+.ves-wrap .ves-field select:focus-visible {
+  outline: none;
+  border-color: var(--vi, #7657FF);
+  box-shadow: 0 0 0 3px var(--vi18, rgba(118,87,255,0.18));
+}
+
+.ves-wrap select.ves-input:disabled,
+.ves-wrap .ves-field select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Long option labels in a fixed-width control should not visually
+   overflow the trigger. */
+.ves-wrap select.ves-input option {
+  background: var(--card, #14243A);
+  color: var(--t1, #F1F5F9);
+}
+
+/* Helper + error microcopy that pairs with a field. */
+.ves-wrap .ves-field-help,
+.ves-wrap .ves-help-text {
+  display: block;
+  margin-top: 5px;
+  font-size: 11.5px;
+  color: var(--t3, #738095);
+}
+
+.ves-wrap .ves-field-error,
+.ves-wrap .ves-field.is-invalid .ves-field-help {
+  color: var(--err, #EF4444);
+}
+
+.ves-wrap .ves-field.is-invalid .ves-input,
+.ves-wrap .ves-field.is-invalid select {
+  border-color: var(--err, #EF4444);
+}
+
+/* Dropdowns / popovers / menus must not be clipped by a scroll
+   ancestor and need an intentional z-index above content. */
+.ves-wrap .ves-user-dropdown,
+.ves-wrap .ves-menu,
+.ves-wrap .ves-popover,
+.ves-wrap [data-popover] {
+  z-index: 60;
+}
+
+/* ── 5. LOADING / EMPTY / ERROR — calm, structured surfaces ──────*/
+.ves-wrap .ves-empty,
+.ves-wrap .ves-empty-state,
+.ves-wrap .ves-empty-results {
+  text-align: center;
+  padding: 32px 24px;
+  border: 1px dashed var(--bdr, #1F3550);
+  border-radius: var(--r3, 8px);
+  background: var(--em06, rgba(54,199,232,0.06));
+  color: var(--t2, #A7B0C0);
+}
+
+.ves-wrap .ves-empty-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 14px;
+}
+
+.ves-wrap .ves-error-box {
+  border: 1px solid var(--er18, rgba(239,68,68,0.18));
+  background: var(--er10, rgba(239,68,68,0.10));
+  color: var(--t1, #F1F5F9);
+  border-radius: var(--r3, 8px);
+  padding: 16px 18px;
+  overflow-wrap: anywhere;
+}
+
+/* Live status dot pulses only when motion is allowed (see §7). */
+.ves-wrap .ves-run-state-dot,
+.ves-wrap .ves-workspace-status-dot {
+  position: relative;
+}
+.ves-wrap .ves-run-state[data-state="running"] .ves-run-state-dot {
+  animation: ves-pulse-dot 1.4s ease-in-out infinite;
+}
+@keyframes ves-pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.35; }
+}
+
+/* Skeleton shimmer kept subtle and motion-aware. */
+.ves-wrap .ves-skel,
+.ves-wrap .ves-skeleton-tile {
+  background: linear-gradient(90deg, var(--card,#14243A) 25%, var(--raised,#18304A) 37%, var(--card,#14243A) 63%);
+  background-size: 400% 100%;
+  animation: ves-skel-shimmer 1.4s ease infinite;
+  border-radius: var(--r2, 6px);
+}
+@keyframes ves-skel-shimmer {
+  0%   { background-position: 100% 0; }
+  100% { background-position: 0 0; }
+}
+
+/* ── 6. RESPONSIVE REFINEMENTS ───────────────────────────────────
+   Reinforce graceful stacking at the canonical breakpoints without
+   fighting the existing media queries (these only relax, never
+   widen, the layout). */
+
+/* Wide desktop — keep the workspace from feeling sparse. */
+@media (min-width: 1441px) {
+  .ves-wrap .ves-page-inner { max-width: 1680px; margin-inline: auto; }
+}
+
+/* Tablet / small laptop — result grids drop to two columns. */
+@media (max-width: 1024px) {
+  .ves-wrap .ves-evidence-card-grid,
+  .ves-wrap .ves-report-grid,
+  .ves-wrap .ves-report-cards,
+  .ves-wrap .ves-report-flow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Portrait tablet / large phone — single column + comfortable pad. */
+@media (max-width: 768px) {
+  .ves-wrap .ves-evidence-card-grid,
+  .ves-wrap .ves-report-grid,
+  .ves-wrap .ves-report-grid.two,
+  .ves-wrap .ves-report-cards,
+  .ves-wrap .ves-report-flow,
+  .ves-wrap .ves-knowledge-grid-2col {
+    grid-template-columns: 1fr;
+  }
+  .ves-wrap .ves-page-head {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .ves-wrap .ves-page-head-actions {
+    width: 100%;
+  }
+  .ves-wrap .ves-page-head-actions .ves-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}
+
+/* Small phone (375px class) — full-width controls, no h-scroll
+   except inside the wrapped table/raw containers. */
+@media (max-width: 480px) {
+  .ves-wrap .ves-field,
+  .ves-wrap select.ves-input,
+  .ves-wrap .ves-field select {
+    width: 100%;
+  }
+  .ves-wrap .ves-result-filters,
+  .ves-wrap .ves-evidence-filters {
+    flex-wrap: wrap;
+  }
+  .ves-wrap .ves-evidence-pagination {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}
+
+/* ── 7. ACCESSIBILITY — focus, touch targets, reduced motion ─────*/
+
+/* Visible focus ring on every interactive element (scoped). */
+.ves-wrap a:focus-visible,
+.ves-wrap button:focus-visible,
+.ves-wrap [role="tab"]:focus-visible,
+.ves-wrap [role="menuitem"]:focus-visible,
+.ves-wrap input:focus-visible,
+.ves-wrap textarea:focus-visible,
+.ves-wrap select:focus-visible {
+  outline: 2px solid var(--vi, #7657FF);
+  outline-offset: 2px;
+}
+
+/* Comfortable touch targets for icon-only / nav controls on touch
+   devices (≥44px) without changing desktop density. */
+@media (pointer: coarse) {
+  .ves-wrap .ves-nav-item,
+  .ves-wrap .ves-tab,
+  .ves-wrap .ves-btn,
+  .ves-wrap .ves-user-avatar,
+  .ves-wrap .ves-mobile-menu-toggle,
+  .ves-wrap .ves-sidebar-collapse {
+    min-height: 44px;
+  }
+}
+
+/* Honour reduced-motion globally for the suite's animations. */
+@media (prefers-reduced-motion: reduce) {
+  .ves-wrap *,
+  .ves-wrap *::before,
+  .ves-wrap *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── 8. DEEP TREND FINDER — same overflow guarantees ─────────────
+   Applies only when the DTF shell is present on a page that also
+   loads this stylesheet; harmless otherwise. */
+.fidtf-shell .fidtf-report,
+.fidtf-shell .fidtf-evidence,
+.fidtf-shell .fidtf-evidence-card,
+.fidtf-shell .fidtf-source-card {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.fidtf-shell pre,
+.fidtf-shell .fidtf-raw {
+  max-width: 100%;
+  max-height: 420px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.fidtf-shell table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* =============================================================
+   §8–10  FORMS · BUTTONS · CARDS  ·  depth, motion, refinement
+   —
+   Micro-interactions, card depth, badge/pill geometry and CTA
+   treatment. Reuses the suite's tokens (var(--em), var(--card),
+   var(--bdr)…) so it inherits the active palette. Structural only.
+   ============================================================= */
+
+/* Smooth, consistent micro-interactions on interactive surfaces. */
+.ves-wrap .ves-nav-item,
+.ves-wrap .ves-tab,
+.ves-wrap .ves-btn,
+.ves-wrap .ves-card,
+.ves-wrap .ves-result-card,
+.ves-wrap .ves-evidence-card,
+.ves-wrap .ves-credit-pill,
+.ves-wrap select.ves-input,
+.ves-wrap .ves-input,
+.ves-wrap .ves-chip {
+  transition: background-color .16s ease, border-color .16s ease,
+              box-shadow .16s ease, color .16s ease, transform .16s ease;
+}
+
+/* Sidebar nav — premium active rail + calm hover. */
+.ves-wrap .ves-nav-item {
+  position: relative;
+  border-radius: var(--r2, 8px);
+}
+.ves-wrap .ves-nav-item:hover {
+  background: var(--em06, rgba(37,99,235,0.06));
+}
+.ves-wrap .ves-nav-item.is-active {
+  background: var(--em10, rgba(37,99,235,0.10));
+  color: var(--em, #2563EB);
+  font-weight: 600;
+}
+.ves-wrap .ves-nav-item.is-active::before {
+  content: "";
+  position: absolute;
+  left: -4px; top: 50%;
+  width: 3px; height: 18px;
+  transform: translateY(-50%);
+  border-radius: 0 3px 3px 0;
+  background: var(--em, #2563EB);
+}
+.ves-wrap .ves-nav-item.is-active .ves-nav-ico { color: var(--em, #2563EB); }
+
+/* Section labels — compact, quiet, uppercase tracking. */
+.ves-wrap .ves-sidebar-section-label {
+  font-size: 10.5px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--t3, #64748B);
+}
+
+/* Cards — subtle elevation that lifts on hover (results feel alive). */
+.ves-wrap .ves-result-card,
+.ves-wrap .ves-evidence-card {
+  border: 1px solid var(--bdr, #E2E8F0);
+  border-radius: var(--r3, 12px);
+  background: var(--card, #fff);
+}
+.ves-wrap .ves-result-card:hover,
+.ves-wrap .ves-evidence-card:hover {
+  border-color: var(--bdr2, #CBD5E1);
+  box-shadow: var(--e1, 0 1px 3px rgba(15,23,42,.08));
+  transform: translateY(-1px);
+}
+
+/* Page header — compact eyebrow/kicker support + sticky on scroll. */
+.ves-wrap .ves-page-eyebrow {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--em, #2563EB);
+  margin-bottom: 6px;
+}
+.ves-wrap .ves-page-title {
+  letter-spacing: -.01em;
+}
+
+/* KPI / summary cards — crisp number hierarchy. */
+.ves-wrap .ves-account-kpis,
+.ves-wrap .ves-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+.ves-wrap .ves-kpi-card {
+  border: 1px solid var(--bdr, #E2E8F0);
+  border-radius: var(--r3, 12px);
+  background: var(--card, #fff);
+  padding: 16px 18px;
+  min-width: 0;
+}
+.ves-wrap .ves-kpi-card .ves-kpi-value {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
+}
+.ves-wrap .ves-kpi-card .ves-kpi-label {
+  font-size: 11.5px;
+  color: var(--t3, #64748B);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+/* Badges / pills / chips — pill geometry + token colors by intent. */
+.ves-wrap .ves-card-badge,
+.ves-wrap .ves-chip,
+.ves-wrap .ves-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  border: 1px solid var(--bdr, #E2E8F0);
+  background: var(--overlay, #F1F5F9);
+  color: var(--t2, #475569);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ves-wrap .ves-badge.is-ok    { color: var(--ok,#22C55E);  background: var(--ok10); border-color: var(--ok18); }
+.ves-wrap .ves-badge.is-warn  { color: var(--warn,#F59E0B); background: var(--wn10); border-color: var(--wn18); }
+.ves-wrap .ves-badge.is-err   { color: var(--err,#EF4444);  background: var(--er10); border-color: var(--er18); }
+
+/* Live-signal accent — lime reserved strictly for active/running. */
+.ves-wrap .ves-run-state[data-state="running"] .ves-run-state-label { color: var(--ok, #22C55E); }
+.ves-wrap .ves-workspace-status-dot,
+.ves-wrap .ves-run-state[data-state="running"] .ves-run-state-dot {
+  background: #84CC16; /* lime — live signal only */
+}
+
+/* Filter rows → segmented-control feel for chip groups. */
+.ves-wrap .ves-result-filters,
+.ves-wrap .ves-evidence-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.ves-wrap .ves-result-filters .ves-chip[aria-pressed="true"],
+.ves-wrap .ves-evidence-filters .ves-chip[aria-pressed="true"] {
+  background: var(--em, #2563EB);
+  border-color: var(--em, #2563EB);
+  color: #fff;
+}
+
+/* Primary CTA — confident, tactile, no glow. */
+.ves-wrap .ves-btn-primary {
+  background: var(--em, #2563EB);
+  border-color: var(--em, #2563EB);
+  color: #fff;
+}
+.ves-wrap .ves-btn-primary:hover {
+  background: var(--emh, #1D4ED8);
+  border-color: var(--emh, #1D4ED8);
+}
+.ves-wrap .ves-btn:active { transform: translateY(1px); }
+
+/* Refined, unobtrusive scrollbars inside scroll regions (scoped). */
+.ves-wrap .ves-evidence-raw-host,
+.ves-wrap .ves-seo-table-wrap,
+.ves-wrap .ves-table-scroll,
+.ves-wrap .ves-page-body,
+.ves-wrap .ves-sidebar-nav {
+  scrollbar-width: thin;
+  scrollbar-color: var(--bdr2, #CBD5E1) transparent;
+}
+.ves-wrap .ves-evidence-raw-host::-webkit-scrollbar,
+.ves-wrap .ves-seo-table-wrap::-webkit-scrollbar,
+.ves-wrap .ves-table-scroll::-webkit-scrollbar,
+.ves-wrap .ves-page-body::-webkit-scrollbar,
+.ves-wrap .ves-sidebar-nav::-webkit-scrollbar { width: 10px; height: 10px; }
+.ves-wrap .ves-evidence-raw-host::-webkit-scrollbar-thumb,
+.ves-wrap .ves-seo-table-wrap::-webkit-scrollbar-thumb,
+.ves-wrap .ves-table-scroll::-webkit-scrollbar-thumb,
+.ves-wrap .ves-page-body::-webkit-scrollbar-thumb,
+.ves-wrap .ves-sidebar-nav::-webkit-scrollbar-thumb {
+  background: var(--bdr2, #CBD5E1);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Report sections — clear editorial rhythm + anchor offset. */
+.ves-wrap .ves-result-section { scroll-margin-top: 16px; }
+.ves-wrap .ves-result-section-head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--panel, #F6F8FC);
+  padding-block: 6px;
+}
+/* =============================================================
+   §3–7  SHELL · SIDEBAR · HEADER · LAYOUT · PAGE TEMPLATES
+   —
+   The full-bleed product shell: edge-to-edge canvas, grouped sidebar
+   (expanded + collapsed), sticky header, content canvas, in-app footer,
+   page hero + dashboard composition. Scoped under .ves-wrap/.fiis-app;
+   reuses the existing tokens. No markup hook is removed.
+   ============================================================= */
+
+/* ── De-box the shell — full product canvas ──────────────────────
+   The base theme renders the suite as a centered, rounded, fixed-height
+   card. With the host header/footer removed on app pages, reclaim the
+   whole viewport. Specificity + load-order mirror the base rule. */
+.ves-wrap.ves-dashboard-shell.ves-light-suite,
+.ves-wrap.ves-shell-v3.ves-dashboard-shell.ves-light-suite {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 100dvh !important;
+  min-height: 100dvh !important;
+  max-height: none !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+  --ves-sidebar-w: 280px;
+  grid-template-columns: var(--ves-sidebar-w) minmax(0, 1fr) !important;
+  background: var(--panel, #F6F8FC) !important;
+}
+
+/* Collapsed rail width. */
+.ves-wrap.ves-light-suite.is-sidebar-collapsed {
+  --ves-sidebar-w: 76px;
+}
+
+/* ── 2. SIDEBAR — software-grade, grouped, premium ───────────────*/
+.ves-wrap .ves-sidebar {
+  background: var(--sidebar, #fff);
+  border-right: 1px solid var(--bdr, #E2E8F0);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Product / workspace header. */
+.ves-wrap .ves-sidebar-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 14px 12px;
+  border-bottom: 1px solid var(--bdr, #E2E8F0);
+}
+.ves-wrap .ves-workspace-switcher {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  padding: 4px 6px;
+  border-radius: var(--r2, 8px);
+  cursor: pointer;
+  text-align: left;
+  transition: background-color .16s ease;
+}
+.ves-wrap .ves-workspace-switcher:hover { background: var(--overlay, #F1F5F9); }
+.ves-wrap .ves-logo {
+  flex: 0 0 auto;
+  width: 34px; height: 34px;
+  display: grid; place-items: center;
+  border-radius: 9px;
+  background: var(--em, #2563EB);
+  color: #fff;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: .02em;
+  box-shadow: 0 2px 6px rgba(37,99,235,.30);
+}
+.ves-wrap .ves-workspace-text { min-width: 0; display: flex; flex-direction: column; line-height: 1.2; }
+.ves-wrap .ves-workspace-text strong {
+  font-size: 13.5px; font-weight: 700; color: var(--t1, #0F172A);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ves-wrap .ves-workspace-meta {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--t3, #64748B);
+}
+.ves-wrap .ves-workspace-status-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: #84CC16; flex: 0 0 auto;
+}
+.ves-wrap .ves-current-project-pill {
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px;
+}
+.ves-wrap .ves-sidebar-collapse {
+  flex: 0 0 auto;
+  width: 28px; height: 28px;
+  display: grid; place-items: center;
+  border: 1px solid var(--bdr, #E2E8F0);
+  border-radius: 7px;
+  background: var(--card, #fff);
+  color: var(--t3, #64748B);
+  cursor: pointer;
+  transition: background-color .16s ease, color .16s ease, border-color .16s ease;
+}
+.ves-wrap .ves-sidebar-collapse:hover { background: var(--overlay,#F1F5F9); color: var(--t1,#0F172A); border-color: var(--bdr2,#CBD5E1); }
+
+/* Scrollable nav body with grouped sections. */
+.ves-wrap .ves-sidebar-nav {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px 10px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ves-wrap .ves-nav-group { padding: 4px 0 8px; }
+.ves-wrap .ves-nav-group + .ves-nav-group { border-top: 1px solid var(--bdr,#E2E8F0); padding-top: 10px; }
+.ves-wrap .ves-sidebar-section-label {
+  font-size: 10.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--t3, #94A3B8);
+  padding: 2px 10px 6px;
+}
+
+/* Nav items — tabs and cross-links share one premium treatment. */
+.ves-wrap .ves-nav-item {
+  position: relative;
+  display: flex; align-items: center; gap: 11px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0; border-radius: 9px;
+  background: transparent;
+  color: var(--t2, #475569);
+  font-size: 13px; font-weight: 500;
+  line-height: 1.2;
+  text-align: left; text-decoration: none;
+  cursor: pointer;
+  transition: background-color .14s ease, color .14s ease;
+}
+.ves-wrap .ves-nav-item:hover { background: var(--overlay, #F1F5F9); color: var(--t1, #0F172A); }
+.ves-wrap .ves-nav-ico-wrap { flex: 0 0 auto; display: grid; place-items: center; width: 20px; height: 20px; color: var(--t3, #64748B); }
+.ves-wrap .ves-nav-item .ves-nav-ico { width: 18px; height: 18px; }
+.ves-wrap .ves-nav-label { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ves-wrap .ves-nav-ext { flex: 0 0 auto; font-size: 12px; color: var(--t3, #94A3B8); opacity: .7; }
+
+.ves-wrap .ves-nav-item.is-active {
+  background: var(--em10, rgba(37,99,235,.10));
+  color: var(--em, #2563EB);
+  font-weight: 600;
+}
+.ves-wrap .ves-nav-item.is-active .ves-nav-ico-wrap { color: var(--em, #2563EB); }
+.ves-wrap .ves-nav-item.is-active::before {
+  content: ""; position: absolute; left: -10px; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 20px; border-radius: 0 3px 3px 0; background: var(--em, #2563EB);
+}
+
+/* Sidebar mid: recent / project memory area. */
+.ves-wrap .ves-sidebar-memory {
+  flex: 0 0 auto;
+  max-height: 30%;
+  overflow-y: auto;
+  padding: 8px 12px;
+  border-top: 1px solid var(--bdr, #E2E8F0);
+  font-size: 12px;
+  color: var(--t3, #64748B);
+}
+.ves-wrap .ves-sidebar-memory-separator { display: none; }
+
+/* Sidebar foot: command palette trigger. */
+.ves-wrap .ves-sidebar-foot {
+  flex: 0 0 auto;
+  padding: 10px;
+  border-top: 1px solid var(--bdr, #E2E8F0);
+}
+.ves-wrap .ves-cmdk-btn {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--bdr, #E2E8F0); border-radius: 9px;
+  background: var(--card, #fff);
+  color: var(--t3, #64748B);
+  font-size: 12.5px; cursor: pointer;
+  transition: border-color .14s ease, background-color .14s ease;
+}
+.ves-wrap .ves-cmdk-btn:hover { border-color: var(--bdr2, #CBD5E1); background: var(--overlay, #F1F5F9); }
+.ves-wrap .ves-cmdk-btn .ves-nav-label { flex: 1; }
+.ves-wrap .ves-cmdk-btn kbd, .ves-wrap .ves-topbar-search kbd {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 10.5px; padding: 2px 5px; border-radius: 5px;
+  border: 1px solid var(--bdr, #E2E8F0); background: var(--overlay, #F1F5F9); color: var(--t3, #64748B);
+}
+
+/* ── 3. COLLAPSED SIDEBAR — icon rail with hover labels ──────────*/
+.ves-wrap.is-sidebar-collapsed .ves-workspace-text,
+.ves-wrap.is-sidebar-collapsed .ves-workspace-chevron,
+.ves-wrap.is-sidebar-collapsed .ves-sidebar-section-label,
+.ves-wrap.is-sidebar-collapsed .ves-nav-ext,
+.ves-wrap.is-sidebar-collapsed .ves-cmdk-btn .ves-nav-label,
+.ves-wrap.is-sidebar-collapsed .ves-cmdk-btn kbd,
+.ves-wrap.is-sidebar-collapsed .ves-sidebar-memory { display: none; }
+.ves-wrap.is-sidebar-collapsed .ves-sidebar-head { justify-content: center; padding: 14px 8px; }
+.ves-wrap.is-sidebar-collapsed .ves-workspace-switcher { justify-content: center; flex: 0; }
+.ves-wrap.is-sidebar-collapsed .ves-sidebar-collapse { transform: rotate(180deg); }
+.ves-wrap.is-sidebar-collapsed .ves-nav-item { justify-content: center; padding: 10px 0; }
+.ves-wrap.is-sidebar-collapsed .ves-nav-item .ves-nav-label {
+  position: absolute; left: calc(100% + 10px); top: 50%; transform: translateY(-50%);
+  width: auto; max-width: 220px; padding: 6px 10px;
+  background: var(--t1, #0F172A); color: #fff; border-radius: 7px;
+  font-size: 12px; box-shadow: var(--e2, 0 4px 16px rgba(15,23,42,.18));
+  opacity: 0; pointer-events: none; visibility: hidden; z-index: 80;
+  transition: opacity .12s ease;
+}
+.ves-wrap.is-sidebar-collapsed .ves-nav-item:hover .ves-nav-label { opacity: 1; visibility: visible; }
+.ves-wrap.is-sidebar-collapsed .ves-cmdk-btn { justify-content: center; }
+.ves-wrap.is-sidebar-collapsed .ves-nav-item.is-active::before { left: 0; }
+
+/* ── 4. MAIN COLUMN, HEADER, CANVAS, FOOTER ──────────────────────*/
+.ves-wrap .ves-main-col {
+  display: flex; flex-direction: column;
+  min-width: 0; min-height: 0; height: 100%;
+  background: var(--panel, #F6F8FC);
+}
+
+/* Premium sticky top header. */
+.ves-wrap .ves-topbar {
+  flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  height: 60px; padding: 0 22px;
+  background: var(--topbar, #fff);
+  border-bottom: 1px solid var(--bdr, #E2E8F0);
+}
+.ves-wrap .ves-topbar-left { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.ves-wrap .ves-topbar-right { display: flex; align-items: center; gap: 10px; }
+.ves-wrap .ves-breadcrumbs { display: flex; align-items: center; gap: 7px; font-size: 13px; min-width: 0; }
+.ves-wrap .ves-breadcrumb-root { color: var(--t3, #64748B); white-space: nowrap; }
+.ves-wrap .ves-breadcrumb-sep { color: var(--t3, #CBD5E1); }
+.ves-wrap .ves-breadcrumb-current { color: var(--t1, #0F172A); font-weight: 600; white-space: nowrap; }
+
+/* Header command bar. */
+.ves-wrap .ves-topbar-search {
+  display: flex; align-items: center; gap: 9px;
+  width: clamp(220px, 28vw, 420px);
+  padding: 8px 12px;
+  border: 1px solid var(--bdr, #E2E8F0); border-radius: 10px;
+  background: var(--panel, #F6F8FC);
+  color: var(--t3, #64748B);
+  font-size: 12.5px; cursor: pointer;
+}
+.ves-wrap .ves-topbar-search:hover { border-color: var(--bdr2, #CBD5E1); background: var(--card, #fff); }
+.ves-wrap .ves-topbar-search-label { flex: 1; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.ves-wrap .ves-topbar-icon-btn {
+  width: 36px; height: 36px; display: grid; place-items: center;
+  border: 1px solid var(--bdr, #E2E8F0); border-radius: 9px;
+  background: var(--card, #fff); color: var(--t2, #475569); cursor: pointer;
+  transition: background-color .14s ease, border-color .14s ease;
+}
+.ves-wrap .ves-topbar-icon-btn:hover { background: var(--overlay, #F1F5F9); border-color: var(--bdr2, #CBD5E1); }
+
+/* Scrollable content canvas — the wide work area. */
+.ves-wrap .ves-page-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 28px 32px 40px;
+}
+.ves-wrap .ves-page-inner {
+  width: 100%;
+  max-width: 1680px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Consistent, calm page header per tool. */
+.ves-wrap .ves-page-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+}
+.ves-wrap .ves-page-title { font-size: 22px; font-weight: 750; letter-spacing: -.01em; color: var(--t1, #0F172A); margin: 0; }
+.ves-wrap .ves-page-sub { font-size: 13px; color: var(--t3, #64748B); margin: 4px 0 0; max-width: 70ch; }
+.ves-wrap .ves-page-head-actions { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
+
+/* Per-group eyebrow above the page title (renders only when set). */
+.ves-wrap .ves-page-title[data-eyebrow]::before {
+  content: attr(data-eyebrow);
+  display: block;
+  font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--em, #2563EB);
+  margin-bottom: 5px;
+}
+
+/* In-app footer / utility strip. */
+.ves-wrap .ves-app-footer {
+  flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  height: 34px; padding: 0 22px;
+  background: var(--topbar, #fff);
+  border-top: 1px solid var(--bdr, #E2E8F0);
+  font-size: 11.5px; color: var(--t3, #94A3B8);
+}
+.ves-wrap .ves-app-footer a { color: var(--t3, #64748B); text-decoration: none; }
+.ves-wrap .ves-app-footer a:hover { color: var(--em, #2563EB); }
+.ves-wrap .ves-app-footer-links { display: flex; gap: 16px; }
+
+/* ── 5. DASHBOARD / OVERVIEW — composed multi-section page ────────*/
+.ves-wrap .ves-dash { display: flex; flex-direction: column; gap: 20px; }
+.ves-wrap .ves-dash-hero {
+  display: flex; align-items: center; justify-content: space-between; gap: 18px;
+  padding: 22px 24px;
+  border: 1px solid var(--bdr, #E2E8F0); border-radius: 14px;
+  background:
+    radial-gradient(120% 140% at 100% 0%, var(--em06, rgba(37,99,235,.06)) 0%, transparent 55%),
+    var(--card, #fff);
+}
+.ves-wrap .ves-dash-hero h2 { margin: 0; font-size: 24px; font-weight: 750; letter-spacing: -.02em; color: var(--t1,#0F172A); }
+.ves-wrap .ves-dash-hero p { margin: 6px 0 0; font-size: 13.5px; color: var(--t3,#64748B); max-width: 60ch; }
+
+/* Stat strip. */
+.ves-wrap .ves-dash-stats {
+  display: grid; gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.ves-wrap .ves-stat-card {
+  border: 1px solid var(--bdr, #E2E8F0); border-radius: 12px;
+  background: var(--card, #fff); padding: 16px 18px; min-width: 0;
+}
+.ves-wrap .ves-stat-card .ves-stat-label { font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--t3,#94A3B8); }
+.ves-wrap .ves-stat-card .ves-stat-value { font-size: 27px; font-weight: 750; line-height: 1.05; letter-spacing: -.02em; color: var(--t1,#0F172A); margin-top: 6px; font-variant-numeric: tabular-nums; }
+.ves-wrap .ves-stat-card .ves-stat-trend { font-size: 12px; margin-top: 4px; color: var(--ok,#16a34a); }
+
+/* Composition grid: shortcuts + recent. */
+.ves-wrap .ves-dash-grid {
+  display: grid; gap: 18px;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+}
+.ves-wrap .ves-dash-section {
+  border: 1px solid var(--bdr, #E2E8F0); border-radius: 14px;
+  background: var(--card, #fff); padding: 18px 20px; min-width: 0;
+}
+.ves-wrap .ves-dash-section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.ves-wrap .ves-dash-section-head h3 { margin: 0; font-size: 14px; font-weight: 700; color: var(--t1,#0F172A); }
+.ves-wrap .ves-dash-tools { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ves-wrap .ves-tool-card {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px; border: 1px solid var(--bdr, #E2E8F0); border-radius: 11px;
+  background: var(--card, #fff); color: var(--t1,#0F172A); text-decoration: none;
+  transition: border-color .14s ease, box-shadow .14s ease, transform .14s ease;
+}
+.ves-wrap .ves-tool-card:hover { border-color: var(--em, #2563EB); box-shadow: var(--e1, 0 1px 3px rgba(15,23,42,.08)); transform: translateY(-1px); }
+.ves-wrap .ves-tool-card .ves-tool-ico { width: 38px; height: 38px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 10px; background: var(--em10, rgba(37,99,235,.10)); color: var(--em, #2563EB); }
+.ves-wrap .ves-tool-card > span:last-child { display: flex; flex-direction: column; min-width: 0; }
+.ves-wrap .ves-tool-card .ves-tool-name { display: block; font-size: 13.5px; font-weight: 650; color: var(--t1, #0F172A); }
+.ves-wrap .ves-tool-card .ves-tool-desc { display: block; font-size: 11.5px; color: var(--t3,#64748B); margin-top: 2px; }
+
+/* ── 6. RESPONSIVE — the shell adapts, never breaks ──────────────*/
+@media (max-width: 1100px) {
+  .ves-wrap .ves-dash-stats { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .ves-wrap .ves-dash-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 1024px) {
+  /* Sidebar becomes an off-canvas drawer. */
+  .ves-wrap.ves-dashboard-shell.ves-light-suite,
+  .ves-wrap.ves-shell-v3.ves-dashboard-shell.ves-light-suite {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .ves-wrap .ves-sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0;
+    width: 286px; z-index: 90;
+    transform: translateX(-100%);
+    transition: transform .22s ease;
+    box-shadow: var(--e3, 0 12px 40px rgba(15,23,42,.18));
+  }
+  .ves-wrap.is-sidebar-open .ves-sidebar { transform: translateX(0); }
+  .ves-wrap .ves-mobile-drawer-backdrop {
+    position: fixed; inset: 0; z-index: 85; background: rgba(15,23,42,.45);
+    opacity: 0; visibility: hidden; transition: opacity .2s ease;
+  }
+  .ves-wrap.is-sidebar-open .ves-mobile-drawer-backdrop { opacity: 1; visibility: visible; }
+  .ves-wrap .ves-sidebar-toggle { display: grid !important; }
+}
+@media (min-width: 1025px) {
+  .ves-wrap .ves-sidebar-toggle { display: none; }
+  .ves-wrap .ves-mobile-menu-toggle { display: none; }
+}
+@media (max-width: 768px) {
+  .ves-wrap .ves-topbar-search { display: none; }
+  .ves-wrap .ves-page-body { padding: 18px 16px 32px; }
+  .ves-wrap .ves-dash-stats { grid-template-columns: 1fr 1fr; }
+  .ves-wrap .ves-dash-tools { grid-template-columns: 1fr; }
+  .ves-wrap .ves-app-footer-links { gap: 10px; }
+}
+@media (max-width: 480px) {
+  .ves-wrap .ves-topbar { padding: 0 14px; }
+  .ves-wrap .ves-page-title { font-size: 19px; }
+  .ves-wrap .ves-app-footer .ves-app-footer-build { display: none; }
+}
+
+/* ── 15. UNIFIED PAGE / SECTION SCAFFOLD (v1.1.0) ────────────────
+   Clean visual wrappers around preserved functional hooks. The new
+   .fiis-* classes own layout; .ves-form/.ves-status/.ves-results/
+   .ves-report-container stay on the same elements as JS hooks. */
+.ves-wrap .fiis-page { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.ves-wrap .fiis-control-panel {
+  background: var(--card, #fff);
+  border: 1px solid var(--bdr, #E2E8F0);
+  border-radius: 14px;
+  padding: 18px 20px;
+  min-width: 0;
+}
+.ves-wrap .fiis-results-region { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+/* Section composition mode ([fiis_section]) — no shell chrome. */
+.ves-wrap.fiis-section {
+  display: block !important;
+  height: auto !important;
+  min-height: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+  padding: 0 !important;
+}
+
+/* Deep-link note rendered when a 2nd full-app shortcode is on one page. */
+.fiis-app-alias-note { padding: 12px 0; }
+
+/* Notification button parity. */
+.ves-wrap .ves-notif-btn { position: relative; }
+
+/* ── Results / output region (consistent across tool pages) ─────── */
+.ves-wrap .fiis-results-region {
+  display: flex; flex-direction: column; gap: 14px;
+  min-width: 0;
+  background: var(--card, #fff);
+  border: 1px solid var(--bdr, #E2E8F0);
+  border-radius: 14px;
+  padding: 18px 20px;
+}
+.ves-wrap .fiis-region-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.ves-wrap .fiis-region-title { margin: 0; font-size: 14px; font-weight: 700; color: var(--t1, #0F172A); }
+.ves-wrap .fiis-region-hint { font-size: 12px; color: var(--t3, #64748B); }
+.ves-wrap .fiis-region-empty {
+  padding: 26px 18px; text-align: center;
+  border: 1px dashed var(--bdr, #E2E8F0); border-radius: 10px;
+  background: var(--panel, #F6F8FC); color: var(--t3, #64748B); font-size: 13px;
+}
+/* Hide the region empty-state once results or a report are present. */
+.ves-wrap .fiis-results-region:has(.ves-results:not(:empty)) .fiis-region-empty,
+.ves-wrap .fiis-results-region:has(.ves-report-container:not(:empty)) .fiis-region-empty,
+.ves-wrap .fiis-results-region:has(.ves-status:not(:empty)) .fiis-region-empty { display: none; }
+
+/* ── Control panel label ────────────────────────────────────────── */
+.ves-wrap .fiis-panel-label,
+.ves-wrap .fiis-section-link {
+  font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--t3, #94A3B8);
+}
+.ves-wrap .fiis-panel-label { display: block; margin-bottom: 12px; }
+.ves-wrap .fiis-section-link { text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--em, #2563EB); text-decoration: none; }
+.ves-wrap .fiis-section-link:hover { text-decoration: underline; }
+
+/* ── SEO scope chips + KPI strip ────────────────────────────────── */
+.ves-wrap .fiis-seo-scopes { display: flex; gap: 8px; flex-wrap: wrap; }
+.ves-wrap .fiis-scope-chip {
+  padding: 6px 12px; border-radius: 999px; font-size: 12.5px; font-weight: 600;
+  border: 1px solid var(--bdr, #E2E8F0); background: var(--card, #fff); color: var(--t2, #475569);
+}
+.ves-wrap .fiis-scope-chip.is-active { background: var(--em, #2563EB); border-color: var(--em, #2563EB); color: #fff; }
+.ves-wrap .fiis-seo-kpis .ves-stat-value { color: var(--t3, #94A3B8); }
+
+/* ── Deep Trend: workflow stages + source readiness ─────────────── */
+.ves-wrap .fiis-stages { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.ves-wrap .fiis-stage { display: flex; gap: 12px; align-items: flex-start; }
+.ves-wrap .fiis-stage-num {
+  flex: 0 0 auto; width: 26px; height: 26px; display: grid; place-items: center;
+  border-radius: 8px; background: var(--em10, rgba(37,99,235,.1)); color: var(--em, #2563EB); font-weight: 700; font-size: 13px;
+}
+.ves-wrap .fiis-stage strong { display: block; font-size: 13px; color: var(--t1, #0F172A); }
+.ves-wrap .fiis-stage span { font-size: 12px; color: var(--t3, #64748B); }
+.ves-wrap .fiis-readiness { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+.ves-wrap .fiis-readiness li { display: flex; align-items: center; gap: 9px; font-size: 13px; color: var(--t1, #0F172A); }
+.ves-wrap .fiis-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; background: var(--t3, #94A3B8); }
+.ves-wrap .fiis-dot.is-ok { background: #16a34a; }
+.ves-wrap .fiis-dot.is-warn { background: var(--warn, #F59E0B); }
+.ves-wrap .fiis-ready-tag { margin-left: auto; font-size: 11px; font-weight: 600; color: #16a34a; }
+.ves-wrap .fiis-ready-tag.is-warn { color: var(--warn, #F59E0B); }
+.ves-wrap .fiis-next-note { font-size: 11.5px; color: var(--t3, #94A3B8); margin: 8px 0 0; text-align: center; }
+
+/* ── Dashboard: recommended next actions ────────────────────────── */
+.ves-wrap .fiis-next-actions { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.ves-wrap .fiis-next-actions a {
+  display: flex; align-items: center; gap: 12px; padding: 11px 12px;
+  border: 1px solid var(--bdr, #E2E8F0); border-radius: 11px; text-decoration: none;
+  background: var(--card, #fff); transition: border-color .14s ease, transform .14s ease;
+}
+.ves-wrap .fiis-next-actions a:hover { border-color: var(--em, #2563EB); transform: translateY(-1px); }
+.ves-wrap .fiis-na-ico { flex: 0 0 auto; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px; background: var(--em10, rgba(37,99,235,.1)); color: var(--em, #2563EB); font-size: 16px; }
+.ves-wrap .fiis-next-actions strong { display: block; font-size: 13px; color: var(--t1, #0F172A); }
+.ves-wrap .fiis-next-actions span span { font-size: 11.5px; color: var(--t3, #64748B); }
+
+/* ── Sidebar usage/credits mini block ───────────────────────────── */
+.ves-wrap .ves-sidebar-credits {
+  flex: 0 0 auto; display: block; margin: 0 10px 8px; padding: 10px 12px;
+  border: 1px solid var(--bdr, #E2E8F0); border-radius: 10px; background: var(--card, #fff);
+  text-decoration: none; transition: border-color .14s ease;
+}
+.ves-wrap .ves-sidebar-credits:hover { border-color: var(--bdr2, #CBD5E1); }
+.ves-wrap .ves-sidebar-credits-row { display: flex; align-items: baseline; justify-content: space-between; }
+.ves-wrap .ves-sidebar-credits-label { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--t3, #94A3B8); }
+.ves-wrap .ves-sidebar-credits-value { font-size: 15px; font-weight: 700; color: var(--t1, #0F172A); font-variant-numeric: tabular-nums; }
+.ves-wrap .ves-sidebar-credits-bar { margin-top: 8px; height: 5px; border-radius: 999px; background: var(--overlay, #F1F5F9); overflow: hidden; }
+.ves-wrap .ves-sidebar-credits-bar > span { display: block; height: 100%; border-radius: 999px; background: var(--em, #2563EB); }
+.ves-wrap.is-sidebar-collapsed .ves-sidebar-credits { display: none; }
+
+/* ── 16. REFINEMENT PASS — header strength, sidebar density, legacy overrides
+   These !important rules exist ONLY to defeat equally-!important legacy rules
+   in ves-frontend.css (e.g. `.ves-cmdk-btn{display:none!important}` at :2243,
+   which the vendor used to disable the command palette). We re-enable the
+   command bar inside the app shell and tighten sidebar density so every nav
+   group is visible without scrolling on a 900px-tall viewport. */
+
+/* Re-enable the header command/search bar + sidebar search trigger. */
+.ves-wrap .ves-topbar-search.ves-cmdk-btn {
+  display: flex !important;
+  flex: 0 1 auto;
+  width: clamp(240px, 30vw, 460px) !important;
+  background: var(--panel, #F6F8FC) !important;
+  color: var(--t3, #64748B) !important;
+  border: 1px solid var(--bdr, #E2E8F0) !important;
+}
+.ves-wrap .ves-topbar-search.ves-cmdk-btn:hover { background: var(--card,#fff) !important; border-color: var(--bdr2,#CBD5E1) !important; }
+.ves-wrap .ves-sidebar-foot .ves-cmdk-btn {
+  display: flex !important;
+  background: var(--card, #fff) !important;
+  color: var(--t3, #64748B) !important;
+  border: 1px solid var(--bdr, #E2E8F0) !important;
+}
+.ves-wrap .ves-topbar-search.ves-cmdk-btn kbd,
+.ves-wrap .ves-sidebar-foot .ves-cmdk-btn kbd { display: inline-flex !important; }
+.ves-wrap.is-sidebar-collapsed .ves-sidebar-foot .ves-cmdk-btn kbd { display: none !important; }
+
+/* Header: stronger context + breadcrumb weight. */
+.ves-wrap .ves-topbar-left { flex: 1 1 auto; min-width: 0; }
+.ves-wrap .ves-breadcrumbs { flex: 0 0 auto; }
+.ves-wrap .ves-topbar-search.ves-cmdk-btn .ves-topbar-search-label { flex: 1; text-align: left; }
+
+/* Workspace / project pill — readable, not a washed-out gray blob. */
+.ves-wrap .ves-current-project-pill {
+  font-size: 10px; font-weight: 600; letter-spacing: .02em;
+  color: var(--t2, #475569) !important;
+  background: var(--overlay, #F1F5F9); border: 1px solid var(--bdr, #E2E8F0);
+  padding: 1px 7px; border-radius: 999px; text-transform: none;
+  max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* Sidebar density — fit Workspace → Outputs without scrolling at 900px. */
+.ves-wrap .ves-sidebar-nav { padding: 8px 10px 4px !important; gap: 0 !important; }
+.ves-wrap .ves-nav-group { padding: 2px 0 5px !important; }
+.ves-wrap .ves-nav-group + .ves-nav-group { padding-top: 6px !important; }
+.ves-wrap .ves-sidebar-section-label { padding: 7px 10px 4px !important; margin: 0 !important; }
+.ves-wrap .ves-nav-item { padding: 6px 10px !important; font-size: 12.5px !important; gap: 10px !important; }
+.ves-wrap .ves-nav-item .ves-nav-ico-wrap { width: 18px; height: 18px; }
+.ves-wrap .ves-nav-item .ves-nav-ico { width: 17px; height: 17px; }
+
+/* Memory preview block — quiet, compact, never eats the whole rail. */
+.ves-wrap .ves-sidebar-memory { max-height: 132px !important; padding: 6px 10px !important; }
+.ves-wrap .ves-sidebar-memory-loading { font-size: 11.5px; color: var(--t3, #94A3B8); padding: 4px 2px; }
+
+/* Mature status/CTA system — secondary actions are neutral, not blue. */
+.ves-wrap .ves-btn-secondary {
+  background: var(--card, #fff);
+  border: 1px solid var(--bdr, #E2E8F0);
+  color: var(--t1, #0F172A);
+}
+.ves-wrap .ves-btn-secondary:hover { background: var(--overlay, #F1F5F9); border-color: var(--bdr2, #CBD5E1); }
+
+/* Hide the perpetual sidebar "memory loading" block so every nav group
+   (Workspace → Outputs) is visible without scrolling. Recent activity is
+   surfaced on the Dashboard instead. */
+.ves-wrap .ves-sidebar-memory { display: none !important; }
+
+/* Decisive nav density (beats .ves-light-suite .ves-nav-item min-height:36px). */
+.ves-wrap.ves-light-suite .ves-nav-item {
+  min-height: 30px !important;
+  padding: 5px 10px !important;
+  font-size: 12.5px !important;
+  gap: 10px !important;
+  border-left-width: 0 !important;
+}
+.ves-wrap.ves-light-suite .ves-sidebar-section-label { padding: 7px 10px 3px !important; }
+.ves-wrap.ves-light-suite .ves-sidebar-credits { margin: 4px 10px 6px !important; padding: 8px 12px !important; }
+.ves-wrap.ves-light-suite .ves-sidebar-foot { padding: 8px 10px !important; }
+
+/* Final density nudge so the full Outputs group is visible at 900px. */
+.ves-wrap.ves-light-suite .ves-nav-item { min-height: 28px !important; padding: 4px 10px !important; }
+.ves-wrap.ves-light-suite .ves-sidebar-credits { margin: 2px 10px 5px !important; padding: 7px 12px !important; }
+.ves-wrap .ves-sidebar-credits-bar { margin-top: 6px; height: 4px; }
+
+/* ── 17. RESULT READABILITY — never tiny pink/mono in result text ───
+   Real results are injected by the JS with legacy classes. Keep their
+   meta/refs readable (no 9.5px mono, no error-red on normal text). */
+.ves-wrap .ves-results .ves-card-meta,
+.ves-wrap .ves-results .ves-evidence-meta,
+.ves-wrap .ves-evidence-card .ves-card-meta {
+  font-family: inherit !important;
+  font-size: 12px !important;
+  color: var(--t3, #64748B) !important;
+  letter-spacing: 0 !important;
+}
+.ves-wrap .ves-results .ves-evidence-ref-row code,
+.ves-wrap .ves-results code {
+  font-size: 11px !important;
+  color: var(--t2, #475569) !important;
+  background: var(--overlay, #F1F5F9) !important;
+  border: 1px solid var(--bdr, #E2E8F0) !important;
+  border-radius: 5px !important;
+  padding: 1px 6px !important;
+}
+.ves-wrap .ves-results .ves-result-section-head,
+.ves-wrap .ves-evidence-card {
+  background: var(--card, #fff) !important;
+}
+
+/* ── 18. COMPLETENESS — coming-soon affordances + library pages ──────
+   Keeps secondary routes (Projects/Reports/Evidence) honest: a "Soon"
+   nav tag + real library/coming-soon page layouts, so the sidebar never
+   over-promises versus the actual product. */
+.ves-wrap .ves-nav-soon {
+  margin-left: auto; flex: 0 0 auto;
+  font-size: 9px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--t3, #94A3B8); background: var(--overlay, #F1F5F9);
+  border: 1px solid var(--bdr, #E2E8F0); border-radius: 999px; padding: 1px 6px;
+}
+.ves-wrap.is-sidebar-collapsed .ves-nav-soon { display: none; }
+.ves-wrap .ves-nav-item.is-soon .ves-nav-label { color: var(--t2, #475569); }
+
+.ves-wrap .fiis-soon-pill {
+  font-size: 11px; font-weight: 700; letter-spacing: .04em;
+  color: var(--em, #2563EB); background: var(--em10, rgba(37,99,235,.1));
+  border: 1px solid var(--em18, rgba(37,99,235,.18)); border-radius: 999px; padding: 4px 12px;
+}
+
+.ves-wrap .fiis-library-empty {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 44px 28px; max-width: 620px; margin: 0 auto; text-align: center;
+}
+.ves-wrap .fiis-empty-ico {
+  width: 56px; height: 56px; display: grid; place-items: center; margin-bottom: 6px;
+  border-radius: 14px; background: var(--em10, rgba(37,99,235,.1)); color: var(--em, #2563EB);
+}
+.ves-wrap .fiis-library-empty h3 { margin: 0; font-size: 17px; font-weight: 700; color: var(--t1, #0F172A); }
+.ves-wrap .fiis-library-empty p { margin: 0; font-size: 13px; color: var(--t3, #64748B); max-width: 52ch; }
+
+.ves-wrap .fiis-project-card {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 16px; border: 1px solid var(--bdr, #E2E8F0); border-radius: 12px; background: var(--card, #fff);
+}
+.ves-wrap .fiis-project-mark {
+  width: 40px; height: 40px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 10px;
+  background: var(--em, #2563EB); color: #fff; font-weight: 800; font-size: 14px;
+}
+.ves-wrap .fiis-project-card > div { flex: 1; min-width: 0; }
+.ves-wrap .fiis-project-card strong { display: block; font-size: 14px; color: var(--t1, #0F172A); }
+.ves-wrap .fiis-project-card span { font-size: 12px; color: var(--t3, #64748B); }
+
+.ves-wrap .fiis-coming-soon {
+  border: 1px dashed var(--bdr2, #CBD5E1); border-radius: 14px; padding: 22px 24px;
+  background: var(--panel, #F6F8FC);
+}
+.ves-wrap .fiis-coming-soon h3 { margin: 0 0 6px; font-size: 15px; font-weight: 700; color: var(--t1, #0F172A); }
+.ves-wrap .fiis-coming-soon p { margin: 0 0 14px; font-size: 13px; color: var(--t3, #64748B); max-width: 60ch; }

@@ -1,0 +1,7 @@
+future-island-deep-trend-finder-addon.php
+includes/class-fidtf-relevance-filter.php
+includes/class-fidtf-source-job-service.php
+includes/class-fidtf-report-service.php
+tests/test-fidtf-v0349-live-noise-and-evidence-card-gates.php
+docs/CHANGELOG_deep-trend-finder-addon-v0.3.49-live-noise-and-evidence-card-gates.md
+docs/FILES_CHANGED_deep-trend-finder-addon-v0.3.49-live-noise-and-evidence-card-gates.txt

@@ -12,7 +12,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
 };
 
-$assert(strpos($main, 'Version: 1.2.4') !== false, 'Version is 1.1.0');
+$assert(strpos($main, 'Version: 1.2.5') !== false, 'Version is 1.1.0');
 
 $assert(strpos($ren, 'report_template_unreadable') !== false, 'Renderer raises report_template_unreadable diagnostic');
 $assert(strpos($ren, 'VES_Admin::record_diagnostic') !== false, 'Renderer calls VES_Admin::record_diagnostic');

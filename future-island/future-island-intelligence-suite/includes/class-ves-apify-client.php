@@ -242,7 +242,55 @@ final class VES_Apify_Client {
         return max(10, min(55, (int) $timeout));
     }
 
+    /**
+     * v0.1 RC — hard dispatch gate. A run-start request (POST …/v2/acts/{slug}/runs
+     * or run-sync, and the actor-tasks equivalent) is refused before any HTTP when
+     * the actor slug is not on the server-side allowlist, and a missing
+     * maxTotalChargeUsd ceiling on a run-start URL is logged as a config warning.
+     * Read-style requests (fetch run/items/abort) are never gated.
+     * @return true|WP_Error
+     */
+    private static function enforce_run_dispatch_safety($method, $url) {
+        if (strtoupper((string) $method) !== 'POST') { return true; }
+        if (!preg_match('#https?://api\.apify\.com/v2/(acts|actor-tasks)/([^/?\#]+)/(runs|run-sync[^/?\#]*)#i', (string) $url, $m)) {
+            return true;
+        }
+        $slug = (string) $m[2];
+        if (class_exists('VES_Apify_Actor_Registry') && method_exists('VES_Apify_Actor_Registry', 'is_allowed_slug')) {
+            if (!VES_Apify_Actor_Registry::is_allowed_slug($slug)) {
+                self::record_diagnostic_safe('apify_actor_not_allowlisted', 'Run dispatch refused: actor is not on the server-side allowlist.', [
+                    'method' => 'POST',
+                    'actor'  => VES_Apify_Actor_Registry::normalize_slug($slug),
+                    'stage'  => 'actor_allowlist_gate',
+                ]);
+                return new WP_Error('ves_actor_not_allowlisted', 'This data source actor is not allowlisted on the server. Ask an admin to register it in the actor registry before running it.', [
+                    'status' => 0,
+                    'provider_state' => 'CONFIGURATION_REQUIRED',
+                    'stage' => 'actor_allowlist_gate',
+                ]);
+            }
+        } else {
+            self::record_diagnostic_safe('apify_allowlist_unavailable', 'Actor allowlist registry unavailable; dispatch proceeded without the allowlist gate.', [
+                'method' => 'POST',
+                'stage'  => 'actor_allowlist_gate_degraded',
+            ]);
+        }
+        if (strpos((string) $url, 'maxTotalChargeUsd=') === false) {
+            self::record_diagnostic_safe('apify_charge_ceiling_missing', 'Run-start URL has no maxTotalChargeUsd ceiling; configure ves_prepare_run_options()/hard max charge.', [
+                'method' => 'POST',
+                'stage'  => 'charge_ceiling_warning',
+            ]);
+        }
+        return true;
+    }
+
     public static function request($method, $url, $body = null, $attempt = 1) {
+        // v0.1 RC: allowlist + ceiling gate runs first — a blocked actor must never
+        // consume token config checks, retries, or provider budget.
+        $dispatch_gate = self::enforce_run_dispatch_safety($method, $url);
+        if (is_wp_error($dispatch_gate)) {
+            return $dispatch_gate;
+        }
         // v0.9.24.6: inject the Apify token via Authorization header rather
         // than as a URL ?token= query param, which leaks into access logs and
         // error messages. The URL token is still accepted by Apify as a

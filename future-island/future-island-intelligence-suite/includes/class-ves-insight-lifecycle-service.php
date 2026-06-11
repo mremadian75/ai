@@ -103,6 +103,36 @@ final class VES_Insight_Lifecycle_Service {
     }
 
     /**
+     * v0.1 RC — the ONLY safe way out of the terminal 'rejected' state. Reopening
+     * always lands on 'draft' (back into human review with the evidence/quality
+     * gates ahead of it); it can never jump to approved. Requires a reason and
+     * records who reopened it.
+     */
+    public static function reopen_insight(int $insight_id, string $reason = '', array $args = []) {
+        $reason = self::clean_reason($reason);
+        if ($reason === '') { return new WP_Error('ves_insight_reason_required', 'Reopening a rejected insight requires a reason.'); }
+        return VES_Intelligence_Store::update_insight_status($insight_id, 'draft', [
+            'reopened_at'     => self::now(),
+            'reopened_reason' => $reason,
+            'reopened_by'     => self::actor($args),
+        ], ['allow_reopen' => true]);
+    }
+
+    /**
+     * v0.1 RC — the ONLY safe way out of the terminal 'archived' state. Restoring
+     * always lands on 'draft'; it can never jump to approved. Requires a reason.
+     */
+    public static function restore_insight(int $insight_id, string $reason = '', array $args = []) {
+        $reason = self::clean_reason($reason);
+        if ($reason === '') { return new WP_Error('ves_insight_reason_required', 'Restoring an archived insight requires a reason.'); }
+        return VES_Intelligence_Store::update_insight_status($insight_id, 'draft', [
+            'restored_at'     => self::now(),
+            'restored_reason' => $reason,
+            'restored_by'     => self::actor($args),
+        ], ['allow_restore' => true]);
+    }
+
+    /**
      * Phase 5 (Part H) — admin diagnostics provider. Counts + a bounded reassessed
      * sample so the panel can show evidence/quality health cheaply. No secrets.
      */

@@ -35,7 +35,7 @@ $extractBlock = static function(string $src, string $needle, int $window = 5000)
 };
 
 // Version bump.
-$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.4') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.4'") !== false);
+$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.5') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.5'") !== false);
 
 // build_safe_diagnostic helper exists and is leak-free by construction.
 $add('build_safe_diagnostic helper exists', strpos($ajax, 'private static function build_safe_diagnostic(') !== false);

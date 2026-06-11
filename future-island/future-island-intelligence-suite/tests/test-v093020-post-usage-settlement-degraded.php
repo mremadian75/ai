@@ -22,7 +22,7 @@ $checks = [];
 $add = function ($label, $cond) use (&$checks) { $checks[$label] = (bool) $cond; };
 
 // Version bump.
-$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.4') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.4'") !== false);
+$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.5') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.5'") !== false);
 
 // --- Fix 1: post_standard_usage_or_error() must not call self::error() on WP_Error ---
 // Locate the function body.
@@ -47,7 +47,7 @@ $add('post_standard_usage_or_error returns instead of dying on wp_error', strpos
 
 // --- Fix 2: settle_standard_usage_by_delivery() must not call self::error() on WP_Error ---
 $settle_start = strpos($ajax, 'private static function settle_standard_usage_by_delivery(');
-$settle_body  = $settle_start !== false ? substr($ajax, $settle_start, 1600) : '';
+$settle_body  = $settle_start !== false ? substr($ajax, $settle_start, 3600) : '';
 
 $add('settle_standard_usage_by_delivery logs wp_error instead of terminating',
     strpos($settle_body, 'settle_usage_wp_error_degraded') !== false);

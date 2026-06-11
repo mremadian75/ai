@@ -1,0 +1,2378 @@
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/LIVE-STAGING-VALIDATION-CHECKLIST.md ./future-island-intelligence-suite/LIVE-STAGING-VALIDATION-CHECKLIST.md
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/LIVE-STAGING-VALIDATION-CHECKLIST.md	1970-01-01 00:00:00.000000000 +0000
++++ ./future-island-intelligence-suite/LIVE-STAGING-VALIDATION-CHECKLIST.md	2026-06-11 12:31:24.659783458 +0000
+@@ -0,0 +1,68 @@
++# Future Island v0.1 RC — Live Staging Validation Checklist
++
++Operator: ____________  Date: ____________  Staging URL: ____________
++
++Every box must be checked with real evidence (command output captured to a log
++file; screenshots saved). **Never run `--apply` during validation. Never enable
++AI execution. If any item fails, the validation fails — record it honestly.**
++
++## A. Environment
++
++- [ ] `php -v` recorded (7.4+ / 8.x)
++- [ ] `wp --info` recorded
++- [ ] `wp core version` recorded
++- [ ] `wp db query "SELECT VERSION();"` recorded
++- [ ] `wp option get siteurl` is the STAGING url, not production
++- [ ] `wp plugin list` and `wp theme list` recorded
++- [ ] DB backup exists: `staging-backup-*.sql` (path noted)
++
++## B. Install
++
++- [ ] RC ZIP SHA-256 matches the published checksum
++- [ ] `wp plugin install <zip> --force` succeeded
++- [ ] `wp plugin activate future-island-intelligence-suite` succeeded
++- [ ] No PHP fatals in the error log during activation
++
++## C. CLI validation (read-only — exit codes recorded)
++
++- [ ] `wp ves verify-schema` — no missing tables
++- [ ] `wp ves validate-staging --format=json` — not `not_ready`
++- [ ] `wp ves readiness-check --format=json`
++- [ ] `wp ves rc-readiness-check --format=json` — `ready_for_staging` or `ready_with_warnings`; `production_ready: false`; warnings reviewed
++- [ ] `wp ves memory-summary --format=json`
++- [ ] `wp ves memory-context-preview --workspace=1 --use-case=brief_generation --format=json` — only trusted memory appears
++- [ ] `wp ves generation-context-preview --workspace=1 --use-case=brief_generation --format=json`
++- [ ] `wp ves generation-prompt-preview --workspace=1 --use-case=brief_generation --target-type=insight --target-id=<id> --format=json` — bounded, redacted, `provider_execution_allowed: false`
++- [ ] `wp ves operator-queue --workspace=1 --format=json` — real queue counts, no fabricated rows
++- [ ] `wp ves memory-expire --dry-run` — reports only, writes nothing
++- [ ] (optional) `wp ves trend-verify-staging`, `wp ves trend-evaluate`, `wp ves trend-summary`, `wp ves trend-obs-backfill --dry-run --limit=100`
++
++## D. Browser validation (screenshot each)
++
++1. - [ ] Signal Room — workflow spine, operator queue, readiness strip, honest empty states, no fake charts
++2. - [ ] Social Media / Signal Report — Informe de señales, Evidence Snapshot, Observed / Inferred / Cannot conclude
++3. - [ ] Evidence Gate — an insight without evidence shows blocked, with no approve path
++4. - [ ] Operator Queue — items match CLI output
++5. - [ ] Memory / Brand Context — trusted vs candidate separated; rejected/archived/expired only as diagnostics; memory-is-not-evidence notice
++6. - [ ] Generation Context Preview — candidate/rejected/archived/expired excluded
++7. - [ ] Prompt Package Preview — blocked package hides full context; no raw prompt anywhere
++8. - [ ] Brief Workbench — insight summary, evidence binder, disabled/safe review controls, NO generate button
++9. - [ ] Draft Workbench — brief summary, output slots, disabled/safe review controls, NO publish button
++10. - [ ] Release Candidate page — shows UNRUN until step F; never claims production-ready
++11. - [ ] Any error state encountered (screenshot + console)
++
++## E. Logs
++
++- [ ] Browser console captured on each page (no uncaught errors)
++- [ ] Failed network requests captured (none unexplained)
++- [ ] PHP error log last ~300 lines captured and sanitized (no secrets)
++
++## F. Sign-off
++
++- [ ] All items above pass with evidence attached
++- [ ] `wp option update ves_rc_live_validation '{"status":"passed","recorded_at":"<UTC>","note":"<operator>"}' --format=json`
++- [ ] `wp ves rc-readiness-check --format=json` now shows `live_validation.status: passed` and still `production_ready: false`
++
++Failures found (attach list): ____________________________________________
++
++Result: ☐ PASSED ☐ FAILED — Signature: ____________
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/PILOT-READINESS-ACCEPTANCE-CRITERIA.md ./future-island-intelligence-suite/PILOT-READINESS-ACCEPTANCE-CRITERIA.md
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/PILOT-READINESS-ACCEPTANCE-CRITERIA.md	1970-01-01 00:00:00.000000000 +0000
++++ ./future-island-intelligence-suite/PILOT-READINESS-ACCEPTANCE-CRITERIA.md	2026-06-11 12:31:48.627782910 +0000
+@@ -0,0 +1,78 @@
++# Future Island v0.1 — Pilot Readiness Acceptance Criteria
++
++A v0.1 pilot may start only when **all** criteria below hold. These criteria are
++binary — partially met is not met. "Verified" means statically tested in the
++suite (`bin/test-all.sh`) **and** observed live on staging per
++`LIVE-STAGING-VALIDATION-CHECKLIST.md`.
++
++## 1. Core loop
++
++- [ ] Source → Signal → Insight → Brief → Draft → Memory → Usage is functional
++      or honestly previewable end-to-end; no step pretends to be more than it is.
++
++## 2. Evidence integrity
++
++- [ ] An insight with zero evidence cannot reach reviewed/approved
++      (store-level gate `ves_intel_evidence_required`).
++- [ ] `brief_generation` prompt packages are `blocked` with `missing_evidence`
++      when the insight has no evidence.
++- [ ] Trusted memory can never substitute for missing evidence.
++- [ ] Evidence status is visible in the Signal Report and Workbenches.
++
++## 3. Review lifecycle
++
++- [ ] Transition matrix active (`wp ves rc-readiness-check` reports it).
++- [ ] rejected/archived are terminal except explicit, reasoned reopen/restore
++      back to draft; nothing ever jumps to approved.
++- [ ] No auto-approval exists anywhere.
++
++## 4. Memory trust boundary
++
++- [ ] candidate / rejected / archived / expired memory never enters trusted
++      context; pinning never overrides; missing status is untrusted.
++- [ ] Memory is labeled "not evidence" in every surface that shows it.
++
++## 5. Generation safety
++
++- [ ] `ves_generation_execution_enabled` is OFF.
++- [ ] Prompt packages are bounded (max items/chars), redacted, and contain no
++      raw prompts, provider responses, or secrets.
++- [ ] `provider_execution_allowed` is false in every preview.
++
++## 6. Usage / credits
++
++- [ ] Ledger model (reserve → settle/void) active; no fabricated costs.
++- [ ] Zero-delivery runs settle as `not_chargeable_zero_delivery` (0 credits)
++      or `failed_delivery_base_fee_only` (base fee), never as full delivery.
++- [ ] OpenAI costs are labeled estimates where the provider returns none.
++
++## 7. Provider safety
++
++- [ ] Actor allowlist gate refuses non-registered actors before any HTTP.
++- [ ] `maxTotalChargeUsd` ceiling present on run-start URLs (warning logged if absent).
++- [ ] Token travels only in the Authorization header — never in URLs.
++
++## 8. Security baseline
++
++- [ ] Capability checks + nonces on every mutating admin/AJAX path.
++- [ ] Prepared SQL everywhere; escaped output in admin/front-end surfaces.
++- [ ] No secrets in logs, diagnostics, exports, or prompt packages.
++
++## 9. Operator readiness
++
++- [ ] `wp ves rc-readiness-check --format=json` returns `ready_for_staging`
++      or `ready_with_warnings` with all warnings reviewed and accepted.
++- [ ] Live staging validation PASSED and recorded (`ves_rc_live_validation`).
++- [ ] All 11 checklist screenshots archived with command logs.
++- [ ] An operator owns the pilot: named person, rollback plan, weekly review.
++
++## 10. Honest claims
++
++- [ ] No surface or document claims production-readiness, a mature SaaS, or
++      autonomous AI. The approved claim for a passed staging validation is:
++
++> "Future Island v0.1 Release Candidate is ready for pilot review on staging.
++> It is still not a mature production SaaS. Production release requires operator
++> approval, monitored pilot usage, and final acceptance."
++
++Sign-off — Product: ____________ Engineering: ____________ Date: ____________
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/RELEASE-CANDIDATE-RUNBOOK.md ./future-island-intelligence-suite/RELEASE-CANDIDATE-RUNBOOK.md
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/RELEASE-CANDIDATE-RUNBOOK.md	1970-01-01 00:00:00.000000000 +0000
++++ ./future-island-intelligence-suite/RELEASE-CANDIDATE-RUNBOOK.md	2026-06-11 12:30:59.555784032 +0000
+@@ -0,0 +1,125 @@
++# Future Island Intelligence Suite — v0.1 Release Candidate Runbook
++
++Plugin version: **1.2.5** · Product label: **v0.1-rc1**
++
++This runbook takes an operator from the RC ZIP to a verified staging install.
++It never touches production. **This RC is NOT production-ready until the live
++staging checklist passes and is signed off by a human operator.**
++
++---
++
++## 0. Ground rules
++
++- **Staging only.** Never install an RC directly on production.
++- **Backup first.** No step below may run before a database export exists.
++- **No `--apply` during validation.** Every validation command is read-only or
++  dry-run by default; leave it that way.
++- **No AI execution.** `ves_generation_execution_enabled` must stay OFF (default).
++- **No fabricated results.** If a step fails, record the failure — do not skip it
++  and do not mark it passed.
++
++## 1. Prerequisites
++
++| Requirement | Check |
++| --- | --- |
++| WordPress 6.x staging site | `wp core version` |
++| PHP 7.4+ (8.x supported) | `php -v` |
++| MySQL/MariaDB via WordPress | `wp db query "SELECT VERSION();"` |
++| WP-CLI | `wp --info` |
++| Admin user with `manage_options` | `wp user list --role=administrator` |
++| The RC ZIP + its SHA-256 | compare with `sha256sum <zip>` |
++
++## 2. Backup (mandatory)
++
++```bash
++wp db export staging-backup-$(date +%Y%m%d-%H%M%S).sql
++```
++
++Keep the file outside the web root. Validation must not start without it.
++
++## 3. Install / update
++
++```bash
++wp plugin install /path/to/future-island-intelligence-suite-v01-release-candidate.zip --force
++wp plugin activate future-island-intelligence-suite
++wp plugin list | grep future-island
++```
++
++`--force` upgrades an existing install in place; tables are migrated additively
++(dbDelta only adds — no destructive migrations exist in this build).
++
++## 4. Core validation (read-only)
++
++Run in order; capture each command's full output to a log file:
++
++```bash
++wp ves verify-schema
++wp ves validate-staging --format=json
++wp ves readiness-check --format=json
++wp ves rc-readiness-check --format=json
++wp ves memory-summary --format=json
++wp ves memory-context-preview --workspace=1 --use-case=brief_generation --format=json
++wp ves generation-context-preview --workspace=1 --use-case=brief_generation --format=json
++wp ves generation-prompt-preview --workspace=1 --use-case=brief_generation --target-type=insight --target-id=1 --format=json
++wp ves operator-queue --workspace=1 --format=json
++wp ves memory-expire --dry-run
++```
++
++Expected: `rc-readiness-check` returns `ready_for_staging` or
++`ready_with_warnings`, with `live_validation.status = "unrun"` until step 7.
++`blocked` means stop and fix before continuing.
++
++## 5. Trend engine validation (optional, read-only)
++
++```bash
++wp ves trend-verify-staging
++wp ves trend-evaluate
++wp ves trend-summary
++wp ves trend-obs-backfill --dry-run --limit=100
++```
++
++## 6. Browser validation
++
++Follow `LIVE-STAGING-VALIDATION-CHECKLIST.md` and capture every screenshot it
++lists (Signal Room, Signal Report, Evidence Gate, Operator Queue, Memory/Brand
++Context, Generation Context Preview, Prompt Package Preview, Brief Workbench,
++Draft Workbench, Release Candidate page, any error state), plus the browser
++console and the last ~300 sanitized lines of the PHP error log.
++
++## 7. Record the result (only after a real pass)
++
++Only after **every** checklist item passes:
++
++```bash
++wp option update ves_rc_live_validation \
++  '{"status":"passed","recorded_at":"YYYY-MM-DD HH:MM:SS","note":"<operator> staging signoff"}' \
++  --format=json
++```
++
++Re-run `wp ves rc-readiness-check --format=json` — `live_validation.status`
++becomes `passed`. `production_ready` stays `false` by design: production release
++additionally requires operator approval and a monitored pilot.
++
++If validation failed, do **not** write the option. File the failures instead.
++
++## 8. Rollback
++
++```bash
++wp plugin deactivate future-island-intelligence-suite
++wp db import staging-backup-<timestamp>.sql   # only if data must be restored
++```
++
++Deactivation alone never deletes data. `uninstall.php` (full delete) is the only
++destructive path and only runs on explicit plugin deletion.
++
++## 9. Feature flags that must stay OFF
++
++| Flag | Why |
++| --- | --- |
++| `ves_generation_execution_enabled` (option) | AI provider execution. v0.1 ships prompt-package previews only. |
++| `VES_PRODUCTION_MVP` (constant) | Production MVP gating. |
++| `VES_ENABLE_DEEP_VIDEO_ANALYSIS` (constant) | Deep video analysis (core). |
++| `FI_DTF_ENABLE_DEEP_VIDEO` (constant) | Deep video analysis (DTF module). |
++
++The Release Candidate admin page (Intelligence Suite → Release Candidate) shows
++all four; any ON state is surfaced as a warning.
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/future-island-intelligence-suite.php ./future-island-intelligence-suite/future-island-intelligence-suite.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/future-island-intelligence-suite.php	2026-06-08 20:35:39.000000000 +0000
++++ ./future-island-intelligence-suite/future-island-intelligence-suite.php	2026-06-11 12:17:21.391802746 +0000
+@@ -2,7 +2,7 @@
+ /**
+  * Plugin Name: Future Island Intelligence Suite
+  * Description: Unified marketing intelligence platform. Includes the full Social Scraper Suite (VES Core) and the Deep Trend Finder module in a single WordPress plugin — no separate add-on required.
+- * Version: 1.2.4
++ * Version: 1.2.5
+  * Requires PHP: 7.4
+  * Author: Future Island / Vietnam Estudio
+  * Text Domain: future-island-intelligence-suite
+@@ -15,7 +15,9 @@
+ // -----------------------------------------------------------------------
+ // Suite-level constants
+ // -----------------------------------------------------------------------
+-define('FIS_VERSION',     '1.2.4');
++define('FIS_VERSION',     '1.2.5');
++// Product-level release label: Future Island v0.1 Release Candidate.
++define('FIS_RC_LABEL',    'v0.1-rc1');
+ define('FIS_PLUGIN_FILE', __FILE__);
+ define('FIS_PLUGIN_DIR',  plugin_dir_path(__FILE__));
+ define('FIS_PLUGIN_URL',  plugin_dir_url(__FILE__));
+@@ -23,7 +25,7 @@
+ // -----------------------------------------------------------------------
+ // VES Core constants (keep all existing VES code working unchanged)
+ // -----------------------------------------------------------------------
+-if (!defined('VES_PLUGIN_VERSION'))         { define('VES_PLUGIN_VERSION',         '1.2.4'); }
++if (!defined('VES_PLUGIN_VERSION'))         { define('VES_PLUGIN_VERSION',         '1.2.5'); }
+ if (!defined('VES_PLUGIN_FILE'))            { define('VES_PLUGIN_FILE',            FIS_PLUGIN_FILE); }
+ if (!defined('VES_PLUGIN_DIR'))             { define('VES_PLUGIN_DIR',             FIS_PLUGIN_DIR); }
+ if (!defined('VES_PLUGIN_URL'))             { define('VES_PLUGIN_URL',             FIS_PLUGIN_URL); }
+@@ -170,6 +172,10 @@
+     FIS_PLUGIN_DIR . 'includes/class-ves-signal-room.php',
+     FIS_PLUGIN_DIR . 'includes/class-ves-workbench.php',
+     FIS_PLUGIN_DIR . 'includes/class-ves-cli-brand-context.php',
++    // v0.1 RC — whole-product readiness gate + read-only Release Candidate page.
++    FIS_PLUGIN_DIR . 'includes/class-ves-rc-readiness-service.php',
++    FIS_PLUGIN_DIR . 'includes/class-ves-cli-rc-readiness.php',
++    FIS_PLUGIN_DIR . 'includes/class-ves-release-candidate-page.php',
+     FIS_PLUGIN_DIR . 'includes/class-ves-plugin.php',
+     FIS_PLUGIN_DIR . 'includes/legacy-config.php',
+     FIS_PLUGIN_DIR . 'includes/helpers.php',
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/includes/class-ves-admin-console.php ./future-island-intelligence-suite/includes/class-ves-admin-console.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/includes/class-ves-admin-console.php	2026-06-08 10:11:30.000000000 +0000
++++ ./future-island-intelligence-suite/includes/class-ves-admin-console.php	2026-06-11 12:18:02.659801802 +0000
+@@ -118,6 +118,7 @@
+             'advanced' => ['Advanced', [
+                 ['ves-diagnostics', 'Diagnostics', 'Low-level diagnostics and internal state.'],
+                 ['ves-audit-log', 'Audit Log', 'Access/credit audit trail.'],
++                ['ves-release-candidate', 'Release Candidate', 'v0.1 RC readiness, feature flags and live-validation status (read-only).'],
+             ]],
+         ];
+     }
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/includes/class-ves-ajax-controller.php ./future-island-intelligence-suite/includes/class-ves-ajax-controller.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/includes/class-ves-ajax-controller.php	2026-06-08 21:05:00.000000000 +0000
++++ ./future-island-intelligence-suite/includes/class-ves-ajax-controller.php	2026-06-11 12:13:16.695808342 +0000
+@@ -2839,14 +2839,23 @@
+             : ($requested > 0 ? max(0.0, ($reserved_cost - $base_fee) / max(1, $requested)) : $reserved_cost);
+         $final_cost = $base_fee + ($delivered * $per_result);
+         $final_cost = max(0.0, min($reserved_cost, round($final_cost, 2)));
++        // v0.1 RC: explicit settlement classification so the ledger says WHY a
++        // reserved charge was reduced. Provider success with nothing delivered is
++        // never final-charged as a successful delivery:
++        //  - zero raw rows + zero delivered  -> not chargeable at all (0.0)
++        //  - raw rows but zero delivered     -> failed delivery, base scan fee only
++        $settlement_classification = 'delivered_charged';
+         if ($delivered <= 0 && $raw > 0) {
+             $final_cost = min($reserved_cost, max(0.0, round($base_fee, 2)));
++            $settlement_classification = 'failed_delivery_base_fee_only';
+         }
+         if ($delivered <= 0 && $raw <= 0) {
+             $final_cost = 0.0;
++            $settlement_classification = 'not_chargeable_zero_delivery';
+         }
+         $project_id = isset($request['project_id']) ? (int) $request['project_id'] : (isset($request['projectId']) ? (int) $request['projectId'] : 0);
+         return [
++            'settlement_classification' => $settlement_classification,
+             'requested_result_count' => $requested,
+             'candidate_scraped_count' => max($candidate, $raw, $delivered),
+             'raw_provider_returned_count' => $raw,
+@@ -2882,8 +2891,25 @@
+             return $formatted;
+         }
+         $context = self::delivery_usage_context($formatted, $platform, $request, $actor_slug);
++        $classification = (string) ($context['settlement_classification'] ?? 'delivered_charged');
++        $settle_message = 'Run manual confirmado por resultados entregados';
++        if ($classification !== 'delivered_charged') {
++            // v0.1 RC: honest ledger message + non-billable diagnostic when the
++            // provider ran but nothing usable was delivered.
++            $settle_message = $classification === 'not_chargeable_zero_delivery'
++                ? 'Run sin resultados entregables — sin cargo final'
++                : 'Run sin resultados entregables — solo tarifa base de escaneo';
++            self::log('usage_settlement_zero_delivery', 'Provider run settled with zero delivered items.', [
++                'request_id' => $request_id,
++                'stage' => 'settlement_classification',
++                'usage_key' => $usage_key,
++                'settlement_classification' => $classification,
++                'raw_provider_returned_count' => (int) ($context['raw_provider_returned_count'] ?? 0),
++                'credits_charged_final' => (float) ($context['credits_charged_final'] ?? 0),
++            ]);
++        }
+         try {
+-            $settled = VES_Usage_Billing::settle_reserved_usage($usage_key, (float) ($context['credits_charged_final'] ?? 0), 'Run manual confirmado por resultados entregados', $context);
++            $settled = VES_Usage_Billing::settle_reserved_usage($usage_key, (float) ($context['credits_charged_final'] ?? 0), $settle_message, $context);
+             if (is_wp_error($settled)) {
+                 // v0.9.30.20: settle is always post-provider; never terminate on billing failure.
+                 self::log('usage_billing_settle_degraded', $settled->get_error_message(), [
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/includes/class-ves-apify-actor-registry.php ./future-island-intelligence-suite/includes/class-ves-apify-actor-registry.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/includes/class-ves-apify-actor-registry.php	2026-05-28 09:52:02.000000000 +0000
++++ ./future-island-intelligence-suite/includes/class-ves-apify-actor-registry.php	2026-06-11 12:11:57.919810144 +0000
+@@ -178,6 +178,66 @@
+         return $rows;
+     }
+ 
++    // ── v0.1 RC — actor slug allowlist (provider dispatch hard gate) ──────────
++
++    /** Canonical slug form used for allowlist comparison: lowercase, `owner~actor`. */
++    public static function normalize_slug($slug) {
++        $slug = strtolower(str_replace('/', '~', trim((string) $slug)));
++        return preg_replace('/[^a-z0-9~\-_.]/', '', $slug);
++    }
++
++    /**
++     * Every actor slug this install is allowed to dispatch. Sources, in order:
++     * the code-backed registry (actor_id + fallback_actors, including disabled
++     * entries — "known" is what the gate means, enable/disable is policy on top),
++     * the legacy per-platform slug map (VES_Config::get_actor_slug), the
++     * ves_apify_actor_allowlist_extra option, and the ves_apify_actor_allowlist
++     * filter. Returned normalized + deduped.
++     */
++    public static function allowed_slugs() {
++        $slugs = [];
++        foreach (self::registry() as $config) {
++            if (!is_array($config)) { continue; }
++            $candidates = array_merge(
++                [(string) ($config['actor_id'] ?? '')],
++                array_map('strval', (array) ($config['fallback_actors'] ?? []))
++            );
++            foreach ($candidates as $c) {
++                $c = self::normalize_slug($c);
++                if ($c !== '') { $slugs[$c] = true; }
++            }
++        }
++        if (class_exists('VES_Config') && method_exists('VES_Config', 'get_actor_slug')) {
++            $legacy_platforms = ['tiktok', 'tiktok_enrichment', 'tiktok_comments', 'tiktok_fallback', 'tiktok_backup', 'youtube', 'facebook', 'instagram', 'facebook_ads', 'google_ads', 'twitter', 'linkedin', 'reddit', 'pinterest', 'semrush', 'google', 'google_serp', 'google_trends', 'google_news', 'google_maps', 'amazon', 'web', 'telegram'];
++            foreach ($legacy_platforms as $platform) {
++                $c = self::normalize_slug(VES_Config::get_actor_slug($platform));
++                if ($c !== '') { $slugs[$c] = true; }
++            }
++        }
++        $extra = function_exists('get_option') ? get_option('ves_apify_actor_allowlist_extra', []) : [];
++        foreach ((array) $extra as $c) {
++            $c = self::normalize_slug($c);
++            if ($c !== '') { $slugs[$c] = true; }
++        }
++        $list = array_keys($slugs);
++        if (function_exists('apply_filters')) {
++            $filtered = apply_filters('ves_apify_actor_allowlist', $list);
++            if (is_array($filtered)) {
++                $list = [];
++                foreach ($filtered as $c) { $c = self::normalize_slug($c); if ($c !== '') { $list[] = $c; } }
++                $list = array_values(array_unique($list));
++            }
++        }
++        return $list;
++    }
++
++    /** Hard gate used by VES_Apify_Client before any run dispatch. */
++    public static function is_allowed_slug($slug) {
++        $slug = self::normalize_slug($slug);
++        if ($slug === '') { return false; }
++        return in_array($slug, self::allowed_slugs(), true);
++    }
++
+     private static function find_primary($module, $source_type = '', $mode = '') {
+         $module = sanitize_key((string) $module);
+         $source_type = sanitize_key((string) $source_type);
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/includes/class-ves-apify-client.php ./future-island-intelligence-suite/includes/class-ves-apify-client.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/includes/class-ves-apify-client.php	2026-06-05 09:16:44.000000000 +0000
++++ ./future-island-intelligence-suite/includes/class-ves-apify-client.php	2026-06-11 12:12:25.835809506 +0000
+@@ -242,7 +242,55 @@
+         return max(10, min(55, (int) $timeout));
+     }
+ 
++    /**
++     * v0.1 RC — hard dispatch gate. A run-start request (POST …/v2/acts/{slug}/runs
++     * or run-sync, and the actor-tasks equivalent) is refused before any HTTP when
++     * the actor slug is not on the server-side allowlist, and a missing
++     * maxTotalChargeUsd ceiling on a run-start URL is logged as a config warning.
++     * Read-style requests (fetch run/items/abort) are never gated.
++     * @return true|WP_Error
++     */
++    private static function enforce_run_dispatch_safety($method, $url) {
++        if (strtoupper((string) $method) !== 'POST') { return true; }
++        if (!preg_match('#https?://api\.apify\.com/v2/(acts|actor-tasks)/([^/?\#]+)/(runs|run-sync[^/?\#]*)#i', (string) $url, $m)) {
++            return true;
++        }
++        $slug = (string) $m[2];
++        if (class_exists('VES_Apify_Actor_Registry') && method_exists('VES_Apify_Actor_Registry', 'is_allowed_slug')) {
++            if (!VES_Apify_Actor_Registry::is_allowed_slug($slug)) {
++                self::record_diagnostic_safe('apify_actor_not_allowlisted', 'Run dispatch refused: actor is not on the server-side allowlist.', [
++                    'method' => 'POST',
++                    'actor'  => VES_Apify_Actor_Registry::normalize_slug($slug),
++                    'stage'  => 'actor_allowlist_gate',
++                ]);
++                return new WP_Error('ves_actor_not_allowlisted', 'This data source actor is not allowlisted on the server. Ask an admin to register it in the actor registry before running it.', [
++                    'status' => 0,
++                    'provider_state' => 'CONFIGURATION_REQUIRED',
++                    'stage' => 'actor_allowlist_gate',
++                ]);
++            }
++        } else {
++            self::record_diagnostic_safe('apify_allowlist_unavailable', 'Actor allowlist registry unavailable; dispatch proceeded without the allowlist gate.', [
++                'method' => 'POST',
++                'stage'  => 'actor_allowlist_gate_degraded',
++            ]);
++        }
++        if (strpos((string) $url, 'maxTotalChargeUsd=') === false) {
++            self::record_diagnostic_safe('apify_charge_ceiling_missing', 'Run-start URL has no maxTotalChargeUsd ceiling; configure ves_prepare_run_options()/hard max charge.', [
++                'method' => 'POST',
++                'stage'  => 'charge_ceiling_warning',
++            ]);
++        }
++        return true;
++    }
++
+     public static function request($method, $url, $body = null, $attempt = 1) {
++        // v0.1 RC: allowlist + ceiling gate runs first — a blocked actor must never
++        // consume token config checks, retries, or provider budget.
++        $dispatch_gate = self::enforce_run_dispatch_safety($method, $url);
++        if (is_wp_error($dispatch_gate)) {
++            return $dispatch_gate;
++        }
+         // v0.9.24.6: inject the Apify token via Authorization header rather
+         // than as a URL ?token= query param, which leaks into access logs and
+         // error messages. The URL token is still accepted by Apify as a
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/includes/class-ves-cli-rc-readiness.php ./future-island-intelligence-suite/includes/class-ves-cli-rc-readiness.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/includes/class-ves-cli-rc-readiness.php	1970-01-01 00:00:00.000000000 +0000
++++ ./future-island-intelligence-suite/includes/class-ves-cli-rc-readiness.php	2026-06-11 12:15:01.031805956 +0000
+@@ -0,0 +1,56 @@
++<?php
++if (!defined('ABSPATH')) { exit; }
++
++/**
++ * VES_CLI_RC_Readiness — `wp ves rc-readiness-check` (v0.1 Release Candidate).
++ *
++ * Read-only whole-product readiness gate. Never mutates data, never calls a
++ * provider, never prints secrets. Exit code 0 for ready_for_staging /
++ * ready_with_warnings, 1 for blocked (CI-friendly). PHP 7.4 compatible.
++ */
++final class VES_CLI_RC_Readiness {
++
++    public static function register() {
++        if (defined('WP_CLI') && WP_CLI && class_exists('WP_CLI')) {
++            \WP_CLI::add_command('ves rc-readiness-check', [__CLASS__, 'run']); // read-only
++        }
++    }
++
++    /**
++     * wp ves rc-readiness-check [--workspace=<id>] [--format=json|table]
++     */
++    public static function run($args, $assoc) {
++        if (function_exists('current_user_can') && function_exists('is_user_logged_in') && is_user_logged_in() && !current_user_can('manage_options')) {
++            \WP_CLI::error('Requires manage_options capability.');
++            return;
++        }
++        if (!class_exists('VES_RC_Readiness_Service')) {
++            \WP_CLI::error('VES_RC_Readiness_Service unavailable.');
++            return;
++        }
++        $report = VES_RC_Readiness_Service::report([
++            'workspace_id' => isset($assoc['workspace']) ? max(0, (int) $assoc['workspace']) : 0,
++        ]);
++        $format = isset($assoc['format']) ? strtolower((string) $assoc['format']) : 'table';
++
++        if ($format === 'json') {
++            \WP_CLI::log(function_exists('wp_json_encode') ? wp_json_encode($report, JSON_PRETTY_PRINT) : json_encode($report, JSON_PRETTY_PRINT));
++        } else {
++            \WP_CLI::log('Future Island v0.1 RC readiness — ' . (string) $report['status']);
++            \WP_CLI::log('Plugin: ' . (string) $report['plugin_version'] . ((string) $report['rc_label'] !== '' ? ' (' . (string) $report['rc_label'] . ')' : ''));
++            \WP_CLI::log('Live validation: ' . (string) ($report['live_validation']['status'] ?? 'unrun'));
++            \WP_CLI::log('Production ready: NO (cannot be granted by this command)');
++            foreach ((array) $report['checks'] as $c) {
++                \WP_CLI::log(sprintf('  [%-5s] %-28s %s', strtoupper((string) $c['status']), (string) $c['label'], (string) $c['detail']));
++            }
++            foreach ((array) $report['blockers'] as $b) { \WP_CLI::log('  BLOCKER: ' . (string) $b); }
++            foreach ((array) $report['warnings'] as $w) { \WP_CLI::log('  warning: ' . (string) $w); }
++        }
++
++        if ((string) $report['status'] === VES_RC_Readiness_Service::STATUS_BLOCKED) {
++            \WP_CLI::error('RC readiness: BLOCKED.');
++            return;
++        }
++        \WP_CLI::success('RC readiness: ' . (string) $report['status']);
++    }
++}
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/includes/class-ves-insight-lifecycle-service.php ./future-island-intelligence-suite/includes/class-ves-insight-lifecycle-service.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/includes/class-ves-insight-lifecycle-service.php	2026-06-07 23:12:16.000000000 +0000
++++ ./future-island-intelligence-suite/includes/class-ves-insight-lifecycle-service.php	2026-06-11 12:11:24.991810897 +0000
+@@ -103,6 +103,36 @@
+     }
+ 
+     /**
++     * v0.1 RC — the ONLY safe way out of the terminal 'rejected' state. Reopening
++     * always lands on 'draft' (back into human review with the evidence/quality
++     * gates ahead of it); it can never jump to approved. Requires a reason and
++     * records who reopened it.
++     */
++    public static function reopen_insight(int $insight_id, string $reason = '', array $args = []) {
++        $reason = self::clean_reason($reason);
++        if ($reason === '') { return new WP_Error('ves_insight_reason_required', 'Reopening a rejected insight requires a reason.'); }
++        return VES_Intelligence_Store::update_insight_status($insight_id, 'draft', [
++            'reopened_at'     => self::now(),
++            'reopened_reason' => $reason,
++            'reopened_by'     => self::actor($args),
++        ], ['allow_reopen' => true]);
++    }
++
++    /**
++     * v0.1 RC — the ONLY safe way out of the terminal 'archived' state. Restoring
++     * always lands on 'draft'; it can never jump to approved. Requires a reason.
++     */
++    public static function restore_insight(int $insight_id, string $reason = '', array $args = []) {
++        $reason = self::clean_reason($reason);
++        if ($reason === '') { return new WP_Error('ves_insight_reason_required', 'Restoring an archived insight requires a reason.'); }
++        return VES_Intelligence_Store::update_insight_status($insight_id, 'draft', [
++            'restored_at'     => self::now(),
++            'restored_reason' => $reason,
++            'restored_by'     => self::actor($args),
++        ], ['allow_restore' => true]);
++    }
++
++    /**
+      * Phase 5 (Part H) — admin diagnostics provider. Counts + a bounded reassessed
+      * sample so the panel can show evidence/quality health cheaply. No secrets.
+      */
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/includes/class-ves-intelligence-store.php ./future-island-intelligence-suite/includes/class-ves-intelligence-store.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/includes/class-ves-intelligence-store.php	2026-06-08 07:17:43.000000000 +0000
++++ ./future-island-intelligence-suite/includes/class-ves-intelligence-store.php	2026-06-11 12:10:47.587811753 +0000
+@@ -1071,13 +1071,63 @@
+     }
+ 
+     /**
++     * v0.1 RC — insight lifecycle transition matrix. Key = current status, value =
++     * statuses reachable WITHOUT an explicit override. Same-status writes are allowed
++     * (idempotent retries / metadata refresh). rejected and archived are TERMINAL:
++     * leaving them requires the explicit, audited reopen/restore override below —
++     * rejected can never silently become approved, and approved can never silently
++     * fall back to draft.
++     */
++    const INSIGHT_STATUS_TRANSITIONS = [
++        'draft'    => ['draft', 'reviewed', 'approved', 'rejected', 'archived'],
++        'reviewed' => ['reviewed', 'approved', 'rejected', 'archived'],
++        'approved' => ['approved', 'archived'],
++        'rejected' => ['rejected'],
++        'archived' => ['archived'],
++    ];
++
++    /**
++     * Pure transition check (no DB). $opts:
++     *   - allow_reopen  (bool) permits ONLY rejected -> draft (back into review, never approved)
++     *   - allow_restore (bool) permits ONLY archived -> draft (back into review, never approved)
++     */
++    public static function insight_transition_allowed(string $from, string $to, array $opts = []): bool {
++        $from = self::sanitize_key($from, 24);
++        $to   = self::sanitize_key($to, 24);
++        $enum = self::enums()['insight_status'];
++        if (!in_array($to, $enum, true)) { return false; }
++        if (!in_array($from, $enum, true)) {
++            // Unknown/legacy stored status: only allow moving into review states,
++            // never directly into approved (mirrors "missing status is untrusted").
++            return in_array($to, ['draft', 'reviewed', 'rejected', 'archived'], true);
++        }
++        $allowed = self::INSIGHT_STATUS_TRANSITIONS[$from] ?? [$from];
++        if (in_array($to, $allowed, true)) { return true; }
++        if ($from === 'rejected' && $to === 'draft' && !empty($opts['allow_reopen'])) { return true; }
++        if ($from === 'archived' && $to === 'draft' && !empty($opts['allow_restore'])) { return true; }
++        return false;
++    }
++
++    /** Readiness probe: true when the transition matrix is compiled in and enforcing. */
++    public static function insight_transition_matrix_active(): bool {
++        return self::insight_transition_allowed('draft', 'approved')
++            && !self::insight_transition_allowed('rejected', 'approved')
++            && !self::insight_transition_allowed('rejected', 'approved', ['allow_reopen' => true])
++            && !self::insight_transition_allowed('archived', 'approved', ['allow_restore' => true])
++            && !self::insight_transition_allowed('approved', 'draft');
++    }
++
++    /**
+      * Phase 5 — update an insight's status (lifecycle). HARD EVIDENCE GATE: an
+      * insight can never be moved to reviewed/approved without at least one linked
+-     * evidence id (the safety net for the create path's enforcement). Updates only
++     * evidence id (the safety net for the create path's enforcement). v0.1 RC adds
++     * the HARD TRANSITION MATRIX above: terminal states stay terminal unless the
++     * caller passes the explicit reopen/restore override in $opts, and the override
++     * only ever leads back to draft (review), never to approved. Updates only
+      * status/updated_at and merges a bounded, scrubbed metadata patch; never touches
+      * the evidence links or created_at. @return int|WP_Error
+      */
+-    public static function update_insight_status(int $insight_id, string $status, array $metadata_merge = []) {
++    public static function update_insight_status(int $insight_id, string $status, array $metadata_merge = [], array $opts = []) {
+         global $wpdb;
+         $status = self::sanitize_key($status, 24);
+         if (!in_array($status, self::enums()['insight_status'], true)) {
+@@ -1087,6 +1137,11 @@
+         if (!is_array($insight)) { return new WP_Error('ves_intel_not_found', 'Insight not found.'); }
+         if (!isset($wpdb) || !is_object($wpdb)) { return new WP_Error('ves_intel_no_db', 'Database unavailable.'); }
+ 
++        $current = self::sanitize_key((string) ($insight['status'] ?? 'draft'), 24);
++        if (!self::insight_transition_allowed($current, $status, $opts)) {
++            return new WP_Error('ves_intel_transition_blocked', "Insight status transition '{$current}' -> '{$status}' is not allowed.", ['from' => $current, 'to' => $status]);
++        }
++
+         $evidence_ids = is_array($insight['evidence_ids'] ?? null) ? $insight['evidence_ids'] : self::decode_ids((string) ($insight['evidence_ids_json'] ?? '[]'));
+         if (in_array($status, ['reviewed', 'approved'], true) && count($evidence_ids) === 0) {
+             return new WP_Error('ves_intel_evidence_required', 'Cannot promote an insight without evidence beyond draft.');
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/includes/class-ves-plugin.php ./future-island-intelligence-suite/includes/class-ves-plugin.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/includes/class-ves-plugin.php	2026-06-08 14:02:13.000000000 +0000
++++ ./future-island-intelligence-suite/includes/class-ves-plugin.php	2026-06-11 12:17:47.923802139 +0000
+@@ -26,6 +26,9 @@
+         if (defined('WP_CLI') && WP_CLI && class_exists('VES_CLI_Brand_Context')) {
+             VES_CLI_Brand_Context::register();
+         }
++        if (defined('WP_CLI') && WP_CLI && class_exists('VES_CLI_RC_Readiness')) {
++            VES_CLI_RC_Readiness::register();
++        }
+         add_action('wp_enqueue_scripts', ['VES_Assets', 'register']);
+ 
+         // Central, version-driven schema guard — forces a one-time dbDelta refresh
+@@ -43,6 +46,13 @@
+             }
+         }
+ 
++        // v0.1 RC — read-only Release Candidate diagnostics page. Same isolation.
++        if (is_admin() && class_exists('VES_Release_Candidate_Page')) {
++            try { VES_Release_Candidate_Page::init(); } catch (\Throwable $e) {
++                if (defined('WP_DEBUG') && WP_DEBUG) { error_log('[VES_Release_Candidate_Page] init failed: ' . $e->getMessage()); }
++            }
++        }
++
+         if (is_admin() && class_exists('VES_Admin')) {
+             VES_Admin::register();
+         }
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/includes/class-ves-rc-readiness-service.php ./future-island-intelligence-suite/includes/class-ves-rc-readiness-service.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/includes/class-ves-rc-readiness-service.php	1970-01-01 00:00:00.000000000 +0000
++++ ./future-island-intelligence-suite/includes/class-ves-rc-readiness-service.php	2026-06-11 12:14:45.103806320 +0000
+@@ -0,0 +1,282 @@
++<?php
++if (!defined('ABSPATH')) { exit; }
++
++/**
++ * VES_RC_Readiness_Service — v0.1 Release Candidate whole-product readiness.
++ *
++ * READ-ONLY: inspects schema, loaded services, safety gates, feature flags and
++ * the recorded live-validation state, and derives an overall RC status. It never
++ * mutates data, never calls a provider, and never prints secrets. "Ready" here
++ * always means ready FOR STAGING REVIEW — this service can never report a
++ * production-ready state: production_ready is hard-coded false until a human
++ * operator runs the live staging checklist and signs off outside this tool.
++ * PHP 7.4 compatible.
++ */
++final class VES_RC_Readiness_Service {
++
++    const STATUS_READY   = 'ready_for_staging';
++    const STATUS_WARN    = 'ready_with_warnings';
++    const STATUS_BLOCKED = 'blocked';
++
++    /**
++     * Operators may record a completed live staging run via
++     * `wp option update ves_rc_live_validation '{"status":"passed",...}' --format=json`
++     * AFTER actually completing LIVE-STAGING-VALIDATION-CHECKLIST.md. This service
++     * only ever READS the option.
++     */
++    const OPTION_LIVE_VALIDATION = 'ves_rc_live_validation';
++
++    /** Services the v0.1 core loop cannot function without. */
++    const REQUIRED_SERVICES = [
++        'VES_Intelligence_Store'                  => 'Intelligence data contract store',
++        'VES_Insight_Evidence_Validator'          => 'Evidence gate validator',
++        'VES_Insight_Lifecycle_Service'           => 'Insight review lifecycle',
++        'VES_Brand_Context_Service'               => 'Memory / brand context trust boundary',
++        'VES_Generation_Context_Resolver'         => 'Generation context resolver',
++        'VES_Generation_Prompt_Package_Builder'   => 'Prompt package builder',
++        'VES_Operator_Queue_Service'              => 'Operator queue',
++        'VES_Signal_Room'                         => 'Signal Room UI service',
++        'VES_Workbench'                           => 'Brief / Draft workbench',
++        'VES_Review_State'                        => 'Canonical review states',
++        'VES_AI_Usage_Tracker'                    => 'AI usage telemetry',
++        'VES_Usage_Billing'                       => 'Usage / credits ledger',
++        'VES_Apify_Client'                        => 'Provider client (Apify)',
++        'VES_Apify_Actor_Registry'                => 'Actor registry / allowlist',
++        'VES_Trend_Observation_Store'             => 'Trend observation store',
++        'VES_Staging_Validation_Service'          => 'Staging validation service',
++    ];
++
++    /** WP-CLI commands an operator needs for the staging checklist. */
++    const REQUIRED_CLI = [
++        'ves verify-schema', 'ves validate-staging', 'ves readiness-check',
++        'ves rc-readiness-check', 'ves memory-summary', 'ves memory-context-preview',
++        'ves generation-context-preview', 'ves generation-prompt-preview',
++        'ves operator-queue', 'ves memory-expire', 'ves trend-evaluate',
++        'ves trend-summary', 'ves trend-obs-backfill',
++    ];
++
++    /** Build the full readiness report. Read-only. */
++    public static function report(array $args = []) {
++        $checks = [];
++        $checks[] = self::check_version();
++        $checks[] = self::check_schema();
++        $checks[] = self::check_core_services();
++        $checks[] = self::check_evidence_gate();
++        $checks[] = self::check_lifecycle_matrix();
++        $checks[] = self::check_memory_trust_boundary();
++        $checks[] = self::check_prompt_package();
++        $checks[] = self::check_operator_surfaces();
++        $checks[] = self::check_usage_ledger();
++        $checks[] = self::check_provider_safety();
++        $checks[] = self::check_feature_flags();
++        $checks[] = self::check_live_validation();
++
++        $blockers = []; $warnings = [];
++        foreach ($checks as $c) {
++            if (($c['status'] ?? '') === 'block') { $blockers[] = (string) $c['detail']; }
++            if (($c['status'] ?? '') === 'warn')  { $warnings[] = (string) $c['detail']; }
++        }
++        $status = self::STATUS_READY;
++        if (count($warnings) > 0) { $status = self::STATUS_WARN; }
++        if (count($blockers) > 0) { $status = self::STATUS_BLOCKED; }
++
++        return [
++            'status'           => $status,
++            'production_ready' => false, // hard-coded: v0.1 RC can never self-certify production
++            'production_note'  => 'Production readiness requires a passed live staging validation, operator approval and monitored pilot usage. This command cannot grant it.',
++            'live_validation'  => self::live_validation_state(),
++            'blockers'         => $blockers,
++            'warnings'         => $warnings,
++            'checks'           => $checks,
++            'plugin_version'   => defined('FIS_VERSION') ? FIS_VERSION : 'unknown',
++            'rc_label'         => defined('FIS_RC_LABEL') ? FIS_RC_LABEL : '',
++            'required_cli'     => self::REQUIRED_CLI,
++            'checked_at'       => function_exists('current_time') ? current_time('mysql', true) : gmdate('Y-m-d H:i:s'),
++        ];
++    }
++
++    // ── individual checks (each returns id/label/status ok|warn|block/detail) ──
++
++    private static function check_version() {
++        $ok = defined('FIS_VERSION') && FIS_VERSION !== '';
++        return self::row('plugin_version', 'Plugin version constant', $ok ? 'ok' : 'block',
++            $ok ? ('FIS_VERSION ' . FIS_VERSION . (defined('FIS_RC_LABEL') ? ' (' . FIS_RC_LABEL . ')' : '')) : 'FIS_VERSION is not defined — bootstrap did not run.');
++    }
++
++    private static function check_schema() {
++        if (!class_exists('VES_Staging_Validation_Service')) {
++            return self::row('schema', 'Database schema', 'block', 'VES_Staging_Validation_Service missing — schema state unknown.');
++        }
++        $s = VES_Staging_Validation_Service::schema_health();
++        $status = (string) ($s['status'] ?? 'ok');
++        if ($status === 'error') { return self::row('schema', 'Database schema', 'block', 'Schema is missing required tables. Run: wp ves verify-schema --repair'); }
++        if ($status === 'warning' || empty($s['available'])) { return self::row('schema', 'Database schema', 'warn', 'Schema has missing columns or could not be fully verified. Run: wp ves verify-schema'); }
++        return self::row('schema', 'Database schema', 'ok', 'All required tables/columns verified.');
++    }
++
++    private static function check_core_services() {
++        $missing = [];
++        foreach (self::REQUIRED_SERVICES as $class => $label) {
++            if (!class_exists($class)) { $missing[] = $class; }
++        }
++        if (count($missing) > 0) {
++            return self::row('core_services', 'Core services loaded', 'block', 'Missing core service(s): ' . implode(', ', $missing));
++        }
++        return self::row('core_services', 'Core services loaded', 'ok', count(self::REQUIRED_SERVICES) . ' core services present.');
++    }
++
++    private static function check_evidence_gate() {
++        if (!class_exists('VES_Insight_Evidence_Validator') || !method_exists('VES_Insight_Evidence_Validator', 'validate_insight')) {
++            return self::row('evidence_gate', 'Evidence gate', 'block', 'VES_Insight_Evidence_Validator unavailable.');
++        }
++        // Pure probe: an insight with no evidence must NOT meet minimum requirements.
++        $verdict = null;
++        try {
++            $verdict = VES_Insight_Evidence_Validator::validate_insight(
++                ['id' => 0, 'title' => 'probe', 'evidence_ids' => []],
++                ['insight' => ['id' => 0, 'evidence_ids' => []], 'evidence' => [], 'sources' => [], 'trend_record' => []]
++            );
++        } catch (\Throwable $e) {
++            return self::row('evidence_gate', 'Evidence gate', 'warn', 'Evidence validator probe failed to run: ' . $e->getMessage());
++        }
++        $met = is_array($verdict) ? !empty($verdict['minimum_requirements_met']) : true;
++        if ($met) { return self::row('evidence_gate', 'Evidence gate', 'block', 'Evidence gate FAILED probe: zero-evidence insight passed minimum requirements.'); }
++        return self::row('evidence_gate', 'Evidence gate', 'ok', 'Zero-evidence insight is blocked by the validator.');
++    }
++
++    private static function check_lifecycle_matrix() {
++        if (!class_exists('VES_Intelligence_Store') || !method_exists('VES_Intelligence_Store', 'insight_transition_matrix_active')) {
++            return self::row('lifecycle_matrix', 'Lifecycle transition matrix', 'block', 'Insight transition matrix is not compiled in.');
++        }
++        $active = false;
++        try { $active = (bool) VES_Intelligence_Store::insight_transition_matrix_active(); } catch (\Throwable $e) { $active = false; }
++        return $active
++            ? self::row('lifecycle_matrix', 'Lifecycle transition matrix', 'ok', 'Terminal states protected; rejected/archived cannot silently become approved.')
++            : self::row('lifecycle_matrix', 'Lifecycle transition matrix', 'block', 'Transition matrix probe failed — terminal states are not protected.');
++    }
++
++    private static function check_memory_trust_boundary() {
++        if (!class_exists('VES_Brand_Context_Service') || !method_exists('VES_Brand_Context_Service', 'is_trusted')) {
++            return self::row('memory_trust', 'Memory trust boundary', 'block', 'VES_Brand_Context_Service unavailable.');
++        }
++        $violations = [];
++        try {
++            $cases = [
++                'candidate' => ['status' => 'candidate'],
++                'rejected'  => ['status' => 'rejected'],
++                'archived'  => ['status' => 'archived'],
++                'expired'   => ['status' => 'active', 'expires_at' => '2000-01-01 00:00:00'],
++                'pinned_rejected' => ['status' => 'rejected', 'is_pinned' => 1],
++                'missing_status'  => [],
++            ];
++            foreach ($cases as $name => $row) {
++                $row += ['id' => 0, 'workspace_id' => 0, 'record_type' => 'brand', 'content_json' => '{}'];
++                if (VES_Brand_Context_Service::is_trusted($row)) { $violations[] = $name; }
++            }
++        } catch (\Throwable $e) {
++            return self::row('memory_trust', 'Memory trust boundary', 'warn', 'Trust boundary probe failed to run: ' . $e->getMessage());
++        }
++        if (count($violations) > 0) {
++            return self::row('memory_trust', 'Memory trust boundary', 'block', 'Untrusted memory treated as trusted: ' . implode(', ', $violations));
++        }
++        return self::row('memory_trust', 'Memory trust boundary', 'ok', 'candidate/rejected/archived/expired/pinned-rejected/missing-status all excluded.');
++    }
++
++    private static function check_prompt_package() {
++        if (!class_exists('VES_Generation_Prompt_Package_Builder')) {
++            return self::row('prompt_package', 'Prompt package builder', 'block', 'VES_Generation_Prompt_Package_Builder unavailable.');
++        }
++        $exec_on = false;
++        try { $exec_on = (bool) VES_Generation_Prompt_Package_Builder::execution_enabled(); } catch (\Throwable $e) { $exec_on = false; }
++        if ($exec_on) {
++            return self::row('prompt_package', 'Prompt package builder', 'warn', 'Generation execution flag (ves_generation_execution_enabled) is ON — v0.1 RC expects it OFF.');
++        }
++        return self::row('prompt_package', 'Prompt package builder', 'ok', 'Builder present; provider execution disabled (default).');
++    }
++
++    private static function check_operator_surfaces() {
++        $missing = [];
++        if (!class_exists('VES_Signal_Room') || !method_exists('VES_Signal_Room', 'render_html')) { $missing[] = 'Signal Room'; }
++        if (!class_exists('VES_Operator_Queue_Service') || !method_exists('VES_Operator_Queue_Service', 'build')) { $missing[] = 'Operator queue'; }
++        if (!class_exists('VES_Workbench') || !method_exists('VES_Workbench', 'render_brief') || !method_exists('VES_Workbench', 'render_draft')) { $missing[] = 'Workbench'; }
++        if (!class_exists('VES_Release_Candidate_Page')) { $missing[] = 'Release Candidate page'; }
++        if (count($missing) > 0) {
++            return self::row('operator_ui', 'Operator UI surfaces', 'block', 'Missing surface(s): ' . implode(', ', $missing));
++        }
++        return self::row('operator_ui', 'Operator UI surfaces', 'ok', 'Signal Room, operator queue, workbenches and RC page available.');
++    }
++
++    private static function check_usage_ledger() {
++        $ok = class_exists('VES_Usage_Billing')
++            && method_exists('VES_Usage_Billing', 'reserve_usage')
++            && method_exists('VES_Usage_Billing', 'settle_reserved_usage')
++            && method_exists('VES_Usage_Billing', 'void_reserved_usage');
++        return $ok
++            ? self::row('usage_ledger', 'Usage / credits ledger', 'ok', 'Reserve / settle / void ledger model present.')
++            : self::row('usage_ledger', 'Usage / credits ledger', 'block', 'Ledger-style usage billing (reserve/settle/void) unavailable.');
++    }
++
++    private static function check_provider_safety() {
++        $problems = []; $warns = [];
++        if (!class_exists('VES_Apify_Actor_Registry') || !method_exists('VES_Apify_Actor_Registry', 'is_allowed_slug')) {
++            $problems[] = 'actor allowlist gate missing';
++        }
++        if (class_exists('VES_Config') && method_exists('VES_Config', 'hard_max_charge_usd')) {
++            $ceiling = (float) VES_Config::hard_max_charge_usd();
++            if ($ceiling <= 0) { $problems[] = 'maxTotalChargeUsd ceiling disabled'; }
++        } else {
++            $problems[] = 'hard max charge config missing';
++        }
++        // Token presence is reported as a boolean only — never the value.
++        $token_configured = class_exists('VES_Config') && method_exists('VES_Config', 'get_token') && trim((string) VES_Config::get_token()) !== '';
++        if (!$token_configured) { $warns[] = 'provider token not configured (dispatch will fail fast; fine for a static RC)'; }
++        if (count($problems) > 0) { return self::row('provider_safety', 'Provider safety', 'block', implode('; ', $problems)); }
++        if (count($warns) > 0) { return self::row('provider_safety', 'Provider safety', 'warn', implode('; ', $warns)); }
++        return self::row('provider_safety', 'Provider safety', 'ok', 'Allowlist gate + charge ceiling active; token via Authorization header only.');
++    }
++
++    private static function check_feature_flags() {
++        $on = [];
++        if (function_exists('get_option') && (bool) get_option('ves_generation_execution_enabled', false)) { $on[] = 'ves_generation_execution_enabled'; }
++        if (defined('VES_PRODUCTION_MVP') && VES_PRODUCTION_MVP) { $on[] = 'VES_PRODUCTION_MVP'; }
++        if (defined('VES_ENABLE_DEEP_VIDEO_ANALYSIS') && VES_ENABLE_DEEP_VIDEO_ANALYSIS) { $on[] = 'VES_ENABLE_DEEP_VIDEO_ANALYSIS'; }
++        if (defined('FI_DTF_ENABLE_DEEP_VIDEO') && FI_DTF_ENABLE_DEEP_VIDEO) { $on[] = 'FI_DTF_ENABLE_DEEP_VIDEO'; }
++        if (count($on) > 0) {
++            return self::row('feature_flags', 'Feature flags', 'warn', 'Flags ON that v0.1 RC expects OFF: ' . implode(', ', $on));
++        }
++        return self::row('feature_flags', 'Feature flags', 'ok', 'All gated features OFF by default (AI execution, MVP mode, deep video).');
++    }
++
++    private static function check_live_validation() {
++        $state = self::live_validation_state();
++        if (($state['status'] ?? '') === 'passed') {
++            return self::row('live_validation', 'Live staging validation', 'ok', 'Recorded as passed at ' . (string) ($state['recorded_at'] ?? 'unknown time') . ' (operator-recorded; verify evidence).');
++        }
++        return self::row('live_validation', 'Live staging validation', 'warn',
++            'UNRUN / not recorded. The RC is statically verified only — production claims are forbidden until the live checklist passes.');
++    }
++
++    private static function live_validation_state() {
++        $raw = function_exists('get_option') ? get_option(self::OPTION_LIVE_VALIDATION, []) : [];
++        if (!is_array($raw) || empty($raw['status'])) {
++            return ['status' => 'unrun', 'recorded_at' => '', 'note' => 'No live staging validation has been recorded on this install.'];
++        }
++        return [
++            'status'      => self::clean_key((string) $raw['status']),
++            'recorded_at' => self::clean_text((string) ($raw['recorded_at'] ?? '')),
++            'note'        => self::clean_text((string) ($raw['note'] ?? '')),
++        ];
++    }
++
++    private static function clean_key($s) {
++        return function_exists('sanitize_key') ? sanitize_key($s) : strtolower(preg_replace('/[^a-z0-9_\-]/i', '', (string) $s));
++    }
++
++    private static function clean_text($s) {
++        return function_exists('sanitize_text_field') ? sanitize_text_field($s) : trim(strip_tags((string) $s));
++    }
++
++    private static function row($id, $label, $status, $detail) {
++        return ['id' => (string) $id, 'label' => (string) $label, 'status' => (string) $status, 'detail' => (string) $detail];
++    }
++}
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/includes/class-ves-release-candidate-page.php ./future-island-intelligence-suite/includes/class-ves-release-candidate-page.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/includes/class-ves-release-candidate-page.php	1970-01-01 00:00:00.000000000 +0000
++++ ./future-island-intelligence-suite/includes/class-ves-release-candidate-page.php	2026-06-11 12:30:08.063785210 +0000
+@@ -0,0 +1,198 @@
++<?php
++if (!defined('ABSPATH')) { exit; }
++
++/**
++ * VES_Release_Candidate_Page — v0.1 RC read-only diagnostic page.
++ *
++ * Admin page "Future Island / Release Candidate": build status, feature flags,
++ * readiness checks, the live commands an operator must run, required screenshots,
++ * known limitations and the next operator action. STRICTLY read-only — no
++ * mutation, no provider calls, no fake pass states, and it can never display a
++ * production-ready badge: until a live validation pass is recorded the page
++ * always says NOT production-ready. PHP 7.4 compatible.
++ */
++final class VES_Release_Candidate_Page {
++
++    const PAGE_SLUG = 'ves-release-candidate';
++
++    public static function init() {
++        if (function_exists('add_action')) {
++            add_action('admin_menu', [__CLASS__, 'register_menu'], 30);
++        }
++    }
++
++    public static function register_menu() {
++        if (!function_exists('add_submenu_page')) { return; }
++        $parent = class_exists('VES_Admin_Console') ? VES_Admin_Console::PARENT_SLUG : 'ves-intelligence-suite';
++        add_submenu_page($parent, 'Release Candidate', 'Release Candidate', 'manage_options', self::PAGE_SLUG, [__CLASS__, 'render']);
++    }
++
++    private static function e($s)  { return function_exists('esc_html') ? esc_html((string) $s) : htmlspecialchars((string) $s, ENT_QUOTES); }
++    private static function ea($s) { return function_exists('esc_attr') ? esc_attr((string) $s) : htmlspecialchars((string) $s, ENT_QUOTES); }
++
++    public static function render() {
++        if (function_exists('current_user_can') && !current_user_can('manage_options')) {
++            if (function_exists('wp_die')) { wp_die(self::e('Insufficient capability')); }
++            return;
++        }
++        echo self::render_html(); // phpcs:ignore WordPress.Security.EscapeOutput -- built exclusively from escaped parts below.
++    }
++
++    /** Build the full page HTML (separated for tests). All dynamic values escaped. */
++    public static function render_html() {
++        $report = class_exists('VES_RC_Readiness_Service')
++            ? VES_RC_Readiness_Service::report()
++            : ['status' => 'blocked', 'blockers' => ['VES_RC_Readiness_Service unavailable.'], 'warnings' => [], 'checks' => [], 'live_validation' => ['status' => 'unrun', 'note' => ''], 'plugin_version' => defined('FIS_VERSION') ? FIS_VERSION : 'unknown', 'rc_label' => defined('FIS_RC_LABEL') ? FIS_RC_LABEL : '', 'required_cli' => [], 'checked_at' => gmdate('Y-m-d H:i:s'), 'production_ready' => false];
++
++        $live = is_array($report['live_validation'] ?? null) ? $report['live_validation'] : ['status' => 'unrun'];
++        $live_passed = ($live['status'] ?? '') === 'passed';
++        $status = (string) ($report['status'] ?? 'blocked');
++
++        $h  = self::styles();
++        $h .= '<div class="wrap fiis-rc-page"><div class="fiis-rc-inner">';
++
++        // Header — editorial heading + mono metadata, no fake green.
++        $h .= '<header class="fiis-rc-head">';
++        $h .= '<p class="fiis-rc-kicker">Future Island · Intelligence Suite</p>';
++        $h .= '<h1>Release Candidate</h1>';
++        $h .= '<p class="fiis-rc-meta">version ' . self::e((string) ($report['plugin_version'] ?? '')) . ((string) ($report['rc_label'] ?? '') !== '' ? ' · ' . self::e((string) $report['rc_label']) : '') . ' · checked ' . self::e((string) ($report['checked_at'] ?? '')) . ' UTC</p>';
++        $h .= '</header>';
++
++        // Honest top banner.
++        if (!$live_passed) {
++            $h .= '<div class="fiis-rc-banner fiis-rc-banner-warn"><strong>Live staging validation: UNRUN.</strong> '
++                . 'This build is statically verified only. It is <strong>NOT production-ready</strong> and must not be installed on a production site. '
++                . 'Run the commands below on a staging copy first.</div>';
++        } else {
++            $h .= '<div class="fiis-rc-banner fiis-rc-banner-info"><strong>Live staging validation recorded as passed</strong> ('
++                . self::e((string) ($live['recorded_at'] ?? '')) . '). Verify the operator evidence (command outputs + screenshots). '
++                . 'Even with a recorded pass, production release still requires operator approval and monitored pilot usage — this page never grants production status.</div>';
++        }
++
++        // Build status.
++        $h .= '<section class="fiis-rc-section"><h2>Build status</h2>';
++        $h .= '<p>Overall: ' . self::badge($status) . ' &nbsp; Production-ready: ' . self::badge('blocked', 'No') . '</p>';
++        if (!empty($report['blockers'])) {
++            $h .= '<ul class="fiis-rc-list fiis-rc-blockers">';
++            foreach ((array) $report['blockers'] as $b) { $h .= '<li>' . self::e((string) $b) . '</li>'; }
++            $h .= '</ul>';
++        }
++        if (!empty($report['warnings'])) {
++            $h .= '<ul class="fiis-rc-list fiis-rc-warnings">';
++            foreach ((array) $report['warnings'] as $w) { $h .= '<li>' . self::e((string) $w) . '</li>'; }
++            $h .= '</ul>';
++        }
++        $h .= '</section>';
++
++        // Readiness checks table.
++        $h .= '<section class="fiis-rc-section"><h2>Readiness checks</h2><table class="fiis-rc-table"><thead><tr><th>Check</th><th>Status</th><th>Detail</th></tr></thead><tbody>';
++        foreach ((array) ($report['checks'] ?? []) as $c) {
++            $h .= '<tr><td>' . self::e((string) ($c['label'] ?? '')) . '</td><td>' . self::badge((string) ($c['status'] ?? 'unknown')) . '</td><td>' . self::e((string) ($c['detail'] ?? '')) . '</td></tr>';
++        }
++        $h .= '</tbody></table></section>';
++
++        // Feature flags.
++        $h .= '<section class="fiis-rc-section"><h2>Feature flags (must stay OFF for v0.1)</h2><table class="fiis-rc-table"><tbody>';
++        foreach (self::flags() as $flag) {
++            $h .= '<tr><td class="fiis-rc-mono">' . self::e($flag['name']) . '</td><td>' . self::badge($flag['on'] ? 'warning' : 'ready', $flag['on'] ? 'ON' : 'OFF') . '</td><td>' . self::e($flag['note']) . '</td></tr>';
++        }
++        $h .= '</tbody></table><p class="fiis-rc-note">AI provider execution stays disabled. There is no generate, publish or auto-approve behavior anywhere in this build.</p></section>';
++
++        // Required live commands.
++        $h .= '<section class="fiis-rc-section"><h2>Live validation commands (staging only)</h2><p>Run on a staging copy with a fresh DB backup. Never run <span class="fiis-rc-mono">--apply</span> during validation.</p><ol class="fiis-rc-cmds">';
++        foreach ((array) ($report['required_cli'] ?? []) as $cmd) {
++            $h .= '<li class="fiis-rc-mono">wp ' . self::e((string) $cmd) . '</li>';
++        }
++        $h .= '</ol><p class="fiis-rc-note">Full procedure: <span class="fiis-rc-mono">RELEASE-CANDIDATE-RUNBOOK.md</span> and <span class="fiis-rc-mono">LIVE-STAGING-VALIDATION-CHECKLIST.md</span> in the plugin folder.</p></section>';
++
++        // Required screenshots.
++        $h .= '<section class="fiis-rc-section"><h2>Required browser evidence</h2><ul class="fiis-rc-list">';
++        foreach (['Signal Room', 'Social Media / Signal Report', 'Evidence Gate (blocked state)', 'Operator Queue', 'Memory / Brand Context', 'Generation Context Preview', 'Prompt Package Preview', 'Brief Workbench', 'Draft Workbench', 'Release Candidate page (this page)', 'Any error state encountered'] as $shot) {
++            $h .= '<li>' . self::e($shot) . '</li>';
++        }
++        $h .= '</ul></section>';
++
++        // Known limitations — honest by design.
++        $h .= '<section class="fiis-rc-section"><h2>Known limitations</h2><ul class="fiis-rc-list">';
++        foreach ([
++            'Live staging validation has not been performed unless explicitly recorded above — static checks cannot replace it.',
++            'AI generation is a preview contract only (prompt packages); no provider execution path is enabled.',
++            'Brief/Draft review controls are disabled where backend handlers are not yet wired — by design, not by accident.',
++            'Usage costs for OpenAI are estimates where the provider does not return final pricing; they are labeled as estimates.',
++            'This is a v0.1 pilot build, not a mature production SaaS.',
++        ] as $lim) {
++            $h .= '<li>' . self::e($lim) . '</li>';
++        }
++        $h .= '</ul></section>';
++
++        // Next operator action.
++        $next = $status === 'blocked'
++            ? 'Resolve the blockers listed above, then re-run wp ves rc-readiness-check.'
++            : (!$live_passed
++                ? 'Install this build on STAGING, follow LIVE-STAGING-VALIDATION-CHECKLIST.md, capture command outputs and screenshots, then record the result.'
++                : 'Review the recorded live evidence with the pilot owner and decide on a monitored pilot — production release still needs explicit operator approval.');
++        $h .= '<section class="fiis-rc-section fiis-rc-next"><h2>Next operator action</h2><p>' . self::e($next) . '</p></section>';
++
++        $h .= '</div></div>';
++        return $h;
++    }
++
++    private static function flags() {
++        // Prefer the builder's view of the flag (it applies filters); fall back to
++        // the raw option so a missing builder can never make an ON flag look OFF.
++        $exec_on = function_exists('get_option') ? (bool) get_option('ves_generation_execution_enabled', false) : false;
++        if (class_exists('VES_Generation_Prompt_Package_Builder')) {
++            try { $exec_on = (bool) VES_Generation_Prompt_Package_Builder::execution_enabled(); } catch (\Throwable $e) { /* keep option value */ }
++        }
++        return [
++            ['name' => 'ves_generation_execution_enabled', 'on' => $exec_on, 'note' => 'AI provider execution for generation. Must stay OFF for v0.1.'],
++            ['name' => 'VES_PRODUCTION_MVP', 'on' => defined('VES_PRODUCTION_MVP') && VES_PRODUCTION_MVP, 'note' => 'Production MVP mode constant.'],
++            ['name' => 'VES_ENABLE_DEEP_VIDEO_ANALYSIS', 'on' => defined('VES_ENABLE_DEEP_VIDEO_ANALYSIS') && VES_ENABLE_DEEP_VIDEO_ANALYSIS, 'note' => 'Deep video analysis (core).'],
++            ['name' => 'FI_DTF_ENABLE_DEEP_VIDEO', 'on' => defined('FI_DTF_ENABLE_DEEP_VIDEO') && FI_DTF_ENABLE_DEEP_VIDEO, 'note' => 'Deep video analysis (Deep Trend Finder module).'],
++        ];
++    }
++
++    private static function badge($state, $label = null) {
++        // Map readiness tokens onto the canonical review-state vocabulary so the
++        // badge colors are honest (ok=ready, warn=warning, block/blocked=blocked).
++        $map = [
++            'ok' => 'ready', 'warn' => 'warning', 'block' => 'blocked',
++            'ready_for_staging' => 'ready', 'ready_with_warnings' => 'warning', 'blocked' => 'blocked',
++        ];
++        $raw = strtolower((string) $state);
++        $mapped = isset($map[$raw]) ? $map[$raw] : $raw;
++        if ($label === null && isset($map[$raw]) && strpos($raw, '_') !== false) { $label = str_replace('_', ' ', $raw); }
++        if (class_exists('VES_Review_State')) { return VES_Review_State::badge($mapped, $label); }
++        $text = $label !== null ? (string) $label : (string) $mapped;
++        return '<span class="fi-status-badge">' . self::e($text) . '</span>';
++    }
++
++    /** Static scoped styles — FI palette (ink/paper/sand/blue + tactical lime/red). */
++    private static function styles() {
++        return '<style id="fiis-rc-styles">'
++            . '.fiis-rc-page{--fi-ink:#15161a;--fi-paper:#f3efe6;--fi-sand:#e7e1d4;--fi-blue:#2f5fd0;--fi-blue-2:#1b2a4a;--fi-lime:#7faa00;--fi-red:#e8552b;--fi-bdr:#d9d2c3;--fi-muted:#6c6a62;background:var(--fi-paper);margin-left:-20px;padding:28px 32px;min-height:100%}'
++            . '.fiis-rc-inner{max-width:980px}'
++            . '.fiis-rc-head h1{font-size:34px;line-height:1.1;margin:2px 0 6px;color:var(--fi-ink);font-weight:800;letter-spacing:-.01em}'
++            . '.fiis-rc-kicker{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--fi-blue);margin:0}'
++            . '.fiis-rc-meta,.fiis-rc-mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:var(--fi-muted)}'
++            . '.fiis-rc-banner{border:1px solid var(--fi-bdr);border-left:4px solid var(--fi-red);background:#fff;padding:12px 16px;margin:18px 0;color:var(--fi-ink);max-width:980px}'
++            . '.fiis-rc-banner-info{border-left-color:var(--fi-blue)}'
++            . '.fiis-rc-section{background:#fff;border:1px solid var(--fi-bdr);padding:18px 20px;margin:0 0 16px}'
++            . '.fiis-rc-section h2{font-size:15px;text-transform:uppercase;letter-spacing:.08em;color:var(--fi-blue-2);margin:0 0 10px;border-bottom:1px solid var(--fi-sand);padding-bottom:8px}'
++            . '.fiis-rc-table{width:100%;border-collapse:collapse}'
++            . '.fiis-rc-table th{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--fi-muted);text-align:left;padding:6px 10px;border-bottom:1px solid var(--fi-bdr)}'
++            . '.fiis-rc-table td{padding:8px 10px;border-bottom:1px solid var(--fi-sand);vertical-align:top;color:var(--fi-ink);word-break:break-word}'
++            . '.fiis-rc-list li{margin:4px 0;color:var(--fi-ink)}'
++            . '.fiis-rc-blockers li{color:var(--fi-red)}'
++            . '.fiis-rc-warnings li{color:#b06a00}'
++            . '.fiis-rc-cmds li{margin:4px 0;color:var(--fi-ink);font-size:12px}'
++            . '.fiis-rc-note{color:var(--fi-muted);font-size:12px;margin-top:10px}'
++            . '.fiis-rc-next{border-left:4px solid var(--fi-lime)}'
++            . '.fiis-rc-page .fi-status-badge{display:inline-block;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:999px;border:1px solid var(--fi-bdr);background:#fff;color:var(--fi-ink);white-space:nowrap}'
++            . '.fiis-rc-page .fiis-badge-ready,.fiis-rc-page .fiis-badge-approved{background:rgba(31,122,77,.12);border-color:#1f7a4d;color:#1f7a4d}'
++            . '.fiis-rc-page .fiis-badge-warning,.fiis-rc-page .fiis-badge-needs_review{background:rgba(176,106,0,.12);border-color:#b06a00;color:#b06a00}'
++            . '.fiis-rc-page .fiis-badge-blocked,.fiis-rc-page .fiis-badge-missing{background:rgba(232,85,43,.12);border-color:var(--fi-red);color:var(--fi-red)}'
++            . '@media (max-width:782px){.fiis-rc-page{margin-left:-10px;padding:16px}.fiis-rc-head h1{font-size:26px}.fiis-rc-table td,.fiis-rc-table th{padding:6px}}'
++            . '</style>';
++    }
++}
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-full-plugin-hardening-audit.php ./future-island-intelligence-suite/tests/test-full-plugin-hardening-audit.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-full-plugin-hardening-audit.php	2026-06-05 20:35:55.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-full-plugin-hardening-audit.php	2026-06-11 12:18:33.131509117 +0000
+@@ -16,8 +16,8 @@
+ $read = function($rel) use ($root) { return file_get_contents($root . '/' . $rel); };
+ 
+ $main = $read('future-island-intelligence-suite.php');
+-$assert(strpos($main, 'Version: 1.2.4') !== false, 'Plugin header version is 1.1.0');
+-$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.4'") !== false, 'VES_PLUGIN_VERSION constant is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.5') !== false, 'Plugin header version is 1.1.0');
++$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.5'") !== false, 'VES_PLUGIN_VERSION constant is 1.1.0');
+ 
+ $publicTemplates = [
+     'templates/_scraper-form.php',
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-settings-dispatch-runtime-fix.php ./future-island-intelligence-suite/tests/test-settings-dispatch-runtime-fix.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-settings-dispatch-runtime-fix.php	2026-06-05 20:35:55.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-settings-dispatch-runtime-fix.php	2026-06-11 12:18:33.133025314 +0000
+@@ -11,7 +11,7 @@
+ $checks = [];
+ $add = function($name, $ok) use (&$checks) { $checks[] = [$name, (bool) $ok]; };
+ 
+-$add('version bumped to 1.1.0', strpos($src['main'], 'Version: 1.2.4') !== false && strpos($src['main'], "VES_PLUGIN_VERSION',         '1.2.4'") !== false);
++$add('version bumped to 1.1.0', strpos($src['main'], 'Version: 1.2.5') !== false && strpos($src['main'], "VES_PLUGIN_VERSION',         '1.2.5'") !== false);
+ $add('settings page has top visible save actionbar', strpos($src['admin'], 'ves-settings-actionbar') !== false && strpos($src['admin'], "submit_button('Guardar cambios', 'primary', 'submit', false") !== false);
+ $add('settings page keeps bottom save button', substr_count($src['admin'], "submit_button('Guardar cambios'") >= 2);
+ $add('runtime lock reset admin action registered', strpos($src['admin'], "admin_post_ves_clear_runtime_locks") !== false && strpos($src['admin'], 'handle_clear_runtime_locks') !== false);
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v093015-fatal-classification.php ./future-island-intelligence-suite/tests/test-v093015-fatal-classification.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v093015-fatal-classification.php	2026-06-05 20:35:55.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-v093015-fatal-classification.php	2026-06-11 12:18:33.133835189 +0000
+@@ -8,7 +8,7 @@
+ $checks = [];
+ $add = function ($label, $ok) use (&$checks) { $checks[] = [$label, (bool) $ok]; };
+ 
+-$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.4') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.4'") !== false);
++$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.5') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.5'") !== false);
+ $add('caught Throwable after provider dispatch is not labeled ajax_fatal', strpos($controller, '$is_fatal_context = in_array($source') !== false && strpos($controller, "if (!empty(\$context['provider_call_attempted'])) { return 'post_dispatch_fatal'; }") !== false && strpos($controller, "return 'ajax_fatal';") !== false);
+ $add('caught Throwable after provider run receives post-provider category', strpos($controller, "if (!empty(\$context['provider_run_created'])) { return 'post_provider_run_fatal'; }") !== false);
+ $add('post-dispatch fatal has user-safe message', strpos($controller, "if (\$category === 'post_dispatch_fatal')") !== false && strpos($controller, 'The source request was attempted, but the response could not be processed') !== false);
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v093015-pre-dispatch-degradation.php ./future-island-intelligence-suite/tests/test-v093015-pre-dispatch-degradation.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v093015-pre-dispatch-degradation.php	2026-06-05 20:35:55.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-v093015-pre-dispatch-degradation.php	2026-06-11 12:18:33.133676502 +0000
+@@ -6,7 +6,7 @@
+ $checks = [];
+ $add = function($name, $ok) use (&$checks) { $checks[] = [$name, (bool) $ok]; };
+ 
+-$add('version bumped to 1.2.4 in main plugin', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.2.4') !== false);
++$add('version bumped to 1.2.5 in main plugin', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.2.5') !== false);
+ $add('platform input validation throwable is degraded instead of ajax fatal', strpos($ajax, 'platform_input_validation_throwable_degraded') !== false && strpos($ajax, '$platform_input_valid = is_array($input) && !empty($input);') !== false);
+ $add('duplicate guard throwable continues to provider dispatch', strpos($ajax, 'duplicate_guard_throwable_degraded') !== false && strpos($ajax, 'duplicate_guard_degraded_continue_dispatch') !== false);
+ $add('provider cost guard throwable is non-blocking for admins', strpos($ajax, 'provider_cost_guard_throwable_degraded') !== false && strpos($ajax, "if (!current_user_can('manage_options'))") !== false);
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v093016-context-preservation.php ./future-island-intelligence-suite/tests/test-v093016-context-preservation.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v093016-context-preservation.php	2026-06-05 20:35:55.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-v093016-context-preservation.php	2026-06-11 12:18:33.131882897 +0000
+@@ -18,7 +18,7 @@
+     $error_fn = $m[0];
+ }
+ 
+-$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.4') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.4'") !== false);
++$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.5') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.5'") !== false);
+ $add('error() merges active run context before classification', strpos($error_fn, '$active_context = is_array(self::$active_run_context) ? self::$active_run_context : [];') !== false && strpos($error_fn, '$context = array_merge($active_context, $context);') !== false && strpos($error_fn, 'last_successful_stage') !== false);
+ $add('explicit error() context preserves post-dispatch state', strpos($error_fn, 'post-dispatch failures') !== false && strpos($error_fn, 'provider_call_attempted/provider_run_created') !== false);
+ $add('shutdown handler classifies with active context', strpos($shutdown, "self::classify_error_category('ajax_shutdown_fatal'") !== false && strpos($shutdown, '$fatal_context = array_merge($active_context') !== false);
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v093017-error-category-ordering.php ./future-island-intelligence-suite/tests/test-v093017-error-category-ordering.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v093017-error-category-ordering.php	2026-06-05 20:35:55.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-v093017-error-category-ordering.php	2026-06-11 12:18:33.130947600 +0000
+@@ -12,7 +12,7 @@
+     $checks[] = [$name, (bool) $ok];
+     echo ($ok ? '[PASS] ' : '[FAIL] ') . $name . PHP_EOL;
+ };
+-$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.4') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.4'") !== false);
++$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.5') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.5'") !== false);
+ $add('classification uses fatal-only context gate', strpos($controller, '$is_fatal_context = in_array($source') !== false && strpos($controller, "'ajax_start_fatal'") !== false && strpos($controller, "'ajax_shutdown_fatal'") !== false);
+ $add('provider flags are only checked inside fatal context', preg_match('/if \(\$is_fatal_context\) \{\s*if \(!empty\(\$context\[\'provider_run_created\'\]\)\)/s', $controller) === 1);
+ $add('actor_dispatch_error branch remains after fatal gate', strpos($controller, "$source === 'actor_dispatch_error'") !== false && strpos($controller, '$is_provider_runtime_error') !== false && strpos($controller, 'provider_run_id_missing') !== false);
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v093018-provider-error-classification.php ./future-island-intelligence-suite/tests/test-v093018-provider-error-classification.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v093018-provider-error-classification.php	2026-06-05 20:35:55.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-v093018-provider-error-classification.php	2026-06-11 12:18:33.132819685 +0000
+@@ -7,7 +7,7 @@
+ $main = file_get_contents($root . '/future-island-intelligence-suite.php');
+ $checks = [];
+ $add = function($label, $condition) use (&$checks) { $checks[$label] = (bool) $condition; };
+-$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.4') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.4'") !== false);
++$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.5') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.5'") !== false);
+ $add('token classification is not broad token substring', strpos($ajax, 'strpos($haystack, \'token\') !== false) { return \'missing_backend_token\'; }') === false);
+ $add('public run tokens classified as module access', strpos($ajax, "public_run_token") !== false && strpos($ajax, "return 'module_access_denied';") !== false);
+ $add('provider runtime includes poll errors', strpos($ajax, 'strpos($source, \'actor_poll\') !== false') !== false);
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v093019-member-safe-diagnostic.php ./future-island-intelligence-suite/tests/test-v093019-member-safe-diagnostic.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v093019-member-safe-diagnostic.php	2026-06-05 20:35:55.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-v093019-member-safe-diagnostic.php	2026-06-11 12:18:33.131420047 +0000
+@@ -35,7 +35,7 @@
+ };
+ 
+ // Version bump.
+-$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.4') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.4'") !== false);
++$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.5') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.5'") !== false);
+ 
+ // build_safe_diagnostic helper exists and is leak-free by construction.
+ $add('build_safe_diagnostic helper exists', strpos($ajax, 'private static function build_safe_diagnostic(') !== false);
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v093020-post-usage-settlement-degraded.php ./future-island-intelligence-suite/tests/test-v093020-post-usage-settlement-degraded.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v093020-post-usage-settlement-degraded.php	2026-06-05 20:35:55.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-v093020-post-usage-settlement-degraded.php	2026-06-11 12:19:23.191522465 +0000
+@@ -22,7 +22,7 @@
+ $add = function ($label, $cond) use (&$checks) { $checks[$label] = (bool) $cond; };
+ 
+ // Version bump.
+-$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.4') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.4'") !== false);
++$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.5') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.5'") !== false);
+ 
+ // --- Fix 1: post_standard_usage_or_error() must not call self::error() on WP_Error ---
+ // Locate the function body.
+@@ -47,7 +47,7 @@
+ 
+ // --- Fix 2: settle_standard_usage_by_delivery() must not call self::error() on WP_Error ---
+ $settle_start = strpos($ajax, 'private static function settle_standard_usage_by_delivery(');
+-$settle_body  = $settle_start !== false ? substr($ajax, $settle_start, 1600) : '';
++$settle_body  = $settle_start !== false ? substr($ajax, $settle_start, 3600) : '';
+ 
+ $add('settle_standard_usage_by_delivery logs wp_error instead of terminating',
+     strpos($settle_body, 'settle_usage_wp_error_degraded') !== false);
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v093021-provider-rental-message.php ./future-island-intelligence-suite/tests/test-v093021-provider-rental-message.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v093021-provider-rental-message.php	2026-06-05 20:35:55.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-v093021-provider-rental-message.php	2026-06-11 12:18:33.133909939 +0000
+@@ -11,7 +11,7 @@
+ $add = function($name, $ok) use (&$checks) { $checks[] = [$name, (bool) $ok]; };
+ 
+ // 1. Version matches
+-$add('version is 1.2.4', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.2.4') !== false);
++$add('version is 1.2.5', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.2.5') !== false);
+ 
+ // 2. provider_actor_rental_required gets its own branch before the generic config array
+ $rental_pos  = strpos($ajax, 'provider_actor_rental_required');
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09310-fi-brand-tokens.php ./future-island-intelligence-suite/tests/test-v09310-fi-brand-tokens.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09310-fi-brand-tokens.php	2026-06-05 20:35:55.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-v09310-fi-brand-tokens.php	2026-06-11 12:18:33.133263490 +0000
+@@ -10,7 +10,7 @@
+ $add = function($name, $ok) use (&$checks) { $checks[] = [$name, (bool) $ok]; };
+ 
+ // Version
+-$add('version is 1.2.4', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.2.4') !== false);
++$add('version is 1.2.5', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.2.5') !== false);
+ 
+ // FI Azul primary color in ves-frontend.css
+ $add('FI Azul #3A61E1 in ves-frontend.css', strpos($css, '#3A61E1') !== false);
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09310-responsive-dataviz.php ./future-island-intelligence-suite/tests/test-v09310-responsive-dataviz.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09310-responsive-dataviz.php	2026-06-05 20:35:55.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-v09310-responsive-dataviz.php	2026-06-11 12:18:33.133420003 +0000
+@@ -10,7 +10,7 @@
+ $add = function($name, $ok) use (&$checks) { $checks[] = [$name, (bool) $ok]; };
+ 
+ // Version
+-$add('version is 1.2.4', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.2.4') !== false);
++$add('version is 1.2.5', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.2.5') !== false);
+ 
+ // Responsive SEO table: stacked card view
+ $add('SEO table thead hidden on mobile in ves-frontend.css', strpos($css, '.ves-seo-table thead') !== false && strpos($css, 'display: none') !== false);
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09311-provider-classification-locks.php ./future-island-intelligence-suite/tests/test-v09311-provider-classification-locks.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09311-provider-classification-locks.php	2026-06-05 20:35:55.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-v09311-provider-classification-locks.php	2026-06-11 12:18:33.133752375 +0000
+@@ -15,7 +15,7 @@
+ $add = function($name, $ok) use (&$checks) { $checks[] = [$name, (bool) $ok]; };
+ 
+ // ── Version ───────────────────────────────────────────────────
+-$add('version is 1.1.0', strpos($main, 'Version: 1.2.4') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.4'") !== false);
++$add('version is 1.1.0', strpos($main, 'Version: 1.2.5') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.5'") !== false);
+ 
+ // ── Phase 4: SEO 403 rental classified before generic access-denied ──
+ $rental_chk = strpos($ajax, 'if ($rental_required) { return \'provider_actor_rental_required\'; }');
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09313-error-categories-extended.php ./future-island-intelligence-suite/tests/test-v09313-error-categories-extended.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09313-error-categories-extended.php	2026-06-05 20:35:55.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-v09313-error-categories-extended.php	2026-06-11 12:18:33.131173855 +0000
+@@ -48,8 +48,8 @@
+ 
+ // 6. Version check.
+ $main = file_get_contents($root . '/future-island-intelligence-suite.php');
+-$assert(strpos($main, 'Version: 1.2.4') !== false, 'Plugin header must declare Version: 1.2.4');
+-$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.4'") !== false, 'VES_PLUGIN_VERSION must be 1.1.0');
++$assert(strpos($main, 'Version: 1.2.5') !== false, 'Plugin header must declare Version: 1.2.5');
++$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.5'") !== false, 'VES_PLUGIN_VERSION must be 1.1.0');
+ 
+ if ($fail === 0) {
+     echo "OK v0.9.31.6 extended error categories — $pass assertions passed\n";
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09314-ai-fallback-label.php ./future-island-intelligence-suite/tests/test-v09314-ai-fallback-label.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09314-ai-fallback-label.php	2026-06-05 20:35:55.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-v09314-ai-fallback-label.php	2026-06-11 12:18:33.132093973 +0000
+@@ -16,7 +16,7 @@
+ };
+ 
+ // Version
+-$assert(strpos($main, 'Version: 1.2.4') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.4'") !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.5') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.5'") !== false, 'Version is 1.1.0');
+ 
+ // PHP: all fallback returns include analysis_source=local_fallback
+ $assert(substr_count($ai, "'analysis_source' => 'local_fallback'") >= 3, 'PHP: at least 3 fallback return paths set analysis_source=local_fallback');
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09314-error-retryable-taxonomy.php ./future-island-intelligence-suite/tests/test-v09314-error-retryable-taxonomy.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09314-error-retryable-taxonomy.php	2026-06-05 20:35:55.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-v09314-error-retryable-taxonomy.php	2026-06-11 12:18:33.133110616 +0000
+@@ -15,7 +15,7 @@
+ };
+ 
+ // Version
+-$assert(strpos($main, 'Version: 1.2.4') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.4'") !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.5') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.5'") !== false, 'Version is 1.1.0');
+ 
+ // classify_retryable helper exists
+ $assert(strpos($ajax, 'private static function classify_retryable(') !== false, 'classify_retryable() helper declared');
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09314-frontend-truthfulness.php ./future-island-intelligence-suite/tests/test-v09314-frontend-truthfulness.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09314-frontend-truthfulness.php	2026-06-05 20:35:55.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-v09314-frontend-truthfulness.php	2026-06-11 12:18:33.132010661 +0000
+@@ -18,7 +18,7 @@
+ };
+ 
+ // Version
+-$assert(strpos($main, 'Version: 1.2.4') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.4'") !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.5') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.5'") !== false, 'Version is 1.1.0');
+ 
+ // 3A: jsTypeError branch no longer emits F5 instruction
+ $assert(strpos($js, 'jsTypeError') !== false, '3A: jsTypeError branch still exists');
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09314-google-serp-normalizer.php ./future-island-intelligence-suite/tests/test-v09314-google-serp-normalizer.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09314-google-serp-normalizer.php	2026-06-05 20:35:55.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-v09314-google-serp-normalizer.php	2026-06-11 12:18:33.130588389 +0000
+@@ -13,7 +13,7 @@
+ };
+ 
+ // Version
+-$assert(strpos($main, 'Version: 1.2.4') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.5') !== false, 'Version is 1.1.0');
+ 
+ // is_google_search_url helper exists
+ $assert(strpos($php, 'private static function is_google_search_url(') !== false, 'is_google_search_url() method declared');
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09315-competitor-downgrade.php ./future-island-intelligence-suite/tests/test-v09315-competitor-downgrade.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09315-competitor-downgrade.php	2026-06-05 20:35:55.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-v09315-competitor-downgrade.php	2026-06-11 12:18:33.131339298 +0000
+@@ -15,7 +15,7 @@
+     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
+ };
+ 
+-$assert(strpos($main, 'Version: 1.2.4') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.5') !== false, 'Version is 1.1.0');
+ 
+ // Helper declared
+ $assert(strpos($ana, 'function ves_detect_competitor_authorship(') !== false, 'ves_detect_competitor_authorship helper declared');
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09315-curated-templates.php ./future-island-intelligence-suite/tests/test-v09315-curated-templates.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09315-curated-templates.php	2026-06-05 20:35:55.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-v09315-curated-templates.php	2026-06-11 12:18:33.133508658 +0000
+@@ -15,7 +15,7 @@
+     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
+ };
+ 
+-$assert(strpos($main, 'Version: 1.2.4') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.5') !== false, 'Version is 1.1.0');
+ 
+ $templates = [
+     'verano-silencioso'   => 'verano-silencioso.php',
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09315-fallback-label-audit.php ./future-island-intelligence-suite/tests/test-v09315-fallback-label-audit.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09315-fallback-label-audit.php	2026-06-05 20:35:55.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-v09315-fallback-label-audit.php	2026-06-11 12:18:33.133187121 +0000
+@@ -15,7 +15,7 @@
+     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
+ };
+ 
+-$assert(strpos($main, 'Version: 1.2.4') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.5') !== false, 'Version is 1.1.0');
+ 
+ // Count of labels — must have grown from v0.9.31.4 (which had 4 labeled).
+ $source_count = substr_count($ai, "'analysis_source' => 'local_fallback'");
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09315-public-support-code-hardened.php ./future-island-intelligence-suite/tests/test-v09315-public-support-code-hardened.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09315-public-support-code-hardened.php	2026-06-05 20:35:55.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-v09315-public-support-code-hardened.php	2026-06-11 12:18:33.132320051 +0000
+@@ -13,7 +13,7 @@
+     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
+ };
+ 
+-$assert(strpos($main, 'Version: 1.2.4') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.5') !== false, 'Version is 1.1.0');
+ 
+ $fn_pos = strpos($ajax, 'private static function public_support_code(');
+ $fn_body = $fn_pos !== false ? substr($ajax, $fn_pos, 2000) : '';
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09315-renderer-diagnostic.php ./future-island-intelligence-suite/tests/test-v09315-renderer-diagnostic.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09315-renderer-diagnostic.php	2026-06-05 20:35:55.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-v09315-renderer-diagnostic.php	2026-06-11 12:18:33.132170400 +0000
+@@ -12,7 +12,7 @@
+     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
+ };
+ 
+-$assert(strpos($main, 'Version: 1.2.4') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.5') !== false, 'Version is 1.1.0');
+ 
+ $assert(strpos($ren, 'report_template_unreadable') !== false, 'Renderer raises report_template_unreadable diagnostic');
+ $assert(strpos($ren, 'VES_Admin::record_diagnostic') !== false, 'Renderer calls VES_Admin::record_diagnostic');
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09315-retryable-frontend.php ./future-island-intelligence-suite/tests/test-v09315-retryable-frontend.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09315-retryable-frontend.php	2026-06-05 20:35:55.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-v09315-retryable-frontend.php	2026-06-11 12:18:33.132245761 +0000
+@@ -15,7 +15,7 @@
+     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
+ };
+ 
+-$assert(strpos($main, 'Version: 1.2.4') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.4'") !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.5') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.5'") !== false, 'Version is 1.1.0');
+ 
+ // JS reads safeDiagnostic.retryable
+ $assert(strpos($js, 'sd.retryable === true') !== false, 'JS branches on safeDiagnostic.retryable === true');
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09316-curated-css-scoping.php ./future-island-intelligence-suite/tests/test-v09316-curated-css-scoping.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09316-curated-css-scoping.php	2026-06-05 20:35:55.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-v09316-curated-css-scoping.php	2026-06-11 12:18:33.132731864 +0000
+@@ -13,7 +13,7 @@
+     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
+ };
+ 
+-$assert(strpos($main, 'Version: 1.2.4') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.5') !== false, 'Version is 1.1.0');
+ 
+ $templates = [
+     'verano-silencioso'   => 'verano-silencioso.php',
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09316-retry-timer-cleanup.php ./future-island-intelligence-suite/tests/test-v09316-retry-timer-cleanup.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09316-retry-timer-cleanup.php	2026-06-05 20:35:55.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-v09316-retry-timer-cleanup.php	2026-06-11 12:18:33.130855193 +0000
+@@ -17,7 +17,7 @@
+     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
+ };
+ 
+-$assert(strpos($main, 'Version: 1.2.4') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.5') !== false, 'Version is 1.1.0');
+ 
+ // Find the body of vesClearAutoRetryTimer.
+ $start = strpos($js, 'const vesClearAutoRetryTimer = ');
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09318-p0-mvp-gating.php ./future-island-intelligence-suite/tests/test-v09318-p0-mvp-gating.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09318-p0-mvp-gating.php	2026-06-05 20:35:55.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-v09318-p0-mvp-gating.php	2026-06-11 12:18:33.131253163 +0000
+@@ -16,8 +16,8 @@
+ 
+ $msg = 'Este módulo no está habilitado en el MVP de producción.';
+ 
+-$assert(strpos($main, 'Version: 1.2.4') !== false, 'Plugin header version bumped to 1.1.0');
+-$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.4'") !== false, 'VES_PLUGIN_VERSION bumped to 1.1.0');
++$assert(strpos($main, 'Version: 1.2.5') !== false, 'Plugin header version bumped to 1.1.0');
++$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.5'") !== false, 'VES_PLUGIN_VERSION bumped to 1.1.0');
+ // [v1.1.0 archived] removed obsolete MVP-gating expectation: VES_PRODUCTION_MVP=true. Production decision:
+ // MVP gating is retired in FIIS v1.1.0; the unified app shell exposes all main routes. The constant is now
+ // false in product and is no longer used to lock the shell. Replaced with the current unified-shell contract.
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09318-p2-trend-lite.php ./future-island-intelligence-suite/tests/test-v09318-p2-trend-lite.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09318-p2-trend-lite.php	2026-06-05 20:35:55.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-v09318-p2-trend-lite.php	2026-06-11 12:18:33.132899334 +0000
+@@ -44,8 +44,8 @@
+ $js = file_get_contents($root . '/assets/js/ves-frontend.js');
+ $service = file_get_contents($root . '/includes/class-ves-run-execution-service.php');
+ 
+-$assert(strpos($main, 'Version: 1.2.4') !== false, 'plugin version bumped to p2 trend lite');
+-$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.4'") !== false, 'VES_PLUGIN_VERSION bumped to p2 trend lite');
++$assert(strpos($main, 'Version: 1.2.5') !== false, 'plugin version bumped to p2 trend lite');
++$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.5'") !== false, 'VES_PLUGIN_VERSION bumped to p2 trend lite');
+ // [v1.1.0 archived] removed obsolete 'P0 MVP flag remains true' expectation: MVP gating is retired in
+ // FIIS v1.1.0 (VES_PRODUCTION_MVP is false in product). The Trend Lite budget-clamp checks below remain
+ // active and assert the still-current sanitizer behavior independently of the MVP flag.
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09318-p3-demo-hardening.php ./future-island-intelligence-suite/tests/test-v09318-p3-demo-hardening.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09318-p3-demo-hardening.php	2026-06-05 20:35:55.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-v09318-p3-demo-hardening.php	2026-06-11 12:18:33.131060534 +0000
+@@ -34,8 +34,8 @@
+ $js = file_get_contents($root . '/assets/js/ves-frontend.js');
+ $ajax = file_get_contents($root . '/includes/class-ves-ajax-controller.php');
+ 
+-$assert(strpos($main, 'Version: 1.2.4') !== false, 'plugin header bumped to p3 demo hardening');
+-$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.4'") !== false, 'VES_PLUGIN_VERSION bumped to p3 demo hardening');
++$assert(strpos($main, 'Version: 1.2.5') !== false, 'plugin header bumped to p3 demo hardening');
++$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.5'") !== false, 'VES_PLUGIN_VERSION bumped to p3 demo hardening');
+ // [v1.1.0 archived] removed obsolete 'README version bumped' assertion: no root README.md exists in the
+ // unified package; the version contract is the plugin header / VES_PLUGIN_VERSION, already asserted above.
+ 
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09318-p31-live-qa-hotfix.php ./future-island-intelligence-suite/tests/test-v09318-p31-live-qa-hotfix.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09318-p31-live-qa-hotfix.php	2026-06-05 20:35:55.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-v09318-p31-live-qa-hotfix.php	2026-06-11 12:18:33.131763124 +0000
+@@ -43,8 +43,8 @@
+ $js = file_get_contents($root . '/assets/js/ves-frontend.js');
+ $openai = file_get_contents($root . '/includes/class-ves-openai-client.php');
+ 
+-$assert(strpos($main, 'Version: 1.2.4') !== false, 'plugin header bumped to p3.1 live QA hotfix');
+-$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.4'") !== false, 'VES_PLUGIN_VERSION bumped to p3.1 live QA hotfix');
++$assert(strpos($main, 'Version: 1.2.5') !== false, 'plugin header bumped to p3.1 live QA hotfix');
++$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.5'") !== false, 'VES_PLUGIN_VERSION bumped to p3.1 live QA hotfix');
+ // [v1.1.0 archived] removed obsolete 'README version bumped' assertion: no root README.md exists in the
+ // unified package; the version contract is the plugin header / VES_PLUGIN_VERSION, already asserted above.
+ 
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09318-p4-deep-trend-addon-integration.php ./future-island-intelligence-suite/tests/test-v09318-p4-deep-trend-addon-integration.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-v09318-p4-deep-trend-addon-integration.php	2026-06-05 20:35:55.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-v09318-p4-deep-trend-addon-integration.php	2026-06-11 12:18:33.133337742 +0000
+@@ -13,7 +13,7 @@
+ 
+ // [v1.1.0 archived] removed obsolete standalone-addon version snapshot '0.9.31.15-p4.8-deep-trend-sidebar-layout'.
+ // Current contract: the suite is version 1.1.0 and DTF is a built-in module booted in-process.
+-$ok(strpos($main, 'Version: 1.2.4') !== false, 'Suite header is v1.1.0');
++$ok(strpos($main, 'Version: 1.2.5') !== false, 'Suite header is v1.1.0');
+ $ok(strpos($main, 'FIDTF_Plugin::boot()') !== false, 'DTF is booted in-process by the unified bootstrap (built-in module, not a separate add-on)');
+ $ok(strpos($main, 'class-ves-deep-trend-addon-bridge.php') !== false, 'Core bootstraps Deep Trend add-on bridge');
+ $ok(strpos($bridge, 'class VES_Deep_Trend_Addon_Bridge') !== false || strpos($bridge, 'final class VES_Deep_Trend_Addon_Bridge') !== false, 'Bridge class exists');
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-ves-health-and-log.php ./future-island-intelligence-suite/tests/test-ves-health-and-log.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-ves-health-and-log.php	2026-06-06 23:43:41.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-ves-health-and-log.php	2026-06-11 12:18:33.132626902 +0000
+@@ -12,8 +12,8 @@
+ 
+ if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
+ if (!defined('WP_DEBUG')) { define('WP_DEBUG', false); }
+-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.4'); }
+-if (!defined('VES_PLUGIN_VERSION')) { define('VES_PLUGIN_VERSION', '1.2.4'); }
++if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.5'); }
++if (!defined('VES_PLUGIN_VERSION')) { define('VES_PLUGIN_VERSION', '1.2.5'); }
+ if (!defined('FIDTF_VERSION')) { define('FIDTF_VERSION', '0.3.53'); }
+ 
+ if (!class_exists('WP_Error')) {
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-ves-insight-lifecycle-transition-matrix.php ./future-island-intelligence-suite/tests/test-ves-insight-lifecycle-transition-matrix.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-ves-insight-lifecycle-transition-matrix.php	1970-01-01 00:00:00.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-ves-insight-lifecycle-transition-matrix.php	2026-06-11 12:21:07.087797583 +0000
+@@ -0,0 +1,178 @@
++<?php
++/**
++ * v0.1 RC — insight lifecycle TRANSITION MATRIX contract.
++ *
++ * Protects the review lifecycle:
++ *  - candidate(draft)/reviewed -> approved/rejected work (with evidence)
++ *  - approved -> archived works; approved can NEVER fall back to draft
++ *  - rejected/archived are TERMINAL: no silent path back to approved
++ *  - explicit reopen/restore overrides ONLY lead back to draft (review),
++ *    require a reason, and never unlock rejected->approved
++ *  - same-status writes stay allowed (idempotent retries)
++ *
++ * Self-contained: WP shims + in-memory MockWpdb. No DB, no network.
++ * Run: php tests/test-ves-insight-lifecycle-transition-matrix.php
++ */
++
++error_reporting(E_ALL & ~E_DEPRECATED);
++if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
++if (!defined('ARRAY_A')) { define('ARRAY_A', 'ARRAY_A'); }
++if (!defined('OBJECT'))  { define('OBJECT', 'OBJECT'); }
++
++class WP_Error {
++    public $code; public $message; public $data;
++    public function __construct($c = '', $m = '', $d = []) { $this->code = $c; $this->message = $m; $this->data = $d; }
++    public function get_error_code() { return $this->code; }
++    public function get_error_message() { return $this->message; }
++}
++function is_wp_error($t) { return $t instanceof WP_Error; }
++function sanitize_text_field($s) { return trim(preg_replace('/[\r\n\t]+/', ' ', strip_tags((string) $s))); }
++function sanitize_textarea_field($s) { return trim(strip_tags((string) $s)); }
++function sanitize_key($s) { return strtolower(preg_replace('/[^a-z0-9_\-]/i', '', (string) $s)); }
++function esc_url_raw($s) { return trim((string) $s); }
++function wp_json_encode($d, $o = 0) { return json_encode($d, $o); }
++function current_time($t = 'mysql', $g = 0) { return '2026-06-11 10:00:00'; }
++function get_option($k, $d = false) { return $GLOBALS['__opts'][$k] ?? $d; }
++function update_option($k, $v, $a = null) { $GLOBALS['__opts'][$k] = $v; return true; }
++function get_current_user_id() { return 7; }
++function dbDelta($sql) { return []; }
++$GLOBALS['__opts'] = [];
++
++class MockWpdb {
++    public $prefix = 'wp_';
++    public $insert_id = 0;
++    public $data = [];
++    public function get_charset_collate() { return ''; }
++    public function query($sql) { return true; }
++    public function insert($table, $row, $formats = null) {
++        $this->insert_id++; $row['id'] = $this->insert_id;
++        $this->data[$table][$this->insert_id] = $row; return 1;
++    }
++    public function update($table, $row, $where, $f = null, $wf = null) {
++        $id = (int) ($where['id'] ?? 0);
++        if (isset($this->data[$table][$id])) { $this->data[$table][$id] = array_merge($this->data[$table][$id], $row); return 1; }
++        return 0;
++    }
++    public function prepare($sql, $args = []) {
++        if (!is_array($args)) { $args = array_slice(func_get_args(), 1); }
++        foreach ($args as $a) {
++            $rep = is_int($a) ? (string) $a : "'" . addslashes((string) $a) . "'";
++            $sql = preg_replace('/%d|%s|%f/', $rep, $sql, 1);
++        }
++        return $sql;
++    }
++    public function get_row($sql, $output = OBJECT) {
++        if (preg_match('/FROM (\S+) WHERE id = (\d+)/', $sql, $m)) {
++            return $this->data[$m[1]][(int) $m[2]] ?? null;
++        }
++        return null;
++    }
++    public function get_var($sql) { return null; }
++    public function get_results($sql, $output = OBJECT) { return []; }
++}
++$GLOBALS['wpdb'] = new MockWpdb();
++
++require_once dirname(__DIR__) . '/includes/class-ves-ai-usage-tracker.php';
++require_once dirname(__DIR__) . '/includes/class-ves-intelligence-store.php';
++
++$pass = 0; $fail = 0;
++$ok = function ($cond, $label) use (&$pass, &$fail) {
++    if ($cond) { $pass++; }
++    else { $fail++; fwrite(STDERR, "FAIL: {$label}\n"); }
++};
++
++/** Seed an insight row with a given status (+ evidence unless $no_evidence). */
++$seed = function ($status, $no_evidence = false) {
++    global $wpdb;
++    $wpdb->insert_id++;
++    $id = $wpdb->insert_id;
++    $wpdb->data['wp_ves_intel_insights'][$id] = [
++        'id' => $id, 'workspace_id' => 1, 'insight_type' => 'trend', 'status' => $status,
++        'title' => 'matrix probe', 'summary' => 'probe', 'recommendation' => '',
++        'evidence_ids_json' => $no_evidence ? '[]' : '[11]',
++        'signal_ids_json' => '[]', 'metadata' => '{}',
++        'created_at' => '2026-06-11 09:00:00', 'updated_at' => '2026-06-11 09:00:00',
++    ];
++    return $id;
++};
++
++// ── 1. Pure matrix semantics ────────────────────────────────────────────────
++$ok(VES_Intelligence_Store::insight_transition_allowed('draft', 'reviewed'), 'draft -> reviewed allowed');
++$ok(VES_Intelligence_Store::insight_transition_allowed('draft', 'approved'), 'draft -> approved allowed (gated by evidence/quality elsewhere)');
++$ok(VES_Intelligence_Store::insight_transition_allowed('draft', 'rejected'), 'draft -> rejected allowed');
++$ok(VES_Intelligence_Store::insight_transition_allowed('reviewed', 'approved'), 'reviewed -> approved allowed');
++$ok(VES_Intelligence_Store::insight_transition_allowed('reviewed', 'rejected'), 'reviewed -> rejected allowed');
++$ok(VES_Intelligence_Store::insight_transition_allowed('approved', 'archived'), 'approved -> archived allowed');
++$ok(VES_Intelligence_Store::insight_transition_allowed('approved', 'approved'), 'same-status write stays allowed (idempotent)');
++
++$ok(!VES_Intelligence_Store::insight_transition_allowed('approved', 'draft'), 'approved CANNOT become draft/candidate again');
++$ok(!VES_Intelligence_Store::insight_transition_allowed('approved', 'reviewed'), 'approved cannot demote to reviewed');
++$ok(!VES_Intelligence_Store::insight_transition_allowed('approved', 'rejected'), 'approved cannot jump to rejected (archive instead)');
++$ok(!VES_Intelligence_Store::insight_transition_allowed('rejected', 'approved'), 'rejected CANNOT silently become approved');
++$ok(!VES_Intelligence_Store::insight_transition_allowed('rejected', 'reviewed'), 'rejected cannot silently become reviewed');
++$ok(!VES_Intelligence_Store::insight_transition_allowed('archived', 'approved'), 'archived CANNOT silently become approved');
++$ok(!VES_Intelligence_Store::insight_transition_allowed('rejected', 'draft'), 'rejected -> draft blocked without explicit reopen');
++$ok(!VES_Intelligence_Store::insight_transition_allowed('archived', 'draft'), 'archived -> draft blocked without explicit restore');
++
++// Overrides are narrow: ONLY back to draft, never to approved.
++$ok(VES_Intelligence_Store::insight_transition_allowed('rejected', 'draft', ['allow_reopen' => true]), 'explicit reopen: rejected -> draft allowed');
++$ok(VES_Intelligence_Store::insight_transition_allowed('archived', 'draft', ['allow_restore' => true]), 'explicit restore: archived -> draft allowed');
++$ok(!VES_Intelligence_Store::insight_transition_allowed('rejected', 'approved', ['allow_reopen' => true]), 'reopen flag can NEVER unlock rejected -> approved');
++$ok(!VES_Intelligence_Store::insight_transition_allowed('archived', 'approved', ['allow_restore' => true]), 'restore flag can NEVER unlock archived -> approved');
++$ok(!VES_Intelligence_Store::insight_transition_allowed('rejected', 'draft', ['allow_restore' => true]), 'restore flag does not unlock rejected (wrong override)');
++$ok(!VES_Intelligence_Store::insight_transition_allowed('archived', 'draft', ['allow_reopen' => true]), 'reopen flag does not unlock archived (wrong override)');
++
++// Unknown/legacy stored statuses may re-enter review but never approval directly.
++$ok(VES_Intelligence_Store::insight_transition_allowed('legacy_weird', 'draft'), 'unknown stored status may move to draft');
++$ok(!VES_Intelligence_Store::insight_transition_allowed('legacy_weird', 'approved'), 'unknown stored status cannot jump straight to approved');
++
++// Readiness probe.
++$ok(VES_Intelligence_Store::insight_transition_matrix_active() === true, 'transition matrix reports active');
++
++// ── 2. Store-level enforcement (DB path) ───────────────────────────────────
++$rejected = $seed('rejected');
++$res = VES_Intelligence_Store::update_insight_status($rejected, 'approved');
++$ok(is_wp_error($res) && $res->get_error_code() === 'ves_intel_transition_blocked', 'store blocks rejected -> approved with ves_intel_transition_blocked');
++$ok(($GLOBALS['wpdb']->data['wp_ves_intel_insights'][$rejected]['status'] ?? '') === 'rejected', 'blocked transition leaves stored status untouched');
++
++$approved = $seed('approved');
++$res = VES_Intelligence_Store::update_insight_status($approved, 'draft');
++$ok(is_wp_error($res) && $res->get_error_code() === 'ves_intel_transition_blocked', 'store blocks approved -> draft');
++
++$res = VES_Intelligence_Store::update_insight_status($approved, 'archived');
++$ok(!is_wp_error($res), 'store allows approved -> archived');
++
++$draft = $seed('draft');
++$res = VES_Intelligence_Store::update_insight_status($draft, 'approved');
++$ok(!is_wp_error($res), 'store allows draft -> approved when evidence present');
++
++$draft_no_evidence = $seed('draft', true);
++$res = VES_Intelligence_Store::update_insight_status($draft_no_evidence, 'approved');
++$ok(is_wp_error($res) && $res->get_error_code() === 'ves_intel_evidence_required', 'evidence gate still blocks promotion without evidence (matrix did not weaken it)');
++
++$rejected2 = $seed('rejected');
++$res = VES_Intelligence_Store::update_insight_status($rejected2, 'draft', ['reopened_reason' => 'new data'], ['allow_reopen' => true]);
++$ok(!is_wp_error($res), 'store allows explicit reopen rejected -> draft');
++$ok(($GLOBALS['wpdb']->data['wp_ves_intel_insights'][$rejected2]['status'] ?? '') === 'draft', 'reopened insight is back in draft (review), not approved');
++
++// ── 3. Lifecycle service wrappers ───────────────────────────────────────────
++require_once dirname(__DIR__) . '/includes/class-ves-insight-lifecycle-service.php';
++
++$rejected3 = $seed('rejected');
++$res = VES_Insight_Lifecycle_Service::reopen_insight($rejected3, '');
++$ok(is_wp_error($res) && $res->get_error_code() === 'ves_insight_reason_required', 'reopen without a reason is refused');
++
++$res = VES_Insight_Lifecycle_Service::reopen_insight($rejected3, 'reviewer asked for second look');
++$ok(!is_wp_error($res), 'reopen with reason succeeds');
++$row = $GLOBALS['wpdb']->data['wp_ves_intel_insights'][$rejected3];
++$ok($row['status'] === 'draft', 'service reopen lands on draft');
++$meta = json_decode((string) $row['metadata'], true);
++$ok(is_array($meta) && ($meta['reopened_reason'] ?? '') !== '' && isset($meta['reopened_by']), 'reopen is audited (reason + actor recorded)');
++
++$archived2 = $seed('archived');
++$res = VES_Insight_Lifecycle_Service::restore_insight($archived2, 'still relevant for Q3');
++$ok(!is_wp_error($res), 'restore with reason succeeds');
++$ok(($GLOBALS['wpdb']->data['wp_ves_intel_insights'][$archived2]['status'] ?? '') === 'draft', 'service restore lands on draft');
++
++echo "\n{$pass} passed, {$fail} failed\n";
++exit($fail === 0 ? 0 : 1);
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-ves-provider-safety-hardening.php ./future-island-intelligence-suite/tests/test-ves-provider-safety-hardening.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-ves-provider-safety-hardening.php	1970-01-01 00:00:00.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-ves-provider-safety-hardening.php	2026-06-11 12:23:16.811794616 +0000
+@@ -0,0 +1,100 @@
++<?php
++/**
++ * v0.1 RC — provider safety hardening contract (Apify).
++ *
++ * Proves by EXECUTION against a mocked HTTP layer (no live network):
++ *  1. run URLs carry the maxTotalChargeUsd ceiling and never a token
++ *  2. the token travels ONLY in the Authorization header
++ *  3. a run-start for a non-allowlisted actor is refused BEFORE any HTTP
++ *  4. allowlisted actors (registry, legacy map form, option extras) dispatch
++ *  5. read-style requests are never gated
++ *  6. a run-start URL missing the ceiling logs a config warning diagnostic
++ *
++ * Run: php tests/test-ves-provider-safety-hardening.php
++ */
++
++require __DIR__ . '/bootstrap-wp-shims.php';
++
++// platform-input needs the hard-ceiling helper (normally from legacy-config).
++if (!function_exists('ves_hard_max_charge_usd')) {
++    function ves_hard_max_charge_usd() { return 3.0; }
++}
++
++require dirname(__DIR__) . '/includes/class-ves-apify-actor-registry.php';
++require dirname(__DIR__) . '/includes/class-ves-apify-client.php';
++require dirname(__DIR__) . '/includes/platform-input.php';
++
++$state = ['total' => 0, 'pass' => 0, 'fail' => []];
++
++// ── 1. Run URL: ceiling present, token absent ───────────────────────────────
++$run_url = ves_make_run_url('apify/web-scraper', ves_prepare_run_options());
++ves_test_ok('run URL includes maxTotalChargeUsd ceiling', strpos($run_url, 'maxTotalChargeUsd=3') !== false, $state);
++ves_test_ok('run URL contains no token param', strpos($run_url, 'token=') === false, $state);
++ves_test_ok('run URL targets normalized ~ slug', strpos($run_url, '/v2/acts/apify~web-scraper/runs') !== false, $state);
++ves_test_ok('hard ceiling helper is positive', ves_hard_max_charge_usd() > 0, $state);
++
++// ── 2. Allowlist membership ─────────────────────────────────────────────────
++ves_test_ok('registry actor allowed (slash form)', VES_Apify_Actor_Registry::is_allowed_slug('apify/web-scraper'), $state);
++ves_test_ok('registry actor allowed (~ form)', VES_Apify_Actor_Registry::is_allowed_slug('apify~website-content-crawler'), $state);
++ves_test_ok('unknown actor is NOT allowed', !VES_Apify_Actor_Registry::is_allowed_slug('evil-actor/data-exfil'), $state);
++ves_test_ok('empty slug is NOT allowed', !VES_Apify_Actor_Registry::is_allowed_slug(''), $state);
++
++$GLOBALS['__ves_options']['ves_apify_actor_allowlist_extra'] = ['custom/approved-actor'];
++ves_test_ok('option extra extends the allowlist', VES_Apify_Actor_Registry::is_allowed_slug('custom~approved-actor'), $state);
++$GLOBALS['__ves_options']['ves_apify_actor_allowlist_extra'] = [];
++
++// ── 3. Dispatch gate: non-allowlisted actor refused before HTTP ─────────────
++VES_Test_HTTP::reset();
++VES_Admin::$diagnostics = [];
++VES_Config::$token = 'apify_api_TESTTOKEN1234567890';
++$blocked = VES_Apify_Client::request('POST', 'https://api.apify.com/v2/acts/evil-actor~data-exfil/runs?build=latest&maxTotalChargeUsd=3', ['q' => 'x']);
++ves_test_ok('non-allowlisted run-start returns WP_Error', is_wp_error($blocked), $state);
++ves_test_ok('error code is ves_actor_not_allowlisted', is_wp_error($blocked) && $blocked->get_error_code() === 'ves_actor_not_allowlisted', $state);
++ves_test_ok('non-allowlisted dispatch makes ZERO HTTP calls', count(VES_Test_HTTP::$calls) === 0, $state);
++ves_test_ok('refusal message leaks no token', is_wp_error($blocked) && strpos($blocked->get_error_message(), 'apify_api_') === false, $state);
++$diag = json_encode(VES_Admin::$diagnostics);
++ves_test_ok('refusal recorded as allowlist diagnostic', strpos($diag, 'apify_actor_not_allowlisted') !== false, $state);
++ves_test_ok('diagnostic leaks no token', strpos($diag, 'apify_api_TESTTOKEN1234567890') === false, $state);
++
++// run-sync variants are gated too.
++VES_Test_HTTP::reset();
++$blocked2 = VES_Apify_Client::request('POST', 'https://api.apify.com/v2/acts/evil-actor~data-exfil/run-sync-get-dataset-items?maxTotalChargeUsd=3', ['q' => 'x']);
++ves_test_ok('run-sync dispatch is gated as well', is_wp_error($blocked2) && $blocked2->get_error_code() === 'ves_actor_not_allowlisted' && count(VES_Test_HTTP::$calls) === 0, $state);
++
++// ── 4. Allowlisted actor dispatches; token only in Authorization header ─────
++VES_Test_HTTP::reset();
++VES_Test_HTTP::$queue[] = ['code' => 201, 'body' => ['data' => ['id' => 'RUN999', 'status' => 'READY']]];
++$url = ves_make_run_url('apify/web-scraper', ves_prepare_run_options());
++$okrun = VES_Apify_Client::request('POST', $url, ['startUrls' => [['url' => 'https://example.com']]]);
++ves_test_ok('allowlisted dispatch succeeds', is_array($okrun) && (int) ($okrun['code'] ?? 0) === 201, $state);
++$call = VES_Test_HTTP::$calls[0] ?? [];
++ves_test_ok('exactly one HTTP call made', count(VES_Test_HTTP::$calls) === 1, $state);
++ves_test_ok('Authorization header carries Bearer token', ($call['args']['headers']['Authorization'] ?? '') === 'Bearer apify_api_TESTTOKEN1234567890', $state);
++ves_test_ok('dispatched URL carries no token', strpos((string) ($call['url'] ?? ''), 'apify_api_') === false && strpos((string) ($call['url'] ?? ''), 'token=') === false, $state);
++ves_test_ok('dispatched URL carries the charge ceiling', strpos((string) ($call['url'] ?? ''), 'maxTotalChargeUsd=') !== false, $state);
++
++// ── 5. Read-style requests are never gated ──────────────────────────────────
++VES_Test_HTTP::reset();
++VES_Test_HTTP::$queue[] = ['code' => 200, 'body' => ['data' => ['id' => 'RUN1', 'status' => 'SUCCEEDED']]];
++$read = VES_Apify_Client::request('GET', 'https://api.apify.com/v2/acts/evil-actor~data-exfil/runs/RUN1');
++ves_test_ok('GET run status for any actor is not gated', is_array($read) && count(VES_Test_HTTP::$calls) === 1, $state);
++
++VES_Test_HTTP::reset();
++VES_Test_HTTP::$queue[] = ['code' => 200, 'body' => ['data' => ['items' => []]]];
++$abort = VES_Apify_Client::request('POST', 'https://api.apify.com/v2/actor-runs/RUN1/abort');
++ves_test_ok('abort (non run-start POST) is not gated', is_array($abort) && count(VES_Test_HTTP::$calls) === 1, $state);
++
++// ── 6. Missing ceiling on a run-start logs a warning diagnostic ─────────────
++VES_Test_HTTP::reset();
++VES_Admin::$diagnostics = [];
++VES_Test_HTTP::$queue[] = ['code' => 201, 'body' => ['data' => ['id' => 'RUN2']]];
++$no_ceiling = VES_Apify_Client::request('POST', 'https://api.apify.com/v2/acts/apify~web-scraper/runs?build=latest', ['q' => 'x']);
++ves_test_ok('missing-ceiling dispatch still proceeds (warn, not block)', is_array($no_ceiling), $state);
++$diag2 = json_encode(VES_Admin::$diagnostics);
++ves_test_ok('missing ceiling recorded as apify_charge_ceiling_missing', strpos($diag2, 'apify_charge_ceiling_missing') !== false, $state);
++
++// ── 7. Source-level guarantees ──────────────────────────────────────────────
++$pi_src = file_get_contents(dirname(__DIR__) . '/includes/platform-input.php');
++ves_test_ok('run URL builder never injects a token param', strpos($pi_src, "query['token']") === false && !preg_match('/[?&]token=/', $pi_src), $state);
++
++ves_test_finish('v0.1 RC provider-safety hardening', $state);
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-ves-rc-readiness-check.php ./future-island-intelligence-suite/tests/test-ves-rc-readiness-check.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-ves-rc-readiness-check.php	1970-01-01 00:00:00.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-ves-rc-readiness-check.php	2026-06-11 12:28:53.727786910 +0000
+@@ -0,0 +1,138 @@
++<?php
++/**
++ * v0.1 RC — rc-readiness-check service contract.
++ *
++ * Proves:
++ *  1. with core services missing the report is BLOCKED and says which ones
++ *  2. with a healthy stack the report is ready_* but live validation reads
++ *     UNRUN until an operator records it — and production_ready is ALWAYS false
++ *  3. safety probes actually probe (a broken trust boundary / matrix blocks)
++ *  4. feature flags ON produce warnings
++ *  5. report() never mutates state (no update_option calls)
++ *  6. output is JSON-encodable and carries checked_at
++ *
++ * Run: php tests/test-ves-rc-readiness-check.php
++ */
++error_reporting(E_ALL & ~E_DEPRECATED);
++if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
++
++function get_option($k, $d = false) { return $GLOBALS['__opts'][$k] ?? $d; }
++function update_option($k, $v, $a = null) { $GLOBALS['__opt_writes'][] = $k; $GLOBALS['__opts'][$k] = $v; return true; }
++function current_time($t = 'mysql', $g = 0) { return '2026-06-11 11:00:00'; }
++function sanitize_key($s) { return strtolower(preg_replace('/[^a-z0-9_\-]/i', '', (string) $s)); }
++function sanitize_text_field($s) { return trim(strip_tags((string) $s)); }
++function wp_json_encode($d, $o = 0) { return json_encode($d, $o); }
++$GLOBALS['__opts'] = [];
++$GLOBALS['__opt_writes'] = [];
++
++require_once dirname(__DIR__) . '/includes/class-ves-rc-readiness-service.php';
++
++$pass = 0; $fail = 0;
++$ok = function ($c, $l) use (&$pass, &$fail) { if ($c) { $pass++; } else { $fail++; fwrite(STDERR, "FAIL: $l\n"); } };
++
++// ── 1. Nothing loaded → BLOCKED, live validation UNRUN, never production ────
++$r = VES_RC_Readiness_Service::report();
++$ok(($r['status'] ?? '') === 'blocked', 'empty stack reports blocked');
++$ok(($r['live_validation']['status'] ?? '') === 'unrun', 'live validation reads UNRUN when never recorded');
++$ok(($r['production_ready'] ?? true) === false, 'production_ready is false');
++$ok(!empty($r['blockers']) && strpos(implode(' ', $r['blockers']), 'VES_Intelligence_Store') !== false, 'missing core services are named as blockers');
++$ok(!empty($r['checked_at']), 'checked_at present');
++$ok(is_string(json_encode($r)) && json_encode($r) !== false, 'report is JSON-encodable');
++$warn_text = implode(' ', (array) $r['warnings']);
++$ok(strpos($warn_text, 'UNRUN') !== false, 'warnings call out the unrun live validation');
++
++// ── 2. Healthy stack stubs ───────────────────────────────────────────────────
++// NOTE: declared inside a conditional block so PHP binds them at RUNTIME —
++// scenario 1 above must run with no services defined.
++if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.5'); }
++if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc1'); }
++if (!class_exists('VES_Intelligence_Store')) {
++final class VES_Intelligence_Store {
++    public static $matrix_active = true;
++    public static function insight_transition_matrix_active() { return self::$matrix_active; }
++}
++final class VES_Insight_Evidence_Validator {
++    public static $let_empty_pass = false;
++    public static function validate_insight($insight, $ctx) { return ['minimum_requirements_met' => self::$let_empty_pass]; }
++}
++final class VES_Insight_Lifecycle_Service {}
++final class VES_Brand_Context_Service {
++    public static $trust_everything = false;
++    public static function is_trusted($row) {
++        if (self::$trust_everything) { return true; }
++        $status = (string) ($row['status'] ?? '');
++        if (!in_array($status, ['active', 'pinned'], true)) { return false; }
++        $exp = (string) ($row['expires_at'] ?? '');
++        if ($exp !== '' && strtotime($exp) < strtotime('2026-06-11')) { return false; }
++        return true;
++    }
++}
++final class VES_Generation_Context_Resolver {}
++final class VES_Generation_Prompt_Package_Builder {
++    public static function execution_enabled() { return (bool) get_option('ves_generation_execution_enabled', false); }
++}
++final class VES_Operator_Queue_Service { public static function build(array $a = []) { return []; } }
++final class VES_Signal_Room { public static function render_html($w = 0) { return ''; } }
++final class VES_Workbench { public static function render_brief($a = []) { return ''; } public static function render_draft($a = []) { return ''; } }
++final class VES_Review_State {}
++final class VES_AI_Usage_Tracker {}
++final class VES_Usage_Billing {
++    public static function reserve_usage($a = null, $b = null, $c = null, $d = null, $e = null) {}
++    public static function settle_reserved_usage($a = null, $b = null, $c = null, $d = null) {}
++    public static function void_reserved_usage($a = null, $b = null) {}
++}
++final class VES_Apify_Client {}
++final class VES_Apify_Actor_Registry { public static function is_allowed_slug($s) { return false; } }
++final class VES_Trend_Observation_Store {}
++final class VES_Staging_Validation_Service { public static function schema_health() { return ['status' => 'ok', 'missing' => [], 'available' => true]; } }
++final class VES_Config {
++    public static $token = '';
++    public static function hard_max_charge_usd() { return 3.0; }
++    public static function get_token() { return self::$token; }
++}
++final class VES_Release_Candidate_Page {}
++} // end runtime-bound stub block
++
++$r = VES_RC_Readiness_Service::report();
++$ok(($r['status'] ?? '') !== 'blocked', 'healthy stack is not blocked');
++$ok(($r['status'] ?? '') === 'ready_with_warnings', 'healthy stack with unrun live validation is ready_with_warnings');
++$ok(($r['production_ready'] ?? true) === false, 'production_ready stays false even when healthy');
++
++// ── 3. Live validation recorded → ok’d but production still false ───────────
++VES_Config::$token = 'apify_api_x';
++$GLOBALS['__opts']['ves_rc_live_validation'] = ['status' => 'passed', 'recorded_at' => '2026-06-12 09:00:00', 'note' => 'ops signoff'];
++$r = VES_RC_Readiness_Service::report();
++$ok(($r['live_validation']['status'] ?? '') === 'passed', 'recorded live validation is surfaced');
++$ok(($r['status'] ?? '') === 'ready_for_staging', 'fully healthy + recorded validation reaches ready_for_staging');
++$ok(($r['production_ready'] ?? true) === false, 'production_ready is STILL false — command cannot grant it');
++unset($GLOBALS['__opts']['ves_rc_live_validation']);
++
++// ── 4. Safety probes really probe ────────────────────────────────────────────
++VES_Brand_Context_Service::$trust_everything = true;
++$r = VES_RC_Readiness_Service::report();
++$ok(($r['status'] ?? '') === 'blocked' && strpos(implode(' ', $r['blockers']), 'Untrusted memory') !== false, 'broken memory trust boundary BLOCKS');
++VES_Brand_Context_Service::$trust_everything = false;
++
++VES_Intelligence_Store::$matrix_active = false;
++$r = VES_RC_Readiness_Service::report();
++$ok(($r['status'] ?? '') === 'blocked', 'inactive transition matrix BLOCKS');
++VES_Intelligence_Store::$matrix_active = true;
++
++VES_Insight_Evidence_Validator::$let_empty_pass = true;
++$r = VES_RC_Readiness_Service::report();
++$ok(strpos(implode(' ', $r['blockers']), 'Evidence gate FAILED') !== false, 'evidence gate that passes zero evidence BLOCKS');
++VES_Insight_Evidence_Validator::$let_empty_pass = false;
++
++// ── 5. Feature flag ON warns ─────────────────────────────────────────────────
++$GLOBALS['__opts']['ves_generation_execution_enabled'] = true;
++$r = VES_RC_Readiness_Service::report();
++$ok(($r['status'] ?? '') === 'ready_with_warnings' && strpos(implode(' ', $r['warnings']), 'ves_generation_execution_enabled') !== false, 'generation execution flag ON produces a warning');
++$GLOBALS['__opts']['ves_generation_execution_enabled'] = false;
++
++// ── 6. No mutation ───────────────────────────────────────────────────────────
++$GLOBALS['__opt_writes'] = [];
++VES_RC_Readiness_Service::report();
++$ok($GLOBALS['__opt_writes'] === [], 'report() performed zero option writes (read-only)');
++
++echo "\n{$pass} passed, {$fail} failed\n";
++exit($fail === 0 ? 0 : 1);
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-ves-release-candidate-page.php ./future-island-intelligence-suite/tests/test-ves-release-candidate-page.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-ves-release-candidate-page.php	1970-01-01 00:00:00.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-ves-release-candidate-page.php	2026-06-11 12:29:45.663785722 +0000
+@@ -0,0 +1,88 @@
++<?php
++/**
++ * v0.1 RC — Release Candidate page honesty contract.
++ *
++ * Renders the REAL page (real VES_RC_Readiness_Service + VES_Review_State) and
++ * proves:
++ *  1. it renders and identifies itself as Future Island / Release Candidate
++ *  2. live validation reads UNRUN and the page says NOT production-ready —
++ *     there is no affirmative production-ready / fake green state
++ *  3. no Generate / Publish / Auto-approve affordances exist
++ *  4. feature flags and required staging commands are listed
++ *  5. rendering performs zero option writes (read-only)
++ *  6. untrusted dynamic strings are escaped
++ *
++ * Run: php tests/test-ves-release-candidate-page.php
++ */
++error_reporting(E_ALL & ~E_DEPRECATED);
++if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
++if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.5'); }
++if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc1'); }
++
++function get_option($k, $d = false) { return $GLOBALS['__opts'][$k] ?? $d; }
++function update_option($k, $v, $a = null) { $GLOBALS['__opt_writes'][] = $k; $GLOBALS['__opts'][$k] = $v; return true; }
++function current_time($t = 'mysql', $g = 0) { return '2026-06-11 11:00:00'; }
++function sanitize_key($s) { return strtolower(preg_replace('/[^a-z0-9_\-]/i', '', (string) $s)); }
++function sanitize_text_field($s) { return trim(strip_tags((string) $s)); }
++function wp_json_encode($d, $o = 0) { return json_encode($d, $o); }
++function esc_html($s) { return htmlspecialchars((string) $s, ENT_QUOTES); }
++function esc_attr($s) { return htmlspecialchars((string) $s, ENT_QUOTES); }
++function apply_filters($t, $v) { return $v; }
++$GLOBALS['__opts'] = [];
++$GLOBALS['__opt_writes'] = [];
++
++require_once dirname(__DIR__) . '/includes/class-ves-review-state.php';
++require_once dirname(__DIR__) . '/includes/class-ves-rc-readiness-service.php';
++require_once dirname(__DIR__) . '/includes/class-ves-release-candidate-page.php';
++
++$pass = 0; $fail = 0;
++$ok = function ($c, $l) use (&$pass, &$fail) { if ($c) { $pass++; } else { $fail++; fwrite(STDERR, "FAIL: $l\n"); } };
++
++$html = VES_Release_Candidate_Page::render_html();
++
++// ── 1. Identity ──────────────────────────────────────────────────────────────
++$ok(strpos($html, 'Release Candidate') !== false, 'page titles itself Release Candidate');
++$ok(strpos($html, 'Future Island') !== false, 'page carries the Future Island identity');
++$ok(strpos($html, '1.2.5') !== false && strpos($html, 'v0.1-rc1') !== false, 'version + RC label shown');
++
++// ── 2. Honesty: UNRUN + never production-ready ───────────────────────────────
++$ok(strpos($html, 'UNRUN') !== false, 'page states live staging validation is UNRUN');
++$ok(strpos($html, 'NOT production-ready') !== false, 'page states the build is NOT production-ready');
++$ok(!preg_match('/production[\s-]ready\s*[:=]?\s*(yes|sí|true)/i', $html), 'no affirmative production-ready claim');
++$ok(!preg_match('/\ball\s+(phases|checks)\s+(passed|complete)/i', $html), 'no fake all-passed claim');
++// The "Production-ready" row must render the blocked/negative badge, not ready.
++$ok(strpos($html, 'Production-ready: <span class="fi-status-badge fiis-badge-blocked"') !== false, 'production-ready row uses the blocked badge with label No');
++
++// ── 3. No unsafe affordances ─────────────────────────────────────────────────
++$ok(stripos($html, 'Generate with AI') === false && !preg_match('/<button[^>]*>(\s|&nbsp;)*Generate/i', $html), 'no Generate button');
++$ok(stripos($html, 'Publish now') === false && !preg_match('/<button[^>]*>(\s|&nbsp;)*Publish/i', $html), 'no Publish button');
++$ok(stripos($html, 'Auto approve') === false && stripos($html, 'auto-approve behavior') !== false, 'no auto-approve affordance (only the guarantee text)');
++$ok(strpos($html, '<form') === false && strpos($html, 'type="submit"') === false, 'page contains no mutating form');
++
++// ── 4. Flags + commands listed ───────────────────────────────────────────────
++$ok(strpos($html, 'ves_generation_execution_enabled') !== false, 'generation execution flag listed');
++$ok(strpos($html, 'VES_PRODUCTION_MVP') !== false, 'production MVP flag listed');
++$ok(strpos($html, 'wp ves rc-readiness-check') !== false, 'rc-readiness-check command listed');
++$ok(strpos($html, 'wp ves verify-schema') !== false, 'verify-schema command listed');
++$ok(strpos($html, 'RELEASE-CANDIDATE-RUNBOOK.md') !== false, 'runbook referenced');
++$ok(stripos($html, '--apply') !== false, 'page warns about --apply during validation');
++
++// ── 5. Read-only ─────────────────────────────────────────────────────────────
++$ok($GLOBALS['__opt_writes'] === [], 'rendering performed zero option writes');
++
++// ── 6. Escaping of untrusted strings ─────────────────────────────────────────
++$GLOBALS['__opts']['ves_rc_live_validation'] = ['status' => 'passed', 'recorded_at' => '<script>alert(1)</script>', 'note' => 'x'];
++$html2 = VES_Release_Candidate_Page::render_html();
++$ok(strpos($html2, '<script>alert(1)</script>') === false, 'recorded_at is escaped/sanitized (no raw script)');
++$ok(strpos($html2, 'recorded as passed') !== false, 'recorded pass state is surfaced');
++$ok(strpos($html2, 'never grants production status') !== false, 'even a recorded pass does not grant production status');
++unset($GLOBALS['__opts']['ves_rc_live_validation']);
++
++// Flag ON renders as ON (honest), not hidden.
++$GLOBALS['__opts']['ves_generation_execution_enabled'] = true;
++$html3 = VES_Release_Candidate_Page::render_html();
++$ok(strpos($html3, '>ON<') !== false, 'an enabled flag is shown as ON, not hidden');
++$GLOBALS['__opts']['ves_generation_execution_enabled'] = false;
++
++echo "\n{$pass} passed, {$fail} failed\n";
++exit($fail === 0 ? 0 : 1);
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-ves-trend-replay-idempotency.php ./future-island-intelligence-suite/tests/test-ves-trend-replay-idempotency.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-ves-trend-replay-idempotency.php	1970-01-01 00:00:00.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-ves-trend-replay-idempotency.php	2026-06-11 12:26:17.671790480 +0000
+@@ -0,0 +1,133 @@
++<?php
++/**
++ * v0.1 RC — trend replay / backfill IDEMPOTENCY contract (real classes).
++ *
++ * Exercises the REAL VES_Trend_Observation_Store + VES_Trend_Backfill_Service
++ * (no stubs of the code under test) against an in-memory wpdb to prove:
++ *  1. dry-run writes NOTHING (no rows, no done-marker)
++ *  2. apply persists observations and marks the report done
++ *  3. REPLAYING the same report is skipped (already_backfilled) — observation
++ *     values are NOT double-counted
++ *  4. observation row dedup: same canonical observation maps to the same row id
++ *  5. a failed-insert run leaves the report unmarked so a later run can recover,
++ *     and that later successful run still ends idempotent
++ *
++ * Run: php tests/test-ves-trend-replay-idempotency.php
++ */
++error_reporting(E_ALL & ~E_DEPRECATED);
++if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
++if (!defined('ARRAY_A')) { define('ARRAY_A', 'ARRAY_A'); }
++
++class WP_Error { public $code; public $message; public function __construct($c='',$m='',$d=[]){$this->code=$c;$this->message=$m;} public function get_error_code(){return $this->code;} public function get_error_message(){return $this->message;} }
++function is_wp_error($t){return $t instanceof WP_Error;}
++function sanitize_text_field($s){return trim(preg_replace('/[\r\n\t]+/',' ',strip_tags((string)$s)));}
++function sanitize_key($s){return strtolower(preg_replace('/[^a-z0-9_\-]/i','',(string)$s));}
++function esc_url_raw($s){return trim((string)$s);}
++function wp_json_encode($d,$o=0){return json_encode($d,$o);}
++function current_time($t='mysql',$g=0){return '2026-06-11 09:00:00';}
++function get_option($k,$d=false){return $GLOBALS['__o'][$k]??$d;}
++function update_option($k,$v,$a=null){$GLOBALS['__o'][$k]=$v;return true;}
++function dbDelta($s){return [];}
++$GLOBALS['__o']=[];
++
++final class FIDTF_DB { public static function table($k) { return 'wp_fi_dtf_' . ($k === 'runs' ? 'runs' : 'reports'); } }
++
++class TrendWpdb {
++    public $prefix='wp_'; public $insert_id=0; private $auto=0; public $data=[];
++    public $fail_inserts=false; // simulate transient insert failures
++    public function get_charset_collate(){return '';}
++    public function query($s){return true;}
++    public function insert($t,$r,$f=null){if($this->fail_inserts)return false;$this->auto++;$r['id']=$this->auto;$this->data[$t][$this->auto]=$r;$this->insert_id=$this->auto;return 1;}
++    public function update($t,$r,$w,$f=null,$wf=null){$id=(int)($w['id']??0);if(isset($this->data[$t][$id])){$this->data[$t][$id]=array_merge($this->data[$t][$id],$r);return 1;}return 0;}
++    public function prepare($sql,$args=[]){if(!is_array($args))$args=array_slice(func_get_args(),1);foreach($args as $a){$rep=is_int($a)?(string)$a:"'".addslashes((string)$a)."'";$sql=preg_replace('/%d|%s|%f/',$rep,$sql,1);}return $sql;}
++    private function rows($sql){
++        if(!preg_match('/FROM (\S+)/',$sql,$m))return [null,[]];
++        $table=$m[1];$rows=$this->data[$table]??[];
++        $where=substr($sql,strpos($sql,'WHERE')!==false?strpos($sql,'WHERE')+5:strlen($sql));
++        $where=preg_split('/ORDER BY| LIMIT| GROUP BY/',$where)[0];
++        preg_match_all("/(\w+)\s*=\s*'?([^'\s]+)'?/",$where,$mm,PREG_SET_ORDER);
++        $conds=[];foreach($mm as $p){if(ctype_digit($p[1]))continue;$conds[$p[1]]=$p[2];}
++        $out=[];foreach($rows as $r){$ok=true;foreach($conds as $k=>$v){if((string)($r[$k]??'')!==(string)$v){$ok=false;break;}}if($ok)$out[]=$r;}
++        return [$table,$out];
++    }
++    public function get_var($sql){
++        if(preg_match('/COUNT\(\*\) FROM/',$sql)){[$t,$rows]=$this->rows($sql);return (string)count($rows);}
++        if(preg_match('/SELECT (\w+) FROM/',$sql,$sm)){[$t,$rows]=$this->rows($sql);return $rows?($rows[0][$sm[1]]??null):null;}
++        return null;
++    }
++    public function get_row($sql,$o=null){[$t,$rows]=$this->rows($sql);return $rows?$rows[0]:null;}
++    public function get_results($sql,$o=null){[$t,$rows]=$this->rows($sql);return array_values($rows);}
++}
++$GLOBALS['wpdb']=new TrendWpdb();
++
++require_once dirname(__DIR__).'/includes/class-ves-ai-usage-tracker.php';
++require_once dirname(__DIR__).'/includes/class-ves-trend-observation-store.php';
++require_once dirname(__DIR__).'/includes/class-ves-trend-golden-set.php';
++require_once dirname(__DIR__).'/includes/class-ves-trend-backfill-service.php';
++
++$pass=0;$fail=0;
++$ok=function($c,$l)use(&$pass,&$fail){if($c){$pass++;}else{$fail++;fwrite(STDERR,"FAIL: $l\n");}};
++
++$obs_table = 'wp_ves_trend_observations';
++$obs_total = function () use ($obs_table) { return count($GLOBALS['wpdb']->data[$obs_table] ?? []); };
++$obs_value_sum = function () use ($obs_table) {
++    $sum = 0.0;
++    foreach (($GLOBALS['wpdb']->data[$obs_table] ?? []) as $r) { $sum += (float) ($r['value_number'] ?? 0); }
++    return $sum;
++};
++
++// Seed one historical DTF report: 2 keyword terms (counts 5 and 3).
++$GLOBALS['wpdb']->data['wp_fi_dtf_reports'][101] = [
++    'id' => 101,
++    'final_synthesis_json' => json_encode(['top_terms' => [['label' => 'ai agents', 'count' => 5], ['label' => 'rag', 'count' => 3]]]),
++];
++$candidate = ['report_id' => 101, 'run_id' => 11, 'workspace_id' => 1, 'created_at' => '2026-05-01 00:00:00', 'reason' => 'eligible'];
++
++// ── 1. Dry-run writes nothing ────────────────────────────────────────────────
++$res = VES_Trend_Backfill_Service::backfill_report($candidate, ['dry_run' => true]);
++$ok(($res['reason'] ?? '') === 'eligible' && (int) $res['created'] === 2, 'dry-run reports 2 extractable observations');
++$ok($obs_total() === 0, 'dry-run persisted ZERO observation rows');
++$ok(get_option('ves_trend_backfill_done', []) === [], 'dry-run did not mark the report done');
++
++// ── 2. Apply persists + marks done ───────────────────────────────────────────
++$res = VES_Trend_Backfill_Service::backfill_report($candidate, []);
++$ok((int) $res['created'] === 2 && ($res['reason'] ?? '') === 'eligible', 'apply created 2 observations');
++$ok($obs_total() === 2, 'two observation rows persisted');
++$sum_after_apply = $obs_value_sum();
++$ok(abs($sum_after_apply - 8.0) < 0.0001, 'observation values total 8.0 (5 + 3)');
++$ok(in_array(101, (array) get_option('ves_trend_backfill_done', []), true), 'report marked done after apply');
++
++// ── 3. REPLAY is skipped — no double count ───────────────────────────────────
++$res = VES_Trend_Backfill_Service::backfill_report($candidate, []);
++$ok(($res['reason'] ?? '') === 'already_backfilled', 'replay of the same report is skipped (already_backfilled)');
++$ok((int) $res['created'] === 0, 'replay created zero observations');
++$ok($obs_total() === 2, 'replay added no rows');
++$ok(abs($obs_value_sum() - $sum_after_apply) < 0.0001, 'replay did NOT double-count observation values');
++
++// ── 4. Observation row dedup: same canonical observation → same row id ──────
++$obs = ['workspace_id' => 9, 'observation_type' => 'keyword', 'term' => 'island marketing', 'platform' => 'tiktok', 'provider' => 'apify', 'observed_at' => '2026-06-01 12:00:00', 'value_number' => 2.0, 'raw_count' => 2];
++$id1 = VES_Trend_Observation_Store::create_or_get_observation($obs);
++$id2 = VES_Trend_Observation_Store::create_or_get_observation($obs);
++$ok(!is_wp_error($id1) && !is_wp_error($id2) && (int) $id1 === (int) $id2, 'same canonical observation resolves to the SAME row (no duplicate rows)');
++$dup_rows = 0;
++foreach (($GLOBALS['wpdb']->data[$obs_table] ?? []) as $r) { if (($r['term'] ?? '') === 'island marketing') { $dup_rows++; } }
++$ok($dup_rows === 1, 'exactly one row exists for the deduped observation');
++
++// ── 5. Failed inserts leave the report recoverable, then converge ───────────
++$GLOBALS['wpdb']->data['wp_fi_dtf_reports'][102] = [
++    'id' => 102,
++    'final_synthesis_json' => json_encode(['top_terms' => [['label' => 'beach clubs', 'count' => 4]]]),
++];
++$candidate2 = ['report_id' => 102, 'run_id' => 12, 'workspace_id' => 1, 'created_at' => '2026-05-02 00:00:00', 'reason' => 'eligible'];
++$GLOBALS['wpdb']->fail_inserts = true;
++$res = VES_Trend_Backfill_Service::backfill_report($candidate2, []);
++$ok(($res['reason'] ?? '') === 'insert_failed' && (int) $res['created'] === 0, 'all-inserts-failed run reports insert_failed');
++$ok(!in_array(102, (array) get_option('ves_trend_backfill_done', []), true), 'failed run does NOT mark the report done (recoverable)');
++$GLOBALS['wpdb']->fail_inserts = false;
++$res = VES_Trend_Backfill_Service::backfill_report($candidate2, []);
++$ok((int) $res['created'] === 1, 'recovery run persists the observation');
++$res = VES_Trend_Backfill_Service::backfill_report($candidate2, []);
++$ok(($res['reason'] ?? '') === 'already_backfilled', 'post-recovery replay converges to already_backfilled');
++
++echo "\n{$pass} passed, {$fail} failed\n";
++exit($fail === 0 ? 0 : 1);
+diff -ruN /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-ves-usage-settlement-zero-delivery.php ./future-island-intelligence-suite/tests/test-ves-usage-settlement-zero-delivery.php
+--- /tmp/fi-work/extracted/future-island-intelligence-suite/tests/test-ves-usage-settlement-zero-delivery.php	1970-01-01 00:00:00.000000000 +0000
++++ ./future-island-intelligence-suite/tests/test-ves-usage-settlement-zero-delivery.php	2026-06-11 12:24:28.943792967 +0000
+@@ -0,0 +1,94 @@
++<?php
++/**
++ * v0.1 RC — charge-on-failure settlement contract.
++ *
++ * Proves by EXECUTION that a provider run which SUCCEEDS upstream but delivers
++ * nothing usable is never final-charged as a successful delivery:
++ *  - zero raw rows + zero delivered  -> settlement_classification
++ *    'not_chargeable_zero_delivery', final cost 0.0
++ *  - raw rows but zero delivered     -> 'failed_delivery_base_fee_only',
++ *    final cost capped at the base scan fee
++ *  - normal delivery                 -> 'delivered_charged'
++ *  - the honest classification + zero-delivery diagnostic reach the ledger
++ *  - no fabricated cost: final charge never exceeds the reservation
++ *
++ * Run: php tests/test-ves-usage-settlement-zero-delivery.php
++ */
++
++require __DIR__ . '/bootstrap-wp-shims.php';
++
++if (!function_exists('wp_strip_all_tags')) { function wp_strip_all_tags($s) { return strip_tags((string) $s); } }
++if (!function_exists('sanitize_textarea_field')) { function sanitize_textarea_field($s) { return trim(strip_tags((string) $s)); } }
++if (!function_exists('esc_url_raw')) { function esc_url_raw($s) { return trim((string) $s); } }
++if (!function_exists('wp_unslash')) { function wp_unslash($v) { return $v; } }
++if (!function_exists('number_format_i18n')) { function number_format_i18n($n, $decimals = 0) { return number_format((float) $n, (int) $decimals); } }
++if (!function_exists('wp_parse_url')) { function wp_parse_url($url, $component = -1) { return parse_url($url, $component); } }
++if (!function_exists('absint')) { function absint($v) { return abs((int) $v); } }
++if (!function_exists('get_current_user_id')) { function get_current_user_id() { return 3; } }
++
++// Ledger stub: records every settle call; reserve cost is 1.0 credit.
++final class VES_Usage_Billing {
++    public static $settled = [];
++    public static function get_cost($type) { return 1.0; }
++    public static function settle_reserved_usage($usage_key, $final_cost, $message = '', $context = []) {
++        self::$settled[] = ['usage_key' => $usage_key, 'final_cost' => (float) $final_cost, 'message' => (string) $message, 'context' => $context];
++        return ['settled' => true, 'final_cost' => (float) $final_cost];
++    }
++    public static function void_reserved_usage($usage_key, $reason = '') { return true; }
++}
++
++$root = dirname(__DIR__);
++require_once $root . '/includes/analysis.php';
++require_once $root . '/includes/class-ves-ajax-controller.php';
++
++$state = ['total' => 0, 'pass' => 0, 'fail' => []];
++
++$ctx_method = new ReflectionMethod('VES_Ajax_Controller', 'delivery_usage_context');
++$ctx_method->setAccessible(true);
++$settle_method = new ReflectionMethod('VES_Ajax_Controller', 'settle_standard_usage_by_delivery');
++$settle_method->setAccessible(true);
++
++$request = ['limit' => 20];
++
++// ── 1. Provider succeeded, dataset empty (zero raw, zero delivered) ─────────
++$formatted = ['items' => [], 'all_items_count' => 0, 'raw_provider_returned_count' => 0, 'run_id' => 'RUN-EMPTY', 'status' => 'succeeded', 'provider_cost_usd' => 0.0];
++$ctx = $ctx_method->invoke(null, $formatted, 'tiktok', $request, 'apidojo/tiktok-scraper');
++ves_test_ok('zero-delivery classified not_chargeable_zero_delivery', ($ctx['settlement_classification'] ?? '') === 'not_chargeable_zero_delivery', $state);
++ves_test_ok('zero-delivery final cost is 0.0', (float) $ctx['credits_charged_final'] === 0.0, $state);
++ves_test_ok('zero-delivery refunds the full reservation', (float) $ctx['credits_refunded_or_voided'] === (float) $ctx['credits_reserved'], $state);
++
++// ── 2. Provider returned rows but nothing usable was delivered ──────────────
++$formatted = ['items' => [], 'all_items_count' => 0, 'raw_provider_returned_count' => 14, 'run_id' => 'RUN-FILTERED', 'status' => 'succeeded', 'provider_cost_usd' => 0.05];
++$ctx = $ctx_method->invoke(null, $formatted, 'tiktok', $request, 'apidojo/tiktok-scraper');
++ves_test_ok('filtered-to-zero classified failed_delivery_base_fee_only', ($ctx['settlement_classification'] ?? '') === 'failed_delivery_base_fee_only', $state);
++ves_test_ok('filtered-to-zero charges at most the base scan fee', (float) $ctx['credits_charged_final'] <= 0.25 + 0.0001, $state);
++ves_test_ok('filtered-to-zero never charges the full reservation', (float) $ctx['credits_charged_final'] < (float) $ctx['credits_reserved'], $state);
++
++// ── 3. Normal delivery stays delivered_charged ──────────────────────────────
++$items = []; for ($i = 0; $i < 20; $i++) { $items[] = ['id' => $i]; }
++$formatted = ['items' => $items, 'all_items_count' => 20, 'raw_provider_returned_count' => 20, 'run_id' => 'RUN-OK', 'status' => 'succeeded', 'provider_cost_usd' => 0.05];
++$ctx = $ctx_method->invoke(null, $formatted, 'tiktok', $request, 'apidojo/tiktok-scraper');
++ves_test_ok('full delivery classified delivered_charged', ($ctx['settlement_classification'] ?? '') === 'delivered_charged', $state);
++ves_test_ok('final charge never exceeds the reservation', (float) $ctx['credits_charged_final'] <= (float) $ctx['credits_reserved'], $state);
++
++// ── 4. End-to-end settle: classification + honest message reach the ledger ──
++VES_Usage_Billing::$settled = [];
++VES_Admin::$diagnostics = [];
++$formatted = ['items' => [], 'all_items_count' => 0, 'raw_provider_returned_count' => 0, 'run_id' => 'RUN-EMPTY2', 'status' => 'succeeded'];
++$settle_method->invoke(null, 'usage-key-1', 'req-1', 'usage_billing', $formatted, 'tiktok', $request, 'apidojo/tiktok-scraper');
++$entry = VES_Usage_Billing::$settled[0] ?? [];
++ves_test_ok('settle was invoked once', count(VES_Usage_Billing::$settled) === 1, $state);
++ves_test_ok('ledger receives final cost 0.0 for zero delivery', (float) ($entry['final_cost'] ?? -1) === 0.0, $state);
++ves_test_ok('ledger context carries the settlement classification', (($entry['context']['settlement_classification'] ?? '') === 'not_chargeable_zero_delivery'), $state);
++ves_test_ok('ledger message is honest about zero delivery (not "confirmado")', strpos((string) ($entry['message'] ?? ''), 'sin resultados entregables') !== false, $state);
++$diag = json_encode(VES_Admin::$diagnostics);
++ves_test_ok('zero-delivery settlement recorded as diagnostic', strpos($diag, 'usage_settlement_zero_delivery') !== false, $state);
++
++// ── 5. Normal delivery keeps the original confirmation message ──────────────
++VES_Usage_Billing::$settled = [];
++$formatted = ['items' => $items, 'all_items_count' => 20, 'raw_provider_returned_count' => 20, 'run_id' => 'RUN-OK2', 'status' => 'succeeded'];
++$settle_method->invoke(null, 'usage-key-2', 'req-2', 'usage_billing', $formatted, 'tiktok', $request, 'apidojo/tiktok-scraper');
++$entry = VES_Usage_Billing::$settled[0] ?? [];
++ves_test_ok('delivered runs keep the confirmation message', strpos((string) ($entry['message'] ?? ''), 'confirmado por resultados entregados') !== false, $state);
++
++ves_test_finish('v0.1 RC zero-delivery settlement', $state);

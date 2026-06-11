@@ -1071,13 +1071,63 @@ final class VES_Intelligence_Store {
     }
 
     /**
+     * v0.1 RC — insight lifecycle transition matrix. Key = current status, value =
+     * statuses reachable WITHOUT an explicit override. Same-status writes are allowed
+     * (idempotent retries / metadata refresh). rejected and archived are TERMINAL:
+     * leaving them requires the explicit, audited reopen/restore override below —
+     * rejected can never silently become approved, and approved can never silently
+     * fall back to draft.
+     */
+    const INSIGHT_STATUS_TRANSITIONS = [
+        'draft'    => ['draft', 'reviewed', 'approved', 'rejected', 'archived'],
+        'reviewed' => ['reviewed', 'approved', 'rejected', 'archived'],
+        'approved' => ['approved', 'archived'],
+        'rejected' => ['rejected'],
+        'archived' => ['archived'],
+    ];
+
+    /**
+     * Pure transition check (no DB). $opts:
+     *   - allow_reopen  (bool) permits ONLY rejected -> draft (back into review, never approved)
+     *   - allow_restore (bool) permits ONLY archived -> draft (back into review, never approved)
+     */
+    public static function insight_transition_allowed(string $from, string $to, array $opts = []): bool {
+        $from = self::sanitize_key($from, 24);
+        $to   = self::sanitize_key($to, 24);
+        $enum = self::enums()['insight_status'];
+        if (!in_array($to, $enum, true)) { return false; }
+        if (!in_array($from, $enum, true)) {
+            // Unknown/legacy stored status: only allow moving into review states,
+            // never directly into approved (mirrors "missing status is untrusted").
+            return in_array($to, ['draft', 'reviewed', 'rejected', 'archived'], true);
+        }
+        $allowed = self::INSIGHT_STATUS_TRANSITIONS[$from] ?? [$from];
+        if (in_array($to, $allowed, true)) { return true; }
+        if ($from === 'rejected' && $to === 'draft' && !empty($opts['allow_reopen'])) { return true; }
+        if ($from === 'archived' && $to === 'draft' && !empty($opts['allow_restore'])) { return true; }
+        return false;
+    }
+
+    /** Readiness probe: true when the transition matrix is compiled in and enforcing. */
+    public static function insight_transition_matrix_active(): bool {
+        return self::insight_transition_allowed('draft', 'approved')
+            && !self::insight_transition_allowed('rejected', 'approved')
+            && !self::insight_transition_allowed('rejected', 'approved', ['allow_reopen' => true])
+            && !self::insight_transition_allowed('archived', 'approved', ['allow_restore' => true])
+            && !self::insight_transition_allowed('approved', 'draft');
+    }
+
+    /**
      * Phase 5 — update an insight's status (lifecycle). HARD EVIDENCE GATE: an
      * insight can never be moved to reviewed/approved without at least one linked
-     * evidence id (the safety net for the create path's enforcement). Updates only
+     * evidence id (the safety net for the create path's enforcement). v0.1 RC adds
+     * the HARD TRANSITION MATRIX above: terminal states stay terminal unless the
+     * caller passes the explicit reopen/restore override in $opts, and the override
+     * only ever leads back to draft (review), never to approved. Updates only
      * status/updated_at and merges a bounded, scrubbed metadata patch; never touches
      * the evidence links or created_at. @return int|WP_Error
      */
-    public static function update_insight_status(int $insight_id, string $status, array $metadata_merge = []) {
+    public static function update_insight_status(int $insight_id, string $status, array $metadata_merge = [], array $opts = []) {
         global $wpdb;
         $status = self::sanitize_key($status, 24);
         if (!in_array($status, self::enums()['insight_status'], true)) {
@@ -1086,6 +1136,11 @@ final class VES_Intelligence_Store {
         $insight = self::get_insight($insight_id);
         if (!is_array($insight)) { return new WP_Error('ves_intel_not_found', 'Insight not found.'); }
         if (!isset($wpdb) || !is_object($wpdb)) { return new WP_Error('ves_intel_no_db', 'Database unavailable.'); }
+
+        $current = self::sanitize_key((string) ($insight['status'] ?? 'draft'), 24);
+        if (!self::insight_transition_allowed($current, $status, $opts)) {
+            return new WP_Error('ves_intel_transition_blocked', "Insight status transition '{$current}' -> '{$status}' is not allowed.", ['from' => $current, 'to' => $status]);
+        }
 
         $evidence_ids = is_array($insight['evidence_ids'] ?? null) ? $insight['evidence_ids'] : self::decode_ids((string) ($insight['evidence_ids_json'] ?? '[]'));
         if (in_array($status, ['reviewed', 'approved'], true) && count($evidence_ids) === 0) {

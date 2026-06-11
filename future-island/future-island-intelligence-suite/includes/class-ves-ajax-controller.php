@@ -2839,14 +2839,23 @@ final class VES_Ajax_Controller {
             : ($requested > 0 ? max(0.0, ($reserved_cost - $base_fee) / max(1, $requested)) : $reserved_cost);
         $final_cost = $base_fee + ($delivered * $per_result);
         $final_cost = max(0.0, min($reserved_cost, round($final_cost, 2)));
+        // v0.1 RC: explicit settlement classification so the ledger says WHY a
+        // reserved charge was reduced. Provider success with nothing delivered is
+        // never final-charged as a successful delivery:
+        //  - zero raw rows + zero delivered  -> not chargeable at all (0.0)
+        //  - raw rows but zero delivered     -> failed delivery, base scan fee only
+        $settlement_classification = 'delivered_charged';
         if ($delivered <= 0 && $raw > 0) {
             $final_cost = min($reserved_cost, max(0.0, round($base_fee, 2)));
+            $settlement_classification = 'failed_delivery_base_fee_only';
         }
         if ($delivered <= 0 && $raw <= 0) {
             $final_cost = 0.0;
+            $settlement_classification = 'not_chargeable_zero_delivery';
         }
         $project_id = isset($request['project_id']) ? (int) $request['project_id'] : (isset($request['projectId']) ? (int) $request['projectId'] : 0);
         return [
+            'settlement_classification' => $settlement_classification,
             'requested_result_count' => $requested,
             'candidate_scraped_count' => max($candidate, $raw, $delivered),
             'raw_provider_returned_count' => $raw,
@@ -2882,8 +2891,25 @@ final class VES_Ajax_Controller {
             return $formatted;
         }
         $context = self::delivery_usage_context($formatted, $platform, $request, $actor_slug);
+        $classification = (string) ($context['settlement_classification'] ?? 'delivered_charged');
+        $settle_message = 'Run manual confirmado por resultados entregados';
+        if ($classification !== 'delivered_charged') {
+            // v0.1 RC: honest ledger message + non-billable diagnostic when the
+            // provider ran but nothing usable was delivered.
+            $settle_message = $classification === 'not_chargeable_zero_delivery'
+                ? 'Run sin resultados entregables — sin cargo final'
+                : 'Run sin resultados entregables — solo tarifa base de escaneo';
+            self::log('usage_settlement_zero_delivery', 'Provider run settled with zero delivered items.', [
+                'request_id' => $request_id,
+                'stage' => 'settlement_classification',
+                'usage_key' => $usage_key,
+                'settlement_classification' => $classification,
+                'raw_provider_returned_count' => (int) ($context['raw_provider_returned_count'] ?? 0),
+                'credits_charged_final' => (float) ($context['credits_charged_final'] ?? 0),
+            ]);
+        }
         try {
-            $settled = VES_Usage_Billing::settle_reserved_usage($usage_key, (float) ($context['credits_charged_final'] ?? 0), 'Run manual confirmado por resultados entregados', $context);
+            $settled = VES_Usage_Billing::settle_reserved_usage($usage_key, (float) ($context['credits_charged_final'] ?? 0), $settle_message, $context);
             if (is_wp_error($settled)) {
                 // v0.9.30.20: settle is always post-provider; never terminate on billing failure.
                 self::log('usage_billing_settle_degraded', $settled->get_error_message(), [

@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Future Island Intelligence Suite
  * Description: Unified marketing intelligence platform. Includes the full Social Scraper Suite (VES Core) and the Deep Trend Finder module in a single WordPress plugin — no separate add-on required.
- * Version: 1.2.4
+ * Version: 1.2.5
  * Requires PHP: 7.4
  * Author: Future Island / Vietnam Estudio
  * Text Domain: future-island-intelligence-suite
@@ -15,7 +15,9 @@ if (!defined('ABSPATH')) {
 // -----------------------------------------------------------------------
 // Suite-level constants
 // -----------------------------------------------------------------------
-define('FIS_VERSION',     '1.2.4');
+define('FIS_VERSION',     '1.2.5');
+// Product-level release label: Future Island v0.1 Release Candidate.
+define('FIS_RC_LABEL',    'v0.1-rc1');
 define('FIS_PLUGIN_FILE', __FILE__);
 define('FIS_PLUGIN_DIR',  plugin_dir_path(__FILE__));
 define('FIS_PLUGIN_URL',  plugin_dir_url(__FILE__));
@@ -23,7 +25,7 @@ define('FIS_PLUGIN_URL',  plugin_dir_url(__FILE__));
 // -----------------------------------------------------------------------
 // VES Core constants (keep all existing VES code working unchanged)
 // -----------------------------------------------------------------------
-if (!defined('VES_PLUGIN_VERSION'))         { define('VES_PLUGIN_VERSION',         '1.2.4'); }
+if (!defined('VES_PLUGIN_VERSION'))         { define('VES_PLUGIN_VERSION',         '1.2.5'); }
 if (!defined('VES_PLUGIN_FILE'))            { define('VES_PLUGIN_FILE',            FIS_PLUGIN_FILE); }
 if (!defined('VES_PLUGIN_DIR'))             { define('VES_PLUGIN_DIR',             FIS_PLUGIN_DIR); }
 if (!defined('VES_PLUGIN_URL'))             { define('VES_PLUGIN_URL',             FIS_PLUGIN_URL); }
@@ -170,6 +172,10 @@ $fis_ves_files = [
     FIS_PLUGIN_DIR . 'includes/class-ves-signal-room.php',
     FIS_PLUGIN_DIR . 'includes/class-ves-workbench.php',
     FIS_PLUGIN_DIR . 'includes/class-ves-cli-brand-context.php',
+    // v0.1 RC — whole-product readiness gate + read-only Release Candidate page.
+    FIS_PLUGIN_DIR . 'includes/class-ves-rc-readiness-service.php',
+    FIS_PLUGIN_DIR . 'includes/class-ves-cli-rc-readiness.php',
+    FIS_PLUGIN_DIR . 'includes/class-ves-release-candidate-page.php',
     FIS_PLUGIN_DIR . 'includes/class-ves-plugin.php',
     FIS_PLUGIN_DIR . 'includes/legacy-config.php',
     FIS_PLUGIN_DIR . 'includes/helpers.php',

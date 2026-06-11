@@ -178,6 +178,66 @@ final class VES_Apify_Actor_Registry {
         return $rows;
     }
 
+    // ── v0.1 RC — actor slug allowlist (provider dispatch hard gate) ──────────
+
+    /** Canonical slug form used for allowlist comparison: lowercase, `owner~actor`. */
+    public static function normalize_slug($slug) {
+        $slug = strtolower(str_replace('/', '~', trim((string) $slug)));
+        return preg_replace('/[^a-z0-9~\-_.]/', '', $slug);
+    }
+
+    /**
+     * Every actor slug this install is allowed to dispatch. Sources, in order:
+     * the code-backed registry (actor_id + fallback_actors, including disabled
+     * entries — "known" is what the gate means, enable/disable is policy on top),
+     * the legacy per-platform slug map (VES_Config::get_actor_slug), the
+     * ves_apify_actor_allowlist_extra option, and the ves_apify_actor_allowlist
+     * filter. Returned normalized + deduped.
+     */
+    public static function allowed_slugs() {
+        $slugs = [];
+        foreach (self::registry() as $config) {
+            if (!is_array($config)) { continue; }
+            $candidates = array_merge(
+                [(string) ($config['actor_id'] ?? '')],
+                array_map('strval', (array) ($config['fallback_actors'] ?? []))
+            );
+            foreach ($candidates as $c) {
+                $c = self::normalize_slug($c);
+                if ($c !== '') { $slugs[$c] = true; }
+            }
+        }
+        if (class_exists('VES_Config') && method_exists('VES_Config', 'get_actor_slug')) {
+            $legacy_platforms = ['tiktok', 'tiktok_enrichment', 'tiktok_comments', 'tiktok_fallback', 'tiktok_backup', 'youtube', 'facebook', 'instagram', 'facebook_ads', 'google_ads', 'twitter', 'linkedin', 'reddit', 'pinterest', 'semrush', 'google', 'google_serp', 'google_trends', 'google_news', 'google_maps', 'amazon', 'web', 'telegram'];
+            foreach ($legacy_platforms as $platform) {
+                $c = self::normalize_slug(VES_Config::get_actor_slug($platform));
+                if ($c !== '') { $slugs[$c] = true; }
+            }
+        }
+        $extra = function_exists('get_option') ? get_option('ves_apify_actor_allowlist_extra', []) : [];
+        foreach ((array) $extra as $c) {
+            $c = self::normalize_slug($c);
+            if ($c !== '') { $slugs[$c] = true; }
+        }
+        $list = array_keys($slugs);
+        if (function_exists('apply_filters')) {
+            $filtered = apply_filters('ves_apify_actor_allowlist', $list);
+            if (is_array($filtered)) {
+                $list = [];
+                foreach ($filtered as $c) { $c = self::normalize_slug($c); if ($c !== '') { $list[] = $c; } }
+                $list = array_values(array_unique($list));
+            }
+        }
+        return $list;
+    }
+
+    /** Hard gate used by VES_Apify_Client before any run dispatch. */
+    public static function is_allowed_slug($slug) {
+        $slug = self::normalize_slug($slug);
+        if ($slug === '') { return false; }
+        return in_array($slug, self::allowed_slugs(), true);
+    }
+
     private static function find_primary($module, $source_type = '', $mode = '') {
         $module = sanitize_key((string) $module);
         $source_type = sanitize_key((string) $source_type);

@@ -26,6 +26,9 @@ final class VES_Plugin {
         if (defined('WP_CLI') && WP_CLI && class_exists('VES_CLI_Brand_Context')) {
             VES_CLI_Brand_Context::register();
         }
+        if (defined('WP_CLI') && WP_CLI && class_exists('VES_CLI_RC_Readiness')) {
+            VES_CLI_RC_Readiness::register();
+        }
         add_action('wp_enqueue_scripts', ['VES_Assets', 'register']);
 
         // Central, version-driven schema guard — forces a one-time dbDelta refresh
@@ -40,6 +43,13 @@ final class VES_Plugin {
         if (is_admin() && class_exists('VES_Admin_Console')) {
             try { VES_Admin_Console::init(); } catch (\Throwable $e) {
                 if (defined('WP_DEBUG') && WP_DEBUG) { error_log('[VES_Admin_Console] init failed: ' . $e->getMessage()); }
+            }
+        }
+
+        // v0.1 RC — read-only Release Candidate diagnostics page. Same isolation.
+        if (is_admin() && class_exists('VES_Release_Candidate_Page')) {
+            try { VES_Release_Candidate_Page::init(); } catch (\Throwable $e) {
+                if (defined('WP_DEBUG') && WP_DEBUG) { error_log('[VES_Release_Candidate_Page] init failed: ' . $e->getMessage()); }
             }
         }
 

@@ -12,7 +12,7 @@ $add = function($name, $ok) use (&$checks) {
     $checks[] = [$name, (bool) $ok];
     echo ($ok ? '[PASS] ' : '[FAIL] ') . $name . PHP_EOL;
 };
-$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.4') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.4'") !== false);
+$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.5') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.5'") !== false);
 $add('classification uses fatal-only context gate', strpos($controller, '$is_fatal_context = in_array($source') !== false && strpos($controller, "'ajax_start_fatal'") !== false && strpos($controller, "'ajax_shutdown_fatal'") !== false);
 $add('provider flags are only checked inside fatal context', preg_match('/if \(\$is_fatal_context\) \{\s*if \(!empty\(\$context\[\'provider_run_created\'\]\)\)/s', $controller) === 1);
 $add('actor_dispatch_error branch remains after fatal gate', strpos($controller, "$source === 'actor_dispatch_error'") !== false && strpos($controller, '$is_provider_runtime_error') !== false && strpos($controller, 'provider_run_id_missing') !== false);

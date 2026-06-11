@@ -15,7 +15,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
 };
 
-$assert(strpos($main, 'Version: 1.2.4') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.4'") !== false, 'Version is 1.1.0');
+$assert(strpos($main, 'Version: 1.2.5') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.5'") !== false, 'Version is 1.1.0');
 
 // JS reads safeDiagnostic.retryable
 $assert(strpos($js, 'sd.retryable === true') !== false, 'JS branches on safeDiagnostic.retryable === true');

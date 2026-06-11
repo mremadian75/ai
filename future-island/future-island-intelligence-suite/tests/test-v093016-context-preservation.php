@@ -18,7 +18,7 @@ if (preg_match('/private static function error\([\s\S]*?private static function 
     $error_fn = $m[0];
 }
 
-$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.4') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.4'") !== false);
+$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.5') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.5'") !== false);
 $add('error() merges active run context before classification', strpos($error_fn, '$active_context = is_array(self::$active_run_context) ? self::$active_run_context : [];') !== false && strpos($error_fn, '$context = array_merge($active_context, $context);') !== false && strpos($error_fn, 'last_successful_stage') !== false);
 $add('explicit error() context preserves post-dispatch state', strpos($error_fn, 'post-dispatch failures') !== false && strpos($error_fn, 'provider_call_attempted/provider_run_created') !== false);
 $add('shutdown handler classifies with active context', strpos($shutdown, "self::classify_error_category('ajax_shutdown_fatal'") !== false && strpos($shutdown, '$fatal_context = array_merge($active_context') !== false);

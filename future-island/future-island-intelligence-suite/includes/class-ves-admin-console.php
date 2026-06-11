@@ -118,6 +118,7 @@ final class VES_Admin_Console {
             'advanced' => ['Advanced', [
                 ['ves-diagnostics', 'Diagnostics', 'Low-level diagnostics and internal state.'],
                 ['ves-audit-log', 'Audit Log', 'Access/credit audit trail.'],
+                ['ves-release-candidate', 'Release Candidate', 'v0.1 RC readiness, feature flags and live-validation status (read-only).'],
             ]],
         ];
     }

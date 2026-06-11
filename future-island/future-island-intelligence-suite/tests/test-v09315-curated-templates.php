@@ -15,7 +15,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
 };
 
-$assert(strpos($main, 'Version: 1.2.5') !== false, 'Version is 1.1.0');
+$assert(strpos($main, 'Version: 1.2.6') !== false, 'Version is 1.1.0');
 
 $templates = [
     'verano-silencioso'   => 'verano-silencioso.php',

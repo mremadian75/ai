@@ -1139,6 +1139,13 @@ final class VES_Intelligence_Store {
 
         $current = self::sanitize_key((string) ($insight['status'] ?? 'draft'), 24);
         if (!self::insight_transition_allowed($current, $status, $opts)) {
+            // Phase 9B.4 — blocked transitions are security events; Phase 9B.1 — they
+            // never reach the review ledger (only real decisions are recorded).
+            if (class_exists('VES_Security_Event_Log')) {
+                VES_Security_Event_Log::record('lifecycle_transition_blocked', 'Insight status transition blocked.', [
+                    'insight_id' => (int) $insight_id, 'from' => $current, 'to' => $status,
+                ]);
+            }
             return new WP_Error('ves_intel_transition_blocked', "Insight status transition '{$current}' -> '{$status}' is not allowed.", ['from' => $current, 'to' => $status]);
         }
 
@@ -1153,7 +1160,96 @@ final class VES_Intelligence_Store {
         $ok = $wpdb->update(self::table_name('insight'),
             ['status' => $status, 'metadata' => self::prepare_metadata($meta), 'updated_at' => $now],
             ['id' => (int) $insight_id], ['%s', '%s', '%s'], ['%d']);
-        return $ok === false ? new WP_Error('ves_intel_update_failed', 'Could not update insight status.') : (int) $insight_id;
+        if ($ok === false) { return new WP_Error('ves_intel_update_failed', 'Could not update insight status.'); }
+        self::record_review_decision('insight', $insight, $current, $status, $metadata_merge, $evidence_ids, $opts);
+        return (int) $insight_id;
+    }
+
+    /**
+     * Phase 9B.1 — append one immutable review decision after a SUCCESSFUL status
+     * mutation. Blocked transitions never get here. Best-effort: a ledger failure
+     * never fails the mutation, but is logged.
+     */
+    private static function record_review_decision(string $object_type, array $row, string $from, string $to, array $metadata_merge, array $evidence_ids, array $opts = []): void {
+        if ($from === $to) { return; } // same-status metadata refresh is not a review decision
+        if (!class_exists('VES_Review_Decision_Ledger') || !method_exists('VES_Review_Decision_Ledger', 'record')) { return; }
+        $decision_map = ['approved' => 'approve', 'rejected' => 'reject', 'archived' => 'archive', 'reviewed' => 'promote_to_reviewed'];
+        $decision = $decision_map[$to] ?? 'status_change';
+        if ($to === 'draft' && !empty($opts['allow_reopen'])) { $decision = 'reopen'; }
+        if ($to === 'draft' && !empty($opts['allow_restore'])) { $decision = 'restore'; }
+        $reason = '';
+        foreach (['rejected_reason', 'archived_reason', 'reopened_reason', 'restored_reason', 'reason'] as $rk) {
+            if (!empty($metadata_merge[$rk]) && is_scalar($metadata_merge[$rk])) { $reason = (string) $metadata_merge[$rk]; break; }
+        }
+        $evidence_hash = '';
+        if (!empty($evidence_ids)) {
+            $ids = array_map('intval', $evidence_ids);
+            sort($ids);
+            $evidence_hash = hash('sha256', $object_type . '|' . implode(',', $ids));
+        }
+        $res = VES_Review_Decision_Ledger::record([
+            'workspace_id' => (int) ($row['workspace_id'] ?? 0),
+            'object_type' => $object_type,
+            'object_id' => (int) ($row['id'] ?? 0),
+            'from_status' => $from,
+            'to_status' => $to,
+            'decision' => $decision,
+            'reason' => $reason,
+            'evidence_snapshot_hash' => $evidence_hash,
+        ]);
+        if (function_exists('is_wp_error') && is_wp_error($res) && class_exists('VES_Log') && method_exists('VES_Log', 'warn')) {
+            VES_Log::warn('review_ledger', 'Review decision could not be appended.', ['object_type' => $object_type, 'object_id' => (int) ($row['id'] ?? 0), 'code' => $res->get_error_code()]);
+        }
+    }
+
+    /**
+     * Phase 9B.1 — brief/draft status mutation with the shared transition matrix
+     * (terminal rejected/archived; approved can only archive) and the same
+     * append-only review-decision ledger as insights. No evidence hard-gate here:
+     * evidence is enforced upstream on the insight the brief/draft derives from.
+     * @return int|WP_Error
+     */
+    public static function update_brief_status(int $brief_id, string $status, array $metadata_merge = []) {
+        return self::update_derived_status('brief', $brief_id, $status, $metadata_merge);
+    }
+
+    public static function update_draft_status(int $draft_id, string $status, array $metadata_merge = []) {
+        return self::update_derived_status('draft', $draft_id, $status, $metadata_merge);
+    }
+
+    private static function update_derived_status(string $entity, int $id, string $status, array $metadata_merge = []) {
+        global $wpdb;
+        $status = self::sanitize_key($status, 24);
+        if (!in_array($status, self::enums()[$entity . '_status'], true)) {
+            return new WP_Error('ves_intel_invalid_enum', "Invalid {$entity} status '{$status}'.");
+        }
+        $row = self::get($entity, $id);
+        if (!is_array($row)) { return new WP_Error('ves_intel_not_found', ucfirst($entity) . ' not found.'); }
+        if (!isset($wpdb) || !is_object($wpdb)) { return new WP_Error('ves_intel_no_db', 'Database unavailable.'); }
+
+        $current = self::sanitize_key((string) ($row['status'] ?? 'draft'), 24);
+        $allowed = class_exists('VES_Review_Decision_Ledger') && method_exists('VES_Review_Decision_Ledger', 'transition_allowed')
+            ? VES_Review_Decision_Ledger::transition_allowed($entity, $current, $status)
+            : ($current === $status); // fail closed to no-op-only when the matrix is unavailable
+        if (!$allowed) {
+            if (class_exists('VES_Security_Event_Log')) {
+                VES_Security_Event_Log::record('lifecycle_transition_blocked', ucfirst($entity) . ' status transition blocked.', [
+                    $entity . '_id' => $id, 'from' => $current, 'to' => $status,
+                ]);
+            }
+            return new WP_Error('ves_intel_transition_blocked', ucfirst($entity) . " status transition '{$current}' -> '{$status}' is not allowed.", ['from' => $current, 'to' => $status]);
+        }
+
+        $meta = is_array($row['metadata'] ?? null) ? $row['metadata'] : [];
+        foreach ($metadata_merge as $k => $v) { $meta[(string) $k] = $v; }
+        $now = function_exists('current_time') ? current_time('mysql', true) : gmdate('Y-m-d H:i:s');
+        $ok = $wpdb->update(self::table_name($entity),
+            ['status' => $status, 'metadata' => self::prepare_metadata($meta), 'updated_at' => $now],
+            ['id' => $id], ['%s', '%s', '%s'], ['%d']);
+        if ($ok === false) { return new WP_Error('ves_intel_update_failed', "Could not update {$entity} status."); }
+        $evidence_ids = is_array($row['evidence_ids'] ?? null) ? $row['evidence_ids'] : [];
+        self::record_review_decision($entity, $row, $current, $status, $metadata_merge, $evidence_ids);
+        return $id;
     }
 
     /**

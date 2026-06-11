@@ -16,7 +16,7 @@
  */
 error_reporting(E_ALL & ~E_DEPRECATED);
 if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.5'); }
+if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.6'); }
 if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc1'); }
 
 function get_option($k, $d = false) { return $GLOBALS['__opts'][$k] ?? $d; }
@@ -32,6 +32,7 @@ $GLOBALS['__opts'] = [];
 $GLOBALS['__opt_writes'] = [];
 
 require_once dirname(__DIR__) . '/includes/class-ves-review-state.php';
+require_once dirname(__DIR__) . '/includes/class-ves-rc-evidence-pack.php';
 require_once dirname(__DIR__) . '/includes/class-ves-rc-readiness-service.php';
 require_once dirname(__DIR__) . '/includes/class-ves-release-candidate-page.php';
 
@@ -43,7 +44,7 @@ $html = VES_Release_Candidate_Page::render_html();
 // ── 1. Identity ──────────────────────────────────────────────────────────────
 $ok(strpos($html, 'Release Candidate') !== false, 'page titles itself Release Candidate');
 $ok(strpos($html, 'Future Island') !== false, 'page carries the Future Island identity');
-$ok(strpos($html, '1.2.5') !== false && strpos($html, 'v0.1-rc1') !== false, 'version + RC label shown');
+$ok(strpos($html, '1.2.6') !== false && strpos($html, 'v0.1-rc1') !== false, 'version + RC label shown');
 
 // ── 2. Honesty: UNRUN + never production-ready ───────────────────────────────
 $ok(strpos($html, 'UNRUN') !== false, 'page states live staging validation is UNRUN');
@@ -70,12 +71,20 @@ $ok(stripos($html, '--apply') !== false, 'page warns about --apply during valida
 // ── 5. Read-only ─────────────────────────────────────────────────────────────
 $ok($GLOBALS['__opt_writes'] === [], 'rendering performed zero option writes');
 
-// ── 6. Escaping of untrusted strings ─────────────────────────────────────────
+// ── 6. Escaping + evidence-pack honesty (Phase 9B.3) ─────────────────────────
+// A manually-written option without an evidence hash is shown as UNVERIFIED.
 $GLOBALS['__opts']['ves_rc_live_validation'] = ['status' => 'passed', 'recorded_at' => '<script>alert(1)</script>', 'note' => 'x'];
 $html2 = VES_Release_Candidate_Page::render_html();
 $ok(strpos($html2, '<script>alert(1)</script>') === false, 'recorded_at is escaped/sanitized (no raw script)');
-$ok(strpos($html2, 'recorded as passed') !== false, 'recorded pass state is surfaced');
-$ok(strpos($html2, 'never grants production status') !== false, 'even a recorded pass does not grant production status');
+$ok(strpos($html2, 'Unverified manual validation record') !== false, 'manual option without evidence pack shows UNVERIFIED, not passed');
+$ok(strpos($html2, 'NOT production-ready') !== false, 'unverified manual record stays NOT production-ready');
+
+// An evidence-pack-backed pass shows the hash (escaped) and still grants nothing.
+$GLOBALS['__opts']['ves_rc_live_validation'] = ['status' => 'passed', 'source' => 'evidence_pack', 'evidence_pack_hash' => str_repeat('ab', 32), 'recorded_at' => '2026-06-12 09:00:00', 'operator' => 'ops'];
+$html2b = VES_Release_Candidate_Page::render_html();
+$ok(strpos($html2b, 'recorded as passed') !== false, 'evidence-backed pass state is surfaced');
+$ok(strpos($html2b, substr(str_repeat('ab', 32), 0, 16)) !== false, 'evidence pack hash displayed (truncated)');
+$ok(strpos($html2b, 'never grants production status') !== false, 'even a recorded pass does not grant production status');
 unset($GLOBALS['__opts']['ves_rc_live_validation']);
 
 // Flag ON renders as ON (honest), not hidden.

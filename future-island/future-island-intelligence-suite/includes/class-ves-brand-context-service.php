@@ -325,6 +325,9 @@ final class VES_Brand_Context_Service {
             'source_id' => (string) ($spec['source_target_id'] ?? ''),
             'importance_score' => (int) ($spec['importance_score'] ?? 50),
             'tags' => ['brand_context', $type, self::STATUS_CANDIDATE],
+            // Phase 9A.4 — same source target proposes the SAME candidate record
+            // (records-layer dedupe), never a growing pile of duplicates.
+            'dedupe' => true,
         ]);
         self::log('candidate_created', ['memory_id' => $id, 'record_type' => $type, 'workspace_id' => (int) $workspace_id]);
         return $id;
@@ -347,6 +350,20 @@ final class VES_Brand_Context_Service {
         if (!self::is_brand_context_type((string) ($row['memory_type'] ?? ''))) { return false; }
         // Optional workspace scoping: never trust a cross-workspace id.
         if ($workspace_id !== null && (int) $workspace_id > 0 && (int) ($row['workspace_id'] ?? 0) !== (int) $workspace_id) { return false; }
+        // Phase 9B.1 — memory transition matrix: a rejected/archived/expired record
+        // can never be resurrected to candidate/active/pinned. Downgrades stay open.
+        $from_status = self::stored_status_of($row);
+        if (class_exists('VES_Review_Decision_Ledger')
+            && method_exists('VES_Review_Decision_Ledger', 'transition_allowed')
+            && !VES_Review_Decision_Ledger::transition_allowed('memory_record', $from_status, $status)) {
+            if (class_exists('VES_Security_Event_Log')) {
+                VES_Security_Event_Log::record('lifecycle_transition_blocked', 'Memory status transition blocked.', [
+                    'memory_id' => $id, 'from' => $from_status, 'to' => (string) $status,
+                ]);
+            }
+            self::log('status_change_blocked', ['memory_id' => $id, 'from' => $from_status, 'to' => (string) $status]);
+            return false;
+        }
         $content = self::decode_content($row);
         if (!isset($content['brand_context']) || !is_array($content['brand_context'])) { $content['brand_context'] = []; }
         $content['brand_context']['status'] = $status;
@@ -362,6 +379,25 @@ final class VES_Brand_Context_Service {
             'updated_at' => function_exists('current_time') ? current_time('mysql') : gmdate('Y-m-d H:i:s'),
         ], ['id' => $id]);
         self::log('status_changed', ['memory_id' => $id, 'status' => $status, 'actor' => (int) $actor_id]);
+        // Phase 9B.1 — every successful memory review action appends one immutable
+        // ledger decision (duplicate submissions collapse on the idempotency key).
+        if ($ok !== false && class_exists('VES_Review_Decision_Ledger') && method_exists('VES_Review_Decision_Ledger', 'record')) {
+            $decision_map = [
+                self::STATUS_ACTIVE => ($from_status === self::STATUS_PINNED ? 'unpin' : 'approve'),
+                self::STATUS_PINNED => 'pin',
+                self::STATUS_REJECTED => 'reject',
+                self::STATUS_ARCHIVED => 'archive',
+            ];
+            VES_Review_Decision_Ledger::record([
+                'workspace_id' => (int) ($row['workspace_id'] ?? 0),
+                'object_type' => 'memory_record',
+                'object_id' => $id,
+                'from_status' => $from_status,
+                'to_status' => (string) $status,
+                'decision' => $decision_map[$status] ?? 'status_change',
+                'actor_user_id' => (int) $actor_id,
+            ]);
+        }
         return $ok !== false;
     }
 

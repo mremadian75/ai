@@ -44,10 +44,23 @@ final class VES_Action_Scheduler_Jobs {
             $lock_key .= '_' . $source_key;
         }
 
+        // Phase 9A.5 — retry/dead-letter rails. A dead-lettered job key is never
+        // executed again until an operator explicitly clears it.
+        $rails = class_exists('VES_Job_Rails');
+        $job_key = $rails ? VES_Job_Rails::job_key($job_type, is_array($payload) ? $payload : []) : '';
+        if ($rails && VES_Job_Rails::is_dead($job_key)) {
+            if ($run_id > 0 && class_exists('VES_Run_Log_Service')) {
+                VES_Run_Log_Service::warn($run_id, 'job_rails', 'Job skipped: dead-lettered after max retries.', ['job_type' => $job_type, 'job_key' => $job_key]);
+            }
+            return;
+        }
+
         if ($run_id <= 0) {
             try {
                 call_user_func($callback, $payload);
+                if ($rails) { VES_Job_Rails::record_success($job_key); }
             } catch (Throwable $e) {
+                if ($rails) { VES_Job_Rails::record_failure($job_key, $job_type, $e->getMessage(), ['run_id' => 0]); }
                 self::fail_payload($payload, $job_type, $e->getMessage(), ['run_id' => 0, 'source_key' => $source_key]);
             }
             return;
@@ -58,8 +71,10 @@ final class VES_Action_Scheduler_Jobs {
         }
         try {
             call_user_func($callback, $payload);
+            if ($rails) { VES_Job_Rails::record_success($job_key); }
         } catch (Throwable $e) {
             VES_Run_Log_Service::error($run_id, 'scheduler', 'Unhandled background exception.', ['job_type' => $job_type, 'lock_key' => $lock_key, 'source_key' => $source_key, 'message' => $e->getMessage()]);
+            if ($rails) { VES_Job_Rails::record_failure($job_key, $job_type, $e->getMessage(), ['run_id' => $run_id]); }
             self::fail_payload($payload, $job_type, $e->getMessage(), ['run_id' => $run_id, 'lock_key' => $lock_key, 'source_key' => $source_key]);
         }
         VES_Run_Lock_Manager::release($run_id, $lock_key);

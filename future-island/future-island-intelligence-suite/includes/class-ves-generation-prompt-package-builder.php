@@ -164,7 +164,7 @@ final class VES_Generation_Prompt_Package_Builder {
         if ($target_type !== 'insight') { $pkg['reason'] = 'target_type_mismatch'; return $pkg; }
         $insight = VES_Intelligence_Store::get_insight($target_id);
         if (!is_array($insight) || empty($insight['id'])) { $pkg['reason'] = 'target_not_found'; return $pkg; }
-        if ((int) ($insight['workspace_id'] ?? 0) !== (int) $workspace_id) { $pkg['reason'] = 'workspace_mismatch'; return $pkg; }
+        if (!self::workspace_ok('insight', $insight, $workspace_id)) { $pkg['reason'] = 'workspace_mismatch'; return $pkg; }
         $evidence_ids = self::evidence_ids($insight);
         $pkg['evidence']['items'] = self::evidence_refs($evidence_ids);
         $pkg['evidence']['count'] = count($evidence_ids);
@@ -182,7 +182,7 @@ final class VES_Generation_Prompt_Package_Builder {
         if ($target_type !== 'brief') { $pkg['reason'] = 'target_type_mismatch'; return $pkg; }
         $brief = VES_Intelligence_Store::get_brief($target_id);
         if (!is_array($brief) || empty($brief['id'])) { $pkg['reason'] = 'target_not_found'; return $pkg; }
-        if ((int) ($brief['workspace_id'] ?? 0) !== (int) $workspace_id) { $pkg['reason'] = 'workspace_mismatch'; return $pkg; }
+        if (!self::workspace_ok('brief', $brief, $workspace_id)) { $pkg['reason'] = 'workspace_mismatch'; return $pkg; }
         $evidence_ids = self::evidence_ids($brief);
         $pkg['evidence']['items'] = self::evidence_refs($evidence_ids);
         $pkg['evidence']['count'] = count($evidence_ids);
@@ -204,13 +204,26 @@ final class VES_Generation_Prompt_Package_Builder {
         if ($fn === '' || !method_exists('VES_Intelligence_Store', $fn)) { $pkg['reason'] = 'invalid_target'; return $pkg; }
         $row = VES_Intelligence_Store::$fn($target_id);
         if (!is_array($row) || empty($row['id'])) { $pkg['reason'] = 'target_not_found'; return $pkg; }
-        if ((int) ($row['workspace_id'] ?? 0) !== (int) $workspace_id) { $pkg['reason'] = 'workspace_mismatch'; return $pkg; }
+        if (!self::workspace_ok($target_type, $row, $workspace_id)) { $pkg['reason'] = 'workspace_mismatch'; return $pkg; }
         $evidence_ids = self::evidence_ids($row);
         $pkg['evidence']['items'] = self::evidence_refs($evidence_ids);
         $pkg['evidence']['count'] = count($evidence_ids);
         $pkg['task']['goal'] = 'QA the ' . $target_type . ' against its evidence and constraints.';
         $pkg['build_status'] = 'ready'; $pkg['reason'] = 'ok';
         return $pkg;
+    }
+
+
+    /**
+     * Phase 9A.3 — tenant check routed through VES_Workspace_Guard so every
+     * cross-workspace attempt is security-logged. Objects without a workspace are
+     * NOT usable here (no allow_unknown): a prompt package must be tenant-scoped.
+     */
+    private static function workspace_ok($object_type, array $row, $workspace_id) {
+        if (class_exists('VES_Workspace_Guard')) {
+            return VES_Workspace_Guard::assert_object_in_workspace((string) $object_type, $row, (int) $workspace_id) === true;
+        }
+        return (int) ($row['workspace_id'] ?? 0) === (int) $workspace_id;
     }
 
     private static function evidence_ids($row) {

@@ -59,13 +59,20 @@ final class VES_Release_Candidate_Page {
         $h .= '</header>';
 
         // Honest top banner.
-        if (!$live_passed) {
+        if (($live['status'] ?? '') === 'unverified_manual') {
+            $h .= '<div class="fiis-rc-banner fiis-rc-banner-warn"><strong>Unverified manual validation record.</strong> '
+                . 'A live-validation option exists but carries no verifiable evidence pack hash, so it is NOT trusted as passed. '
+                . 'Re-run the validation script and record through <span class="fiis-rc-mono">wp ves rc-record-live-validation --evidence-pack=…</span>. '
+                . 'This build remains <strong>NOT production-ready</strong>.</div>';
+        } elseif (!$live_passed) {
             $h .= '<div class="fiis-rc-banner fiis-rc-banner-warn"><strong>Live staging validation: UNRUN.</strong> '
                 . 'This build is statically verified only. It is <strong>NOT production-ready</strong> and must not be installed on a production site. '
                 . 'Run the commands below on a staging copy first.</div>';
         } else {
             $h .= '<div class="fiis-rc-banner fiis-rc-banner-info"><strong>Live staging validation recorded as passed</strong> ('
-                . self::e((string) ($live['recorded_at'] ?? '')) . '). Verify the operator evidence (command outputs + screenshots). '
+                . self::e((string) ($live['recorded_at'] ?? '')) . ') via evidence pack '
+                . '<span class="fiis-rc-mono">' . self::e(substr((string) ($live['evidence_pack_hash'] ?? ''), 0, 16)) . '…</span>. '
+                . 'Verify the operator evidence (command outputs + screenshots). '
                 . 'Even with a recorded pass, production release still requires operator approval and monitored pilot usage — this page never grants production status.</div>';
         }
 
@@ -112,6 +119,9 @@ final class VES_Release_Candidate_Page {
         }
         $h .= '</ul></section>';
 
+        // Phase 9 — audit & rails diagnostics (read-only, escaped, no fake green).
+        $h .= self::rails_diagnostics_section();
+
         // Known limitations — honest by design.
         $h .= '<section class="fiis-rc-section"><h2>Known limitations</h2><ul class="fiis-rc-list">';
         foreach ([
@@ -134,6 +144,77 @@ final class VES_Release_Candidate_Page {
         $h .= '<section class="fiis-rc-section fiis-rc-next"><h2>Next operator action</h2><p>' . self::e($next) . '</p></section>';
 
         $h .= '</div></div>';
+        return $h;
+    }
+
+    /**
+     * Phase 9 — read-only audit & rails diagnostics: recent review decisions
+     * (append-only ledger), dead-lettered jobs and the security-event summary.
+     * Honest empty states; everything escaped; no mutation controls.
+     */
+    private static function rails_diagnostics_section() {
+        $h = '<section class="fiis-rc-section"><h2>Audit &amp; rails diagnostics</h2>';
+
+        // Review decision ledger (append-only) — newest first.
+        $h .= '<h3 class="fiis-rc-subhead">Recent review decisions</h3>';
+        if (class_exists('VES_Review_Decision_Ledger') && method_exists('VES_Review_Decision_Ledger', 'recent')) {
+            $decisions = [];
+            try { $decisions = VES_Review_Decision_Ledger::recent(['limit' => 10]); } catch (\Throwable $e) { $decisions = []; }
+            if (empty($decisions)) {
+                $h .= '<p class="fiis-rc-note">No review decisions recorded yet. The ledger is append-only; every approve/reject/archive/pin will appear here.</p>';
+            } else {
+                $h .= '<table class="fiis-rc-table"><thead><tr><th>When (UTC)</th><th>Object</th><th>Decision</th><th>Transition</th><th>Actor</th></tr></thead><tbody>';
+                foreach ($decisions as $d) {
+                    $h .= '<tr><td class="fiis-rc-mono">' . self::e((string) ($d['created_at'] ?? '')) . '</td>'
+                        . '<td class="fiis-rc-mono">' . self::e((string) ($d['object_type'] ?? '') . ' #' . (int) ($d['object_id'] ?? 0)) . '</td>'
+                        . '<td>' . self::e((string) ($d['decision'] ?? '')) . '</td>'
+                        . '<td class="fiis-rc-mono">' . self::e((string) ($d['from_status'] ?? '?') . ' → ' . (string) ($d['to_status'] ?? '?')) . '</td>'
+                        . '<td class="fiis-rc-mono">#' . self::e((string) (int) ($d['actor_user_id'] ?? 0)) . '</td></tr>';
+                }
+                $h .= '</tbody></table>';
+            }
+        } else {
+            $h .= '<p class="fiis-rc-note">Review decision ledger unavailable on this install.</p>';
+        }
+
+        // Dead-letter rails.
+        $h .= '<h3 class="fiis-rc-subhead">Queue dead letters</h3>';
+        if (class_exists('VES_Job_Rails') && method_exists('VES_Job_Rails', 'dead_letters')) {
+            $dead = [];
+            try { $dead = VES_Job_Rails::dead_letters(5); } catch (\Throwable $e) { $dead = []; }
+            if (empty($dead)) {
+                $h .= '<p class="fiis-rc-note">No dead-lettered jobs. Background jobs retry up to ' . (int) VES_Job_Rails::MAX_RETRIES . ' times, then land here.</p>';
+            } else {
+                $h .= '<ul class="fiis-rc-list fiis-rc-warnings">';
+                foreach ($dead as $row) {
+                    $h .= '<li><span class="fiis-rc-mono">' . self::e((string) ($row['job_type'] ?? '')) . '</span> — '
+                        . self::e((string) ($row['reason'] ?? '')) . ' <span class="fiis-rc-mono">(' . self::e((string) ($row['created_at'] ?? '')) . ')</span></li>';
+                }
+                $h .= '</ul>';
+            }
+        } else {
+            $h .= '<p class="fiis-rc-note">Dead-letter rails unavailable on this install.</p>';
+        }
+
+        // Security event summary (counts only; contents stay in the scrubbed log).
+        $h .= '<h3 class="fiis-rc-subhead">Security events</h3>';
+        if (class_exists('VES_Security_Event_Log') && method_exists('VES_Security_Event_Log', 'summary')) {
+            $sum = ['total' => 0, 'by_type' => []];
+            try { $sum = VES_Security_Event_Log::summary(); } catch (\Throwable $e) { /* keep zeros */ }
+            if ((int) ($sum['total'] ?? 0) === 0) {
+                $h .= '<p class="fiis-rc-note">No security events recorded. Blocked dispatches, blocked transitions and workspace mismatches will appear here (scrubbed).</p>';
+            } else {
+                $h .= '<p class="fiis-rc-note">' . self::e((string) (int) $sum['total']) . ' scrubbed event(s):</p><ul class="fiis-rc-list">';
+                foreach ((array) ($sum['by_type'] ?? []) as $type => $count) {
+                    $h .= '<li><span class="fiis-rc-mono">' . self::e((string) $type) . '</span>: ' . self::e((string) (int) $count) . '</li>';
+                }
+                $h .= '</ul>';
+            }
+        } else {
+            $h .= '<p class="fiis-rc-note">Security event log unavailable on this install.</p>';
+        }
+
+        $h .= '</section>';
         return $h;
     }
 
@@ -187,6 +268,7 @@ final class VES_Release_Candidate_Page {
             . '.fiis-rc-warnings li{color:#b06a00}'
             . '.fiis-rc-cmds li{margin:4px 0;color:var(--fi-ink);font-size:12px}'
             . '.fiis-rc-note{color:var(--fi-muted);font-size:12px;margin-top:10px}'
+            . '.fiis-rc-subhead{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--fi-muted);margin:16px 0 6px}'
             . '.fiis-rc-next{border-left:4px solid var(--fi-lime)}'
             . '.fiis-rc-page .fi-status-badge{display:inline-block;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:999px;border:1px solid var(--fi-bdr);background:#fff;color:var(--fi-ink);white-space:nowrap}'
             . '.fiis-rc-page .fiis-badge-ready,.fiis-rc-page .fiis-badge-approved{background:rgba(31,122,77,.12);border-color:#1f7a4d;color:#1f7a4d}'

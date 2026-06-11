@@ -44,6 +44,12 @@ final class VES_RC_Readiness_Service {
         'VES_Apify_Actor_Registry'                => 'Actor registry / allowlist',
         'VES_Trend_Observation_Store'             => 'Trend observation store',
         'VES_Staging_Validation_Service'          => 'Staging validation service',
+        'VES_Workspace_Guard'                     => 'Workspace/tenant isolation guard',
+        'VES_Review_Decision_Ledger'              => 'Review decision ledger',
+        'VES_Usage_Settlement'                    => 'Usage settlement semantics',
+        'VES_Security_Event_Log'                  => 'Security event log',
+        'VES_Job_Rails'                           => 'Queue retry/dead-letter rails',
+        'VES_RC_Evidence_Pack'                    => 'Release evidence pack',
     ];
 
     /** WP-CLI commands an operator needs for the staging checklist. */
@@ -55,8 +61,11 @@ final class VES_RC_Readiness_Service {
         'ves trend-summary', 'ves trend-obs-backfill',
     ];
 
-    /** Build the full readiness report. Read-only. */
+    const STATUS_PILOT = 'ready_for_pilot_review';
+
+    /** Build the full readiness report. Read-only. $args: ['strict' => bool] */
     public static function report(array $args = []) {
+        $strict = !empty($args['strict']);
         $checks = [];
         $checks[] = self::check_version();
         $checks[] = self::check_schema();
@@ -68,6 +77,12 @@ final class VES_RC_Readiness_Service {
         $checks[] = self::check_operator_surfaces();
         $checks[] = self::check_usage_ledger();
         $checks[] = self::check_provider_safety();
+        $checks[] = self::check_workspace_guard();
+        $checks[] = self::check_review_ledger();
+        $checks[] = self::check_settlement();
+        $checks[] = self::check_trend_idempotency();
+        $checks[] = self::check_job_rails();
+        $checks[] = self::check_security_log();
         $checks[] = self::check_feature_flags();
         $checks[] = self::check_live_validation();
 
@@ -80,8 +95,31 @@ final class VES_RC_Readiness_Service {
         if (count($warnings) > 0) { $status = self::STATUS_WARN; }
         if (count($blockers) > 0) { $status = self::STATUS_BLOCKED; }
 
+        // Phase 9C.4 — strict mode: blocked unless live validation passed through a
+        // verified evidence pack AND every hard rail is active AND nothing needs
+        // settlement. A strict pass is ready_for_pilot_review — NEVER production.
+        if ($strict) {
+            $live = self::live_validation_state();
+            if (($live['status'] ?? '') !== 'passed' || empty($live['evidence_pack_hash'])) {
+                $blockers[] = 'STRICT: live validation has not passed with a verified evidence pack (state: ' . (string) ($live['status'] ?? 'unrun') . ').';
+            }
+            foreach ($checks as $c) {
+                if (in_array($c['id'], ['provider_safety', 'workspace_guard', 'review_ledger', 'lifecycle_matrix', 'trend_idempotency', 'job_rails'], true) && ($c['status'] ?? '') !== 'ok') {
+                    $blockers[] = 'STRICT: hard rail not fully active: ' . (string) $c['label'] . ' — ' . (string) $c['detail'];
+                }
+            }
+            if (class_exists('VES_Usage_Settlement') && method_exists('VES_Usage_Settlement', 'settlement_health')) {
+                $sh = VES_Usage_Settlement::settlement_health();
+                if (!empty($sh['settlement_required']) || !empty($sh['reserved_stale'])) {
+                    $blockers[] = 'STRICT: ' . (int) $sh['settlement_required'] . ' settlement_required marker(s) and ' . (int) $sh['reserved_stale'] . ' stale reservation(s) must be resolved.';
+                }
+            }
+            $status = count($blockers) > 0 ? self::STATUS_BLOCKED : self::STATUS_PILOT;
+        }
+
         return [
             'status'           => $status,
+            'strict'           => $strict,
             'production_ready' => false, // hard-coded: v0.1 RC can never self-certify production
             'production_note'  => 'Production readiness requires a passed live staging validation, operator approval and monitored pilot usage. This command cannot grant it.',
             'live_validation'  => self::live_validation_state(),
@@ -227,12 +265,104 @@ final class VES_RC_Readiness_Service {
         } else {
             $problems[] = 'hard max charge config missing';
         }
+        // Phase 9A.1/9A.2 — fail-closed + hard-ceiling enforcement must be compiled in.
+        if (class_exists('VES_Apify_Client')) {
+            if (!defined('VES_Apify_Client::MIN_CHARGE_CEILING_USD') || !defined('VES_Apify_Client::MAX_CHARGE_CEILING_USD')) {
+                $problems[] = 'hard charge-ceiling enforcement not compiled in';
+            }
+        } else {
+            $problems[] = 'provider client missing';
+        }
+        if (defined('VES_ALLOW_UNSAFE_PROVIDER_DISPATCH_FOR_LOCAL_TESTS_ONLY') && VES_ALLOW_UNSAFE_PROVIDER_DISPATCH_FOR_LOCAL_TESTS_ONLY) {
+            $warns[] = 'UNSAFE local-tests-only dispatch bypass constant is defined TRUE on this install';
+        }
         // Token presence is reported as a boolean only — never the value.
         $token_configured = class_exists('VES_Config') && method_exists('VES_Config', 'get_token') && trim((string) VES_Config::get_token()) !== '';
         if (!$token_configured) { $warns[] = 'provider token not configured (dispatch will fail fast; fine for a static RC)'; }
         if (count($problems) > 0) { return self::row('provider_safety', 'Provider safety', 'block', implode('; ', $problems)); }
         if (count($warns) > 0) { return self::row('provider_safety', 'Provider safety', 'warn', implode('; ', $warns)); }
-        return self::row('provider_safety', 'Provider safety', 'ok', 'Allowlist gate + charge ceiling active; token via Authorization header only.');
+        return self::row('provider_safety', 'Provider safety', 'ok', 'Fail-closed allowlist + hard charge ceiling active; token via Authorization header only.');
+    }
+
+    private static function check_workspace_guard() {
+        if (!class_exists('VES_Workspace_Guard') || !method_exists('VES_Workspace_Guard', 'guard_active')) {
+            return self::row('workspace_guard', 'Workspace isolation guard', 'block', 'VES_Workspace_Guard unavailable.');
+        }
+        $active = false;
+        try { $active = (bool) VES_Workspace_Guard::guard_active(); } catch (\Throwable $e) { $active = false; }
+        return $active
+            ? self::row('workspace_guard', 'Workspace isolation guard', 'ok', 'Cross-workspace and unknown-workspace access refused.')
+            : self::row('workspace_guard', 'Workspace isolation guard', 'block', 'Workspace guard probe FAILED — cross-workspace access is not being refused.');
+    }
+
+    private static function check_review_ledger() {
+        if (!class_exists('VES_Review_Decision_Ledger') || !method_exists('VES_Review_Decision_Ledger', 'ledger_active')) {
+            return self::row('review_ledger', 'Review decision ledger', 'block', 'VES_Review_Decision_Ledger unavailable.');
+        }
+        $active = false;
+        try { $active = (bool) VES_Review_Decision_Ledger::ledger_active(); } catch (\Throwable $e) { $active = false; }
+        return $active
+            ? self::row('review_ledger', 'Review decision ledger', 'ok', 'Append-only decision ledger active (no update/delete API).')
+            : self::row('review_ledger', 'Review decision ledger', 'block', 'Review ledger probe failed.');
+    }
+
+    private static function check_settlement() {
+        if (!class_exists('VES_Usage_Settlement') || !method_exists('VES_Usage_Settlement', 'settlement_health')) {
+            return self::row('usage_settlement', 'Usage settlement', 'block', 'VES_Usage_Settlement unavailable.');
+        }
+        $sem = false; $health = ['settlement_required' => 0, 'reserved_stale' => 0];
+        try {
+            $sem = (bool) VES_Usage_Settlement::semantics_active();
+            $health = VES_Usage_Settlement::settlement_health();
+        } catch (\Throwable $e) { $sem = false; }
+        if (!$sem) { return self::row('usage_settlement', 'Usage settlement', 'block', 'Settlement state taxonomy probe failed.'); }
+        $required = (int) ($health['settlement_required'] ?? 0);
+        $stale = (int) ($health['reserved_stale'] ?? 0);
+        if ($required > 0 || $stale > 0) {
+            return self::row('usage_settlement', 'Usage settlement', 'warn', $required . ' settlement_required marker(s), ' . $stale . ' stale reservation(s) — resolve before pilot.');
+        }
+        return self::row('usage_settlement', 'Usage settlement', 'ok', 'Reserve/complete/fail/void semantics active; nothing awaiting settlement.');
+    }
+
+    private static function check_trend_idempotency() {
+        if (!class_exists('VES_Trend_Observation_Store')) {
+            return self::row('trend_idempotency', 'Trend idempotency', 'block', 'VES_Trend_Observation_Store unavailable.');
+        }
+        if (!method_exists('VES_Trend_Observation_Store', 'idempotency_migration_report')) {
+            return self::row('trend_idempotency', 'Trend idempotency', 'block', 'DB-level idempotency (ws_canonical unique index + race-safe insert) is not compiled in.');
+        }
+        $report = ['unique_index_present' => false, 'duplicate_groups' => 0];
+        try { $report = VES_Trend_Observation_Store::idempotency_migration_report(); } catch (\Throwable $e) { /* report stays pessimistic */ }
+        if (!empty($report['unique_index_present'])) {
+            return self::row('trend_idempotency', 'Trend idempotency', 'ok', 'ws_canonical unique index live; duplicate inserts resolve to the existing row.');
+        }
+        $dupes = (int) ($report['duplicate_groups'] ?? 0);
+        return self::row('trend_idempotency', 'Trend idempotency', 'warn',
+            $dupes > 0
+                ? 'Unique index not yet live: ' . $dupes . ' duplicate group(s) must be consolidated first (application-level dedup remains active).'
+                : 'Unique index not yet live (run migrations / wp ves verify-schema --repair); application-level dedup remains active.');
+    }
+
+    private static function check_job_rails() {
+        if (!class_exists('VES_Job_Rails') || !method_exists('VES_Job_Rails', 'status')) {
+            return self::row('job_rails', 'Queue dead-letter rails', 'block', 'VES_Job_Rails unavailable.');
+        }
+        $status = ['available' => false, 'dead_letters' => 0];
+        try { $status = VES_Job_Rails::status(); } catch (\Throwable $e) { /* pessimistic */ }
+        if (empty($status['available'])) { return self::row('job_rails', 'Queue dead-letter rails', 'block', 'Dead-letter status unavailable.'); }
+        $dead = (int) ($status['dead_letters'] ?? 0);
+        return $dead > 0
+            ? self::row('job_rails', 'Queue dead-letter rails', 'warn', $dead . ' dead-lettered job(s) need operator review.')
+            : self::row('job_rails', 'Queue dead-letter rails', 'ok', 'Retry caps active; no dead-lettered jobs.');
+    }
+
+    private static function check_security_log() {
+        if (!class_exists('VES_Security_Event_Log') || !method_exists('VES_Security_Event_Log', 'summary')) {
+            return self::row('security_log', 'Security event log', 'warn', 'VES_Security_Event_Log unavailable — guardrail trips are not being recorded.');
+        }
+        $summary = ['total' => 0];
+        try { $summary = VES_Security_Event_Log::summary(); } catch (\Throwable $e) { /* pessimistic zero */ }
+        return self::row('security_log', 'Security event log', 'ok', 'Append-only scrubbed log active (' . (int) ($summary['total'] ?? 0) . ' event(s) recorded).');
     }
 
     private static function check_feature_flags() {
@@ -249,22 +379,35 @@ final class VES_RC_Readiness_Service {
 
     private static function check_live_validation() {
         $state = self::live_validation_state();
-        if (($state['status'] ?? '') === 'passed') {
-            return self::row('live_validation', 'Live staging validation', 'ok', 'Recorded as passed at ' . (string) ($state['recorded_at'] ?? 'unknown time') . ' (operator-recorded; verify evidence).');
+        $status = (string) ($state['status'] ?? 'unrun');
+        if ($status === 'passed' && !empty($state['evidence_pack_hash'])) {
+            return self::row('live_validation', 'Live staging validation', 'ok',
+                'Passed via verified evidence pack ' . substr((string) $state['evidence_pack_hash'], 0, 12) . '… at ' . (string) ($state['recorded_at'] ?? 'unknown time') . '.');
+        }
+        if ($status === 'unverified_manual') {
+            return self::row('live_validation', 'Live staging validation', 'warn',
+                'A manually-written validation option exists WITHOUT a verifiable evidence pack — treated as UNVERIFIED, not passed.');
         }
         return self::row('live_validation', 'Live staging validation', 'warn',
             'UNRUN / not recorded. The RC is statically verified only — production claims are forbidden until the live checklist passes.');
     }
 
     private static function live_validation_state() {
+        // Phase 9B.3 — the evidence pack classifier is authoritative: only a pack-
+        // verified pass is 'passed'; a bare option is 'unverified_manual'.
+        if (class_exists('VES_RC_Evidence_Pack') && method_exists('VES_RC_Evidence_Pack', 'live_validation_state')) {
+            return VES_RC_Evidence_Pack::live_validation_state();
+        }
         $raw = function_exists('get_option') ? get_option(self::OPTION_LIVE_VALIDATION, []) : [];
         if (!is_array($raw) || empty($raw['status'])) {
-            return ['status' => 'unrun', 'recorded_at' => '', 'note' => 'No live staging validation has been recorded on this install.'];
+            return ['status' => 'unrun', 'recorded_at' => '', 'evidence_pack_hash' => '', 'note' => 'No live staging validation has been recorded on this install.'];
         }
+        // Without the pack classifier nothing manual can be trusted as passed.
         return [
-            'status'      => self::clean_key((string) $raw['status']),
+            'status'      => 'unverified_manual',
             'recorded_at' => self::clean_text((string) ($raw['recorded_at'] ?? '')),
-            'note'        => self::clean_text((string) ($raw['note'] ?? '')),
+            'evidence_pack_hash' => '',
+            'note'        => 'Evidence pack service unavailable; stored state cannot be verified.',
         ];
     }
 

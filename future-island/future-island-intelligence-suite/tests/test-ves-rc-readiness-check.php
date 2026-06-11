@@ -44,7 +44,7 @@ $ok(strpos($warn_text, 'UNRUN') !== false, 'warnings call out the unrun live val
 // ── 2. Healthy stack stubs ───────────────────────────────────────────────────
 // NOTE: declared inside a conditional block so PHP binds them at RUNTIME —
 // scenario 1 above must run with no services defined.
-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.5'); }
+if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.6'); }
 if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc1'); }
 if (!class_exists('VES_Intelligence_Store')) {
 final class VES_Intelligence_Store {
@@ -81,9 +81,11 @@ final class VES_Usage_Billing {
     public static function settle_reserved_usage($a = null, $b = null, $c = null, $d = null) {}
     public static function void_reserved_usage($a = null, $b = null) {}
 }
-final class VES_Apify_Client {}
+final class VES_Apify_Client { const MIN_CHARGE_CEILING_USD = 0.1; const MAX_CHARGE_CEILING_USD = 50.0; }
 final class VES_Apify_Actor_Registry { public static function is_allowed_slug($s) { return false; } }
-final class VES_Trend_Observation_Store {}
+final class VES_Trend_Observation_Store {
+    public static function idempotency_migration_report() { return ['unique_index_present' => true, 'duplicate_groups' => 0, 'safe_to_index' => true, 'note' => '']; }
+}
 final class VES_Staging_Validation_Service { public static function schema_health() { return ['status' => 'ok', 'missing' => [], 'available' => true]; } }
 final class VES_Config {
     public static $token = '';
@@ -91,6 +93,40 @@ final class VES_Config {
     public static function get_token() { return self::$token; }
 }
 final class VES_Release_Candidate_Page {}
+// Phase 9 production-rails stubs (probe-compatible).
+final class VES_Workspace_Guard {
+    public static $active = true;
+    public static function guard_active() { return self::$active; }
+}
+final class VES_Review_Decision_Ledger {
+    public static $active = true;
+    public static function ledger_active() { return self::$active; }
+}
+final class VES_Usage_Settlement {
+    public static $required = 0;
+    public static function semantics_active() { return true; }
+    public static function settlement_health() { return ['available' => true, 'reserved_stale' => 0, 'settlement_required' => self::$required, 'healthy' => self::$required === 0]; }
+}
+final class VES_Security_Event_Log {
+    public static function summary() { return ['total' => 0, 'by_type' => [], 'available' => true]; }
+    public static function record($t, $d, $c = []) { return true; }
+    public static function scrub($s) { return (string) $s; }
+}
+final class VES_Job_Rails {
+    public static $dead = 0;
+    public static function status() { return ['available' => true, 'tracked_keys' => 0, 'dead_letters' => self::$dead, 'max_retries' => 3, 'healthy' => self::$dead === 0]; }
+}
+final class VES_RC_Evidence_Pack {
+    public static function live_validation_state() {
+        $raw = get_option('ves_rc_live_validation', []);
+        if (!is_array($raw) || empty($raw['status'])) { return ['status' => 'unrun', 'recorded_at' => '', 'evidence_pack_hash' => '', 'note' => '']; }
+        $hash = strtolower((string) ($raw['evidence_pack_hash'] ?? ''));
+        if ((string) ($raw['source'] ?? '') === 'evidence_pack' && preg_match('/^[a-f0-9]{64}$/', $hash) && $raw['status'] === 'passed') {
+            return ['status' => 'passed', 'recorded_at' => (string) ($raw['recorded_at'] ?? ''), 'evidence_pack_hash' => $hash, 'note' => ''];
+        }
+        return ['status' => 'unverified_manual', 'recorded_at' => (string) ($raw['recorded_at'] ?? ''), 'evidence_pack_hash' => '', 'note' => ''];
+    }
+}
 } // end runtime-bound stub block
 
 $r = VES_RC_Readiness_Service::report();
@@ -98,12 +134,17 @@ $ok(($r['status'] ?? '') !== 'blocked', 'healthy stack is not blocked');
 $ok(($r['status'] ?? '') === 'ready_with_warnings', 'healthy stack with unrun live validation is ready_with_warnings');
 $ok(($r['production_ready'] ?? true) === false, 'production_ready stays false even when healthy');
 
-// ── 3. Live validation recorded → ok’d but production still false ───────────
+// ── 3. Phase 9B.3 — manual option is NOT trusted; evidence pack is ───────────
 VES_Config::$token = 'apify_api_x';
 $GLOBALS['__opts']['ves_rc_live_validation'] = ['status' => 'passed', 'recorded_at' => '2026-06-12 09:00:00', 'note' => 'ops signoff'];
 $r = VES_RC_Readiness_Service::report();
-$ok(($r['live_validation']['status'] ?? '') === 'passed', 'recorded live validation is surfaced');
-$ok(($r['status'] ?? '') === 'ready_for_staging', 'fully healthy + recorded validation reaches ready_for_staging');
+$ok(($r['live_validation']['status'] ?? '') === 'unverified_manual', 'manually-written option WITHOUT evidence pack reads unverified_manual, never passed');
+$ok(($r['status'] ?? '') === 'ready_with_warnings', 'manual option keeps the report at ready_with_warnings');
+
+$GLOBALS['__opts']['ves_rc_live_validation'] = ['status' => 'passed', 'source' => 'evidence_pack', 'evidence_pack_hash' => str_repeat('ab', 32), 'recorded_at' => '2026-06-12 09:00:00'];
+$r = VES_RC_Readiness_Service::report();
+$ok(($r['live_validation']['status'] ?? '') === 'passed', 'evidence-pack-backed validation is surfaced as passed');
+$ok(($r['status'] ?? '') === 'ready_for_staging', 'fully healthy + evidence-backed validation reaches ready_for_staging');
 $ok(($r['production_ready'] ?? true) === false, 'production_ready is STILL false — command cannot grant it');
 unset($GLOBALS['__opts']['ves_rc_live_validation']);
 

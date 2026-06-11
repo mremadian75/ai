@@ -29,7 +29,8 @@ final class VES_Workbench {
         }
         $insight = VES_Intelligence_Store::get_insight($insight_id);
         if (!is_array($insight) || empty($insight['id'])) { return $h . self::error('Insight not found.') . '</div>'; }
-        if ($ws > 0 && (int) ($insight['workspace_id'] ?? 0) !== $ws) { return $h . self::error('Insight is outside this workspace.') . '</div>'; }
+        if ($ws > 0 && class_exists('VES_Workspace_Guard') && VES_Workspace_Guard::assert_object_in_workspace('insight', $insight, $ws) !== true) { return $h . self::error('Insight is outside this workspace.') . '</div>'; }
+        if ($ws > 0 && !class_exists('VES_Workspace_Guard') && (int) ($insight['workspace_id'] ?? 0) !== $ws) { return $h . self::error('Insight is outside this workspace.') . '</div>'; }
 
         // 1. Target summary
         $status = (string) ($insight['status'] ?? 'unknown');
@@ -81,7 +82,8 @@ final class VES_Workbench {
         }
         $brief = VES_Intelligence_Store::get_brief($brief_id);
         if (!is_array($brief) || empty($brief['id'])) { return $h . self::error('Brief not found.') . '</div>'; }
-        if ($ws > 0 && (int) ($brief['workspace_id'] ?? 0) !== $ws) { return $h . self::error('Brief is outside this workspace.') . '</div>'; }
+        if ($ws > 0 && class_exists('VES_Workspace_Guard') && VES_Workspace_Guard::assert_object_in_workspace('brief', $brief, $ws) !== true) { return $h . self::error('Brief is outside this workspace.') . '</div>'; }
+        if ($ws > 0 && !class_exists('VES_Workspace_Guard') && (int) ($brief['workspace_id'] ?? 0) !== $ws) { return $h . self::error('Brief is outside this workspace.') . '</div>'; }
 
         $status = strtolower((string) ($brief['status'] ?? 'draft'));
         $ready = in_array($status, ['approved', 'ready', 'reviewed'], true);

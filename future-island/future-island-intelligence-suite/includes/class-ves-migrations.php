@@ -19,7 +19,7 @@ if (!defined('ABSPATH')) { exit; }
 final class VES_Migrations {
 
     /** Bump this whenever ANY table schema changes to force a one-time re-migration. */
-    const SCHEMA_VERSION = '2026.06.13-5';
+    const SCHEMA_VERSION = '2026.06.14-1';
     const OPTION = 'ves_schema_version';
     const LOCK   = 'ves_schema_migrating';
     const REPAIR = 'ves_repair_tables';
@@ -50,6 +50,7 @@ final class VES_Migrations {
             ['VES_Usage_Billing', 'create_tables'],
             ['VES_Stripe_Billing', 'create_tables'],
             ['VES_Memory_Records', 'create_table'],
+            ['VES_Review_Decision_Ledger', 'create_table'],
             ['VES_Insight_Records', 'create_table'],
             ['VES_Opportunity_Records', 'create_table'],
             ['VES_Brief_Records', 'create_table'],

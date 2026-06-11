@@ -14,7 +14,7 @@ if (!defined('ABSPATH')) { exit; }
 final class VES_Trend_Observation_Store {
 
     const TABLE_SLUG  = 'ves_trend_observations';
-    const DB_VERSION  = '1.0.0';
+    const DB_VERSION  = '1.1.0';
     const VERSION_OPT = 'ves_trend_observations_db_version';
     const MAX_META_BYTES = 8000;
 
@@ -70,7 +70,8 @@ final class VES_Trend_Observation_Store {
             KEY observed_at (observed_at),
             KEY canonical_hash (canonical_hash),
             KEY source_id (source_id),
-            KEY signal_id (signal_id)
+            KEY signal_id (signal_id),
+            UNIQUE KEY ws_canonical (workspace_id,canonical_hash)
         ) {$cc};";
         if (function_exists('dbDelta')) { dbDelta($sql); }
         elseif (method_exists($wpdb, 'query')) { $wpdb->query($sql); }
@@ -158,7 +159,55 @@ final class VES_Trend_Observation_Store {
             'created_at' => $row['created_at'], 'updated_at' => $row['updated_at'],
         ];
         $ok = $wpdb->insert(self::table_name(), $ordered, $formats);
-        return $ok ? (int) $wpdb->insert_id : new WP_Error('ves_trend_insert_failed', 'Could not persist observation.');
+        if ($ok) { return (int) $wpdb->insert_id; }
+        // Phase 9A.4 — concurrent-replay safety: with the ws_canonical UNIQUE index,
+        // a racing duplicate insert fails at the DB. Resolve deterministically by
+        // re-reading the winning row and accumulating into it (same as the normal
+        // dedup path) instead of failing the caller.
+        $winner = (int) $wpdb->get_var($wpdb->prepare(
+            'SELECT id FROM ' . self::table_name() . ' WHERE workspace_id = %d AND canonical_hash = %s ORDER BY id ASC LIMIT 1',
+            $norm['workspace_id'], $norm['canonical_hash']
+        ));
+        if ($winner > 0) {
+            $cur = $wpdb->get_row($wpdb->prepare('SELECT value_number, raw_count FROM ' . self::table_name() . ' WHERE id = %d', $winner), ARRAY_A);
+            $wpdb->update(self::table_name(), [
+                'value_number' => round((float) ($cur['value_number'] ?? 0) + $norm['value_number'], 4),
+                'raw_count' => max(0, (int) ($cur['raw_count'] ?? 0) + $norm['raw_count']),
+                'updated_at' => $now,
+            ], ['id' => $winner], ['%f', '%d', '%s'], ['%d']);
+            return $winner;
+        }
+        return new WP_Error('ves_trend_insert_failed', 'Could not persist observation.');
+    }
+
+    /**
+     * Phase 9A.4 — read-only idempotency migration report. dbDelta cannot add the
+     * ws_canonical UNIQUE index while duplicate (workspace_id, canonical_hash)
+     * rows exist; this reports duplicates and whether the index is live so the
+     * operator can act. Writes nothing.
+     */
+    public static function idempotency_migration_report(): array {
+        global $wpdb;
+        $out = ['unique_index_present' => false, 'duplicate_groups' => 0, 'safe_to_index' => false, 'note' => ''];
+        if (!isset($wpdb) || !is_object($wpdb)) { $out['note'] = 'db_unavailable'; return $out; }
+        if (method_exists($wpdb, 'get_results')) {
+            $indexes = $wpdb->get_results('SHOW INDEX FROM ' . self::table_name(), ARRAY_A);
+            foreach ((array) $indexes as $ix) {
+                if ((string) ($ix['Key_name'] ?? '') === 'ws_canonical' && (int) ($ix['Non_unique'] ?? 1) === 0) {
+                    $out['unique_index_present'] = true;
+                    break;
+                }
+            }
+        }
+        if (method_exists($wpdb, 'get_var')) {
+            $dupes = $wpdb->get_var('SELECT COUNT(*) FROM (SELECT workspace_id, canonical_hash FROM ' . self::table_name() . " WHERE canonical_hash <> '' GROUP BY workspace_id, canonical_hash HAVING COUNT(*) > 1) d");
+            $out['duplicate_groups'] = max(0, (int) $dupes);
+        }
+        $out['safe_to_index'] = $out['duplicate_groups'] === 0;
+        if (!$out['unique_index_present'] && !$out['safe_to_index']) {
+            $out['note'] = 'Duplicate observation groups exist; dbDelta cannot add the unique index until they are consolidated. Application-level dedup remains active.';
+        }
+        return $out;
     }
 
     /** List observations (workspace-scoped) for the series builder / diagnostics. */

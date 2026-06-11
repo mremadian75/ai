@@ -242,12 +242,47 @@ final class VES_Apify_Client {
         return max(10, min(55, (int) $timeout));
     }
 
+    // Phase 9A.2 — hard charge-ceiling policy for paid actor dispatch.
+    const MIN_CHARGE_CEILING_USD = 0.1;
+    const MAX_CHARGE_CEILING_USD = 50.0;
+
     /**
-     * v0.1 RC — hard dispatch gate. A run-start request (POST …/v2/acts/{slug}/runs
-     * or run-sync, and the actor-tasks equivalent) is refused before any HTTP when
-     * the actor slug is not on the server-side allowlist, and a missing
-     * maxTotalChargeUsd ceiling on a run-start URL is logged as a config warning.
-     * Read-style requests (fetch run/items/abort) are never gated.
+     * Phase 9A.1 — explicit local-dev-only bypass of the dispatch gates. Default
+     * OFF. Requires the scary constant/filter AND a local/dev siteurl; any attempt
+     * to use it on a non-local site is refused and logged as a security event.
+     */
+    private static function unsafe_bypass_active() {
+        $on = defined('VES_ALLOW_UNSAFE_PROVIDER_DISPATCH_FOR_LOCAL_TESTS_ONLY')
+            && VES_ALLOW_UNSAFE_PROVIDER_DISPATCH_FOR_LOCAL_TESTS_ONLY;
+        if (function_exists('apply_filters')) {
+            $on = (bool) apply_filters('ves_allow_unsafe_provider_dispatch_for_local_tests_only', $on);
+        }
+        if (!$on) { return false; }
+        $site = function_exists('get_option') ? strtolower((string) get_option('siteurl', '')) : '';
+        $host = (string) (parse_url($site, PHP_URL_HOST) ?: '');
+        $is_local = $host === 'localhost' || $host === '127.0.0.1' || $host === '::1'
+            || substr($host, -6) === '.local' || substr($host, -5) === '.test'
+            || substr($host, -10) === '.localhost';
+        if (!$is_local) {
+            if (class_exists('VES_Security_Event_Log')) {
+                VES_Security_Event_Log::record('unsafe_bypass_attempt', 'Unsafe provider dispatch bypass requested on a non-local site; refused.', ['host' => $host]);
+            }
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * v0.1 RC + Phase 9A — hard dispatch gate, FAIL CLOSED. A run-start request
+     * (POST …/v2/acts/{slug}/runs or run-sync, and the actor-tasks equivalent) is
+     * refused before any HTTP when:
+     *   - the allowlist registry is unavailable (9A.1: no registry, no dispatch),
+     *   - the actor slug is not allowlisted,
+     *   - the URL has no maxTotalChargeUsd ceiling and the actor is not explicitly
+     *     registered as zero-cost (9A.2),
+     *   - the ceiling is below the minimum floor or above the maximum allowed.
+     * Read-style requests (fetch run/items/abort) are never gated. The only escape
+     * hatch is the local-dev-only constant above (default false, non-local refused).
      * @return true|WP_Error
      */
     private static function enforce_run_dispatch_safety($method, $url) {
@@ -256,29 +291,79 @@ final class VES_Apify_Client {
             return true;
         }
         $slug = (string) $m[2];
-        if (class_exists('VES_Apify_Actor_Registry') && method_exists('VES_Apify_Actor_Registry', 'is_allowed_slug')) {
-            if (!VES_Apify_Actor_Registry::is_allowed_slug($slug)) {
-                self::record_diagnostic_safe('apify_actor_not_allowlisted', 'Run dispatch refused: actor is not on the server-side allowlist.', [
-                    'method' => 'POST',
-                    'actor'  => VES_Apify_Actor_Registry::normalize_slug($slug),
-                    'stage'  => 'actor_allowlist_gate',
-                ]);
-                return new WP_Error('ves_actor_not_allowlisted', 'This data source actor is not allowlisted on the server. Ask an admin to register it in the actor registry before running it.', [
-                    'status' => 0,
-                    'provider_state' => 'CONFIGURATION_REQUIRED',
-                    'stage' => 'actor_allowlist_gate',
-                ]);
+        if (self::unsafe_bypass_active()) {
+            self::record_diagnostic_safe('apify_unsafe_bypass_used', 'Dispatch gates bypassed via local-tests-only constant (local site).', [
+                'method' => 'POST', 'stage' => 'unsafe_local_bypass',
+            ]);
+            return true;
+        }
+
+        // 9A.1 — fail CLOSED when the allowlist cannot be evaluated.
+        if (!class_exists('VES_Apify_Actor_Registry') || !method_exists('VES_Apify_Actor_Registry', 'is_allowed_slug')) {
+            self::record_diagnostic_safe('apify_allowlist_unavailable', 'Run dispatch refused: actor allowlist registry unavailable (fail-closed).', [
+                'method' => 'POST', 'stage' => 'actor_allowlist_gate_fail_closed',
+            ]);
+            if (class_exists('VES_Security_Event_Log')) {
+                VES_Security_Event_Log::record('allowlist_unavailable', 'Provider dispatch blocked: allowlist registry unavailable.', ['stage' => 'fail_closed']);
             }
-        } else {
-            self::record_diagnostic_safe('apify_allowlist_unavailable', 'Actor allowlist registry unavailable; dispatch proceeded without the allowlist gate.', [
-                'method' => 'POST',
-                'stage'  => 'actor_allowlist_gate_degraded',
+            return new WP_Error('ves_allowlist_unavailable', 'Provider dispatch is blocked because the actor allowlist service is unavailable. No paid run can start until it is restored.', [
+                'status' => 0, 'provider_state' => 'CONFIGURATION_REQUIRED', 'stage' => 'actor_allowlist_gate_fail_closed',
             ]);
         }
-        if (strpos((string) $url, 'maxTotalChargeUsd=') === false) {
-            self::record_diagnostic_safe('apify_charge_ceiling_missing', 'Run-start URL has no maxTotalChargeUsd ceiling; configure ves_prepare_run_options()/hard max charge.', [
+        if (!VES_Apify_Actor_Registry::is_allowed_slug($slug)) {
+            self::record_diagnostic_safe('apify_actor_not_allowlisted', 'Run dispatch refused: actor is not on the server-side allowlist.', [
                 'method' => 'POST',
-                'stage'  => 'charge_ceiling_warning',
+                'actor'  => VES_Apify_Actor_Registry::normalize_slug($slug),
+                'stage'  => 'actor_allowlist_gate',
+            ]);
+            if (class_exists('VES_Security_Event_Log')) {
+                VES_Security_Event_Log::record('provider_dispatch_blocked', 'Provider dispatch blocked: actor not allowlisted.', ['actor' => VES_Apify_Actor_Registry::normalize_slug($slug)]);
+            }
+            return new WP_Error('ves_actor_not_allowlisted', 'This data source actor is not allowlisted on the server. Ask an admin to register it in the actor registry before running it.', [
+                'status' => 0, 'provider_state' => 'CONFIGURATION_REQUIRED', 'stage' => 'actor_allowlist_gate',
+            ]);
+        }
+
+        // 9A.2 — hard ceiling enforcement.
+        $ceiling = null;
+        if (preg_match('/[?&]maxTotalChargeUsd=([0-9.]+)/', (string) $url, $cm)) { $ceiling = (float) $cm[1]; }
+        if ($ceiling === null || $ceiling <= 0) {
+            $zero_cost = method_exists('VES_Apify_Actor_Registry', 'is_zero_cost_slug') && VES_Apify_Actor_Registry::is_zero_cost_slug($slug);
+            if ($zero_cost) {
+                self::record_diagnostic_safe('apify_zero_cost_dispatch', 'Run-start without charge ceiling allowed: actor is registered zero-cost.', [
+                    'method' => 'POST', 'actor' => VES_Apify_Actor_Registry::normalize_slug($slug), 'stage' => 'charge_ceiling_zero_cost',
+                ]);
+                return true;
+            }
+            self::record_diagnostic_safe('apify_charge_ceiling_missing', 'Run dispatch refused: run-start URL has no maxTotalChargeUsd ceiling (hard gate).', [
+                'method' => 'POST', 'stage' => 'charge_ceiling_blocked',
+            ]);
+            if (class_exists('VES_Security_Event_Log')) {
+                VES_Security_Event_Log::record('charge_ceiling_blocked', 'Provider dispatch blocked: missing charge ceiling.', ['actor' => VES_Apify_Actor_Registry::normalize_slug($slug)]);
+            }
+            return new WP_Error('ves_charge_ceiling_required', 'Provider dispatch is blocked: this paid run has no maxTotalChargeUsd cost ceiling. Configure the hard max charge in settings.', [
+                'status' => 0, 'provider_state' => 'CONFIGURATION_REQUIRED', 'stage' => 'charge_ceiling_blocked',
+            ]);
+        }
+        $max_allowed = self::MAX_CHARGE_CEILING_USD;
+        if (function_exists('apply_filters')) { $max_allowed = (float) apply_filters('ves_apify_max_charge_ceiling_usd', $max_allowed); }
+        if ($ceiling < self::MIN_CHARGE_CEILING_USD) {
+            self::record_diagnostic_safe('apify_charge_ceiling_too_low', 'Run dispatch refused: charge ceiling below the minimum floor.', [
+                'method' => 'POST', 'ceiling' => $ceiling, 'minimum' => self::MIN_CHARGE_CEILING_USD, 'stage' => 'charge_ceiling_blocked',
+            ]);
+            return new WP_Error('ves_charge_ceiling_too_low', 'Provider dispatch is blocked: the cost ceiling is below the supported minimum.', [
+                'status' => 0, 'provider_state' => 'CONFIGURATION_REQUIRED', 'stage' => 'charge_ceiling_blocked',
+            ]);
+        }
+        if ($max_allowed > 0 && $ceiling > $max_allowed) {
+            self::record_diagnostic_safe('apify_charge_ceiling_too_high', 'Run dispatch refused: charge ceiling above the maximum allowed.', [
+                'method' => 'POST', 'ceiling' => $ceiling, 'maximum' => $max_allowed, 'stage' => 'charge_ceiling_blocked',
+            ]);
+            if (class_exists('VES_Security_Event_Log')) {
+                VES_Security_Event_Log::record('charge_ceiling_blocked', 'Provider dispatch blocked: ceiling above maximum.', ['ceiling' => $ceiling, 'maximum' => $max_allowed]);
+            }
+            return new WP_Error('ves_charge_ceiling_too_high', 'Provider dispatch is blocked: the cost ceiling exceeds the maximum allowed for this install.', [
+                'status' => 0, 'provider_state' => 'CONFIGURATION_REQUIRED', 'stage' => 'charge_ceiling_blocked',
             ]);
         }
         return true;

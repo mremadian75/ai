@@ -49,6 +49,9 @@ final class VES_Apify_Actor_Registry {
             'health_status' => 'unknown',
             'permission_status' => 'not_checked',
             'primary' => false,
+            // Phase 9A.2: only an explicitly zero-cost actor may dispatch without a
+            // maxTotalChargeUsd ceiling. Default false — paid until proven otherwise.
+            'zero_cost' => false,
         ];
         $merged = array_merge($defaults, $overrides);
         if (empty($merged['purpose']) && !empty($merged['use_case'])) { $merged['purpose'] = $merged['use_case']; }
@@ -236,6 +239,27 @@ final class VES_Apify_Actor_Registry {
         $slug = self::normalize_slug($slug);
         if ($slug === '') { return false; }
         return in_array($slug, self::allowed_slugs(), true);
+    }
+
+    /**
+     * Phase 9A.2 — true only when a registry entry explicitly marks this actor
+     * zero-cost. Used as the ONLY exception to the hard charge-ceiling gate; an
+     * unknown slug is never zero-cost.
+     */
+    public static function is_zero_cost_slug($slug) {
+        $slug = self::normalize_slug($slug);
+        if ($slug === '' || !self::is_allowed_slug($slug)) { return false; }
+        foreach (self::registry() as $config) {
+            if (!is_array($config) || empty($config['zero_cost'])) { continue; }
+            $candidates = array_merge(
+                [(string) ($config['actor_id'] ?? '')],
+                array_map('strval', (array) ($config['fallback_actors'] ?? []))
+            );
+            foreach ($candidates as $c) {
+                if (self::normalize_slug($c) === $slug) { return true; }
+            }
+        }
+        return false;
     }
 
     private static function find_primary($module, $source_type = '', $mode = '') {

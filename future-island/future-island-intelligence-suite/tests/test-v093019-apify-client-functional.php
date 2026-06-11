@@ -5,10 +5,21 @@
  * dispatch success, and error classification by EXECUTION, not string-grep.
  */
 require __DIR__ . '/bootstrap-wp-shims.php';
+
+// Phase 9A made dispatch FAIL CLOSED (allowlist + hard charge ceiling). This test
+// is about HTTP mechanics/classification, so satisfy the gates with a permissive
+// registry stub and a ceiling on the run URL; the gates themselves are covered by
+// test-ves-provider-fail-closed-9a.php and test-ves-provider-safety-hardening.php.
+final class VES_Apify_Actor_Registry {
+    public static function normalize_slug($slug) { return strtolower(str_replace('/', '~', trim((string) $slug))); }
+    public static function is_allowed_slug($slug) { return self::normalize_slug($slug) === 'apidojo~tiktok-scraper'; }
+    public static function is_zero_cost_slug($slug) { return false; }
+}
+
 require dirname(__DIR__) . '/includes/class-ves-apify-client.php';
 
 $state = ['total' => 0, 'pass' => 0, 'fail' => []];
-$url = 'https://api.apify.com/v2/acts/apidojo~tiktok-scraper/runs';
+$url = 'https://api.apify.com/v2/acts/apidojo~tiktok-scraper/runs?maxTotalChargeUsd=3';
 
 // --- T1: empty token guard fires BEFORE any HTTP call -----------------------
 VES_Test_HTTP::reset();

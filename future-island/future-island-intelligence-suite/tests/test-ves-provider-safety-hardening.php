@@ -84,14 +84,34 @@ VES_Test_HTTP::$queue[] = ['code' => 200, 'body' => ['data' => ['items' => []]]]
 $abort = VES_Apify_Client::request('POST', 'https://api.apify.com/v2/actor-runs/RUN1/abort');
 ves_test_ok('abort (non run-start POST) is not gated', is_array($abort) && count(VES_Test_HTTP::$calls) === 1, $state);
 
-// ── 6. Missing ceiling on a run-start logs a warning diagnostic ─────────────
+// ── 6. Phase 9A.2 — missing/invalid ceiling is a HARD BLOCK ──────────────────
 VES_Test_HTTP::reset();
 VES_Admin::$diagnostics = [];
-VES_Test_HTTP::$queue[] = ['code' => 201, 'body' => ['data' => ['id' => 'RUN2']]];
 $no_ceiling = VES_Apify_Client::request('POST', 'https://api.apify.com/v2/acts/apify~web-scraper/runs?build=latest', ['q' => 'x']);
-ves_test_ok('missing-ceiling dispatch still proceeds (warn, not block)', is_array($no_ceiling), $state);
+ves_test_ok('missing-ceiling dispatch is BLOCKED (fail closed)', is_wp_error($no_ceiling) && $no_ceiling->get_error_code() === 'ves_charge_ceiling_required', $state);
+ves_test_ok('missing-ceiling block makes ZERO HTTP calls', count(VES_Test_HTTP::$calls) === 0, $state);
 $diag2 = json_encode(VES_Admin::$diagnostics);
 ves_test_ok('missing ceiling recorded as apify_charge_ceiling_missing', strpos($diag2, 'apify_charge_ceiling_missing') !== false, $state);
+
+VES_Test_HTTP::reset();
+$low = VES_Apify_Client::request('POST', 'https://api.apify.com/v2/acts/apify~web-scraper/runs?maxTotalChargeUsd=0.01', ['q' => 'x']);
+ves_test_ok('ceiling below the 0.10 floor is blocked', is_wp_error($low) && $low->get_error_code() === 'ves_charge_ceiling_too_low' && count(VES_Test_HTTP::$calls) === 0, $state);
+
+VES_Test_HTTP::reset();
+$high = VES_Apify_Client::request('POST', 'https://api.apify.com/v2/acts/apify~web-scraper/runs?maxTotalChargeUsd=999', ['q' => 'x']);
+ves_test_ok('ceiling above the maximum is blocked', is_wp_error($high) && $high->get_error_code() === 'ves_charge_ceiling_too_high' && count(VES_Test_HTTP::$calls) === 0, $state);
+
+// Zero-cost exception: only an allowlisted actor explicitly registered zero_cost
+// may dispatch without a ceiling.
+$GLOBALS['__ves_options']['ves_apify_actor_registry_overrides'] = [
+    'web_scraper' => ['actor_id' => 'apify/web-scraper', 'zero_cost' => true],
+];
+VES_Test_HTTP::reset();
+VES_Test_HTTP::$queue[] = ['code' => 201, 'body' => ['data' => ['id' => 'RUN-ZC']]];
+$zc = VES_Apify_Client::request('POST', 'https://api.apify.com/v2/acts/apify~web-scraper/runs?build=latest', ['q' => 'x']);
+ves_test_ok('zero-cost registered actor may dispatch without ceiling', is_array($zc) && count(VES_Test_HTTP::$calls) === 1, $state);
+$GLOBALS['__ves_options']['ves_apify_actor_registry_overrides'] = [];
+ves_test_ok('unknown actors are never zero-cost', !VES_Apify_Actor_Registry::is_zero_cost_slug('evil-actor/data-exfil'), $state);
 
 // ── 7. Source-level guarantees ──────────────────────────────────────────────
 $pi_src = file_get_contents(dirname(__DIR__) . '/includes/platform-input.php');

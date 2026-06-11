@@ -11,7 +11,7 @@ foreach ($files as $k => $f) { $src[$k] = file_get_contents($f); }
 $checks = [];
 $add = function($name, $ok) use (&$checks) { $checks[] = [$name, (bool) $ok]; };
 
-$add('version bumped to 1.1.0', strpos($src['main'], 'Version: 1.2.5') !== false && strpos($src['main'], "VES_PLUGIN_VERSION',         '1.2.5'") !== false);
+$add('version bumped to 1.1.0', strpos($src['main'], 'Version: 1.2.6') !== false && strpos($src['main'], "VES_PLUGIN_VERSION',         '1.2.6'") !== false);
 $add('settings page has top visible save actionbar', strpos($src['admin'], 'ves-settings-actionbar') !== false && strpos($src['admin'], "submit_button('Guardar cambios', 'primary', 'submit', false") !== false);
 $add('settings page keeps bottom save button', substr_count($src['admin'], "submit_button('Guardar cambios'") >= 2);
 $add('runtime lock reset admin action registered', strpos($src['admin'], "admin_post_ves_clear_runtime_locks") !== false && strpos($src['admin'], 'handle_clear_runtime_locks') !== false);

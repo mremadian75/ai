@@ -34,6 +34,11 @@ $ves_tables = [
     'ves_market_signal_events', 'ves_ms_workspaces', 'ves_ms_sources',
     'ves_ms_runs', 'ves_ms_signals', 'ves_ms_insights',
     'ves_ms_briefs', 'ves_ms_drafts', 'ves_ms_audit_log',
+    // Phases 2-9 (intelligence contract, trend engine, rails, audit ledger)
+    'ves_intel_sources', 'ves_intel_signals', 'ves_intel_evidences',
+    'ves_intel_insights', 'ves_intel_briefs', 'ves_intel_drafts',
+    'ves_intel_memory', 'ves_trend_observations', 'ves_trend_records',
+    'ves_review_decisions', 'ves_ai_usage_events', 'ves_topup_requests',
 ];
 
 // Deep Trend Finder tables
@@ -55,6 +60,15 @@ $ves_options = [
     'ves_opportunity_records_db_version', 'ves_brief_records_db_version',
     'ves_workflow_events_db_version', 'ves_market_signal_store_db_version',
     'ves_market_signal_commercial_db_version', 'ves_market_signal_commercial_settings',
+    // Phases 2-9 options (rails, ledgers, evidence, egress) — wiped on explicit
+    // delete so no validation/audit state survives a "remove my data" uninstall.
+    'ves_trend_observations_db_version', 'ves_review_decisions_db_version',
+    'ves_trend_backfill_done', 'ves_trend_backfill_last',
+    'ves_rc_live_validation', 'ves_security_event_log',
+    'ves_job_retry_counts', 'ves_job_dead_letter',
+    'ves_usage_settlement_required', 'ves_apify_actor_allowlist_extra',
+    'ves_apify_actor_registry_overrides', 'ves_apify_active_slots',
+    'ves_generation_execution_enabled',
 ];
 
 // Deep Trend Finder options

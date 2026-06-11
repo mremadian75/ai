@@ -20,6 +20,9 @@
 #
 set -u
 
+echo "NOTICE: v2 produces a schema-1.0 evidence pack which can NO LONGER be recorded as passed." >&2
+echo "        Use scripts/future-island-live-validation-v3.sh (evidence pack v2, file-backed verification)." >&2
+
 # ── args ─────────────────────────────────────────────────────────────────────
 CONFIRM_STAGING=0
 DB_BACKUP=""

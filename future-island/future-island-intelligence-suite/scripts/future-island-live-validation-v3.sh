@@ -183,6 +183,14 @@ if [ -n "$DB_BACKUP" ] && [ -s "$DB_BACKUP" ]; then
     DB_BACKUP_SHA="$(sha "$DB_BACKUP")"
     echo "$DB_BACKUP_SHA  $(basename "$DB_BACKUP")" > "$EVDIR/db-backup-sha256.txt"
 fi
+# finalize reuses the hash stored by collect-cli when --db-backup is not re-passed.
+if [ -z "$DB_BACKUP_SHA" ] && [ -f "$EVDIR/db-backup-sha256.txt" ]; then
+    DB_BACKUP_SHA="$(awk '{print $1}' "$EVDIR/db-backup-sha256.txt" | head -1)"
+fi
+if [ "$MODE" = "finalize" ] && [ -z "$DB_BACKUP_SHA" ]; then
+    echo "REFUSED: finalize needs the DB backup hash — pass --db-backup=<file> or run collect-cli first (db-backup-sha256.txt)." >&2
+    exit 3
+fi
 
 # ── command battery (READ-ONLY; stdout/stderr/combined; never --apply) ──────
 run_cmd() {

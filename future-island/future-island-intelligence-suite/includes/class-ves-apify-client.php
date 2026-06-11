@@ -425,7 +425,19 @@ final class VES_Apify_Client {
         $raw  = wp_remote_retrieve_body($response);
         $json = json_decode($raw, true);
 
-        if (self::should_retry($code) && $attempt < 2) {
+        // Deep-review hardening: a POST run-start is NOT retried on 5xx — the run
+        // may already have started upstream, and re-POSTing could dispatch (and
+        // charge) twice. 429 means the run was rate-limited away, so it stays
+        // retryable; reads/aborts keep the original retry behavior.
+        $is_run_start = strtoupper((string) $method) === 'POST'
+            && preg_match('#https?://api\.apify\.com/v2/(acts|actor-tasks)/[^/?\#]+/(runs|run-sync[^/?\#]*)#i', (string) $url);
+        if ($is_run_start && $code >= 500 && self::should_retry($code)) {
+            self::record_diagnostic_safe('apify_run_start_no_retry', 'Run-start returned a 5xx; NOT retried to avoid a possible double dispatch/charge. Check the provider console before re-running.', [
+                'method' => 'POST',
+                'status' => $code,
+            ]);
+        }
+        if (self::should_retry($code) && $attempt < 2 && !($is_run_start && $code >= 500)) {
             self::record_diagnostic_safe('apify_retry', 'Retrying upstream request after transient error.', [
                 'method' => strtoupper($method),
                 'status' => $code,

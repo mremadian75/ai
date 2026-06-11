@@ -62,8 +62,8 @@ final class VES_CLI_RC_Readiness {
 
     /**
      * wp ves rc-evidence-pack --output=<folder> [--build-sha=<sha256>]
-     *   [--operator=<name>] [--screenshots-dir=<dir>] [--php-error-log=<file>]
-     *   [--browser-log=<file>] [--format=json]
+     *   [--operator=<name>] [--screenshots-dir=<dir>] [--db-backup=<file>]
+     *   [--php-error-log=<file>] [--browser-log=<file>] [--format=json]
      * Phase 9B.3 — generates the evidence pack JSON from the live environment.
      * Read-only apart from writing the pack file itself. validation_status is
      * COMPUTED (passed only when every required command output is attached by
@@ -88,6 +88,14 @@ final class VES_CLI_RC_Readiness {
         if (!empty($assoc['screenshots-dir']) && is_dir((string) $assoc['screenshots-dir'])) {
             $shots = glob(rtrim((string) $assoc['screenshots-dir'], '/') . '/*.{png,jpg,jpeg}', GLOB_BRACE);
             $inputs['screenshots_manifest'] = array_map('basename', is_array($shots) ? $shots : []);
+            // Schema 2.0: every screenshot is hashed so the pack is file-verifiable.
+            $inputs['screenshot_files'] = [];
+            foreach ((array) $shots as $shot_path) {
+                if (is_readable($shot_path)) { $inputs['screenshot_files'][basename($shot_path)] = hash_file('sha256', $shot_path); }
+            }
+        }
+        if (!empty($assoc['db-backup']) && is_readable((string) $assoc['db-backup'])) {
+            $inputs['db_backup_sha256'] = hash_file('sha256', (string) $assoc['db-backup']);
         }
         foreach (['php-error-log' => 'php_error_log_sha256', 'browser-log' => 'browser_console_log_sha256'] as $arg => $field) {
             if (!empty($assoc[$arg]) && is_readable((string) $assoc[$arg])) {

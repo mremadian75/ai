@@ -265,11 +265,35 @@ final class VES_RC_Evidence_Pack {
         $manifest_sha = (string) hash_file('sha256', $manifest);
         $declared = strtolower((string) ($pack['evidence_archive_sha256'] ?? ''));
         if (!self::is_hash($declared) || !hash_equals($declared, $manifest_sha)) {
-            return ['status' => 'file_hash_mismatch', 'missing' => [], 'mismatched' => ['manifest-files.txt (archive manifest hash mismatch)'], 'root' => $root];
+            self::cleanup_dir($tmp);
+            return ['status' => 'file_hash_mismatch', 'missing' => [], 'mismatched' => ['manifest-files.txt (archive manifest hash mismatch)'], 'root' => ''];
         }
         $result = self::verify_files($pack, $root);
-        $result['root'] = $root;
+        $result['root'] = '';
+        self::cleanup_dir($tmp);
         return $result;
+    }
+
+    /** Best-effort recursive removal of the temp extraction dir (bounded to /tmp). */
+    private static function cleanup_dir($dir) {
+        $dir = (string) $dir;
+        if ($dir === '' || strpos($dir, rtrim(sys_get_temp_dir(), '/') . '/ves-evidence-') !== 0 || !is_dir($dir)) { return; }
+        $items = scandir($dir);
+        foreach ((array) $items as $item) {
+            if ($item === '.' || $item === '..') { continue; }
+            $path = $dir . '/' . $item;
+            if (is_dir($path)) { self::cleanup_dir_inner($path); } else { @unlink($path); }
+        }
+        @rmdir($dir);
+    }
+
+    private static function cleanup_dir_inner($dir) {
+        foreach ((array) scandir($dir) as $item) {
+            if ($item === '.' || $item === '..') { continue; }
+            $path = $dir . '/' . $item;
+            if (is_dir($path)) { self::cleanup_dir_inner($path); } else { @unlink($path); }
+        }
+        @rmdir($dir);
     }
 
     // ── Phase 9E.2 — the ONLY trusted write path ───────────────────────────────

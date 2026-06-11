@@ -113,6 +113,30 @@ ves_test_ok('zero-cost registered actor may dispatch without ceiling', is_array(
 $GLOBALS['__ves_options']['ves_apify_actor_registry_overrides'] = [];
 ves_test_ok('unknown actors are never zero-cost', !VES_Apify_Actor_Registry::is_zero_cost_slug('evil-actor/data-exfil'), $state);
 
+// ── 6b. Deep-review hardening: POST run-start is NOT retried on 5xx ─────────
+VES_Test_HTTP::reset();
+VES_Admin::$diagnostics = [];
+VES_Test_HTTP::$queue[] = ['code' => 500, 'body' => ['error' => ['message' => 'upstream exploded']]];
+VES_Test_HTTP::$queue[] = ['code' => 201, 'body' => ['data' => ['id' => 'RUN-NEVER']]];
+$r5xx = VES_Apify_Client::request('POST', ves_make_run_url('apify/web-scraper', ves_prepare_run_options()), ['q' => 'x']);
+ves_test_ok('run-start 5xx returns an error (no silent retry)', is_wp_error($r5xx), $state);
+ves_test_ok('run-start 5xx made EXACTLY ONE HTTP call (no double dispatch/charge)', count(VES_Test_HTTP::$calls) === 1, $state);
+ves_test_ok('no-retry decision recorded as diagnostic', strpos(json_encode(VES_Admin::$diagnostics), 'apify_run_start_no_retry') !== false, $state);
+
+// 429 on a run-start stays retryable (run was rate-limited away, not started).
+VES_Test_HTTP::reset();
+VES_Test_HTTP::$queue[] = ['code' => 429, 'body' => ['error' => ['message' => 'rate limited']]];
+VES_Test_HTTP::$queue[] = ['code' => 201, 'body' => ['data' => ['id' => 'RUN-RETRIED']]];
+$r429 = VES_Apify_Client::request('POST', ves_make_run_url('apify/web-scraper', ves_prepare_run_options()), ['q' => 'x']);
+ves_test_ok('run-start 429 is retried and succeeds', is_array($r429) && count(VES_Test_HTTP::$calls) === 2, $state);
+
+// GET reads keep the original transient-retry behavior on 5xx.
+VES_Test_HTTP::reset();
+VES_Test_HTTP::$queue[] = ['code' => 500, 'body' => ['error' => ['message' => 'flaky']]];
+VES_Test_HTTP::$queue[] = ['code' => 200, 'body' => ['data' => ['id' => 'RUN1', 'status' => 'SUCCEEDED']]];
+$rget = VES_Apify_Client::request('GET', 'https://api.apify.com/v2/acts/apify~web-scraper/runs/RUN1');
+ves_test_ok('GET read retries 5xx and succeeds (2 calls)', is_array($rget) && count(VES_Test_HTTP::$calls) === 2, $state);
+
 // ── 7. Source-level guarantees ──────────────────────────────────────────────
 $pi_src = file_get_contents(dirname(__DIR__) . '/includes/platform-input.php');
 ves_test_ok('run URL builder never injects a token param', strpos($pi_src, "query['token']") === false && !preg_match('/[?&]token=/', $pi_src), $state);

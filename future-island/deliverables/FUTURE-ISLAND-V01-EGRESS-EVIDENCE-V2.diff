@@ -244,6 +244,31 @@ index 36c082b..ac2e369 100644
      FIS_PLUGIN_DIR . 'includes/class-ves-cost-estimator.php',
      FIS_PLUGIN_DIR . 'includes/class-ves-ai-usage-tracker.php',
      FIS_PLUGIN_DIR . 'includes/class-ves-health-check.php',
+diff --git a/future-island/future-island-intelligence-suite/includes/class-ves-apify-client.php b/future-island/future-island-intelligence-suite/includes/class-ves-apify-client.php
+index b2fe007..cd62bd2 100644
+--- a/future-island/future-island-intelligence-suite/includes/class-ves-apify-client.php
++++ b/future-island/future-island-intelligence-suite/includes/class-ves-apify-client.php
+@@ -425,7 +425,19 @@ final class VES_Apify_Client {
+         $raw  = wp_remote_retrieve_body($response);
+         $json = json_decode($raw, true);
+ 
+-        if (self::should_retry($code) && $attempt < 2) {
++        // Deep-review hardening: a POST run-start is NOT retried on 5xx — the run
++        // may already have started upstream, and re-POSTing could dispatch (and
++        // charge) twice. 429 means the run was rate-limited away, so it stays
++        // retryable; reads/aborts keep the original retry behavior.
++        $is_run_start = strtoupper((string) $method) === 'POST'
++            && preg_match('#https?://api\.apify\.com/v2/(acts|actor-tasks)/[^/?\#]+/(runs|run-sync[^/?\#]*)#i', (string) $url);
++        if ($is_run_start && $code >= 500 && self::should_retry($code)) {
++            self::record_diagnostic_safe('apify_run_start_no_retry', 'Run-start returned a 5xx; NOT retried to avoid a possible double dispatch/charge. Check the provider console before re-running.', [
++                'method' => 'POST',
++                'status' => $code,
++            ]);
++        }
++        if (self::should_retry($code) && $attempt < 2 && !($is_run_start && $code >= 500)) {
+             self::record_diagnostic_safe('apify_retry', 'Retrying upstream request after transient error.', [
+                 'method' => strtoupper($method),
+                 'status' => $code,
 diff --git a/future-island/future-island-intelligence-suite/includes/class-ves-brand-context-service.php b/future-island/future-island-intelligence-suite/includes/class-ves-brand-context-service.php
 index d01c370..5f0dd9e 100644
 --- a/future-island/future-island-intelligence-suite/includes/class-ves-brand-context-service.php
@@ -263,10 +288,36 @@ index d01c370..5f0dd9e 100644
          // Phase 9B.1 — every successful memory review action appends one immutable
          // ledger decision (duplicate submissions collapse on the idempotency key).
 diff --git a/future-island/future-island-intelligence-suite/includes/class-ves-cli-rc-readiness.php b/future-island/future-island-intelligence-suite/includes/class-ves-cli-rc-readiness.php
-index 9ce8316..3ef7597 100644
+index 9ce8316..fc82971 100644
 --- a/future-island/future-island-intelligence-suite/includes/class-ves-cli-rc-readiness.php
 +++ b/future-island/future-island-intelligence-suite/includes/class-ves-cli-rc-readiness.php
-@@ -109,10 +109,13 @@ final class VES_CLI_RC_Readiness {
+@@ -62,8 +62,8 @@ final class VES_CLI_RC_Readiness {
+ 
+     /**
+      * wp ves rc-evidence-pack --output=<folder> [--build-sha=<sha256>]
+-     *   [--operator=<name>] [--screenshots-dir=<dir>] [--php-error-log=<file>]
+-     *   [--browser-log=<file>] [--format=json]
++     *   [--operator=<name>] [--screenshots-dir=<dir>] [--db-backup=<file>]
++     *   [--php-error-log=<file>] [--browser-log=<file>] [--format=json]
+      * Phase 9B.3 — generates the evidence pack JSON from the live environment.
+      * Read-only apart from writing the pack file itself. validation_status is
+      * COMPUTED (passed only when every required command output is attached by
+@@ -88,6 +88,14 @@ final class VES_CLI_RC_Readiness {
+         if (!empty($assoc['screenshots-dir']) && is_dir((string) $assoc['screenshots-dir'])) {
+             $shots = glob(rtrim((string) $assoc['screenshots-dir'], '/') . '/*.{png,jpg,jpeg}', GLOB_BRACE);
+             $inputs['screenshots_manifest'] = array_map('basename', is_array($shots) ? $shots : []);
++            // Schema 2.0: every screenshot is hashed so the pack is file-verifiable.
++            $inputs['screenshot_files'] = [];
++            foreach ((array) $shots as $shot_path) {
++                if (is_readable($shot_path)) { $inputs['screenshot_files'][basename($shot_path)] = hash_file('sha256', $shot_path); }
++            }
++        }
++        if (!empty($assoc['db-backup']) && is_readable((string) $assoc['db-backup'])) {
++            $inputs['db_backup_sha256'] = hash_file('sha256', (string) $assoc['db-backup']);
+         }
+         foreach (['php-error-log' => 'php_error_log_sha256', 'browser-log' => 'browser_console_log_sha256'] as $arg => $field) {
+             if (!empty($assoc[$arg]) && is_readable((string) $assoc[$arg])) {
+@@ -109,10 +117,13 @@ final class VES_CLI_RC_Readiness {
  
      /**
       * wp ves rc-record-live-validation --evidence-pack=<file.json>
@@ -284,7 +335,7 @@ index 9ce8316..3ef7597 100644
       */
      public static function record_live_validation($args, $assoc) {
          if (function_exists('current_user_can') && function_exists('is_user_logged_in') && is_user_logged_in() && !current_user_can('manage_options')) {
-@@ -126,16 +129,28 @@ final class VES_CLI_RC_Readiness {
+@@ -126,16 +137,28 @@ final class VES_CLI_RC_Readiness {
              \WP_CLI::error('--evidence-pack must point to a readable JSON file.');
              return;
          }
@@ -319,7 +370,7 @@ index 9ce8316..3ef7597 100644
  }
 diff --git a/future-island/future-island-intelligence-suite/includes/class-ves-external-egress-inventory.php b/future-island/future-island-intelligence-suite/includes/class-ves-external-egress-inventory.php
 new file mode 100644
-index 0000000..e448e29
+index 0000000..a76838d
 --- /dev/null
 +++ b/future-island/future-island-intelligence-suite/includes/class-ves-external-egress-inventory.php
 @@ -0,0 +1,131 @@
@@ -367,7 +418,7 @@ index 0000000..e448e29
 +            self::row('apify', 'VES_Ajax_Controller', 'multiple dispatch handlers', 'apify_run_start_core_guarded', true,
 +                ['All run URLs built by ves_make_run_url and dispatched via VES_Apify_Client::request.']),
 +            self::row('apify', 'VES_Market_Signal_Commercial', 'run_apify_sync', 'apify_run_start_core_guarded', true,
-+                ['Phase 9D.2: direct wp_remote_post removed; run-sync routed through VES_Apify_Client::request with ceiling; fail-closed without the core client.']),
++                ['Phase 9D.2: direct wp_remote_post removed; run-sync routed through VES_Apify_Client::request with ceiling; fail-closed without the core client. get_apify_token remains ONLY for a boolean diagnostics presence check.']),
 +            self::row('apify', 'FIDTF_Core_Apify_Client_Adapter', 'start', 'apify_run_start_core_guarded', true,
 +                ['DTF bridge into the core client; run URL via ves_make_run_url (ceiling included).']),
 +            self::row('apify', 'FIDTF_Generic_Apify_Live_Adapter', 'start_direct_apify_run', 'apify_direct_legacy_blocked', true,
@@ -390,9 +441,9 @@ index 0000000..e448e29
 +            // ── AI provider (OpenAI) — no default-on generation anywhere ──
 +            self::row('openai', 'VES_OpenAI_Client', 'request', 'ai_provider_gated', true,
 +                ['Core AI client for operator-triggered analysis; API-key + credit gated; prompt-discipline tests; NOT generation (ves_generation_execution_enabled stays false and has no execution path).']),
-+            self::row('openai', 'includes/analysis.php', 'ves_call_openai_analysis (direct post)', 'ai_provider_legacy_requires_review', true,
++            self::row('openai', 'includes/analysis.php', 'ves_request_item_analysis (direct post)', 'ai_provider_legacy_requires_review', true,
 +                ['Legacy direct call for scrape analysis; key + operator action gated; consolidation into VES_OpenAI_Client is roadmap.']),
-+            self::row('openai', 'VES_Market_Signal_Commercial', 'run_chatgpt (direct post)', 'ai_provider_legacy_requires_review', true,
++            self::row('openai', 'VES_Market_Signal_Commercial', 'generate_with_openai (direct post)', 'ai_provider_legacy_requires_review', true,
 +                ['MarketSignal ChatGPT call; key + admin settings gated; roadmap consolidation.']),
 +            self::row('openai', 'FIDTF_AI_Bridge', 'plan (direct post)', 'ai_provider_legacy_requires_review', true,
 +                ['DTF planner call; key + source-enabled gated; deterministic fallback when absent.']),
@@ -522,7 +573,7 @@ index 17d5589..9756276 100644
              self::record_apify_scrape($user_id, $ms_actor, 0, 'failed', 'invalid_json');
              return new WP_Error('ves_ms_apify_bad_json', __('Apify did not return valid JSON dataset items.', 'ves'), ['status' => 502]);
 diff --git a/future-island/future-island-intelligence-suite/includes/class-ves-rc-evidence-pack.php b/future-island/future-island-intelligence-suite/includes/class-ves-rc-evidence-pack.php
-index 269b02d..45c89a9 100644
+index 269b02d..e73387b 100644
 --- a/future-island/future-island-intelligence-suite/includes/class-ves-rc-evidence-pack.php
 +++ b/future-island/future-island-intelligence-suite/includes/class-ves-rc-evidence-pack.php
 @@ -2,45 +2,72 @@
@@ -693,7 +744,7 @@ index 269b02d..45c89a9 100644
      public static function build(array $inputs = []) {
          global $wpdb;
          $pack = [
-@@ -120,51 +163,148 @@ final class VES_RC_Evidence_Pack {
+@@ -120,51 +163,172 @@ final class VES_RC_Evidence_Pack {
              'wp_version'     => isset($GLOBALS['wp_version']) ? (string) $GLOBALS['wp_version'] : 'unknown',
              'php_version'    => PHP_VERSION,
              'db_version'     => (isset($wpdb) && is_object($wpdb) && method_exists($wpdb, 'db_version')) ? (string) $wpdb->db_version() : 'unknown',
@@ -738,12 +789,16 @@ index 269b02d..45c89a9 100644
  
 -    // ── record live validation (the ONLY trusted write path) ──────────────────
 +    // ── Phase 9E.2 — file-backed verification ─────────────────────────────────
-+
-+    /**
+ 
+     /**
+-     * Record a live validation from a verified pack. Refuses invalid schema,
+-     * hash mismatch, non-passed status, or current critical blockers. Returns
+-     * the stored state array or WP_Error. Never claims production readiness.
 +     * Verify every referenced artifact against the evidence root on disk.
 +     * @return array{status:string,missing:array,mismatched:array}
 +     *   status: ok | missing_required_artifacts | file_hash_mismatch
-+     */
+      */
+-    public static function record_live_validation(array $pack) {
 +    public static function verify_files(array $pack, $evidence_root) {
 +        $root = rtrim((string) $evidence_root, '/');
 +        $missing = []; $mismatched = [];
@@ -772,19 +827,15 @@ index 269b02d..45c89a9 100644
 +        if (count($mismatched) > 0) { return ['status' => 'file_hash_mismatch', 'missing' => [], 'mismatched' => $mismatched]; }
 +        return ['status' => 'ok', 'missing' => [], 'mismatched' => []];
 +    }
- 
-     /**
--     * Record a live validation from a verified pack. Refuses invalid schema,
--     * hash mismatch, non-passed status, or current critical blockers. Returns
--     * the stored state array or WP_Error. Never claims production readiness.
++
++    /**
 +     * Verify a tar.gz evidence archive: extract to a temp dir (PharData) and run
 +     * verify_files against the extraction. The pack's evidence_archive_sha256 is
 +     * the ARCHIVE MANIFEST hash (sha256 of manifest-files.txt — non-circular) and
 +     * is re-verified against the extracted manifest. Failure to extract/verify
 +     * NEVER records a pass.
 +     * @return array{status:string,missing:array,mismatched:array,root:string}
-      */
--    public static function record_live_validation(array $pack) {
++     */
 +    public static function verify_archive(array $pack, $archive_path) {
 +        $archive_path = (string) $archive_path;
 +        if (!is_file($archive_path) || !is_readable($archive_path)) {
@@ -816,11 +867,35 @@ index 269b02d..45c89a9 100644
 +        $manifest_sha = (string) hash_file('sha256', $manifest);
 +        $declared = strtolower((string) ($pack['evidence_archive_sha256'] ?? ''));
 +        if (!self::is_hash($declared) || !hash_equals($declared, $manifest_sha)) {
-+            return ['status' => 'file_hash_mismatch', 'missing' => [], 'mismatched' => ['manifest-files.txt (archive manifest hash mismatch)'], 'root' => $root];
++            self::cleanup_dir($tmp);
++            return ['status' => 'file_hash_mismatch', 'missing' => [], 'mismatched' => ['manifest-files.txt (archive manifest hash mismatch)'], 'root' => ''];
 +        }
 +        $result = self::verify_files($pack, $root);
-+        $result['root'] = $root;
++        $result['root'] = '';
++        self::cleanup_dir($tmp);
 +        return $result;
++    }
++
++    /** Best-effort recursive removal of the temp extraction dir (bounded to /tmp). */
++    private static function cleanup_dir($dir) {
++        $dir = (string) $dir;
++        if ($dir === '' || strpos($dir, rtrim(sys_get_temp_dir(), '/') . '/ves-evidence-') !== 0 || !is_dir($dir)) { return; }
++        $items = scandir($dir);
++        foreach ((array) $items as $item) {
++            if ($item === '.' || $item === '..') { continue; }
++            $path = $dir . '/' . $item;
++            if (is_dir($path)) { self::cleanup_dir_inner($path); } else { @unlink($path); }
++        }
++        @rmdir($dir);
++    }
++
++    private static function cleanup_dir_inner($dir) {
++        foreach ((array) scandir($dir) as $item) {
++            if ($item === '.' || $item === '..') { continue; }
++            $path = $dir . '/' . $item;
++            if (is_dir($path)) { self::cleanup_dir_inner($path); } else { @unlink($path); }
++        }
++        @rmdir($dir);
 +    }
 +
 +    // ── Phase 9E.2 — the ONLY trusted write path ───────────────────────────────
@@ -860,7 +935,7 @@ index 269b02d..45c89a9 100644
          if (class_exists('VES_RC_Readiness_Service')) {
              $report = VES_RC_Readiness_Service::report();
              if (!empty($report['blockers'])) {
-@@ -174,9 +314,14 @@ final class VES_RC_Evidence_Pack {
+@@ -174,9 +338,14 @@ final class VES_RC_Evidence_Pack {
          $state = [
              'status'             => 'passed',
              'source'             => 'evidence_pack',
@@ -875,7 +950,7 @@ index 269b02d..45c89a9 100644
              'recorded_at'        => function_exists('current_time') ? current_time('mysql', true) : gmdate('Y-m-d H:i:s'),
              'operator'           => self::clean_text((string) ($pack['operator']['name'] ?? ''), 120),
              'operator_user_id'   => (int) ($pack['operator']['user_id'] ?? 0),
-@@ -186,39 +331,67 @@ final class VES_RC_Evidence_Pack {
+@@ -186,39 +355,67 @@ final class VES_RC_Evidence_Pack {
      }
  
      /**
@@ -1151,7 +1226,7 @@ index 9c9da79..6b2c79a 100644
  
      private function refresh_direct_apify_run(array $context, string $provider_run_id) {
 diff --git a/future-island/future-island-intelligence-suite/modules/deep-trend-finder/includes/providers/class-fidtf-tiktok-live-adapter.php b/future-island/future-island-intelligence-suite/modules/deep-trend-finder/includes/providers/class-fidtf-tiktok-live-adapter.php
-index ba93de0..b5ef0bd 100644
+index ba93de0..8d55895 100644
 --- a/future-island/future-island-intelligence-suite/modules/deep-trend-finder/includes/providers/class-fidtf-tiktok-live-adapter.php
 +++ b/future-island/future-island-intelligence-suite/modules/deep-trend-finder/includes/providers/class-fidtf-tiktok-live-adapter.php
 @@ -98,25 +98,25 @@ final class FIDTF_TikTok_Live_Adapter {
@@ -1170,7 +1245,7 @@ index ba93de0..b5ef0bd 100644
 -        if ($token === '') {
 -            return new WP_Error('tiktok_provider_unavailable', 'TikTok provider is not configured.', ['status' => 503, 'retryable' => false]);
 +        if (class_exists('FIDTF_Core_Apify_Client_Adapter') && FIDTF_Core_Apify_Client_Adapter::available()) {
-+            $core = $this->run_with_core_client($context, [], $actor_input);
++            $core = $this->run_with_core_client($context, (array) ($context['payload'] ?? []), $actor_input);
 +            if (is_array($core) || is_wp_error($core)) { return $this->sanitize_external_result($core); }
          }
 -        if (!function_exists('wp_remote_post')) {
@@ -1232,12 +1307,26 @@ index e6efae2..89205a7 100644
  ok(strpos($direct_adapter, 'discovery_actor_input') !== false, 'direct Apify diagnostics preserve sanitized actor input after completion');
  ok(strpos($direct_adapter, '$this->limit_from_actor_input($actor_input)') !== false, 'direct Apify fetch uses requested actor limit, not global default');
  
+diff --git a/future-island/future-island-intelligence-suite/scripts/future-island-live-validation-v2.sh b/future-island/future-island-intelligence-suite/scripts/future-island-live-validation-v2.sh
+index 26b6ce1..502f605 100644
+--- a/future-island/future-island-intelligence-suite/scripts/future-island-live-validation-v2.sh
++++ b/future-island/future-island-intelligence-suite/scripts/future-island-live-validation-v2.sh
+@@ -20,6 +20,9 @@
+ #
+ set -u
+ 
++echo "NOTICE: v2 produces a schema-1.0 evidence pack which can NO LONGER be recorded as passed." >&2
++echo "        Use scripts/future-island-live-validation-v3.sh (evidence pack v2, file-backed verification)." >&2
++
+ # ── args ─────────────────────────────────────────────────────────────────────
+ CONFIRM_STAGING=0
+ DB_BACKUP=""
 diff --git a/future-island/future-island-intelligence-suite/scripts/future-island-live-validation-v3.sh b/future-island/future-island-intelligence-suite/scripts/future-island-live-validation-v3.sh
 new file mode 100644
-index 0000000..71f020e
+index 0000000..5e04fb3
 --- /dev/null
 +++ b/future-island/future-island-intelligence-suite/scripts/future-island-live-validation-v3.sh
-@@ -0,0 +1,374 @@
+@@ -0,0 +1,382 @@
 +#!/usr/bin/env bash
 +#
 +# future-island-live-validation-v3.sh — Phase 9E.3 operator validation script.
@@ -1422,6 +1511,14 @@ index 0000000..71f020e
 +if [ -n "$DB_BACKUP" ] && [ -s "$DB_BACKUP" ]; then
 +    DB_BACKUP_SHA="$(sha "$DB_BACKUP")"
 +    echo "$DB_BACKUP_SHA  $(basename "$DB_BACKUP")" > "$EVDIR/db-backup-sha256.txt"
++fi
++# finalize reuses the hash stored by collect-cli when --db-backup is not re-passed.
++if [ -z "$DB_BACKUP_SHA" ] && [ -f "$EVDIR/db-backup-sha256.txt" ]; then
++    DB_BACKUP_SHA="$(awk '{print $1}' "$EVDIR/db-backup-sha256.txt" | head -1)"
++fi
++if [ "$MODE" = "finalize" ] && [ -z "$DB_BACKUP_SHA" ]; then
++    echo "REFUSED: finalize needs the DB backup hash — pass --db-backup=<file> or run collect-cli first (db-backup-sha256.txt)." >&2
++    exit 3
 +fi
 +
 +# ── command battery (READ-ONLY; stdout/stderr/combined; never --apply) ──────
@@ -2029,10 +2126,10 @@ index d7b4799..b858c5d 100644
  $ok(strpos($bridge, 'class VES_Deep_Trend_Addon_Bridge') !== false || strpos($bridge, 'final class VES_Deep_Trend_Addon_Bridge') !== false, 'Bridge class exists');
 diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-egress-lockdown-9d.php b/future-island/future-island-intelligence-suite/tests/test-ves-egress-lockdown-9d.php
 new file mode 100644
-index 0000000..99c377a
+index 0000000..ef53fb1
 --- /dev/null
 +++ b/future-island/future-island-intelligence-suite/tests/test-ves-egress-lockdown-9d.php
-@@ -0,0 +1,123 @@
+@@ -0,0 +1,126 @@
 +<?php
 +/**
 + * Phase 9D — external egress lockdown contract.
@@ -2142,6 +2239,9 @@ index 0000000..99c377a
 +// ── 5. AI egress classified + key-gated; no flag flip ────────────────────────
 +$openai_rows = VES_External_Egress_Inventory::for_provider('openai');
 +$ok(count($openai_rows) >= 5, 'all five OpenAI call sites classified');
++$openai_json = json_encode($openai_rows);
++$ok(strpos($openai_json, 'ves_request_item_analysis') !== false, 'inventory names the REAL analysis.php function');
++$ok(strpos($openai_json, 'generate_with_openai') !== false, 'inventory names the REAL MarketSignal OpenAI method');
 +foreach ($openai_rows as $r) {
 +    $ok(in_array($r['classification'], ['ai_provider_gated', 'ai_provider_legacy_requires_review'], true), 'OpenAI path classified gated/legacy-review: ' . $r['class']);
 +}
@@ -2623,6 +2723,41 @@ index 0000000..ceba992
 +
 +echo "\n{$pass} passed, {$fail} failed\n";
 +exit($fail === 0 ? 0 : 1);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-provider-safety-hardening.php b/future-island/future-island-intelligence-suite/tests/test-ves-provider-safety-hardening.php
+index f98a7c9..2f0fce3 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-ves-provider-safety-hardening.php
++++ b/future-island/future-island-intelligence-suite/tests/test-ves-provider-safety-hardening.php
+@@ -113,6 +113,30 @@ ves_test_ok('zero-cost registered actor may dispatch without ceiling', is_array(
+ $GLOBALS['__ves_options']['ves_apify_actor_registry_overrides'] = [];
+ ves_test_ok('unknown actors are never zero-cost', !VES_Apify_Actor_Registry::is_zero_cost_slug('evil-actor/data-exfil'), $state);
+ 
++// ── 6b. Deep-review hardening: POST run-start is NOT retried on 5xx ─────────
++VES_Test_HTTP::reset();
++VES_Admin::$diagnostics = [];
++VES_Test_HTTP::$queue[] = ['code' => 500, 'body' => ['error' => ['message' => 'upstream exploded']]];
++VES_Test_HTTP::$queue[] = ['code' => 201, 'body' => ['data' => ['id' => 'RUN-NEVER']]];
++$r5xx = VES_Apify_Client::request('POST', ves_make_run_url('apify/web-scraper', ves_prepare_run_options()), ['q' => 'x']);
++ves_test_ok('run-start 5xx returns an error (no silent retry)', is_wp_error($r5xx), $state);
++ves_test_ok('run-start 5xx made EXACTLY ONE HTTP call (no double dispatch/charge)', count(VES_Test_HTTP::$calls) === 1, $state);
++ves_test_ok('no-retry decision recorded as diagnostic', strpos(json_encode(VES_Admin::$diagnostics), 'apify_run_start_no_retry') !== false, $state);
++
++// 429 on a run-start stays retryable (run was rate-limited away, not started).
++VES_Test_HTTP::reset();
++VES_Test_HTTP::$queue[] = ['code' => 429, 'body' => ['error' => ['message' => 'rate limited']]];
++VES_Test_HTTP::$queue[] = ['code' => 201, 'body' => ['data' => ['id' => 'RUN-RETRIED']]];
++$r429 = VES_Apify_Client::request('POST', ves_make_run_url('apify/web-scraper', ves_prepare_run_options()), ['q' => 'x']);
++ves_test_ok('run-start 429 is retried and succeeds', is_array($r429) && count(VES_Test_HTTP::$calls) === 2, $state);
++
++// GET reads keep the original transient-retry behavior on 5xx.
++VES_Test_HTTP::reset();
++VES_Test_HTTP::$queue[] = ['code' => 500, 'body' => ['error' => ['message' => 'flaky']]];
++VES_Test_HTTP::$queue[] = ['code' => 200, 'body' => ['data' => ['id' => 'RUN1', 'status' => 'SUCCEEDED']]];
++$rget = VES_Apify_Client::request('GET', 'https://api.apify.com/v2/acts/apify~web-scraper/runs/RUN1');
++ves_test_ok('GET read retries 5xx and succeeds (2 calls)', is_array($rget) && count(VES_Test_HTTP::$calls) === 2, $state);
++
+ // ── 7. Source-level guarantees ──────────────────────────────────────────────
+ $pi_src = file_get_contents(dirname(__DIR__) . '/includes/platform-input.php');
+ ves_test_ok('run URL builder never injects a token param', strpos($pi_src, "query['token']") === false && !preg_match('/[?&]token=/', $pi_src), $state);
 diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-rc-readiness-check.php b/future-island/future-island-intelligence-suite/tests/test-ves-rc-readiness-check.php
 index b0e709c..4c42988 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-ves-rc-readiness-check.php
@@ -2773,12 +2908,77 @@ index a9d7ab4..c2f4ec6 100644
  $ok(strpos($html2b, 'never grants production status') !== false, 'even a recorded pass does not grant production status');
  unset($GLOBALS['__opts']['ves_rc_live_validation']);
  
+diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-uninstall-coverage-9de.php b/future-island/future-island-intelligence-suite/tests/test-ves-uninstall-coverage-9de.php
+new file mode 100644
+index 0000000..b72127e
+--- /dev/null
++++ b/future-island/future-island-intelligence-suite/tests/test-ves-uninstall-coverage-9de.php
+@@ -0,0 +1,59 @@
++<?php
++/**
++ * Deep-review fix — uninstall data-retention coverage contract (source-level).
++ *
++ * Proves:
++ *  1. data retention is the DEFAULT (destructive cleanup only behind the
++ *     explicit ves_delete_data_on_uninstall flag, guarded by WP_UNINSTALL_PLUGIN)
++ *  2. when the operator explicitly opts into deletion, the cleanup covers the
++ *     tables AND options added by phases 2–9 (intelligence contract, trend
++ *     engine, review ledger, rails, evidence/live-validation state) — a
++ *     "remove my data" uninstall leaves no validation/audit state behind
++ *  3. nothing destructive sits outside the gated block
++ *
++ * Run: php tests/test-ves-uninstall-coverage-9de.php
++ */
++error_reporting(E_ALL & ~E_DEPRECATED);
++
++$pass=0;$fail=0;
++$ok=function($c,$l)use(&$pass,&$fail){if($c){$pass++;}else{$fail++;fwrite(STDERR,"FAIL: $l\n");}};
++
++$src = (string) file_get_contents(dirname(__DIR__) . '/uninstall.php');
++
++// ── 1. Retention default + uninstall guard ───────────────────────────────────
++$ok(strpos($src, "defined('WP_UNINSTALL_PLUGIN')") !== false, 'guarded by WP_UNINSTALL_PLUGIN');
++$ok(strpos($src, 'ves_delete_data_on_uninstall') !== false, 'destructive cleanup is behind the explicit delete flag');
++$gate_pos = strpos($src, 'if (!$delete_data) {');
++$ok($gate_pos !== false, 'retention-by-default gate present');
++$pre_gate = substr($src, 0, $gate_pos);
++$ok(strpos($pre_gate, 'DROP TABLE') === false && strpos($pre_gate, '$wpdb->query') === false, 'NOTHING destructive runs before the delete-data gate');
++
++// ── 2. Phase 2–9 tables covered by explicit deletion ─────────────────────────
++foreach ([
++    'ves_intel_sources', 'ves_intel_signals', 'ves_intel_evidences',
++    'ves_intel_insights', 'ves_intel_briefs', 'ves_intel_drafts', 'ves_intel_memory',
++    'ves_trend_observations', 'ves_trend_records', 'ves_review_decisions',
++    'ves_ai_usage_events', 'ves_topup_requests',
++] as $table) {
++    $ok(strpos($src, "'{$table}'") !== false, "explicit-delete covers table: {$table}");
++}
++
++// ── 3. Phase 2–9 options covered by explicit deletion ────────────────────────
++foreach ([
++    'ves_rc_live_validation', 'ves_security_event_log',
++    'ves_job_retry_counts', 'ves_job_dead_letter',
++    'ves_usage_settlement_required', 'ves_apify_actor_allowlist_extra',
++    'ves_apify_actor_registry_overrides', 'ves_apify_active_slots',
++    'ves_generation_execution_enabled', 'ves_trend_backfill_done',
++    'ves_trend_backfill_last', 'ves_trend_observations_db_version',
++    'ves_review_decisions_db_version',
++] as $option) {
++    $ok(strpos($src, "'{$option}'") !== false, "explicit-delete covers option: {$option}");
++}
++
++// The recorded live validation MUST NOT survive a full data wipe (a stale
++// "passed" record on a reinstalled site would be a forged trust signal).
++$ok(strpos($src, 'ves_rc_live_validation') > $gate_pos, 'live-validation state is wiped ONLY under the explicit delete flag (and is wiped then)');
++
++echo "\n{$pass} passed, {$fail} failed\n";
++exit($fail === 0 ? 0 : 1);
 diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-validation-script-v3-9e.php b/future-island/future-island-intelligence-suite/tests/test-ves-validation-script-v3-9e.php
 new file mode 100644
-index 0000000..03bce45
+index 0000000..d74151d
 --- /dev/null
 +++ b/future-island/future-island-intelligence-suite/tests/test-ves-validation-script-v3-9e.php
-@@ -0,0 +1,101 @@
+@@ -0,0 +1,109 @@
 +<?php
 +/**
 + * Phase 9E.3 — live validation script v3 contract (static + behavioral refusals).
@@ -2852,6 +3052,14 @@ index 0000000..03bce45
 +list($rc, $out) = $run('--mode=finalize --expected-siteurl=https://staging.example.com --i-confirm-this-is-staging --screenshots-dir=' . escapeshellarg($tmp . '/shots') . ' --browser-console-log=' . escapeshellarg($tmp . '/console.log') . ' --network-errors-log=' . escapeshellarg($tmp . '/net.log') . ' --php-error-log=' . escapeshellarg($tmp . '/php.log'));
 +$ok($rc === 3 && strpos($out, '07-generation-context-preview.png') !== false, 'finalize names the missing required screenshot');
 +
++// ── 4b. Deep-review fix: finalize needs the DB-backup hash (stored or passed) ─
++@mkdir($tmp . '/evdir/commands', 0777, true);
++file_put_contents($tmp . '/shots/07-generation-context-preview.png', 'png'); // restore the set
++list($rc, $out) = $run('--mode=finalize --expected-siteurl=https://staging.example.com --i-confirm-this-is-staging --evidence-dir=' . escapeshellarg($tmp . '/evdir') . ' --screenshots-dir=' . escapeshellarg($tmp . '/shots') . ' --browser-console-log=' . escapeshellarg($tmp . '/console.log') . ' --network-errors-log=' . escapeshellarg($tmp . '/net.log') . ' --php-error-log=' . escapeshellarg($tmp . '/php.log'));
++$ok($rc === 3 && stripos($out, 'DB backup hash') !== false, 'finalize REFUSES without a stored or passed DB backup hash');
++file_put_contents($tmp . '/evdir/db-backup-sha256.txt', str_repeat('a', 64) . "  staging-backup.sql\n");
++$ok(strpos($src, 'db-backup-sha256.txt') !== false && strpos($src, 'finalize reuses the hash stored by collect-cli') !== false, 'finalize reuses the collect-cli stored DB-backup hash');
++
 +// ── 5. Redaction + siteurl mismatch logic present in source ─────────────────
 +foreach (['apify_api_', 'sk-', 'sk_live_', 'whsec_', 'AIza', 'earer'] as $shape) {
 +    $ok(strpos($src, $shape) !== false, "redaction covers {$shape} tokens");
@@ -2880,3 +3088,35 @@ index 0000000..03bce45
 +
 +echo "\n{$pass} passed, {$fail} failed\n";
 +exit($fail === 0 ? 0 : 1);
+diff --git a/future-island/future-island-intelligence-suite/uninstall.php b/future-island/future-island-intelligence-suite/uninstall.php
+index 21a16aa..433f1cd 100644
+--- a/future-island/future-island-intelligence-suite/uninstall.php
++++ b/future-island/future-island-intelligence-suite/uninstall.php
+@@ -34,6 +34,11 @@ $ves_tables = [
+     'ves_market_signal_events', 'ves_ms_workspaces', 'ves_ms_sources',
+     'ves_ms_runs', 'ves_ms_signals', 'ves_ms_insights',
+     'ves_ms_briefs', 'ves_ms_drafts', 'ves_ms_audit_log',
++    // Phases 2-9 (intelligence contract, trend engine, rails, audit ledger)
++    'ves_intel_sources', 'ves_intel_signals', 'ves_intel_evidences',
++    'ves_intel_insights', 'ves_intel_briefs', 'ves_intel_drafts',
++    'ves_intel_memory', 'ves_trend_observations', 'ves_trend_records',
++    'ves_review_decisions', 'ves_ai_usage_events', 'ves_topup_requests',
+ ];
+ 
+ // Deep Trend Finder tables
+@@ -55,6 +60,15 @@ $ves_options = [
+     'ves_opportunity_records_db_version', 'ves_brief_records_db_version',
+     'ves_workflow_events_db_version', 'ves_market_signal_store_db_version',
+     'ves_market_signal_commercial_db_version', 'ves_market_signal_commercial_settings',
++    // Phases 2-9 options (rails, ledgers, evidence, egress) — wiped on explicit
++    // delete so no validation/audit state survives a "remove my data" uninstall.
++    'ves_trend_observations_db_version', 'ves_review_decisions_db_version',
++    'ves_trend_backfill_done', 'ves_trend_backfill_last',
++    'ves_rc_live_validation', 'ves_security_event_log',
++    'ves_job_retry_counts', 'ves_job_dead_letter',
++    'ves_usage_settlement_required', 'ves_apify_actor_allowlist_extra',
++    'ves_apify_actor_registry_overrides', 'ves_apify_active_slots',
++    'ves_generation_execution_enabled',
+ ];
+ 
+ // Deep Trend Finder options

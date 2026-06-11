@@ -107,6 +107,9 @@ $ok(strpos($tik, 'VES_Security_Event_Log::record(\'provider_dispatch_blocked\'')
 // ── 5. AI egress classified + key-gated; no flag flip ────────────────────────
 $openai_rows = VES_External_Egress_Inventory::for_provider('openai');
 $ok(count($openai_rows) >= 5, 'all five OpenAI call sites classified');
+$openai_json = json_encode($openai_rows);
+$ok(strpos($openai_json, 'ves_request_item_analysis') !== false, 'inventory names the REAL analysis.php function');
+$ok(strpos($openai_json, 'generate_with_openai') !== false, 'inventory names the REAL MarketSignal OpenAI method');
 foreach ($openai_rows as $r) {
     $ok(in_array($r['classification'], ['ai_provider_gated', 'ai_provider_legacy_requires_review'], true), 'OpenAI path classified gated/legacy-review: ' . $r['class']);
 }

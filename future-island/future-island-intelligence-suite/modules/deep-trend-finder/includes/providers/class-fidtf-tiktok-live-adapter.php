@@ -107,7 +107,7 @@ final class FIDTF_TikTok_Live_Adapter {
      */
     private function start_direct_apify_run(array $context, array $actor_input) {
         if (class_exists('FIDTF_Core_Apify_Client_Adapter') && FIDTF_Core_Apify_Client_Adapter::available()) {
-            $core = $this->run_with_core_client($context, [], $actor_input);
+            $core = $this->run_with_core_client($context, (array) ($context['payload'] ?? []), $actor_input);
             if (is_array($core) || is_wp_error($core)) { return $this->sanitize_external_result($core); }
         }
         if (class_exists('VES_Security_Event_Log')) {

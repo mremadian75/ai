@@ -114,3 +114,22 @@ In `command-output-v01-egress-evidence-v2.log`: `php -l` 18/18; `bash -n` 3/3; P
 - **Is it production-ready?** **No.** No live evidence exists; no code path can claim it.
 - **Can AI generation be enabled?** **No.** Flag OFF; no execution path; AI egress classified and gated.
 - **What remains before production?** (1) v3 script on real staging (`--expected-siteurl`, backup, collect-cli) → (2) browser checklist v3 with the 12 named screenshots + logs → (3) finalize mode → (4) `rc-record-live-validation --evidence-pack=… --evidence-root=…` → (5) `rc-readiness-check --strict` → `ready_for_pilot_review` → (6) operator approval, monitored pilot, final acceptance.
+
+---
+
+## ADDENDUM — Deep Review & Debug Pass (same phase, corrective)
+
+A hostile re-review of the 9D+9E work found **eight issues the 193 passing tests did not reach**; all are fixed, with regression tests. Suite is now **194/194 from the tree and from a clean extraction of the rebuilt ZIP** (new SHA-256: `a1b0b2660c4435c9768752b53ccd72a201d2e94d2a4755665a352b0ffaa279e9`).
+
+| Sev | Found | Fix |
+| --- | --- | --- |
+| **high** | **v3 script finalize mode could NEVER produce a passed pack**: `db_backup_sha256` was only computed from `--db-backup`, which finalize does not require — every finalized pack silently stayed `incomplete`. | finalize reuses the hash stored by collect-cli (`db-backup-sha256.txt`) or refuses with a named reason. Behavioral test added. |
+| **medium** | **Run-start retry on 5xx = possible double dispatch/charge**: the client retried any 429/5xx once, including POST run-starts where the first attempt may have already started a paid run upstream. | POST run-starts are no longer retried on 5xx (diagnostic recorded; operator checks the provider console); 429 (rate-limited away, not started) and all reads keep the original retry. 4 new assertions. |
+| **medium** | **Uninstall "delete my data" left phase 2–9 data behind**: intel-store tables, trend observations/records, review-decision ledger, AI-usage/topup tables, and options including `ves_rc_live_validation` — a stale "passed" validation record could survive a full wipe and resurface as a forged trust signal on reinstall. | Explicit-delete lists extended (12 tables, 13 options), still strictly behind the existing opt-in flag; nothing destructive moved outside the gate. New 30-assertion coverage test. |
+| low | TikTok fail-closed fallback passed `[]` to the `fidtf_tiktok_core_apify_client` filter instead of the canonical payload (degraded external-integrator context). | Threads `context['payload']` through. |
+| low | Egress inventory named two OpenAI call sites by guessed method names (`ves_call_openai_analysis`, `run_chatgpt`). | Corrected to the real ones: `ves_request_item_analysis`, `generate_with_openai`; test now pins them. |
+| low | `verify_archive` left its temp extraction in /tmp on every verification. | Best-effort recursive cleanup, path-bounded to `/tmp/ves-evidence-*`; behaviorally confirmed zero new leftovers. |
+| low | `rc-evidence-pack` CLI listed screenshots without hashing them and had no DB-backup input, so its packs could never become file-verifiable. | Hashes screenshots into `screenshot_files`; accepts `--db-backup=<file>`. |
+| note | v2 script silently produced schema-1.0 packs that recording now rejects. | Prints an explicit deprecation notice pointing to v3 (v2 retained). |
+
+Verified clean after fixes: `php -l` on all touched files, `bash -n` on both scripts, PHP 7.4 audit green, full suite 194/194 (tree + clean extraction). Live validation remains **UNRUN** — unchanged classification: `ready_for_live_staging`, **not production-ready**.

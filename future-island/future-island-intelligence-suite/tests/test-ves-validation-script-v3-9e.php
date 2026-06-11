@@ -71,6 +71,14 @@ file_put_contents($tmp . '/php.log', 'tail');
 list($rc, $out) = $run('--mode=finalize --expected-siteurl=https://staging.example.com --i-confirm-this-is-staging --screenshots-dir=' . escapeshellarg($tmp . '/shots') . ' --browser-console-log=' . escapeshellarg($tmp . '/console.log') . ' --network-errors-log=' . escapeshellarg($tmp . '/net.log') . ' --php-error-log=' . escapeshellarg($tmp . '/php.log'));
 $ok($rc === 3 && strpos($out, '07-generation-context-preview.png') !== false, 'finalize names the missing required screenshot');
 
+// ── 4b. Deep-review fix: finalize needs the DB-backup hash (stored or passed) ─
+@mkdir($tmp . '/evdir/commands', 0777, true);
+file_put_contents($tmp . '/shots/07-generation-context-preview.png', 'png'); // restore the set
+list($rc, $out) = $run('--mode=finalize --expected-siteurl=https://staging.example.com --i-confirm-this-is-staging --evidence-dir=' . escapeshellarg($tmp . '/evdir') . ' --screenshots-dir=' . escapeshellarg($tmp . '/shots') . ' --browser-console-log=' . escapeshellarg($tmp . '/console.log') . ' --network-errors-log=' . escapeshellarg($tmp . '/net.log') . ' --php-error-log=' . escapeshellarg($tmp . '/php.log'));
+$ok($rc === 3 && stripos($out, 'DB backup hash') !== false, 'finalize REFUSES without a stored or passed DB backup hash');
+file_put_contents($tmp . '/evdir/db-backup-sha256.txt', str_repeat('a', 64) . "  staging-backup.sql\n");
+$ok(strpos($src, 'db-backup-sha256.txt') !== false && strpos($src, 'finalize reuses the hash stored by collect-cli') !== false, 'finalize reuses the collect-cli stored DB-backup hash');
+
 // ── 5. Redaction + siteurl mismatch logic present in source ─────────────────
 foreach (['apify_api_', 'sk-', 'sk_live_', 'whsec_', 'AIza', 'earer'] as $shape) {
     $ok(strpos($src, $shape) !== false, "redaction covers {$shape} tokens");

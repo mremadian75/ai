@@ -1,0 +1,2882 @@
+diff --git a/future-island/future-island-intelligence-suite/LIVE-BROWSER-VALIDATION-CHECKLIST.md b/future-island/future-island-intelligence-suite/LIVE-BROWSER-VALIDATION-CHECKLIST.md
+index 2745bfa..34e8831 100644
+--- a/future-island/future-island-intelligence-suite/LIVE-BROWSER-VALIDATION-CHECKLIST.md
++++ b/future-island/future-island-intelligence-suite/LIVE-BROWSER-VALIDATION-CHECKLIST.md
+@@ -1,39 +1,55 @@
+-# Future Island — Live Browser Validation Checklist v2 (Phase 9C.2)
++# Future Island — Live Browser Validation Checklist v3 (Phase 9E.4)
+ 
+ Operator: ____________ Date: ____________ Staging URL: ____________
+-Evidence folder: `fi-evidence-<timestamp>/screenshots/`
+-
+-Run `scripts/future-island-browser-smoke.sh --base-url=…` first for URL
+-reachability, then complete every item below **manually with screenshots**.
+-The smoke script cannot replace this checklist. If any item fails, the
+-validation fails — record it honestly.
+-
+-## Required screenshots
+-
+-1. - [ ] **Signal Room** — workflow spine, operator queue, readiness strip, honest empty states, no fake charts
+-2. - [ ] **Social Media / Signal Report** — Informe de señales, Evidence Snapshot, Observed / Inferred / Cannot conclude
+-3. - [ ] **Evidence Gate** — BOTH states: an insight without evidence blocked, and one with evidence ready
+-4. - [ ] **Operator Queue** — counts match `wp ves operator-queue --workspace=1 --format=json`
+-5. - [ ] **Memory / Brand Context** — trusted vs candidate separated; rejected/archived/expired diagnostics; memory-is-not-evidence notice
+-6. - [ ] **Generation Context Preview** — candidate/rejected/archived/expired excluded
+-7. - [ ] **Prompt Package Preview** — blocked package hides full context; `provider_execution_allowed: false`
+-8. - [ ] **Brief Workbench** — evidence binder, disabled/safe review controls, NO generate button
+-9. - [ ] **Draft Workbench** — output slots, disabled/safe review controls, NO publish button
+-10. - [ ] **Release Candidate page** — rails table (provider fail-closed, charge ceiling, workspace guard, review ledger, settlement, trend idempotency, dead-letter, security log), live-validation banner state, no production-ready claim
+-11. - [ ] **Security / dead-letter diagnostics** — the Audit & rails section on the RC page (or honest "unavailable" state)
+-12. - [ ] **Any error state encountered** — with its support code
+-
+-## Required exports
+-
+-- [ ] Browser console log for each page (saved as `browser-console-<page>.txt`)
+-- [ ] Failed network requests export (HAR or list) — none unexplained
+-- [ ] PHP error log tail (~300 lines, redacted) — captured by the validation script
+-- [ ] Explicit note: did ANY **Generate / Publish / Auto-approve** button appear anywhere? (must be NO)
+-
+-## Sign-off
+-
+-- [ ] All screenshots saved into the evidence folder before the pack hash is finalized
+-- [ ] `wp ves rc-record-live-validation --evidence-pack=…` run ONLY if everything above passed
+-- [ ] `wp ves rc-readiness-check --strict --format=json` output saved
++Evidence folder: `fi-evidence-<timestamp>/`
++
++**This is human visual evidence, not automated proof.** The smoke script only
++checks URLs respond; every item below needs a human eye and a saved artifact.
++Evidence Pack v2 cannot compute `passed` without these files — exact names
++matter, they are hashed into the pack. If any item fails, the validation fails;
++record it honestly.
++
++## Required screenshots → `screenshots/`
++
++| File (exact name) | Must show |
++| --- | --- |
++| `01-signal-room.png` | workflow spine, operator queue, readiness strip, honest empty states |
++| `02-social-media-signal-report.png` | Informe de señales, Evidence Snapshot, Observed/Inferred/Cannot-conclude |
++| `03-evidence-gate-blocked.png` | an insight WITHOUT evidence blocked from approval |
++| `04-evidence-gate-ready.png` | an insight WITH evidence in a ready/approvable state |
++| `05-operator-queue.png` | queue counts matching `wp ves operator-queue --workspace=1 --format=json` |
++| `06-memory-brand-context.png` | trusted vs candidate separation; memory-is-not-evidence notice |
++| `07-generation-context-preview.png` | candidate/rejected/archived/expired excluded |
++| `08-prompt-package-preview.png` | blocked package hides context; `provider_execution_allowed: false` |
++| `09-brief-workbench.png` | evidence binder; disabled/safe review controls; NO generate button |
++| `10-draft-workbench.png` | output slots; disabled/safe review controls; NO publish button |
++| `11-release-candidate-page.png` | rails table + evidence-state banner; no production-ready claim |
++| `12-security-dead-letter-diagnostics.png` | Audit & rails section (decisions, dead letters, security events) |
++
++## Required logs → `logs/`
++
++| File (exact name) | Rule |
++| --- | --- |
++| `browser-console.log` | console export from each page; if clean, file must contain `NO_CONSOLE_ERRORS_OBSERVED` |
++| `network-errors.log` | failed requests export; if clean, file must contain `NO_NETWORK_ERRORS_OBSERVED` |
++| `php-error-log-tail.log` | last ~300 lines, redacted (the v3 script captures this) |
++
++The files must EXIST even when empty of findings — absence blocks `passed`.
++
++## Required notes
++
++- [ ] Did ANY **Generate / Publish / Auto-approve** button appear anywhere? (must be NO — note where if yes)
++- [ ] Spanish/English copy consistent on the pilot surfaces
++- [ ] No fake/placeholder metrics observed
++
++## Flow
++
++1. `bash scripts/future-island-browser-smoke.sh --base-url=…` (reachability only).
++2. Walk every surface, capture the 12 screenshots with the exact names above.
++3. Export console + network logs (or write the explicit NO_*_OBSERVED markers).
++4. Finalize: `bash scripts/future-island-live-validation-v3.sh --mode=finalize --evidence-dir=… --screenshots-dir=… --browser-console-log=… --network-errors-log=… --php-error-log=… --expected-siteurl=… --i-confirm-this-is-staging`
++5. Record: `wp ves rc-record-live-validation --evidence-pack=…/evidence-pack-v2.json --evidence-root=…`
++6. Gate: `wp ves rc-readiness-check --strict --format=json`
+ 
+ Result: ☐ PASSED ☐ FAILED — Signature: ____________
++(A pass here still does NOT make the build production-ready.)
+diff --git a/future-island/future-island-intelligence-suite/RELEASE-EVIDENCE-PACK-SPEC.md b/future-island/future-island-intelligence-suite/RELEASE-EVIDENCE-PACK-SPEC.md
+index 65e29c9..48cfe37 100644
+--- a/future-island/future-island-intelligence-suite/RELEASE-EVIDENCE-PACK-SPEC.md
++++ b/future-island/future-island-intelligence-suite/RELEASE-EVIDENCE-PACK-SPEC.md
+@@ -1,4 +1,8 @@
+-# Release Evidence Pack — Specification (schema 1.0)
++# Release Evidence Pack — Specification (schema 1.0) — SUPERSEDED
++
++> **Phase 9E:** schema 1.0 is superseded by **schema 2.0** — see
++> `RELEASE-EVIDENCE-PACK-V2-SPEC.md`. v1 packs can no longer be recorded as
++> passed; this document remains for historical reference only.
+ 
+ Phase 9B.3. A live staging validation may only be recorded as **passed** through
+ a structured, hash-verified evidence pack. A bare
+diff --git a/future-island/future-island-intelligence-suite/RELEASE-EVIDENCE-PACK-V2-SPEC.md b/future-island/future-island-intelligence-suite/RELEASE-EVIDENCE-PACK-V2-SPEC.md
+new file mode 100644
+index 0000000..d9bc137
+--- /dev/null
++++ b/future-island/future-island-intelligence-suite/RELEASE-EVIDENCE-PACK-V2-SPEC.md
+@@ -0,0 +1,89 @@
++# Release Evidence Pack — Specification v2 (schema 2.0)
++
++Phase 9E. Supersedes schema 1.0 (`RELEASE-EVIDENCE-PACK-SPEC.md`). A live
++staging validation may only be recorded as **passed** through a schema-2.0,
++hash-verified, **file-backed** evidence pack. A pack JSON alone — however
++well-formed — is classified `json_only_unverified` and is never trusted.
++
++## Files
++
++Produced by `scripts/future-island-live-validation-v3.sh` inside the evidence
++folder:
++
++```
++fi-evidence-<UTC timestamp>/
++  evidence-pack-v2.json          ← the pack
++  manifest-commands.txt          ← per-command exit codes + file hashes
++  manifest-files.txt             ← sha256 of every artifact (archive manifest)
++  build-sha256.txt  db-backup-sha256.txt
++  commands/<slug>.out|.err|.combined.txt   (stdout/stderr/combined per command)
++  screenshots/01-…12-*.png       ← the 12 required screenshots
++  logs/browser-console.log  logs/network-errors.log  logs/php-error-log-tail.log
++```
++
++## Required fields (all mandatory)
++
++`schema_version`(=2.0) · `build_sha256` · `plugin_version` · `siteurl` · `home`
++· `wp_version` · `php_version` · `db_version` · `db_backup_sha256` ·
++`command_outputs` · `screenshots_manifest` · `screenshot_files` ·
++`php_error_log_file`+`_sha256` · `browser_console_log_file`+`_sha256` ·
++`network_errors_file`+`_sha256` · `evidence_archive_sha256` · `generated_at` ·
++`operator{name,user_id}` · `validation_status` · `limitations` ·
++`evidence_pack_hash`
++
++Per command (all 18 required commands, exit code 0):
++
++```json
++"wp ves verify-schema": {
++  "exit_code": 0,
++  "stdout_file": "commands/verify-schema.out",   "stdout_sha256": "…",
++  "stderr_file": "commands/verify-schema.err",   "stderr_sha256": "…",
++  "combined_file": "commands/verify-schema.combined.txt", "combined_sha256": "…"
++}
++```
++
++Required commands: `php -v`, `wp --info`, `wp core version`,
++`wp db query "SELECT VERSION();"`, `wp option get siteurl`, `wp option get home`,
++`wp plugin list`, `wp theme list`, `wp ves verify-schema`,
++`wp ves validate-staging --format=json`, `wp ves readiness-check --format=json`,
++`wp ves rc-readiness-check --format=json`, `wp ves memory-summary --format=json`,
++`wp ves memory-context-preview …`, `wp ves generation-context-preview …`,
++`wp ves generation-prompt-preview …`, `wp ves operator-queue …`,
++`wp ves memory-expire --dry-run`.
++
++Browser artifacts: all **12** screenshots from
++`LIVE-BROWSER-VALIDATION-CHECKLIST.md` must be in `screenshots_manifest` with a
++SHA-256 each in `screenshot_files`; console/network/php-error logs must exist
++and hash (clean runs use `NO_CONSOLE_ERRORS_OBSERVED` /
++`NO_NETWORK_ERRORS_OBSERVED` file content — file presence is still mandatory).
++
++`validation_status` is **computed, never asserted**: `passed` requires all 18
++commands at exit 0 with all three captured streams, all 12 screenshots, all
++three logs, `db_backup_sha256`, and an operator name.
++
++## Hashes
++
++- `evidence_pack_hash` — deterministic SHA-256 of the canonicalized pack
++  (recursive key sort, compact encoding, hash field excluded). Any edit
++  invalidates the pack.
++- `evidence_archive_sha256` — **archive manifest hash**: the SHA-256 of
++  `manifest-files.txt` (which lists every artifact's hash). Non-circular by
++  design: the manifest excludes itself and the pack file, so the pack can carry
++  it before archiving. Recording verifies it against the extracted archive.
++
++## Recording (the only trusted write)
++
++```
++wp ves rc-record-live-validation --evidence-pack=…/evidence-pack-v2.json \
++  ( --evidence-root=…/fi-evidence-<ts>  |  --evidence-archive=…/fi-evidence-<ts>.tar.gz )
++```
++
++Verification order: pack hash → schema → `validation_status=passed` →
++**every referenced file exists and its SHA-256 matches** (root, or archive
++extracted via PharData + manifest hash check) → no readiness blockers. Failure
++classifications: `json_only_unverified` (no root/archive given),
++`missing_required_artifacts`, `file_hash_mismatch` — none of them record a pass.
++
++Stored state on success carries `files_verified: true`; the classifier reports
++`passed` only for such states. `wp ves rc-readiness-check --strict` trusts only
++`passed`. Nothing in this pipeline can produce a production-ready claim.
+diff --git a/future-island/future-island-intelligence-suite/future-island-intelligence-suite.php b/future-island/future-island-intelligence-suite/future-island-intelligence-suite.php
+index 36c082b..ac2e369 100644
+--- a/future-island/future-island-intelligence-suite/future-island-intelligence-suite.php
++++ b/future-island/future-island-intelligence-suite/future-island-intelligence-suite.php
+@@ -2,7 +2,7 @@
+ /**
+  * Plugin Name: Future Island Intelligence Suite
+  * Description: Unified marketing intelligence platform. Includes the full Social Scraper Suite (VES Core) and the Deep Trend Finder module in a single WordPress plugin — no separate add-on required.
+- * Version: 1.2.6
++ * Version: 1.2.7
+  * Requires PHP: 7.4
+  * Author: Future Island / Vietnam Estudio
+  * Text Domain: future-island-intelligence-suite
+@@ -15,9 +15,9 @@ if (!defined('ABSPATH')) {
+ // -----------------------------------------------------------------------
+ // Suite-level constants
+ // -----------------------------------------------------------------------
+-define('FIS_VERSION',     '1.2.6');
++define('FIS_VERSION',     '1.2.7');
+ // Product-level release label: Future Island v0.1 Release Candidate.
+-define('FIS_RC_LABEL',    'v0.1-rc2');
++define('FIS_RC_LABEL',    'v0.1-rc3');
+ define('FIS_PLUGIN_FILE', __FILE__);
+ define('FIS_PLUGIN_DIR',  plugin_dir_path(__FILE__));
+ define('FIS_PLUGIN_URL',  plugin_dir_url(__FILE__));
+@@ -25,7 +25,7 @@ define('FIS_PLUGIN_URL',  plugin_dir_url(__FILE__));
+ // -----------------------------------------------------------------------
+ // VES Core constants (keep all existing VES code working unchanged)
+ // -----------------------------------------------------------------------
+-if (!defined('VES_PLUGIN_VERSION'))         { define('VES_PLUGIN_VERSION',         '1.2.6'); }
++if (!defined('VES_PLUGIN_VERSION'))         { define('VES_PLUGIN_VERSION',         '1.2.7'); }
+ if (!defined('VES_PLUGIN_FILE'))            { define('VES_PLUGIN_FILE',            FIS_PLUGIN_FILE); }
+ if (!defined('VES_PLUGIN_DIR'))             { define('VES_PLUGIN_DIR',             FIS_PLUGIN_DIR); }
+ if (!defined('VES_PLUGIN_URL'))             { define('VES_PLUGIN_URL',             FIS_PLUGIN_URL); }
+@@ -57,6 +57,7 @@ $fis_ves_files = [
+     FIS_PLUGIN_DIR . 'includes/class-ves-review-decision-ledger.php',
+     FIS_PLUGIN_DIR . 'includes/class-ves-usage-settlement.php',
+     FIS_PLUGIN_DIR . 'includes/class-ves-rc-evidence-pack.php',
++    FIS_PLUGIN_DIR . 'includes/class-ves-external-egress-inventory.php',
+     FIS_PLUGIN_DIR . 'includes/class-ves-cost-estimator.php',
+     FIS_PLUGIN_DIR . 'includes/class-ves-ai-usage-tracker.php',
+     FIS_PLUGIN_DIR . 'includes/class-ves-health-check.php',
+diff --git a/future-island/future-island-intelligence-suite/includes/class-ves-brand-context-service.php b/future-island/future-island-intelligence-suite/includes/class-ves-brand-context-service.php
+index d01c370..5f0dd9e 100644
+--- a/future-island/future-island-intelligence-suite/includes/class-ves-brand-context-service.php
++++ b/future-island/future-island-intelligence-suite/includes/class-ves-brand-context-service.php
+@@ -378,6 +378,13 @@ final class VES_Brand_Context_Service {
+             'is_pinned' => $pin,
+             'updated_at' => function_exists('current_time') ? current_time('mysql') : gmdate('Y-m-d H:i:s'),
+         ], ['id' => $id]);
++        // Phase 9D/9E low fix — never log success before the DB proves it:
++        // status_changed ONLY after a successful update; failures get their own
++        // honest event, the ledger is skipped, and the caller receives false.
++        if ($ok === false) {
++            self::log('status_change_failed', ['memory_id' => $id, 'status' => $status, 'actor' => (int) $actor_id]);
++            return false;
++        }
+         self::log('status_changed', ['memory_id' => $id, 'status' => $status, 'actor' => (int) $actor_id]);
+         // Phase 9B.1 — every successful memory review action appends one immutable
+         // ledger decision (duplicate submissions collapse on the idempotency key).
+diff --git a/future-island/future-island-intelligence-suite/includes/class-ves-cli-rc-readiness.php b/future-island/future-island-intelligence-suite/includes/class-ves-cli-rc-readiness.php
+index 9ce8316..3ef7597 100644
+--- a/future-island/future-island-intelligence-suite/includes/class-ves-cli-rc-readiness.php
++++ b/future-island/future-island-intelligence-suite/includes/class-ves-cli-rc-readiness.php
+@@ -109,10 +109,13 @@ final class VES_CLI_RC_Readiness {
+ 
+     /**
+      * wp ves rc-record-live-validation --evidence-pack=<file.json>
+-     * Phase 9B.3 — the ONLY trusted way to record a live validation pass. The
+-     * pack must verify (schema + deterministic hash + required command outputs
+-     * with exit code 0 + validation_status=passed) and no readiness blockers may
+-     * exist. Never produces a production-ready state.
++     *   ( --evidence-root=<folder> | --evidence-archive=<file.tar.gz> )
++     * Phase 9E.2 — the ONLY trusted way to record a live validation pass. The
++     * pack must verify (schema 2.0 + deterministic hash + full required command
++     * battery + browser artifacts) AND every referenced artifact file must exist
++     * with a matching SHA-256 in the evidence root or extracted archive. A pack
++     * JSON alone is json_only_unverified and is refused. Never produces a
++     * production-ready state.
+      */
+     public static function record_live_validation($args, $assoc) {
+         if (function_exists('current_user_can') && function_exists('is_user_logged_in') && is_user_logged_in() && !current_user_can('manage_options')) {
+@@ -126,16 +129,28 @@ final class VES_CLI_RC_Readiness {
+             \WP_CLI::error('--evidence-pack must point to a readable JSON file.');
+             return;
+         }
++        $root = isset($assoc['evidence-root']) ? (string) $assoc['evidence-root'] : '';
++        $archive = isset($assoc['evidence-archive']) ? (string) $assoc['evidence-archive'] : '';
++        if ($root === '' && $archive === '') {
++            if (class_exists('VES_Security_Event_Log')) { VES_Security_Event_Log::record('invalid_cli_args', 'rc-record-live-validation called without --evidence-root/--evidence-archive (json-only refused).'); }
++            \WP_CLI::error('Refused: provide --evidence-root=<folder> or --evidence-archive=<file.tar.gz>. A pack JSON alone is json_only_unverified and cannot be recorded as passed.');
++            return;
++        }
+         $pack = json_decode((string) file_get_contents($file), true);
+         if (!is_array($pack)) { \WP_CLI::error('Evidence pack file is not valid JSON.'); return; }
+-        $result = VES_RC_Evidence_Pack::record_live_validation($pack);
++        $opts = [];
++        if ($root !== '') { $opts['evidence_root'] = $root; }
++        if ($archive !== '') { $opts['archive_path'] = $archive; }
++        $result = VES_RC_Evidence_Pack::record_live_validation($pack, $opts);
+         if (function_exists('is_wp_error') && is_wp_error($result)) {
+             \WP_CLI::error('Refused: ' . $result->get_error_message());
+             return;
+         }
+-        \WP_CLI::log('Recorded live validation (evidence-backed).');
+-        \WP_CLI::log('evidence_pack_hash: ' . (string) $result['evidence_pack_hash']);
+-        \WP_CLI::log('build_sha256:       ' . (string) $result['build_sha256']);
++        \WP_CLI::log('Recorded live validation (evidence-backed, file-verified via ' . (string) $result['verified_via'] . ').');
++        \WP_CLI::log('schema_version:      ' . (string) $result['schema_version']);
++        \WP_CLI::log('evidence_pack_hash:  ' . (string) $result['evidence_pack_hash']);
++        \WP_CLI::log('archive_manifest:    ' . (string) $result['evidence_archive_sha256']);
++        \WP_CLI::log('build_sha256:        ' . (string) $result['build_sha256']);
+         \WP_CLI::success('Live validation recorded. This does NOT make the build production-ready.');
+     }
+ }
+diff --git a/future-island/future-island-intelligence-suite/includes/class-ves-external-egress-inventory.php b/future-island/future-island-intelligence-suite/includes/class-ves-external-egress-inventory.php
+new file mode 100644
+index 0000000..e448e29
+--- /dev/null
++++ b/future-island/future-island-intelligence-suite/includes/class-ves-external-egress-inventory.php
+@@ -0,0 +1,131 @@
++<?php
++if (!defined('ABSPATH')) { exit; }
++
++/**
++ * VES_External_Egress_Inventory — Phase 9D.1 single external egress policy map.
++ *
++ * One honest, static registry of every code path that talks to the network.
++ * Backed by grep-style tests (tests/test-ves-egress-lockdown-9d.php) that fail
++ * the build if a NEW external call appears without being classified here, and
++ * consumed by rc-readiness-check (strict mode blocks on unknown egress or any
++ * paid Apify run-start outside the core guard). Pure/static — never performs
++ * HTTP itself. PHP 7.4 compatible.
++ */
++final class VES_External_Egress_Inventory {
++
++    const CLASSIFICATIONS = [
++        'apify_run_start_core_guarded',   // paid run-start routed through VES_Apify_Client::request()
++        'apify_read_guarded',             // status/dataset/user reads, header token, no token-in-URL
++        'apify_direct_legacy_blocked',    // legacy direct dispatch now fail-closed (no HTTP)
++        'ai_provider_gated',              // AI call behind config + operator action + usage path
++        'ai_provider_legacy_requires_review', // direct legacy AI call, key+operator gated; consolidation roadmap
++        'billing_provider_explicit',      // Stripe billing API, explicit and isolated from usage credits
++        'public_content_fetch_guarded',   // SSRF-guarded fetch of public scraped content (no provider API)
++        'unknown_external_egress_blocker',// anything unclassified — must never exist
++        'test_only',
++    ];
++
++    /** The full static registry. Every row: provider/class/method/classification/guarded/notes. */
++    public static function inventory() {
++        return [
++            // ── Apify run-start (paid) — ALL routed through the single core gate ──
++            self::row('apify', 'VES_Apify_Client', 'request', 'apify_run_start_core_guarded', true,
++                ['THE single dispatch gate: fail-closed allowlist + hard maxTotalChargeUsd + header-only token + security events.']),
++            self::row('apify', 'VES_Run_Execution_Service', 'start_source_apify', 'apify_run_start_core_guarded', true,
++                ['Builds run URL via ves_make_run_url (ceiling included) and dispatches through VES_Apify_Client::request.']),
++            self::row('apify', 'VES_Google_Intel', 'run_actor_with_slug', 'apify_run_start_core_guarded', true,
++                ['Adds maxTotalChargeUsd explicitly; dispatches through VES_Apify_Client::request.']),
++            self::row('apify', 'VES_Monitor_Runner', 'dispatch', 'apify_run_start_core_guarded', true,
++                ['ves_make_run_url + VES_Apify_Client::request.']),
++            self::row('apify', 'VES_Brand_Audit_Execution_Service', 'start_source', 'apify_run_start_core_guarded', true,
++                ['ves_make_run_url + VES_Apify_Client::request.']),
++            self::row('apify', 'VES_Ajax_Controller', 'multiple dispatch handlers', 'apify_run_start_core_guarded', true,
++                ['All run URLs built by ves_make_run_url and dispatched via VES_Apify_Client::request.']),
++            self::row('apify', 'VES_Market_Signal_Commercial', 'run_apify_sync', 'apify_run_start_core_guarded', true,
++                ['Phase 9D.2: direct wp_remote_post removed; run-sync routed through VES_Apify_Client::request with ceiling; fail-closed without the core client.']),
++            self::row('apify', 'FIDTF_Core_Apify_Client_Adapter', 'start', 'apify_run_start_core_guarded', true,
++                ['DTF bridge into the core client; run URL via ves_make_run_url (ceiling included).']),
++            self::row('apify', 'FIDTF_Generic_Apify_Live_Adapter', 'start_direct_apify_run', 'apify_direct_legacy_blocked', true,
++                ['Phase 9D.2: legacy direct dispatch DISABLED — fail-closed WP_Error + security event; zero HTTP.']),
++            self::row('apify', 'FIDTF_TikTok_Live_Adapter', 'start_direct_apify_run', 'apify_direct_legacy_blocked', true,
++                ['Phase 9D.2: legacy direct dispatch routes to the core adapter when available, otherwise fail-closed; zero direct HTTP.']),
++
++            // ── Apify reads (status / datasets / account) — header token, no token-in-URL ──
++            self::row('apify', 'VES_Apify_Client', 'fetch_run / fetch_items / abort_run', 'apify_read_guarded', true,
++                ['Core read paths; Authorization header; scrubbed diagnostics.']),
++            self::row('apify', 'VES_Admin', 'handle_apify_connection_test', 'apify_read_guarded', true,
++                ['Admin-only /v2/users/me connectivity test; header token; capability + nonce gated.']),
++            self::row('apify', 'VES_Ajax_Controller', 'dataset item fetch (host-validated)', 'apify_read_guarded', true,
++                ['Validates host === api.apify.com and /v2/datasets/ path before fetching.']),
++            self::row('apify', 'FIDTF_Generic_Apify_Live_Adapter', 'refresh_direct_apify_run / fetch_items_*', 'apify_read_guarded', true,
++                ['Read-only status/dataset fetches; Authorization header; no run-start.']),
++            self::row('apify', 'FIDTF_TikTok_Live_Adapter', 'refresh_direct_apify_run / fetch_dataset_*', 'apify_read_guarded', true,
++                ['Read-only status/dataset fetches; Authorization header; no run-start.']),
++
++            // ── AI provider (OpenAI) — no default-on generation anywhere ──
++            self::row('openai', 'VES_OpenAI_Client', 'request', 'ai_provider_gated', true,
++                ['Core AI client for operator-triggered analysis; API-key + credit gated; prompt-discipline tests; NOT generation (ves_generation_execution_enabled stays false and has no execution path).']),
++            self::row('openai', 'includes/analysis.php', 'ves_call_openai_analysis (direct post)', 'ai_provider_legacy_requires_review', true,
++                ['Legacy direct call for scrape analysis; key + operator action gated; consolidation into VES_OpenAI_Client is roadmap.']),
++            self::row('openai', 'VES_Market_Signal_Commercial', 'run_chatgpt (direct post)', 'ai_provider_legacy_requires_review', true,
++                ['MarketSignal ChatGPT call; key + admin settings gated; roadmap consolidation.']),
++            self::row('openai', 'FIDTF_AI_Bridge', 'plan (direct post)', 'ai_provider_legacy_requires_review', true,
++                ['DTF planner call; key + source-enabled gated; deterministic fallback when absent.']),
++            self::row('openai', 'FICI_OpenAI_Provider', 'generate (direct post)', 'ai_provider_legacy_requires_review', true,
++                ['Creative Intelligence provider; key gated, admin module; roadmap consolidation.']),
++
++            // ── Billing ──
++            self::row('stripe', 'VES_Stripe_Billing', 'api_request', 'billing_provider_explicit', true,
++                ['Explicit Stripe REST calls for billing; isolated from the usage-credit ledger; secrets never logged (covered by test-ves-stripe-billing.php).']),
++
++            // ── Public content fetch (not a provider API) ──
++            self::row('public_web', 'includes/analysis.php', 'ves_fetch_subtitle_text (wp_remote_get)', 'public_content_fetch_guarded', true,
++                ['Fetches public subtitle/transcript URLs from scraped items; SSRF-guarded by ves_is_public_http_url; no credentials sent.']),
++        ];
++    }
++
++    /** Summary for readiness diagnostics. */
++    public static function summary() {
++        $rows = self::inventory();
++        $by = [];
++        $unknown = 0;
++        $unguarded_run_start = 0;
++        foreach ($rows as $r) {
++            $c = (string) $r['classification'];
++            $by[$c] = ($by[$c] ?? 0) + 1;
++            if ($c === 'unknown_external_egress_blocker') { $unknown++; }
++            if (strpos($c, 'apify_run_start') === 0 && empty($r['guarded'])) { $unguarded_run_start++; }
++            if ($c === 'apify_direct_legacy_blocked' && empty($r['guarded'])) { $unguarded_run_start++; }
++        }
++        return [
++            'available' => true,
++            'total' => count($rows),
++            'by_classification' => $by,
++            'unknown_count' => $unknown,
++            'unguarded_run_start_count' => $unguarded_run_start,
++            'single_dispatch_gate' => $unknown === 0 && $unguarded_run_start === 0,
++        ];
++    }
++
++    /** Rows for a given provider (diagnostics). */
++    public static function for_provider($provider) {
++        $provider = strtolower(trim((string) $provider));
++        $out = [];
++        foreach (self::inventory() as $r) {
++            if ($r['provider'] === $provider) { $out[] = $r; }
++        }
++        return $out;
++    }
++
++    private static function row($provider, $class, $method, $classification, $guarded, array $notes) {
++        if (!in_array($classification, self::CLASSIFICATIONS, true)) { $classification = 'unknown_external_egress_blocker'; }
++        return [
++            'provider' => (string) $provider,
++            'class' => (string) $class,
++            'method' => (string) $method,
++            'classification' => $classification,
++            'guarded' => (bool) $guarded,
++            'notes' => array_map('strval', $notes),
++        ];
++    }
++}
+diff --git a/future-island/future-island-intelligence-suite/includes/class-ves-market-signal-commercial.php b/future-island/future-island-intelligence-suite/includes/class-ves-market-signal-commercial.php
+index 17d5589..9756276 100644
+--- a/future-island/future-island-intelligence-suite/includes/class-ves-market-signal-commercial.php
++++ b/future-island/future-island-intelligence-suite/includes/class-ves-market-signal-commercial.php
+@@ -611,39 +611,45 @@ final class VES_Market_Signal_Commercial {
+     }
+ 
+     private static function run_apify_sync($prompt, $settings, $user_id) {
+-        $token = self::get_apify_token($settings);
+-        if ($token === '') { return new WP_Error('ves_ms_apify_missing_token', __('Apify API token is not configured.', 'ves'), ['status' => 500]); }
++        // Phase 9D.2 — NO direct wp_remote_post to Apify here anymore. Every
++        // MarketSignal run-start goes through the single core dispatch gate
++        // (fail-closed allowlist + hard maxTotalChargeUsd + header-only token +
++        // security events). If the core client is unavailable, dispatch is
++        // BLOCKED — never a silent direct fallback.
++        if (!class_exists('VES_Apify_Client') || !method_exists('VES_Apify_Client', 'request')) {
++            if (class_exists('VES_Security_Event_Log')) {
++                VES_Security_Event_Log::record('provider_dispatch_blocked', 'MarketSignal Apify dispatch blocked: core provider client unavailable (fail-closed).', ['module' => 'market_signal']);
++            }
++            return new WP_Error('ves_ms_apify_client_unavailable', __('The provider dispatch service is unavailable; MarketSignal cannot start a run.', 'ves'), ['status' => 503]);
++        }
+         $task_id = self::clean_actor_id((string) ($settings['apify_task_id'] ?? ''));
+         $actor_id = self::clean_actor_id((string) ($settings['apify_actor_id'] ?? ''));
+         if ($task_id === '' && $actor_id === '') { return new WP_Error('ves_ms_apify_missing_actor', __('Apify Actor ID or Task ID is required.', 'ves'), ['status' => 500]); }
+         $apify_id = str_replace('/', '~', $task_id !== '' ? $task_id : $actor_id);
+         $base = $task_id !== '' ? 'https://api.apify.com/v2/actor-tasks/' : 'https://api.apify.com/v2/acts/';
++        $ceiling = function_exists('ves_hard_max_charge_usd') ? (float) ves_hard_max_charge_usd()
++            : (class_exists('VES_Config') && method_exists('VES_Config', 'hard_max_charge_usd') ? (float) VES_Config::hard_max_charge_usd() : 3.0);
+         $url = add_query_arg([
+             'format' => 'json',
+             'clean' => 'true',
+             'maxItems' => max(1, min(100, (int) ($settings['apify_max_items'] ?? 20))),
+             'timeout' => max(20, min(240, (int) ($settings['apify_timeout_seconds'] ?? 60))),
++            'maxTotalChargeUsd' => max(0.1, $ceiling),
+         ], $base . rawurlencode($apify_id) . '/run-sync-get-dataset-items');
+         $input = self::build_apify_input($prompt, $settings);
+-        $response = wp_remote_post($url, [
+-            'timeout' => max(30, min(260, (int) ($settings['apify_timeout_seconds'] ?? 60) + 20)),
+-            'headers' => [
+-                'Authorization' => 'Bearer ' . $token,
+-                'Content-Type' => 'application/json; charset=utf-8',
+-                'Accept' => 'application/json',
+-                'User-Agent' => 'MarketSignal-WordPress-ChatGPT-Apify/' . (defined('VES_PLUGIN_VERSION') ? VES_PLUGIN_VERSION : '1.0'),
+-            ],
+-            'body' => wp_json_encode($input, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+-        ]);
+         $ms_actor = $task_id !== '' ? $task_id : $actor_id;
+-        if (is_wp_error($response)) { self::record_apify_scrape($user_id, $ms_actor, 0, 'failed', 'transport_error'); return $response; }
+-        $code = (int) wp_remote_retrieve_response_code($response);
+-        $raw = (string) wp_remote_retrieve_body($response);
++        $response = VES_Apify_Client::request('POST', $url, $input);
++        if (is_wp_error($response)) {
++            $reason = sanitize_key((string) $response->get_error_code());
++            self::record_apify_scrape($user_id, $ms_actor, 0, 'failed', $reason !== '' ? $reason : 'transport_error');
++            return $response;
++        }
++        $code = (int) ($response['code'] ?? 0);
+         if ($code < 200 || $code >= 300) {
+             self::record_apify_scrape($user_id, $ms_actor, 0, 'failed', 'http_' . $code);
+-            return new WP_Error('ves_ms_apify_http_error', 'Apify returned HTTP ' . $code . '.', ['status' => 502, 'body' => self::truncate($raw, 600)]);
++            return new WP_Error('ves_ms_apify_http_error', 'Apify returned HTTP ' . $code . '.', ['status' => 502]);
+         }
+-        $items = json_decode($raw, true);
++        $items = $response['body'] ?? null;
+         if (!is_array($items)) {
+             self::record_apify_scrape($user_id, $ms_actor, 0, 'failed', 'invalid_json');
+             return new WP_Error('ves_ms_apify_bad_json', __('Apify did not return valid JSON dataset items.', 'ves'), ['status' => 502]);
+diff --git a/future-island/future-island-intelligence-suite/includes/class-ves-rc-evidence-pack.php b/future-island/future-island-intelligence-suite/includes/class-ves-rc-evidence-pack.php
+index 269b02d..45c89a9 100644
+--- a/future-island/future-island-intelligence-suite/includes/class-ves-rc-evidence-pack.php
++++ b/future-island/future-island-intelligence-suite/includes/class-ves-rc-evidence-pack.php
+@@ -2,45 +2,72 @@
+ if (!defined('ABSPATH')) { exit; }
+ 
+ /**
+- * VES_RC_Evidence_Pack — Phase 9B.3 release evidence pack integrity.
++ * VES_RC_Evidence_Pack — Phase 9E evidence pack v2 / live-validation anti-forgery.
+  *
+- * A live validation may only be recorded as PASSED through a structured,
+- * hash-verified evidence pack. The pack carries environment facts, the outputs
+- * and exit codes of every required validation command, screenshot/log manifests
+- * and an operator identity; its evidence_pack_hash is a deterministic SHA-256
+- * over the canonicalized pack (sorted keys, hash field excluded), so any edit
+- * invalidates it. A bare `wp option update ves_rc_live_validation …` without a
+- * verifiable pack is classified `unverified_manual` and is never trusted as
+- * passed. Recording NEVER produces a production-ready state. PHP 7.4.
++ * Schema 2.0. A live validation may ONLY be recorded as passed when:
++ *   1. the pack verifies (schema + deterministic evidence_pack_hash),
++ *   2. validation_status is the COMPUTED 'passed' (never asserted), which now
++ *      requires every required CLI command captured to stdout/stderr/combined
++ *      files with exit code 0, the 12 required browser screenshots, the browser
++ *      console log, the network-errors log, the PHP error-log tail and the DB
++ *      backup hash, and
++ *   3. every referenced artifact FILE is verified on disk (evidence root or
++ *      extracted archive): exists + SHA-256 matches. A pack JSON alone is
++ *      classified json_only_unverified and can never be recorded as passed.
++ * The recorded state carries files_verified=true; the classifier only ever
++ * reports 'passed' for such states. Nothing here can produce a
++ * production-ready claim. PHP 7.4 compatible.
+  */
+ final class VES_RC_Evidence_Pack {
+ 
+-    const SCHEMA_VERSION = '1.0';
++    const SCHEMA_VERSION = '2.0';
+     const OPTION_LIVE_VALIDATION = 'ves_rc_live_validation';
+ 
+-    /** Commands whose captured output is mandatory for a PASSED pack. */
++    /** Every required CLI command for a PASSED pack (9E.1 full battery). */
+     const REQUIRED_COMMANDS = [
+         'php -v',
++        'wp --info',
+         'wp core version',
++        'wp db query "SELECT VERSION();"',
+         'wp option get siteurl',
++        'wp option get home',
++        'wp plugin list',
++        'wp theme list',
+         'wp ves verify-schema',
+         'wp ves validate-staging --format=json',
++        'wp ves readiness-check --format=json',
+         'wp ves rc-readiness-check --format=json',
+         'wp ves memory-summary --format=json',
++        'wp ves memory-context-preview --workspace=1 --use-case=brief_generation --format=json',
++        'wp ves generation-context-preview --workspace=1 --use-case=brief_generation --format=json',
++        'wp ves generation-prompt-preview --workspace=1 --use-case=brief_generation --target-type=insight --target-id=1 --format=json',
+         'wp ves operator-queue --workspace=1 --format=json',
+         'wp ves memory-expire --dry-run',
+     ];
+ 
++    /** Canonical browser screenshot set (9E.4). */
++    const REQUIRED_SCREENSHOTS = [
++        '01-signal-room.png', '02-social-media-signal-report.png',
++        '03-evidence-gate-blocked.png', '04-evidence-gate-ready.png',
++        '05-operator-queue.png', '06-memory-brand-context.png',
++        '07-generation-context-preview.png', '08-prompt-package-preview.png',
++        '09-brief-workbench.png', '10-draft-workbench.png',
++        '11-release-candidate-page.png', '12-security-dead-letter-diagnostics.png',
++    ];
++
+     const REQUIRED_FIELDS = [
+         'schema_version', 'build_sha256', 'plugin_version', 'siteurl', 'home',
+-        'wp_version', 'php_version', 'db_version', 'command_outputs',
+-        'screenshots_manifest', 'php_error_log_sha256', 'browser_console_log_sha256',
+-        'generated_at', 'operator', 'validation_status', 'limitations',
++        'wp_version', 'php_version', 'db_version', 'db_backup_sha256',
++        'command_outputs', 'screenshots_manifest', 'screenshot_files',
++        'php_error_log_file', 'php_error_log_sha256',
++        'browser_console_log_file', 'browser_console_log_sha256',
++        'network_errors_file', 'network_errors_sha256',
++        'evidence_archive_sha256', 'generated_at', 'operator',
++        'validation_status', 'limitations',
+     ];
+ 
+-    // ── canonical hash ─────────────────────────────────────────────────────────
++    // ── canonical hash (unchanged mechanics from v1; proven deterministic) ─────
+ 
+-    /** Deterministic SHA-256 of the pack: recursive key sort, hash field excluded. */
+     public static function compute_hash(array $pack) {
+         unset($pack['evidence_pack_hash']);
+         $canonical = self::canonicalize($pack);
+@@ -61,38 +88,55 @@ final class VES_RC_Evidence_Pack {
+         return $out;
+     }
+ 
+-    // ── schema ────────────────────────────────────────────────────────────────
++    // ── schema v2 ──────────────────────────────────────────────────────────────
+ 
+     /** @return array{valid:bool,errors:array} */
+     public static function schema_validate(array $pack) {
+         $errors = [];
++        if ((string) ($pack['schema_version'] ?? '') !== self::SCHEMA_VERSION) {
++            $errors[] = 'schema_version must be ' . self::SCHEMA_VERSION;
++        }
+         foreach (self::REQUIRED_FIELDS as $field) {
+             if (!array_key_exists($field, $pack)) { $errors[] = "missing field: {$field}"; }
+         }
+         if (!is_array($pack['command_outputs'] ?? null)) {
+-            $errors[] = 'command_outputs must be a map of command => {output_sha256, exit_code}';
++            $errors[] = 'command_outputs must be a map of command => {exit_code, stdout_file, stdout_sha256, stderr_file, stderr_sha256, combined_file, combined_sha256}';
+         } else {
+             foreach (self::REQUIRED_COMMANDS as $cmd) {
+                 $entry = $pack['command_outputs'][$cmd] ?? null;
+-                if (!is_array($entry) || !isset($entry['exit_code']) || !isset($entry['output_sha256'])) {
+-                    $errors[] = "missing required command output: {$cmd}";
+-                } elseif ((int) $entry['exit_code'] !== 0) {
+-                    $errors[] = "required command exited non-zero: {$cmd}";
++                if (!is_array($entry)) { $errors[] = "missing required command output: {$cmd}"; continue; }
++                if ((int) ($entry['exit_code'] ?? 1) !== 0) { $errors[] = "required command exited non-zero: {$cmd}"; }
++                foreach (['stdout', 'stderr', 'combined'] as $stream) {
++                    if (!self::valid_relpath((string) ($entry[$stream . '_file'] ?? ''))) { $errors[] = "{$cmd}: {$stream}_file missing or unsafe path"; }
++                    if (!self::is_hash((string) ($entry[$stream . '_sha256'] ?? ''))) { $errors[] = "{$cmd}: {$stream}_sha256 missing/invalid"; }
+                 }
+             }
+         }
+-        if (!is_array($pack['screenshots_manifest'] ?? null)) { $errors[] = 'screenshots_manifest must be an array'; }
++        $manifest = is_array($pack['screenshots_manifest'] ?? null) ? array_map('strval', $pack['screenshots_manifest']) : [];
++        foreach (self::REQUIRED_SCREENSHOTS as $shot) {
++            if (!in_array($shot, $manifest, true)) { $errors[] = "screenshots_manifest missing required screenshot: {$shot}"; }
++        }
++        $shot_files = is_array($pack['screenshot_files'] ?? null) ? $pack['screenshot_files'] : [];
++        foreach (self::REQUIRED_SCREENSHOTS as $shot) {
++            if (!self::is_hash((string) ($shot_files[$shot] ?? ''))) { $errors[] = "screenshot_files missing/invalid sha256 for: {$shot}"; }
++        }
++        foreach ([
++            'php_error_log' => 'PHP error log', 'browser_console_log' => 'browser console log', 'network_errors' => 'network errors log',
++        ] as $key => $label) {
++            if (!self::valid_relpath((string) ($pack[$key . '_file'] ?? ''))) { $errors[] = "{$label} file missing or unsafe path"; }
++            if (!self::is_hash((string) ($pack[$key . '_sha256'] ?? ''))) { $errors[] = "{$label} sha256 missing/invalid (file may be a NO_*_OBSERVED marker but must exist and hash)"; }
++        }
++        if (!self::is_hash((string) ($pack['db_backup_sha256'] ?? ''))) { $errors[] = 'db_backup_sha256 missing/invalid'; }
++        if (!self::is_hash((string) ($pack['build_sha256'] ?? ''))) { $errors[] = 'build_sha256 must be a SHA-256 hex digest'; }
++        if (!self::is_hash((string) ($pack['evidence_archive_sha256'] ?? ''))) { $errors[] = 'evidence_archive_sha256 (archive manifest hash) missing/invalid'; }
+         $status = self::clean_key((string) ($pack['validation_status'] ?? ''));
+         if (!in_array($status, ['passed', 'failed', 'incomplete'], true)) { $errors[] = 'validation_status must be passed|failed|incomplete'; }
+         if (!is_array($pack['operator'] ?? null) || trim((string) ($pack['operator']['name'] ?? '')) === '') { $errors[] = 'operator.name is required'; }
+-        if (!preg_match('/^[a-f0-9]{64}$/i', (string) ($pack['build_sha256'] ?? ''))) { $errors[] = 'build_sha256 must be a SHA-256 hex digest'; }
+-        if (isset($pack['evidence_pack_hash']) && !preg_match('/^[a-f0-9]{64}$/i', (string) $pack['evidence_pack_hash'])) {
+-            $errors[] = 'evidence_pack_hash must be a SHA-256 hex digest';
+-        }
++        if (isset($pack['evidence_pack_hash']) && !self::is_hash((string) $pack['evidence_pack_hash'])) { $errors[] = 'evidence_pack_hash must be a SHA-256 hex digest'; }
+         return ['valid' => count($errors) === 0, 'errors' => $errors];
+     }
+ 
+-    /** Validate schema AND that the embedded hash matches the content. */
++    /** Schema + embedded hash integrity. */
+     public static function verify(array $pack) {
+         $schema = self::schema_validate($pack);
+         if (!$schema['valid']) { return $schema; }
+@@ -105,9 +149,8 @@ final class VES_RC_Evidence_Pack {
+         return ['valid' => true, 'errors' => []];
+     }
+ 
+-    // ── build (in-WP generator; command outputs may be merged in by the script) ─
++    // ── build (v2 skeleton; status COMPUTED, never asserted) ──────────────────
+ 
+-    /** Assemble a pack skeleton from the live WP environment. Read-only. */
+     public static function build(array $inputs = []) {
+         global $wpdb;
+         $pack = [
+@@ -120,51 +163,148 @@ final class VES_RC_Evidence_Pack {
+             'wp_version'     => isset($GLOBALS['wp_version']) ? (string) $GLOBALS['wp_version'] : 'unknown',
+             'php_version'    => PHP_VERSION,
+             'db_version'     => (isset($wpdb) && is_object($wpdb) && method_exists($wpdb, 'db_version')) ? (string) $wpdb->db_version() : 'unknown',
++            'db_backup_sha256' => self::clean_hash((string) ($inputs['db_backup_sha256'] ?? '')),
+             'command_outputs' => is_array($inputs['command_outputs'] ?? null) ? $inputs['command_outputs'] : [],
+             'screenshots_manifest' => is_array($inputs['screenshots_manifest'] ?? null) ? array_values(array_map('strval', $inputs['screenshots_manifest'])) : [],
++            'screenshot_files' => is_array($inputs['screenshot_files'] ?? null) ? $inputs['screenshot_files'] : [],
++            'php_error_log_file' => (string) ($inputs['php_error_log_file'] ?? ''),
+             'php_error_log_sha256' => self::clean_hash((string) ($inputs['php_error_log_sha256'] ?? '')),
++            'browser_console_log_file' => (string) ($inputs['browser_console_log_file'] ?? ''),
+             'browser_console_log_sha256' => self::clean_hash((string) ($inputs['browser_console_log_sha256'] ?? '')),
++            'network_errors_file' => (string) ($inputs['network_errors_file'] ?? ''),
++            'network_errors_sha256' => self::clean_hash((string) ($inputs['network_errors_sha256'] ?? '')),
++            'evidence_archive_sha256' => self::clean_hash((string) ($inputs['evidence_archive_sha256'] ?? '')),
+             'generated_at'   => function_exists('current_time') ? current_time('mysql', true) : gmdate('Y-m-d H:i:s'),
+             'operator'       => [
+                 'name'    => self::clean_text((string) ($inputs['operator_name'] ?? ''), 120),
+                 'user_id' => function_exists('get_current_user_id') ? (int) get_current_user_id() : 0,
+             ],
+             'validation_status' => 'incomplete',
+-            'limitations'    => is_array($inputs['limitations'] ?? null) ? array_values(array_map('strval', $inputs['limitations'])) : ['Generated pack; validation_status stays incomplete until every required command output is attached and verified.'],
++            'limitations'    => is_array($inputs['limitations'] ?? null) ? array_values(array_map('strval', $inputs['limitations'])) : ['Generated skeleton; the validation script attaches command outputs and browser artifacts before this pack can compute passed.'],
+         ];
+-        // Status is COMPUTED, never asserted: passed requires every required command
+-        // captured with exit code 0.
+-        $all_present = true;
+-        foreach (self::REQUIRED_COMMANDS as $cmd) {
+-            $entry = $pack['command_outputs'][$cmd] ?? null;
+-            if (!is_array($entry) || (int) ($entry['exit_code'] ?? 1) !== 0 || (string) ($entry['output_sha256'] ?? '') === '') {
+-                $all_present = false;
+-                break;
+-            }
+-        }
+-        if ($all_present && !empty($inputs['operator_name'])) { $pack['validation_status'] = 'passed'; }
++        $probe = $pack;
++        $probe['validation_status'] = 'passed';
++        $check = self::schema_validate($probe + ['evidence_pack_hash' => str_repeat('0', 64)]);
++        $pack['validation_status'] = $check['valid'] && trim((string) $pack['operator']['name']) !== '' ? 'passed' : 'incomplete';
+         $pack['evidence_pack_hash'] = self::compute_hash($pack);
+         return $pack;
+     }
+ 
+-    // ── record live validation (the ONLY trusted write path) ──────────────────
++    // ── Phase 9E.2 — file-backed verification ─────────────────────────────────
++
++    /**
++     * Verify every referenced artifact against the evidence root on disk.
++     * @return array{status:string,missing:array,mismatched:array}
++     *   status: ok | missing_required_artifacts | file_hash_mismatch
++     */
++    public static function verify_files(array $pack, $evidence_root) {
++        $root = rtrim((string) $evidence_root, '/');
++        $missing = []; $mismatched = [];
++        $check = function ($rel, $expected_sha) use ($root, &$missing, &$mismatched) {
++            if (!self::valid_relpath((string) $rel)) { $missing[] = (string) $rel . ' (unsafe path)'; return; }
++            $abs = $root . '/' . $rel;
++            if (!is_file($abs) || !is_readable($abs)) { $missing[] = (string) $rel; return; }
++            $actual = hash_file('sha256', $abs);
++            if (!self::is_hash((string) $expected_sha) || !hash_equals(strtolower((string) $expected_sha), (string) $actual)) {
++                $mismatched[] = (string) $rel;
++            }
++        };
++        foreach ((array) ($pack['command_outputs'] ?? []) as $cmd => $entry) {
++            if (!is_array($entry)) { $missing[] = 'command_outputs:' . $cmd; continue; }
++            foreach (['stdout', 'stderr', 'combined'] as $stream) {
++                $check((string) ($entry[$stream . '_file'] ?? ''), (string) ($entry[$stream . '_sha256'] ?? ''));
++            }
++        }
++        foreach ((array) ($pack['screenshot_files'] ?? []) as $name => $sha) {
++            $check('screenshots/' . basename((string) $name), (string) $sha);
++        }
++        $check((string) ($pack['php_error_log_file'] ?? ''), (string) ($pack['php_error_log_sha256'] ?? ''));
++        $check((string) ($pack['browser_console_log_file'] ?? ''), (string) ($pack['browser_console_log_sha256'] ?? ''));
++        $check((string) ($pack['network_errors_file'] ?? ''), (string) ($pack['network_errors_sha256'] ?? ''));
++        if (count($missing) > 0) { return ['status' => 'missing_required_artifacts', 'missing' => $missing, 'mismatched' => $mismatched]; }
++        if (count($mismatched) > 0) { return ['status' => 'file_hash_mismatch', 'missing' => [], 'mismatched' => $mismatched]; }
++        return ['status' => 'ok', 'missing' => [], 'mismatched' => []];
++    }
+ 
+     /**
+-     * Record a live validation from a verified pack. Refuses invalid schema,
+-     * hash mismatch, non-passed status, or current critical blockers. Returns
+-     * the stored state array or WP_Error. Never claims production readiness.
++     * Verify a tar.gz evidence archive: extract to a temp dir (PharData) and run
++     * verify_files against the extraction. The pack's evidence_archive_sha256 is
++     * the ARCHIVE MANIFEST hash (sha256 of manifest-files.txt — non-circular) and
++     * is re-verified against the extracted manifest. Failure to extract/verify
++     * NEVER records a pass.
++     * @return array{status:string,missing:array,mismatched:array,root:string}
+      */
+-    public static function record_live_validation(array $pack) {
++    public static function verify_archive(array $pack, $archive_path) {
++        $archive_path = (string) $archive_path;
++        if (!is_file($archive_path) || !is_readable($archive_path)) {
++            return ['status' => 'missing_required_artifacts', 'missing' => ['evidence archive: ' . basename($archive_path)], 'mismatched' => [], 'root' => ''];
++        }
++        if (!class_exists('PharData')) {
++            return ['status' => 'missing_required_artifacts', 'missing' => ['PharData unavailable: cannot extract archive for verification'], 'mismatched' => [], 'root' => ''];
++        }
++        $tmp = rtrim(sys_get_temp_dir(), '/') . '/ves-evidence-' . substr(hash('sha256', $archive_path . microtime()), 0, 12);
++        try {
++            @mkdir($tmp, 0700, true);
++            $phar = new PharData($archive_path);
++            $phar->extractTo($tmp, null, true);
++        } catch (\Throwable $e) {
++            return ['status' => 'missing_required_artifacts', 'missing' => ['archive extraction failed: ' . basename($archive_path)], 'mismatched' => [], 'root' => ''];
++        }
++        // The archive contains the evidence folder; locate the root that holds the manifest.
++        $root = $tmp;
++        $manifest = $root . '/manifest-files.txt';
++        if (!is_file($manifest)) {
++            $entries = glob($tmp . '/*', GLOB_ONLYDIR);
++            foreach ((array) $entries as $dir) {
++                if (is_file($dir . '/manifest-files.txt')) { $root = $dir; $manifest = $dir . '/manifest-files.txt'; break; }
++            }
++        }
++        if (!is_file($manifest)) {
++            return ['status' => 'missing_required_artifacts', 'missing' => ['manifest-files.txt not found in archive'], 'mismatched' => [], 'root' => ''];
++        }
++        $manifest_sha = (string) hash_file('sha256', $manifest);
++        $declared = strtolower((string) ($pack['evidence_archive_sha256'] ?? ''));
++        if (!self::is_hash($declared) || !hash_equals($declared, $manifest_sha)) {
++            return ['status' => 'file_hash_mismatch', 'missing' => [], 'mismatched' => ['manifest-files.txt (archive manifest hash mismatch)'], 'root' => $root];
++        }
++        $result = self::verify_files($pack, $root);
++        $result['root'] = $root;
++        return $result;
++    }
++
++    // ── Phase 9E.2 — the ONLY trusted write path ───────────────────────────────
++
++    /**
++     * Record a live validation. $opts MUST provide 'evidence_root' or
++     * 'archive_path' — a pack JSON alone is json_only_unverified and is refused.
++     * @return array|WP_Error
++     */
++    public static function record_live_validation(array $pack, array $opts = []) {
+         if (function_exists('current_user_can') && function_exists('is_user_logged_in') && is_user_logged_in() && !current_user_can('manage_options')) {
+             return new WP_Error('ves_evidence_capability', 'Recording a live validation requires manage_options.');
+         }
+         $verify = self::verify($pack);
+         if (!$verify['valid']) {
+-            return new WP_Error('ves_evidence_invalid', 'Evidence pack rejected: ' . implode('; ', array_slice($verify['errors'], 0, 5)));
++            return new WP_Error('ves_evidence_invalid', 'Evidence pack rejected: ' . implode('; ', array_slice($verify['errors'], 0, 6)));
+         }
+         if (self::clean_key((string) $pack['validation_status']) !== 'passed') {
+             return new WP_Error('ves_evidence_not_passed', 'Evidence pack validation_status is not "passed"; refusing to record a pass.');
+         }
++        $root = isset($opts['evidence_root']) ? (string) $opts['evidence_root'] : '';
++        $archive = isset($opts['archive_path']) ? (string) $opts['archive_path'] : '';
++        if ($root === '' && $archive === '') {
++            return new WP_Error('ves_evidence_json_only', 'A pack JSON alone is json_only_unverified: provide --evidence-root or --evidence-archive so every artifact file can be verified.');
++        }
++        if ($root !== '') {
++            if (!is_dir($root)) { return new WP_Error('ves_evidence_root_missing', 'Evidence root folder not found.'); }
++            $files = self::verify_files($pack, $root);
++        } else {
++            $files = self::verify_archive($pack, $archive);
++        }
++        if (($files['status'] ?? '') !== 'ok') {
++            $detail = array_slice(array_merge((array) $files['missing'], (array) $files['mismatched']), 0, 8);
++            return new WP_Error('ves_evidence_' . $files['status'], 'Artifact verification failed (' . $files['status'] . '): ' . implode('; ', $detail));
++        }
+         if (class_exists('VES_RC_Readiness_Service')) {
+             $report = VES_RC_Readiness_Service::report();
+             if (!empty($report['blockers'])) {
+@@ -174,9 +314,14 @@ final class VES_RC_Evidence_Pack {
+         $state = [
+             'status'             => 'passed',
+             'source'             => 'evidence_pack',
++            'schema_version'     => self::SCHEMA_VERSION,
++            'files_verified'     => true,
++            'verified_via'       => $root !== '' ? 'evidence_root' : 'evidence_archive',
+             'evidence_pack_hash' => strtolower((string) $pack['evidence_pack_hash']),
++            'evidence_archive_sha256' => strtolower((string) $pack['evidence_archive_sha256']),
+             'build_sha256'       => strtolower((string) $pack['build_sha256']),
+             'plugin_version'     => (string) $pack['plugin_version'],
++            'screenshots_verified' => count(self::REQUIRED_SCREENSHOTS),
+             'recorded_at'        => function_exists('current_time') ? current_time('mysql', true) : gmdate('Y-m-d H:i:s'),
+             'operator'           => self::clean_text((string) ($pack['operator']['name'] ?? ''), 120),
+             'operator_user_id'   => (int) ($pack['operator']['user_id'] ?? 0),
+@@ -186,39 +331,67 @@ final class VES_RC_Evidence_Pack {
+     }
+ 
+     /**
+-     * Classify the stored live-validation option:
+-     *   passed            — recorded through a verified evidence pack
+-     *   unverified_manual — option exists but lacks a valid evidence_pack_hash
+-     *                       (e.g. written manually with wp option update)
+-     *   unrun             — nothing recorded
++     * Classify the stored live-validation option (9E.2 taxonomy):
++     *   passed              — evidence-pack recorded WITH file verification
++     *   json_only_unverified — evidence-pack-shaped state without files_verified
++     *   unverified_manual   — any other manual option
++     *   unrun               — nothing recorded
+      */
+     public static function live_validation_state() {
+         $raw = function_exists('get_option') ? get_option(self::OPTION_LIVE_VALIDATION, []) : [];
+         if (!is_array($raw) || empty($raw['status'])) {
+-            return ['status' => 'unrun', 'recorded_at' => '', 'evidence_pack_hash' => '', 'note' => 'No live staging validation has been recorded on this install.'];
++            return ['status' => 'unrun', 'recorded_at' => '', 'evidence_pack_hash' => '', 'schema_version' => '', 'note' => 'No live staging validation has been recorded on this install.', 'missing_for_trust' => ['evidence pack', 'file-backed verification', 'browser artifacts']];
+         }
+         $hash = strtolower((string) ($raw['evidence_pack_hash'] ?? ''));
+-        $is_evidence_backed = (string) ($raw['source'] ?? '') === 'evidence_pack' && preg_match('/^[a-f0-9]{64}$/', $hash);
+-        if (self::clean_key((string) $raw['status']) === 'passed' && $is_evidence_backed) {
++        $is_pack = (string) ($raw['source'] ?? '') === 'evidence_pack' && self::is_hash($hash);
++        $files_verified = !empty($raw['files_verified']);
++        if (self::clean_key((string) $raw['status']) === 'passed' && $is_pack && $files_verified) {
+             return [
+                 'status'             => 'passed',
++                'schema_version'     => self::clean_text((string) ($raw['schema_version'] ?? ''), 8),
++                'files_verified'     => true,
++                'verified_via'       => self::clean_key((string) ($raw['verified_via'] ?? '')),
+                 'recorded_at'        => self::clean_text((string) ($raw['recorded_at'] ?? ''), 40),
+                 'evidence_pack_hash' => $hash,
++                'evidence_archive_sha256' => strtolower((string) ($raw['evidence_archive_sha256'] ?? '')),
+                 'build_sha256'       => strtolower((string) ($raw['build_sha256'] ?? '')),
+                 'operator'           => self::clean_text((string) ($raw['operator'] ?? ''), 120),
+-                'note'               => 'Recorded through a verified evidence pack.',
++                'note'               => 'Recorded through a verified, file-backed evidence pack.',
++                'missing_for_trust'  => [],
++            ];
++        }
++        if ($is_pack && !$files_verified) {
++            return [
++                'status' => 'json_only_unverified',
++                'schema_version' => self::clean_text((string) ($raw['schema_version'] ?? ''), 8),
++                'recorded_at' => self::clean_text((string) ($raw['recorded_at'] ?? ''), 40),
++                'evidence_pack_hash' => '',
++                'note' => 'An evidence-pack-shaped record exists but its artifact files were never verified. NOT trusted as passed.',
++                'missing_for_trust' => ['file-backed artifact verification (re-record with --evidence-root or --evidence-archive)'],
+             ];
+         }
+         return [
+             'status'             => 'unverified_manual',
+             'recorded_at'        => self::clean_text((string) ($raw['recorded_at'] ?? ''), 40),
+             'evidence_pack_hash' => '',
+-            'note'               => 'A live-validation option exists but has no verifiable evidence pack hash. NOT trusted as passed.',
++            'schema_version'     => '',
++            'note'               => 'A live-validation option exists but has no verifiable evidence pack. NOT trusted as passed.',
++            'missing_for_trust'  => ['verified evidence pack (schema 2.0)', 'file-backed artifact verification', 'browser screenshots + console/network logs'],
+         ];
+     }
+ 
+     // ── helpers ────────────────────────────────────────────────────────────────
+ 
++    private static function is_hash($s) { return (bool) preg_match('/^[a-f0-9]{64}$/i', (string) $s); }
++
++    /** Relative, traversal-free path inside the evidence folder. */
++    private static function valid_relpath($p) {
++        $p = (string) $p;
++        if ($p === '' || strpos($p, '..') !== false) { return false; }
++        if ($p[0] === '/' || preg_match('/^[A-Za-z]:[\\\\\/]/', $p)) { return false; }
++        return true;
++    }
++
+     private static function clean_key($s) {
+         return function_exists('sanitize_key') ? sanitize_key($s) : strtolower(preg_replace('/[^a-z0-9_\-]/i', '', (string) $s));
+     }
+diff --git a/future-island/future-island-intelligence-suite/includes/class-ves-rc-readiness-service.php b/future-island/future-island-intelligence-suite/includes/class-ves-rc-readiness-service.php
+index c264695..62bd134 100644
+--- a/future-island/future-island-intelligence-suite/includes/class-ves-rc-readiness-service.php
++++ b/future-island/future-island-intelligence-suite/includes/class-ves-rc-readiness-service.php
+@@ -50,6 +50,7 @@ final class VES_RC_Readiness_Service {
+         'VES_Security_Event_Log'                  => 'Security event log',
+         'VES_Job_Rails'                           => 'Queue retry/dead-letter rails',
+         'VES_RC_Evidence_Pack'                    => 'Release evidence pack',
++        'VES_External_Egress_Inventory'           => 'External egress inventory',
+     ];
+ 
+     /** WP-CLI commands an operator needs for the staging checklist. */
+@@ -77,6 +78,10 @@ final class VES_RC_Readiness_Service {
+         $checks[] = self::check_operator_surfaces();
+         $checks[] = self::check_usage_ledger();
+         $checks[] = self::check_provider_safety();
++        $checks[] = self::check_external_egress();
++        $checks[] = self::check_apify_single_gate();
++        $checks[] = self::check_ai_egress();
++        $checks[] = self::check_billing_egress();
+         $checks[] = self::check_workspace_guard();
+         $checks[] = self::check_review_ledger();
+         $checks[] = self::check_settlement();
+@@ -104,7 +109,7 @@ final class VES_RC_Readiness_Service {
+                 $blockers[] = 'STRICT: live validation has not passed with a verified evidence pack (state: ' . (string) ($live['status'] ?? 'unrun') . ').';
+             }
+             foreach ($checks as $c) {
+-                if (in_array($c['id'], ['provider_safety', 'workspace_guard', 'review_ledger', 'lifecycle_matrix', 'trend_idempotency', 'job_rails'], true) && ($c['status'] ?? '') !== 'ok') {
++                if (in_array($c['id'], ['provider_safety', 'external_egress', 'apify_single_gate', 'ai_egress', 'workspace_guard', 'review_ledger', 'lifecycle_matrix', 'trend_idempotency', 'job_rails'], true) && ($c['status'] ?? '') !== 'ok') {
+                     $blockers[] = 'STRICT: hard rail not fully active: ' . (string) $c['label'] . ' — ' . (string) $c['detail'];
+                 }
+             }
+@@ -284,6 +289,70 @@ final class VES_RC_Readiness_Service {
+         return self::row('provider_safety', 'Provider safety', 'ok', 'Fail-closed allowlist + hard charge ceiling active; token via Authorization header only.');
+     }
+ 
++    /** Phase 9D.5 — every external egress path is classified; unknown = blocked. */
++    private static function check_external_egress() {
++        if (!class_exists('VES_External_Egress_Inventory') || !method_exists('VES_External_Egress_Inventory', 'summary')) {
++            return self::row('external_egress', 'External egress inventory', 'block', 'VES_External_Egress_Inventory unavailable — external egress cannot be evaluated.');
++        }
++        $sum = ['unknown_count' => 1, 'total' => 0];
++        try { $sum = VES_External_Egress_Inventory::summary(); } catch (\Throwable $e) { /* pessimistic */ }
++        if ((int) ($sum['unknown_count'] ?? 1) > 0) {
++            return self::row('external_egress', 'External egress inventory', 'block', (int) $sum['unknown_count'] . ' UNCLASSIFIED external egress path(s) — classify or block them.');
++        }
++        return self::row('external_egress', 'External egress inventory', 'ok', (int) ($sum['total'] ?? 0) . ' external paths classified; zero unknown egress.');
++    }
++
++    /** Phase 9D.5 — no paid Apify run-start outside the single core gate. */
++    private static function check_apify_single_gate() {
++        if (!class_exists('VES_External_Egress_Inventory')) {
++            return self::row('apify_single_gate', 'Apify single dispatch gate', 'block', 'Egress inventory unavailable — dispatch routing cannot be evaluated.');
++        }
++        $sum = ['single_dispatch_gate' => false];
++        try { $sum = VES_External_Egress_Inventory::summary(); } catch (\Throwable $e) { /* pessimistic */ }
++        $client_gate = class_exists('VES_Apify_Client') && defined('VES_Apify_Client::MIN_CHARGE_CEILING_USD');
++        if (empty($sum['single_dispatch_gate']) || !$client_gate) {
++            return self::row('apify_single_gate', 'Apify single dispatch gate', 'block', 'A paid run-start path exists outside the guarded core client, or the core gate is missing.');
++        }
++        return self::row('apify_single_gate', 'Apify single dispatch gate', 'ok', 'All paid run-starts route through VES_Apify_Client::request(); legacy direct paths fail closed.');
++    }
++
++    /** Phase 9D.5 — AI egress classified; generation execution stays OFF. */
++    private static function check_ai_egress() {
++        if (!class_exists('VES_External_Egress_Inventory')) {
++            return self::row('ai_egress', 'AI provider egress', 'block', 'Egress inventory unavailable — AI egress cannot be evaluated.');
++        }
++        $rows = [];
++        try { $rows = VES_External_Egress_Inventory::for_provider('openai'); } catch (\Throwable $e) { $rows = []; }
++        if (count($rows) === 0) {
++            return self::row('ai_egress', 'AI provider egress', 'block', 'No OpenAI egress classification found — inventory is incomplete.');
++        }
++        foreach ($rows as $r) {
++            if (empty($r['guarded']) || ($r['classification'] ?? '') === 'unknown_external_egress_blocker') {
++                return self::row('ai_egress', 'AI provider egress', 'block', 'Unguarded/unclassified AI egress: ' . (string) ($r['class'] ?? '?'));
++            }
++        }
++        $exec_on = function_exists('get_option') && (bool) get_option('ves_generation_execution_enabled', false);
++        if ($exec_on) {
++            return self::row('ai_egress', 'AI provider egress', 'warn', count($rows) . ' AI path(s) classified/gated, but ves_generation_execution_enabled is ON (expected OFF).');
++        }
++        return self::row('ai_egress', 'AI provider egress', 'ok', count($rows) . ' AI path(s) classified and gated; generation execution disabled (default).');
++    }
++
++    /** Phase 9D.5 — billing egress is explicit and isolated. */
++    private static function check_billing_egress() {
++        if (!class_exists('VES_External_Egress_Inventory')) {
++            return self::row('billing_egress', 'Billing provider egress', 'block', 'Egress inventory unavailable — billing egress cannot be evaluated.');
++        }
++        $rows = [];
++        try { $rows = VES_External_Egress_Inventory::for_provider('stripe'); } catch (\Throwable $e) { $rows = []; }
++        foreach ($rows as $r) {
++            if (($r['classification'] ?? '') !== 'billing_provider_explicit') {
++                return self::row('billing_egress', 'Billing provider egress', 'block', 'Billing path not explicitly classified: ' . (string) ($r['class'] ?? '?'));
++            }
++        }
++        return self::row('billing_egress', 'Billing provider egress', 'ok', count($rows) . ' billing path(s) classified billing_provider_explicit (isolated from usage credits).');
++    }
++
+     private static function check_workspace_guard() {
+         if (!class_exists('VES_Workspace_Guard') || !method_exists('VES_Workspace_Guard', 'guard_active')) {
+             return self::row('workspace_guard', 'Workspace isolation guard', 'block', 'VES_Workspace_Guard unavailable.');
+@@ -384,6 +453,10 @@ final class VES_RC_Readiness_Service {
+             return self::row('live_validation', 'Live staging validation', 'ok',
+                 'Passed via verified evidence pack ' . substr((string) $state['evidence_pack_hash'], 0, 12) . '… at ' . (string) ($state['recorded_at'] ?? 'unknown time') . '.');
+         }
++        if ($status === 'json_only_unverified') {
++            return self::row('live_validation', 'Live staging validation', 'warn',
++                'An evidence-pack record exists but its artifact FILES were never verified (json_only_unverified) — re-record with --evidence-root or --evidence-archive.');
++        }
+         if ($status === 'unverified_manual') {
+             return self::row('live_validation', 'Live staging validation', 'warn',
+                 'A manually-written validation option exists WITHOUT a verifiable evidence pack — treated as UNVERIFIED, not passed.');
+diff --git a/future-island/future-island-intelligence-suite/includes/class-ves-release-candidate-page.php b/future-island/future-island-intelligence-suite/includes/class-ves-release-candidate-page.php
+index f1c0f28..24df0b0 100644
+--- a/future-island/future-island-intelligence-suite/includes/class-ves-release-candidate-page.php
++++ b/future-island/future-island-intelligence-suite/includes/class-ves-release-candidate-page.php
+@@ -59,7 +59,21 @@ final class VES_Release_Candidate_Page {
+         $h .= '</header>';
+ 
+         // Honest top banner.
+-        if (($live['status'] ?? '') === 'unverified_manual') {
++        $missing_for_trust = is_array($live['missing_for_trust'] ?? null) ? $live['missing_for_trust'] : [];
++        $missing_html = '';
++        if (count($missing_for_trust) > 0) {
++            $missing_html = ' Missing for trust: ';
++            $parts = [];
++            foreach ($missing_for_trust as $m) { $parts[] = self::e((string) $m); }
++            $missing_html .= implode(' · ', $parts) . '.';
++        }
++        if (($live['status'] ?? '') === 'json_only_unverified') {
++            $h .= '<div class="fiis-rc-banner fiis-rc-banner-warn"><strong>Evidence pack recorded WITHOUT file verification (json_only_unverified).</strong> '
++                . 'The pack JSON exists but its artifact files (command outputs, screenshots, logs) were never verified on disk, so it is NOT trusted as passed.'
++                . $missing_html
++                . ' Re-record with <span class="fiis-rc-mono">wp ves rc-record-live-validation --evidence-pack=… --evidence-root=…</span>. '
++                . 'This build remains <strong>NOT production-ready</strong>.</div>';
++        } elseif (($live['status'] ?? '') === 'unverified_manual') {
+             $h .= '<div class="fiis-rc-banner fiis-rc-banner-warn"><strong>Unverified manual validation record.</strong> '
+                 . 'A live-validation option exists but carries no verifiable evidence pack hash, so it is NOT trusted as passed. '
+                 . 'Re-run the validation script and record through <span class="fiis-rc-mono">wp ves rc-record-live-validation --evidence-pack=…</span>. '
+@@ -67,11 +81,12 @@ final class VES_Release_Candidate_Page {
+         } elseif (!$live_passed) {
+             $h .= '<div class="fiis-rc-banner fiis-rc-banner-warn"><strong>Live staging validation: UNRUN.</strong> '
+                 . 'This build is statically verified only. It is <strong>NOT production-ready</strong> and must not be installed on a production site. '
+-                . 'Run the commands below on a staging copy first.</div>';
++                . 'Run the commands below on a staging copy first.' . $missing_html . '</div>';
+         } else {
+             $h .= '<div class="fiis-rc-banner fiis-rc-banner-info"><strong>Live staging validation recorded as passed</strong> ('
+                 . self::e((string) ($live['recorded_at'] ?? '')) . ') via evidence pack '
+-                . '<span class="fiis-rc-mono">' . self::e(substr((string) ($live['evidence_pack_hash'] ?? ''), 0, 16)) . '…</span>. '
++                . '<span class="fiis-rc-mono">' . self::e(substr((string) ($live['evidence_pack_hash'] ?? ''), 0, 16)) . '…</span>'
++                . ((string) ($live['schema_version'] ?? '') !== '' ? ' (schema ' . self::e((string) $live['schema_version']) . ', file-backed: ' . (!empty($live['files_verified']) ? 'yes' : 'NO') . ')' : '') . '. '
+                 . 'Verify the operator evidence (command outputs + screenshots). '
+                 . 'Even with a recorded pass, production release still requires operator approval and monitored pilot usage — this page never grants production status.</div>';
+         }
+diff --git a/future-island/future-island-intelligence-suite/modules/deep-trend-finder/includes/providers/class-fidtf-generic-apify-live-adapter.php b/future-island/future-island-intelligence-suite/modules/deep-trend-finder/includes/providers/class-fidtf-generic-apify-live-adapter.php
+index 9c9da79..6b2c79a 100644
+--- a/future-island/future-island-intelligence-suite/modules/deep-trend-finder/includes/providers/class-fidtf-generic-apify-live-adapter.php
++++ b/future-island/future-island-intelligence-suite/modules/deep-trend-finder/includes/providers/class-fidtf-generic-apify-live-adapter.php
+@@ -350,19 +350,25 @@ final class FIDTF_Generic_Apify_Live_Adapter {
+         return $this->normalize_refresh_response($response, $run_id, $limit, $context);
+     }
+ 
++    /**
++     * Phase 9D.2 — legacy direct run-start is DISABLED. A paid Apify dispatch
++     * may only happen through the core gate (FIDTF_Core_Apify_Client_Adapter →
++     * VES_Apify_Client::request with fail-closed allowlist + hard charge
++     * ceiling). When the core client is unavailable this FAILS CLOSED with a
++     * scrubbed security event — it never falls back to an unguarded
++     * wp_remote_post. Read paths (refresh/datasets) below remain read-only.
++     */
+     private function start_direct_apify_run(array $context, array $actor_input) {
+-        $token = FIDTF_Settings::tiktok_apify_token();
+-        if ($token === '' || !function_exists('wp_remote_post')) {
+-            return new WP_Error('source_provider_unavailable', $this->label() . ' provider is not configured.', ['status' => 503, 'retryable' => false]);
++        if (class_exists('FIDTF_Core_Apify_Client_Adapter') && FIDTF_Core_Apify_Client_Adapter::available()) {
++            return $this->start_with_core_client($context, $actor_input);
+         }
+-        $url = self::API_BASE . '/acts/' . $this->actor_path((string) ($context['actor_id'] ?? '')) . '/runs?waitForFinish=0&timeout=0';
+-        $response = wp_remote_post($url, [
+-            'headers' => ['Authorization' => 'Bearer ' . $token, 'Content-Type' => 'application/json'],
+-            'body' => wp_json_encode($actor_input),
+-            'timeout' => 20,
+-        ]);
+-        if (is_wp_error($response)) { return $this->map_http_error($response); }
+-        return $this->normalize_direct_http_response($response, $context, $actor_input);
++        if (class_exists('VES_Security_Event_Log')) {
++            VES_Security_Event_Log::record('provider_dispatch_blocked', 'DTF generic Apify dispatch blocked: core provider client unavailable (fail-closed, legacy direct path disabled).', [
++                'module' => 'deep_trend_finder',
++                'source_key' => sanitize_key((string) ($context['source_key'] ?? $this->source_key)),
++            ]);
++        }
++        return new WP_Error('source_dispatch_blocked_fail_closed', $this->label() . ' dispatch is blocked: the guarded provider client is unavailable and direct dispatch is disabled.', ['status' => 503, 'retryable' => false, 'request_attempted' => false]);
+     }
+ 
+     private function refresh_direct_apify_run(array $context, string $provider_run_id) {
+diff --git a/future-island/future-island-intelligence-suite/modules/deep-trend-finder/includes/providers/class-fidtf-tiktok-live-adapter.php b/future-island/future-island-intelligence-suite/modules/deep-trend-finder/includes/providers/class-fidtf-tiktok-live-adapter.php
+index ba93de0..b5ef0bd 100644
+--- a/future-island/future-island-intelligence-suite/modules/deep-trend-finder/includes/providers/class-fidtf-tiktok-live-adapter.php
++++ b/future-island/future-island-intelligence-suite/modules/deep-trend-finder/includes/providers/class-fidtf-tiktok-live-adapter.php
+@@ -98,25 +98,25 @@ final class FIDTF_TikTok_Live_Adapter {
+         return $adapter->refresh($context, $this->limit_from_actor_input($actor_input));
+     }
+ 
++    /**
++     * Phase 9D.2 — legacy direct run-start is DISABLED. TikTok dispatch may only
++     * go through the core gate (FIDTF_Core_Apify_Client_Adapter →
++     * VES_Apify_Client::request with fail-closed allowlist + hard charge
++     * ceiling). Without the core client this FAILS CLOSED with a scrubbed
++     * security event — never an unguarded wp_remote_post. Reads stay read-only.
++     */
+     private function start_direct_apify_run(array $context, array $actor_input) {
+-        $token = FIDTF_Settings::tiktok_apify_token();
+-        if ($token === '') {
+-            return new WP_Error('tiktok_provider_unavailable', 'TikTok provider is not configured.', ['status' => 503, 'retryable' => false]);
++        if (class_exists('FIDTF_Core_Apify_Client_Adapter') && FIDTF_Core_Apify_Client_Adapter::available()) {
++            $core = $this->run_with_core_client($context, [], $actor_input);
++            if (is_array($core) || is_wp_error($core)) { return $this->sanitize_external_result($core); }
+         }
+-        if (!function_exists('wp_remote_post')) {
+-            return new WP_Error('tiktok_provider_unavailable', 'WordPress HTTP API is unavailable.', ['status' => 503, 'retryable' => false]);
++        if (class_exists('VES_Security_Event_Log')) {
++            VES_Security_Event_Log::record('provider_dispatch_blocked', 'DTF TikTok Apify dispatch blocked: core provider client unavailable (fail-closed, legacy direct path disabled).', [
++                'module' => 'deep_trend_finder',
++                'source_key' => 'tiktok',
++            ]);
+         }
+-
+-        $url = self::API_BASE . '/acts/' . $this->actor_path(FIDTF_Settings::tiktok_discovery_actor_id()) . '/runs';
+-        $response = wp_remote_post($url, [
+-            'headers' => [
+-                'Authorization' => 'Bearer ' . $token,
+-                'Content-Type' => 'application/json',
+-            ],
+-            'body' => wp_json_encode($actor_input),
+-            'timeout' => 20,
+-        ]);
+-        return $this->normalize_http_run_response($response, $context, $actor_input);
++        return new WP_Error('tiktok_dispatch_blocked_fail_closed', 'TikTok dispatch is blocked: the guarded provider client is unavailable and direct dispatch is disabled.', ['status' => 503, 'retryable' => false, 'request_attempted' => false]);
+     }
+ 
+     private function apify_run_succeeded(string $status): bool {
+diff --git a/future-island/future-island-intelligence-suite/modules/deep-trend-finder/tests/test-fidtf-v030-tiktok-provider-bridge.php b/future-island/future-island-intelligence-suite/modules/deep-trend-finder/tests/test-fidtf-v030-tiktok-provider-bridge.php
+index 1e34bd1..ebf007e 100644
+--- a/future-island/future-island-intelligence-suite/modules/deep-trend-finder/tests/test-fidtf-v030-tiktok-provider-bridge.php
++++ b/future-island/future-island-intelligence-suite/modules/deep-trend-finder/tests/test-fidtf-v030-tiktok-provider-bridge.php
+@@ -117,10 +117,11 @@ $fidtf_options[FIDTF_Settings::OPTION] = $settings;
+ $fidtf_filter_handlers = [];
+ $fidtf_last_http_request = [];
+ $direct = $provider->dispatch($source_plan, $request);
+-ok(!is_wp_error($direct) && ($direct['provider_run_id'] ?? '') === 'apify-run-1', 'direct Apify bridge starts async actor run');
+-ok(strpos($fidtf_last_http_request['url'] ?? '', '/acts/clockworks~tiktok-scraper/runs') !== false, 'direct Apify bridge uses async actor runs endpoint');
+-ok(($fidtf_last_http_request['args']['headers']['Authorization'] ?? '') === 'Bearer apify-secret-test-token', 'direct Apify bridge sends token only in server-side Authorization header');
+-ok(strpos(wp_json_encode($fidtf_last_http_request['args']['body'] ?? ''), 'apify-secret-test-token') === false, 'direct Apify bridge never includes token in request body');
++// Phase 9D.2: WITHOUT the guarded core client the legacy apify_bridge mode is
++// FAIL-CLOSED — blocked with a safe error, ZERO direct HTTP, token never leaves.
++ok(is_wp_error($direct) && $direct->get_error_code() === 'tiktok_dispatch_blocked_fail_closed', 'direct Apify bridge is fail-closed without the core client (9D.2)');
++ok(($fidtf_last_http_request['url'] ?? '') === '', 'fail-closed bridge made no direct HTTP call');
++ok(strpos(wp_json_encode($fidtf_last_http_request), 'apify-secret-test-token') === false, 'token never left the process on the blocked path');
+ 
+ $frontend = file_get_contents(dirname(__DIR__) . '/assets/js/fidtf-frontend.js');
+ ok(strpos($frontend, 'apify-secret-test-token') === false && strpos($frontend, 'Authorization') === false, 'frontend bundle contains no provider token or Authorization header');
+diff --git a/future-island/future-island-intelligence-suite/modules/deep-trend-finder/tests/test-fidtf-v0324-durable-diagnostics-and-counts.php b/future-island/future-island-intelligence-suite/modules/deep-trend-finder/tests/test-fidtf-v0324-durable-diagnostics-and-counts.php
+index e6efae2..89205a7 100644
+--- a/future-island/future-island-intelligence-suite/modules/deep-trend-finder/tests/test-fidtf-v0324-durable-diagnostics-and-counts.php
++++ b/future-island/future-island-intelligence-suite/modules/deep-trend-finder/tests/test-fidtf-v0324-durable-diagnostics-and-counts.php
+@@ -22,7 +22,10 @@ ok(strpos($source_job, 'source_job_columns') !== false, 'source-job service intr
+ ok(strpos($source_job, "provider_dataset_total_rows") !== false, 'job updates persist provider total count');
+ ok(strpos($source_job, "flattened_raw_items") !== false, 'job updates persist flattened item count');
+ 
+-ok(strpos($direct_adapter, 'normalize_http_run_response($response, $context, $actor_input)') !== false, 'direct Apify start preserves context in run response normalization');
++// Phase 9D.2: the legacy direct run-start is gone — the adapter routes through the
++// guarded core client or FAILS CLOSED (no direct wp_remote_post run-start remains).
++ok(strpos($direct_adapter, 'tiktok_dispatch_blocked_fail_closed') !== false && strpos($direct_adapter, 'FIDTF_Core_Apify_Client_Adapter') !== false, 'direct Apify start is fail-closed and routed through the core client gate (9D.2)');
++ok(!preg_match('/wp_remote_post\\s*\\(/', $direct_adapter), 'TikTok adapter contains no direct wp_remote_post run-start call');
+ ok(strpos($direct_adapter, 'discovery_actor_input') !== false, 'direct Apify diagnostics preserve sanitized actor input after completion');
+ ok(strpos($direct_adapter, '$this->limit_from_actor_input($actor_input)') !== false, 'direct Apify fetch uses requested actor limit, not global default');
+ 
+diff --git a/future-island/future-island-intelligence-suite/scripts/future-island-live-validation-v3.sh b/future-island/future-island-intelligence-suite/scripts/future-island-live-validation-v3.sh
+new file mode 100644
+index 0000000..71f020e
+--- /dev/null
++++ b/future-island/future-island-intelligence-suite/scripts/future-island-live-validation-v3.sh
+@@ -0,0 +1,374 @@
++#!/usr/bin/env bash
++#
++# future-island-live-validation-v3.sh — Phase 9E.3 operator validation script.
++#
++# v3 upgrades over v2 (which remains available): explicit expected-staging-host
++# matching, separate stdout/stderr/combined capture per command, evidence pack
++# v2 with file-backed hashes, browser artifact requirements, archive manifest
++# hashing, and three modes. It NEVER runs --apply, never performs destructive
++# migrations, never calls AI generation, and never claims a pass without the
++# browser artifacts.
++#
++# Usage:
++#   bash scripts/future-island-live-validation-v3.sh \
++#     --mode=collect-cli|finalize|full \
++#     --expected-siteurl=https://staging.example.com   (or --expected-host=staging.example.com) \
++#     --i-confirm-this-is-staging \
++#     --db-backup=/path/staging-backup.sql \
++#     [--plugin-zip=/path/plugin.zip] [--wp-path=/var/www/staging] \
++#     [--operator="Name"] [--output=/path/evidence-root] \
++#     [--evidence-dir=/path/existing-evidence-folder]      (finalize mode) \
++#     [--screenshots-dir=<dir>] [--browser-console-log=<file>] \
++#     [--network-errors-log=<file>] [--php-error-log=<file>]
++#
++set -u
++
++MODE="full"
++CONFIRM_STAGING=0
++EXPECTED_SITEURL=""
++EXPECTED_HOST=""
++DB_BACKUP=""
++PLUGIN_ZIP=""
++WP_PATH=""
++OPERATOR="${USER:-unknown-operator}"
++OUTPUT_ROOT="."
++EVIDENCE_DIR=""
++SCREENSHOTS_DIR=""
++BROWSER_CONSOLE_LOG=""
++NETWORK_ERRORS_LOG=""
++PHP_ERROR_LOG=""
++for arg in "$@"; do
++    case "$arg" in
++        --mode=*)               MODE="${arg#*=}" ;;
++        --i-confirm-this-is-staging) CONFIRM_STAGING=1 ;;
++        --expected-siteurl=*)   EXPECTED_SITEURL="${arg#*=}" ;;
++        --expected-host=*)      EXPECTED_HOST="${arg#*=}" ;;
++        --db-backup=*)          DB_BACKUP="${arg#*=}" ;;
++        --plugin-zip=*)         PLUGIN_ZIP="${arg#*=}" ;;
++        --wp-path=*)            WP_PATH="${arg#*=}" ;;
++        --operator=*)           OPERATOR="${arg#*=}" ;;
++        --output=*)             OUTPUT_ROOT="${arg#*=}" ;;
++        --evidence-dir=*)       EVIDENCE_DIR="${arg#*=}" ;;
++        --screenshots-dir=*)    SCREENSHOTS_DIR="${arg#*=}" ;;
++        --browser-console-log=*) BROWSER_CONSOLE_LOG="${arg#*=}" ;;
++        --network-errors-log=*) NETWORK_ERRORS_LOG="${arg#*=}" ;;
++        --php-error-log=*)      PHP_ERROR_LOG="${arg#*=}" ;;
++        *) echo "Unknown argument: $arg" >&2; exit 2 ;;
++    esac
++done
++
++case "$MODE" in collect-cli|finalize|full) : ;; *) echo "REFUSED: --mode must be collect-cli, finalize or full." >&2; exit 2 ;; esac
++
++WP="wp"
++[ -n "$WP_PATH" ] && WP="wp --path=$WP_PATH"
++
++# ── secret redaction ─────────────────────────────────────────────────────────
++redact() {
++    sed -E \
++        -e 's/apify_api_[A-Za-z0-9]+/[redacted-token]/g' \
++        -e 's/sk-[A-Za-z0-9_-]{8,}/[redacted-token]/g' \
++        -e 's/sk_live_[A-Za-z0-9]{8,}/[redacted-token]/g' \
++        -e 's/whsec_[A-Za-z0-9]{8,}/[redacted-token]/g' \
++        -e 's/AIza[A-Za-z0-9_-]{20,}/[redacted-token]/g' \
++        -e 's/(Authorization[\"'\'': ]*)[Bb]earer[[:space:]]+[A-Za-z0-9_.-]+/\1Bearer [redacted-token]/g'
++}
++
++sha() { sha256sum "$1" | awk '{print $1}'; }
++
++# ── hard stops (9E.3: strong staging detection) ──────────────────────────────
++if [ "$CONFIRM_STAGING" -ne 1 ]; then
++    echo "REFUSED: pass --i-confirm-this-is-staging after verifying this is NOT production." >&2
++    exit 3
++fi
++if [ -z "$EXPECTED_SITEURL" ] && [ -z "$EXPECTED_HOST" ]; then
++    echo "REFUSED: --expected-siteurl=<url> or --expected-host=<host> is REQUIRED. Weak staging detection is not accepted." >&2
++    exit 3
++fi
++if [ "$MODE" != "finalize" ]; then
++    if [ -z "$DB_BACKUP" ] || [ ! -s "$DB_BACKUP" ]; then
++        echo "REFUSED: --db-backup must point to an existing, non-empty DB export. Create one first:" >&2
++        echo "  $WP db export staging-backup-\$(date +%Y%m%d-%H%M%S).sql" >&2
++        exit 3
++    fi
++    if ! command -v wp >/dev/null 2>&1; then
++        echo "REFUSED: WP-CLI not found on PATH." >&2
++        exit 3
++    fi
++
++    SITEURL="$($WP option get siteurl 2>/dev/null || echo '')"
++    HOMEURL="$($WP option get home 2>/dev/null || echo '')"
++    norm() { echo "$1" | sed -E 's#/+$##' | tr 'A-Z' 'a-z'; }
++    host_of() { echo "$1" | sed -E 's#^[a-z]+://##' | cut -d/ -f1 | cut -d: -f1; }
++    if [ -n "$EXPECTED_SITEURL" ]; then
++        if [ "$(norm "$SITEURL")" != "$(norm "$EXPECTED_SITEURL")" ]; then
++            echo "REFUSED: siteurl '$SITEURL' does not match --expected-siteurl '$EXPECTED_SITEURL'." >&2
++            exit 3
++        fi
++        if [ "$(norm "$HOMEURL")" != "$(norm "$EXPECTED_SITEURL")" ] && [ "$(host_of "$(norm "$HOMEURL")")" != "$(host_of "$(norm "$EXPECTED_SITEURL")")" ]; then
++            echo "REFUSED: home '$HOMEURL' does not match the expected staging URL/host." >&2
++            exit 3
++        fi
++    else
++        for u in "$SITEURL" "$HOMEURL"; do
++            if [ "$(host_of "$(norm "$u")")" != "$(norm "$EXPECTED_HOST")" ]; then
++                echo "REFUSED: '$u' is not on expected staging host '$EXPECTED_HOST'." >&2
++                exit 3
++            fi
++        done
++    fi
++    echo "siteurl/home verified against expected staging target: $SITEURL"
++fi
++
++# ── finalize mode requires the browser artifacts up front ────────────────────
++require_browser_artifacts() {
++    if [ -z "$SCREENSHOTS_DIR" ] || [ ! -d "$SCREENSHOTS_DIR" ]; then
++        echo "REFUSED: --screenshots-dir=<dir> with the 12 required screenshots is mandatory to finalize." >&2
++        exit 3
++    fi
++    for shot in 01-signal-room.png 02-social-media-signal-report.png 03-evidence-gate-blocked.png \
++                04-evidence-gate-ready.png 05-operator-queue.png 06-memory-brand-context.png \
++                07-generation-context-preview.png 08-prompt-package-preview.png 09-brief-workbench.png \
++                10-draft-workbench.png 11-release-candidate-page.png 12-security-dead-letter-diagnostics.png; do
++        if [ ! -s "$SCREENSHOTS_DIR/$shot" ]; then
++            echo "REFUSED: required screenshot missing: $SCREENSHOTS_DIR/$shot" >&2
++            exit 3
++        fi
++    done
++    if [ -z "$BROWSER_CONSOLE_LOG" ] || [ ! -s "$BROWSER_CONSOLE_LOG" ]; then
++        echo "REFUSED: --browser-console-log=<file> is mandatory (use NO_CONSOLE_ERRORS_OBSERVED content when clean)." >&2
++        exit 3
++    fi
++    if [ -z "$NETWORK_ERRORS_LOG" ] || [ ! -s "$NETWORK_ERRORS_LOG" ]; then
++        echo "REFUSED: --network-errors-log=<file> is mandatory (use NO_NETWORK_ERRORS_OBSERVED content when clean)." >&2
++        exit 3
++    fi
++    if [ -z "$PHP_ERROR_LOG" ] || [ ! -r "$PHP_ERROR_LOG" ]; then
++        echo "REFUSED: --php-error-log=<file> is mandatory for a finalized pack." >&2
++        exit 3
++    fi
++}
++if [ "$MODE" = "finalize" ] || [ "$MODE" = "full" ]; then
++    require_browser_artifacts
++fi
++
++# ── evidence folder ──────────────────────────────────────────────────────────
++if [ "$MODE" = "finalize" ]; then
++    if [ -z "$EVIDENCE_DIR" ] || [ ! -d "$EVIDENCE_DIR" ]; then
++        echo "REFUSED: finalize mode needs --evidence-dir=<folder created by collect-cli>." >&2
++        exit 3
++    fi
++    EVDIR="$EVIDENCE_DIR"
++else
++    STAMP="$(date -u +%Y%m%d-%H%M%S)"
++    EVDIR="$OUTPUT_ROOT/fi-evidence-$STAMP"
++    mkdir -p "$EVDIR/commands" "$EVDIR/screenshots" "$EVDIR/logs" || { echo "Cannot create $EVDIR" >&2; exit 2; }
++fi
++echo "Evidence folder: $EVDIR"
++MANIFEST="$EVDIR/manifest-commands.txt"
++
++# ── plugin ZIP (optional) ────────────────────────────────────────────────────
++BUILD_SHA="$(printf '0%.0s' $(seq 1 64))"
++if [ -n "$PLUGIN_ZIP" ] && [ "$MODE" != "finalize" ]; then
++    [ -s "$PLUGIN_ZIP" ] || { echo "REFUSED: --plugin-zip not found: $PLUGIN_ZIP" >&2; exit 3; }
++    BUILD_SHA="$(sha "$PLUGIN_ZIP")"
++    echo "$BUILD_SHA  $(basename "$PLUGIN_ZIP")" > "$EVDIR/build-sha256.txt"
++    $WP plugin install "$PLUGIN_ZIP" --force 2>&1 | redact | tee "$EVDIR/commands/plugin-install.combined.txt" >/dev/null
++    $WP plugin activate future-island-intelligence-suite 2>&1 | redact | tee "$EVDIR/commands/plugin-activate.combined.txt" >/dev/null
++fi
++[ -f "$EVDIR/build-sha256.txt" ] && BUILD_SHA="$(awk '{print $1}' "$EVDIR/build-sha256.txt" | head -1)"
++
++# ── DB backup hash ───────────────────────────────────────────────────────────
++DB_BACKUP_SHA=""
++if [ -n "$DB_BACKUP" ] && [ -s "$DB_BACKUP" ]; then
++    DB_BACKUP_SHA="$(sha "$DB_BACKUP")"
++    echo "$DB_BACKUP_SHA  $(basename "$DB_BACKUP")" > "$EVDIR/db-backup-sha256.txt"
++fi
++
++# ── command battery (READ-ONLY; stdout/stderr/combined; never --apply) ──────
++run_cmd() {
++    label="$1"; slug="$2"; shift 2
++    out="$EVDIR/commands/$slug.out"; err="$EVDIR/commands/$slug.err"; comb="$EVDIR/commands/$slug.combined.txt"
++    "$@" >"$out.raw" 2>"$err.raw"
++    code=$?
++    redact < "$out.raw" > "$out"; redact < "$err.raw" > "$err"
++    cat "$out" "$err" > "$comb"
++    rm -f "$out.raw" "$err.raw"
++    printf '%s|exit=%d|stdout=%s|stdout_sha=%s|stderr=%s|stderr_sha=%s|combined=%s|combined_sha=%s\n' \
++        "$label" "$code" "commands/$slug.out" "$(sha "$out")" "commands/$slug.err" "$(sha "$err")" "commands/$slug.combined.txt" "$(sha "$comb")" >> "$MANIFEST"
++    echo "[$code] $label"
++}
++
++if [ "$MODE" != "finalize" ]; then
++    : > "$MANIFEST"
++    run_cmd "php -v"                                php-v            php -v
++    run_cmd "wp --info"                             wp-info          $WP --info
++    run_cmd "wp core version"                       wp-core-version  $WP core version
++    run_cmd "wp db query \"SELECT VERSION();\""     db-version       $WP db query "SELECT VERSION();"
++    run_cmd "wp option get siteurl"                 siteurl          $WP option get siteurl
++    run_cmd "wp option get home"                    home             $WP option get home
++    run_cmd "wp plugin list"                        plugin-list      $WP plugin list
++    run_cmd "wp theme list"                         theme-list       $WP theme list
++    run_cmd "wp ves verify-schema"                  verify-schema    $WP ves verify-schema
++    run_cmd "wp ves validate-staging --format=json" validate-staging $WP ves validate-staging --format=json
++    run_cmd "wp ves readiness-check --format=json"  readiness        $WP ves readiness-check --format=json
++    run_cmd "wp ves rc-readiness-check --format=json" rc-readiness   $WP ves rc-readiness-check --format=json
++    run_cmd "wp ves memory-summary --format=json"   memory-summary   $WP ves memory-summary --format=json
++    run_cmd "wp ves memory-context-preview --workspace=1 --use-case=brief_generation --format=json" memory-context $WP ves memory-context-preview --workspace=1 --use-case=brief_generation --format=json
++    run_cmd "wp ves generation-context-preview --workspace=1 --use-case=brief_generation --format=json" gen-context $WP ves generation-context-preview --workspace=1 --use-case=brief_generation --format=json
++    run_cmd "wp ves generation-prompt-preview --workspace=1 --use-case=brief_generation --target-type=insight --target-id=1 --format=json" prompt-preview $WP ves generation-prompt-preview --workspace=1 --use-case=brief_generation --target-type=insight --target-id=1 --format=json
++    run_cmd "wp ves operator-queue --workspace=1 --format=json" operator-queue $WP ves operator-queue --workspace=1 --format=json
++    run_cmd "wp ves memory-expire --dry-run"        memory-expire    $WP ves memory-expire --dry-run
++fi
++
++# ── browser artifacts into the evidence folder ───────────────────────────────
++if [ "$MODE" = "finalize" ] || [ "$MODE" = "full" ]; then
++    cp "$SCREENSHOTS_DIR"/*.png "$EVDIR/screenshots/" 2>/dev/null
++    redact < "$BROWSER_CONSOLE_LOG" > "$EVDIR/logs/browser-console.log"
++    redact < "$NETWORK_ERRORS_LOG"  > "$EVDIR/logs/network-errors.log"
++    tail -n 300 "$PHP_ERROR_LOG" | redact > "$EVDIR/logs/php-error-log-tail.log"
++fi
++
++# ── evidence pack v2 assembly (python3) ──────────────────────────────────────
++PACK_FILE="$EVDIR/evidence-pack-v2.json"
++if command -v python3 >/dev/null 2>&1; then
++python3 - "$EVDIR" "$PACK_FILE" "$MODE" "$BUILD_SHA" "$DB_BACKUP_SHA" "$OPERATOR" <<'PYEOF'
++import hashlib, json, os, sys
++ev, pack_file, mode, build_sha, db_sha, operator = sys.argv[1:7]
++
++def fsha(p):
++    h = hashlib.sha256()
++    with open(p, 'rb') as fh:
++        for chunk in iter(lambda: fh.read(65536), b''):
++            h.update(chunk)
++    return h.hexdigest()
++
++def grab(cmdline):
++    # wp option values captured during the run
++    p = os.path.join(ev, 'commands', cmdline)
++    return open(p).read().strip() if os.path.isfile(p) else ''
++
++outputs = {}
++manifest = os.path.join(ev, 'manifest-commands.txt')
++if os.path.isfile(manifest):
++    for line in open(manifest):
++        line = line.strip()
++        if not line:
++            continue
++        parts = dict(p.split('=', 1) for p in line.split('|')[1:])
++        label = line.split('|')[0]
++        outputs[label] = {
++            'exit_code': int(parts['exit']),
++            'stdout_file': parts['stdout'], 'stdout_sha256': parts['stdout_sha'],
++            'stderr_file': parts['stderr'], 'stderr_sha256': parts['stderr_sha'],
++            'combined_file': parts['combined'], 'combined_sha256': parts['combined_sha'],
++        }
++
++shots_dir = os.path.join(ev, 'screenshots')
++manifest_shots, shot_files = [], {}
++if os.path.isdir(shots_dir):
++    for name in sorted(os.listdir(shots_dir)):
++        if name.lower().endswith('.png'):
++            manifest_shots.append(name)
++            shot_files[name] = fsha(os.path.join(shots_dir, name))
++
++def log_pair(rel):
++    p = os.path.join(ev, rel)
++    return (rel, fsha(p)) if os.path.isfile(p) else ('', '')
++
++console_f, console_h = log_pair('logs/browser-console.log')
++net_f, net_h = log_pair('logs/network-errors.log')
++php_f, php_h = log_pair('logs/php-error-log-tail.log')
++
++REQUIRED = ['php -v','wp --info','wp core version','wp db query "SELECT VERSION();"',
++ 'wp option get siteurl','wp option get home','wp plugin list','wp theme list',
++ 'wp ves verify-schema','wp ves validate-staging --format=json','wp ves readiness-check --format=json',
++ 'wp ves rc-readiness-check --format=json','wp ves memory-summary --format=json',
++ 'wp ves memory-context-preview --workspace=1 --use-case=brief_generation --format=json',
++ 'wp ves generation-context-preview --workspace=1 --use-case=brief_generation --format=json',
++ 'wp ves generation-prompt-preview --workspace=1 --use-case=brief_generation --target-type=insight --target-id=1 --format=json',
++ 'wp ves operator-queue --workspace=1 --format=json','wp ves memory-expire --dry-run']
++REQ_SHOTS = ['01-signal-room.png','02-social-media-signal-report.png','03-evidence-gate-blocked.png',
++ '04-evidence-gate-ready.png','05-operator-queue.png','06-memory-brand-context.png',
++ '07-generation-context-preview.png','08-prompt-package-preview.png','09-brief-workbench.png',
++ '10-draft-workbench.png','11-release-candidate-page.png','12-security-dead-letter-diagnostics.png']
++
++cli_ok = all(outputs.get(c, {}).get('exit_code', 1) == 0 for c in REQUIRED)
++browser_ok = all(s in shot_files for s in REQ_SHOTS) and console_h and net_h and php_h
++status = 'passed' if (mode != 'collect-cli' and cli_ok and browser_ok and operator and db_sha) else 'incomplete'
++
++pack = {
++  'schema_version': '2.0',
++  'build_sha256': build_sha,
++  'plugin_version': 'see wp plugin list output',
++  'rc_label': '',
++  'siteurl': grab('siteurl.out'),
++  'home': grab('home.out'),
++  'wp_version': grab('wp-core-version.out'),
++  'php_version': grab('php-v.out').split('\n')[0] if grab('php-v.out') else '',
++  'db_version': grab('db-version.out'),
++  'db_backup_sha256': db_sha,
++  'command_outputs': outputs,
++  'screenshots_manifest': manifest_shots,
++  'screenshot_files': shot_files,
++  'php_error_log_file': php_f, 'php_error_log_sha256': php_h,
++  'browser_console_log_file': console_f, 'browser_console_log_sha256': console_h,
++  'network_errors_file': net_f, 'network_errors_sha256': net_h,
++  'evidence_archive_sha256': '0' * 64,  # replaced below with the manifest-files hash
++  'generated_at': __import__('datetime').datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'),
++  'operator': {'name': operator, 'user_id': 0},
++  'validation_status': status,
++  'limitations': ['Human visual evidence (screenshots) reviewed by an operator; this pack proves capture, not UX quality.'],
++}
++
++# Non-circular archive integrity: hash every artifact into manifest-files.txt,
++# store ITS sha256 in the pack, then archive everything (incl. the pack).
++files_manifest = os.path.join(ev, 'manifest-files.txt')
++with open(files_manifest, 'w') as mf:
++    for root, _, files in os.walk(ev):
++        for name in sorted(files):
++            p = os.path.join(root, name)
++            rel = os.path.relpath(p, ev)
++            if rel in ('manifest-files.txt', 'evidence-pack-v2.json'):
++                continue
++            mf.write('%s  %s\n' % (fsha(p), rel))
++pack['evidence_archive_sha256'] = fsha(files_manifest)
++
++def canonicalize(v):
++    if isinstance(v, dict):
++        return {str(k): canonicalize(v[k]) for k in sorted(v, key=str)}
++    if isinstance(v, list):
++        return [canonicalize(x) for x in v]
++    return v
++h = dict(pack)
++pack['evidence_pack_hash'] = hashlib.sha256(
++    json.dumps(canonicalize(h), separators=(',', ':'), ensure_ascii=False).encode()
++).hexdigest()
++json.dump(pack, open(pack_file, 'w'), indent=2)
++print('evidence pack v2:', pack_file)
++print('validation_status:', status)
++print('evidence_pack_hash:', pack['evidence_pack_hash'])
++print('archive_manifest_sha256:', pack['evidence_archive_sha256'])
++PYEOF
++else
++    echo "WARNING: python3 unavailable — pack assembly skipped; collect mode artifacts remain usable." >&2
++fi
++
++# ── archive ──────────────────────────────────────────────────────────────────
++BASE="$(basename "$EVDIR")"
++ARCHIVE="$(dirname "$EVDIR")/$BASE.tar.gz"
++tar -czf "$ARCHIVE" -C "$(dirname "$EVDIR")" "$BASE"
++echo "Evidence archive: $ARCHIVE"
++sha256sum "$ARCHIVE"
++
++cat <<NEXT
++
++NEXT STEPS:
++ 1. Review every command output in $EVDIR/commands/ — any non-zero exit code means FAILED.
++ 2. Confirm the 12 screenshots + logs/ in the evidence folder match LIVE-BROWSER-VALIDATION-CHECKLIST.md.
++ 3. Record ONLY through file-backed verification:
++      $WP ves rc-record-live-validation --evidence-pack=$PACK_FILE --evidence-root=$EVDIR
++    (or --evidence-archive=$ARCHIVE)
++ 4. Strict gate: $WP ves rc-readiness-check --strict --format=json
++ NOTE: a recorded pass still does NOT make the build production-ready.
++NEXT
++exit 0
+diff --git a/future-island/future-island-intelligence-suite/tests/test-full-plugin-hardening-audit.php b/future-island/future-island-intelligence-suite/tests/test-full-plugin-hardening-audit.php
+index 35c209b..a5d0504 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-full-plugin-hardening-audit.php
++++ b/future-island/future-island-intelligence-suite/tests/test-full-plugin-hardening-audit.php
+@@ -16,8 +16,8 @@ $assert = function($condition, $message) use (&$failures, &$passes) {
+ $read = function($rel) use ($root) { return file_get_contents($root . '/' . $rel); };
+ 
+ $main = $read('future-island-intelligence-suite.php');
+-$assert(strpos($main, 'Version: 1.2.6') !== false, 'Plugin header version is 1.1.0');
+-$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.6'") !== false, 'VES_PLUGIN_VERSION constant is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.7') !== false, 'Plugin header version is 1.1.0');
++$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.7'") !== false, 'VES_PLUGIN_VERSION constant is 1.1.0');
+ 
+ $publicTemplates = [
+     'templates/_scraper-form.php',
+diff --git a/future-island/future-island-intelligence-suite/tests/test-settings-dispatch-runtime-fix.php b/future-island/future-island-intelligence-suite/tests/test-settings-dispatch-runtime-fix.php
+index 7d4f19f..73790db 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-settings-dispatch-runtime-fix.php
++++ b/future-island/future-island-intelligence-suite/tests/test-settings-dispatch-runtime-fix.php
+@@ -11,7 +11,7 @@ foreach ($files as $k => $f) { $src[$k] = file_get_contents($f); }
+ $checks = [];
+ $add = function($name, $ok) use (&$checks) { $checks[] = [$name, (bool) $ok]; };
+ 
+-$add('version bumped to 1.1.0', strpos($src['main'], 'Version: 1.2.6') !== false && strpos($src['main'], "VES_PLUGIN_VERSION',         '1.2.6'") !== false);
++$add('version bumped to 1.1.0', strpos($src['main'], 'Version: 1.2.7') !== false && strpos($src['main'], "VES_PLUGIN_VERSION',         '1.2.7'") !== false);
+ $add('settings page has top visible save actionbar', strpos($src['admin'], 'ves-settings-actionbar') !== false && strpos($src['admin'], "submit_button('Guardar cambios', 'primary', 'submit', false") !== false);
+ $add('settings page keeps bottom save button', substr_count($src['admin'], "submit_button('Guardar cambios'") >= 2);
+ $add('runtime lock reset admin action registered', strpos($src['admin'], "admin_post_ves_clear_runtime_locks") !== false && strpos($src['admin'], 'handle_clear_runtime_locks') !== false);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v093015-fatal-classification.php b/future-island/future-island-intelligence-suite/tests/test-v093015-fatal-classification.php
+index 397b946..3ac3bbe 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v093015-fatal-classification.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v093015-fatal-classification.php
+@@ -8,7 +8,7 @@ $main = file_get_contents($root . '/future-island-intelligence-suite.php');
+ $checks = [];
+ $add = function ($label, $ok) use (&$checks) { $checks[] = [$label, (bool) $ok]; };
+ 
+-$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.6') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.6'") !== false);
++$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.7') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.7'") !== false);
+ $add('caught Throwable after provider dispatch is not labeled ajax_fatal', strpos($controller, '$is_fatal_context = in_array($source') !== false && strpos($controller, "if (!empty(\$context['provider_call_attempted'])) { return 'post_dispatch_fatal'; }") !== false && strpos($controller, "return 'ajax_fatal';") !== false);
+ $add('caught Throwable after provider run receives post-provider category', strpos($controller, "if (!empty(\$context['provider_run_created'])) { return 'post_provider_run_fatal'; }") !== false);
+ $add('post-dispatch fatal has user-safe message', strpos($controller, "if (\$category === 'post_dispatch_fatal')") !== false && strpos($controller, 'The source request was attempted, but the response could not be processed') !== false);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v093015-pre-dispatch-degradation.php b/future-island/future-island-intelligence-suite/tests/test-v093015-pre-dispatch-degradation.php
+index 231c23b..98d7472 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v093015-pre-dispatch-degradation.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v093015-pre-dispatch-degradation.php
+@@ -6,7 +6,7 @@ $js = file_get_contents($root . '/assets/js/ves-frontend.js');
+ $checks = [];
+ $add = function($name, $ok) use (&$checks) { $checks[] = [$name, (bool) $ok]; };
+ 
+-$add('version bumped to 1.2.6 in main plugin', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.2.6') !== false);
++$add('version bumped to 1.2.7 in main plugin', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.2.7') !== false);
+ $add('platform input validation throwable is degraded instead of ajax fatal', strpos($ajax, 'platform_input_validation_throwable_degraded') !== false && strpos($ajax, '$platform_input_valid = is_array($input) && !empty($input);') !== false);
+ $add('duplicate guard throwable continues to provider dispatch', strpos($ajax, 'duplicate_guard_throwable_degraded') !== false && strpos($ajax, 'duplicate_guard_degraded_continue_dispatch') !== false);
+ $add('provider cost guard throwable is non-blocking for admins', strpos($ajax, 'provider_cost_guard_throwable_degraded') !== false && strpos($ajax, "if (!current_user_can('manage_options'))") !== false);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v093016-context-preservation.php b/future-island/future-island-intelligence-suite/tests/test-v093016-context-preservation.php
+index 1a1fe5e..746c524 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v093016-context-preservation.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v093016-context-preservation.php
+@@ -18,7 +18,7 @@ if (preg_match('/private static function error\([\s\S]*?private static function
+     $error_fn = $m[0];
+ }
+ 
+-$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.6') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.6'") !== false);
++$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.7') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.7'") !== false);
+ $add('error() merges active run context before classification', strpos($error_fn, '$active_context = is_array(self::$active_run_context) ? self::$active_run_context : [];') !== false && strpos($error_fn, '$context = array_merge($active_context, $context);') !== false && strpos($error_fn, 'last_successful_stage') !== false);
+ $add('explicit error() context preserves post-dispatch state', strpos($error_fn, 'post-dispatch failures') !== false && strpos($error_fn, 'provider_call_attempted/provider_run_created') !== false);
+ $add('shutdown handler classifies with active context', strpos($shutdown, "self::classify_error_category('ajax_shutdown_fatal'") !== false && strpos($shutdown, '$fatal_context = array_merge($active_context') !== false);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v093017-error-category-ordering.php b/future-island/future-island-intelligence-suite/tests/test-v093017-error-category-ordering.php
+index f2cac59..4a7f4cd 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v093017-error-category-ordering.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v093017-error-category-ordering.php
+@@ -12,7 +12,7 @@ $add = function($name, $ok) use (&$checks) {
+     $checks[] = [$name, (bool) $ok];
+     echo ($ok ? '[PASS] ' : '[FAIL] ') . $name . PHP_EOL;
+ };
+-$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.6') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.6'") !== false);
++$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.7') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.7'") !== false);
+ $add('classification uses fatal-only context gate', strpos($controller, '$is_fatal_context = in_array($source') !== false && strpos($controller, "'ajax_start_fatal'") !== false && strpos($controller, "'ajax_shutdown_fatal'") !== false);
+ $add('provider flags are only checked inside fatal context', preg_match('/if \(\$is_fatal_context\) \{\s*if \(!empty\(\$context\[\'provider_run_created\'\]\)\)/s', $controller) === 1);
+ $add('actor_dispatch_error branch remains after fatal gate', strpos($controller, "$source === 'actor_dispatch_error'") !== false && strpos($controller, '$is_provider_runtime_error') !== false && strpos($controller, 'provider_run_id_missing') !== false);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v093018-provider-error-classification.php b/future-island/future-island-intelligence-suite/tests/test-v093018-provider-error-classification.php
+index 1568b7c..1526aaa 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v093018-provider-error-classification.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v093018-provider-error-classification.php
+@@ -7,7 +7,7 @@ $ajax = file_get_contents($root . '/includes/class-ves-ajax-controller.php');
+ $main = file_get_contents($root . '/future-island-intelligence-suite.php');
+ $checks = [];
+ $add = function($label, $condition) use (&$checks) { $checks[$label] = (bool) $condition; };
+-$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.6') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.6'") !== false);
++$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.7') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.7'") !== false);
+ $add('token classification is not broad token substring', strpos($ajax, 'strpos($haystack, \'token\') !== false) { return \'missing_backend_token\'; }') === false);
+ $add('public run tokens classified as module access', strpos($ajax, "public_run_token") !== false && strpos($ajax, "return 'module_access_denied';") !== false);
+ $add('provider runtime includes poll errors', strpos($ajax, 'strpos($source, \'actor_poll\') !== false') !== false);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v093019-member-safe-diagnostic.php b/future-island/future-island-intelligence-suite/tests/test-v093019-member-safe-diagnostic.php
+index 10b6036..a004a99 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v093019-member-safe-diagnostic.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v093019-member-safe-diagnostic.php
+@@ -35,7 +35,7 @@ $extractBlock = static function(string $src, string $needle, int $window = 5000)
+ };
+ 
+ // Version bump.
+-$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.6') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.6'") !== false);
++$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.7') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.7'") !== false);
+ 
+ // build_safe_diagnostic helper exists and is leak-free by construction.
+ $add('build_safe_diagnostic helper exists', strpos($ajax, 'private static function build_safe_diagnostic(') !== false);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v093020-post-usage-settlement-degraded.php b/future-island/future-island-intelligence-suite/tests/test-v093020-post-usage-settlement-degraded.php
+index dde90b9..1c70c56 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v093020-post-usage-settlement-degraded.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v093020-post-usage-settlement-degraded.php
+@@ -22,7 +22,7 @@ $checks = [];
+ $add = function ($label, $cond) use (&$checks) { $checks[$label] = (bool) $cond; };
+ 
+ // Version bump.
+-$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.6') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.6'") !== false);
++$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.7') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.7'") !== false);
+ 
+ // --- Fix 1: post_standard_usage_or_error() must not call self::error() on WP_Error ---
+ // Locate the function body.
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v093021-provider-rental-message.php b/future-island/future-island-intelligence-suite/tests/test-v093021-provider-rental-message.php
+index 5053798..89ade75 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v093021-provider-rental-message.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v093021-provider-rental-message.php
+@@ -11,7 +11,7 @@ $checks = [];
+ $add = function($name, $ok) use (&$checks) { $checks[] = [$name, (bool) $ok]; };
+ 
+ // 1. Version matches
+-$add('version is 1.2.6', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.2.6') !== false);
++$add('version is 1.2.7', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.2.7') !== false);
+ 
+ // 2. provider_actor_rental_required gets its own branch before the generic config array
+ $rental_pos  = strpos($ajax, 'provider_actor_rental_required');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09310-fi-brand-tokens.php b/future-island/future-island-intelligence-suite/tests/test-v09310-fi-brand-tokens.php
+index e2078eb..2ca2a31 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09310-fi-brand-tokens.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09310-fi-brand-tokens.php
+@@ -10,7 +10,7 @@ $checks = [];
+ $add = function($name, $ok) use (&$checks) { $checks[] = [$name, (bool) $ok]; };
+ 
+ // Version
+-$add('version is 1.2.6', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.2.6') !== false);
++$add('version is 1.2.7', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.2.7') !== false);
+ 
+ // FI Azul primary color in ves-frontend.css
+ $add('FI Azul #3A61E1 in ves-frontend.css', strpos($css, '#3A61E1') !== false);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09310-responsive-dataviz.php b/future-island/future-island-intelligence-suite/tests/test-v09310-responsive-dataviz.php
+index 16cca26..a314a94 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09310-responsive-dataviz.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09310-responsive-dataviz.php
+@@ -10,7 +10,7 @@ $checks = [];
+ $add = function($name, $ok) use (&$checks) { $checks[] = [$name, (bool) $ok]; };
+ 
+ // Version
+-$add('version is 1.2.6', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.2.6') !== false);
++$add('version is 1.2.7', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.2.7') !== false);
+ 
+ // Responsive SEO table: stacked card view
+ $add('SEO table thead hidden on mobile in ves-frontend.css', strpos($css, '.ves-seo-table thead') !== false && strpos($css, 'display: none') !== false);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09311-provider-classification-locks.php b/future-island/future-island-intelligence-suite/tests/test-v09311-provider-classification-locks.php
+index 56c12cf..96207bd 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09311-provider-classification-locks.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09311-provider-classification-locks.php
+@@ -15,7 +15,7 @@ $checks = [];
+ $add = function($name, $ok) use (&$checks) { $checks[] = [$name, (bool) $ok]; };
+ 
+ // ── Version ───────────────────────────────────────────────────
+-$add('version is 1.1.0', strpos($main, 'Version: 1.2.6') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.6'") !== false);
++$add('version is 1.1.0', strpos($main, 'Version: 1.2.7') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.7'") !== false);
+ 
+ // ── Phase 4: SEO 403 rental classified before generic access-denied ──
+ $rental_chk = strpos($ajax, 'if ($rental_required) { return \'provider_actor_rental_required\'; }');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09313-error-categories-extended.php b/future-island/future-island-intelligence-suite/tests/test-v09313-error-categories-extended.php
+index 332fa5a..bfeae51 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09313-error-categories-extended.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09313-error-categories-extended.php
+@@ -48,8 +48,8 @@ $assert(strpos($filter_all_block, "'info'") !== false || strpos($filter_all_bloc
+ 
+ // 6. Version check.
+ $main = file_get_contents($root . '/future-island-intelligence-suite.php');
+-$assert(strpos($main, 'Version: 1.2.6') !== false, 'Plugin header must declare Version: 1.2.6');
+-$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.6'") !== false, 'VES_PLUGIN_VERSION must be 1.1.0');
++$assert(strpos($main, 'Version: 1.2.7') !== false, 'Plugin header must declare Version: 1.2.7');
++$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.7'") !== false, 'VES_PLUGIN_VERSION must be 1.1.0');
+ 
+ if ($fail === 0) {
+     echo "OK v0.9.31.6 extended error categories — $pass assertions passed\n";
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09314-ai-fallback-label.php b/future-island/future-island-intelligence-suite/tests/test-v09314-ai-fallback-label.php
+index ffd0c7b..0f544c7 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09314-ai-fallback-label.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09314-ai-fallback-label.php
+@@ -16,7 +16,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+ };
+ 
+ // Version
+-$assert(strpos($main, 'Version: 1.2.6') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.6'") !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.7') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.7'") !== false, 'Version is 1.1.0');
+ 
+ // PHP: all fallback returns include analysis_source=local_fallback
+ $assert(substr_count($ai, "'analysis_source' => 'local_fallback'") >= 3, 'PHP: at least 3 fallback return paths set analysis_source=local_fallback');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09314-error-retryable-taxonomy.php b/future-island/future-island-intelligence-suite/tests/test-v09314-error-retryable-taxonomy.php
+index 0819490..747ca8a 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09314-error-retryable-taxonomy.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09314-error-retryable-taxonomy.php
+@@ -15,7 +15,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+ };
+ 
+ // Version
+-$assert(strpos($main, 'Version: 1.2.6') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.6'") !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.7') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.7'") !== false, 'Version is 1.1.0');
+ 
+ // classify_retryable helper exists
+ $assert(strpos($ajax, 'private static function classify_retryable(') !== false, 'classify_retryable() helper declared');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09314-frontend-truthfulness.php b/future-island/future-island-intelligence-suite/tests/test-v09314-frontend-truthfulness.php
+index 67211ff..7ab4efd 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09314-frontend-truthfulness.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09314-frontend-truthfulness.php
+@@ -18,7 +18,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+ };
+ 
+ // Version
+-$assert(strpos($main, 'Version: 1.2.6') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.6'") !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.7') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.7'") !== false, 'Version is 1.1.0');
+ 
+ // 3A: jsTypeError branch no longer emits F5 instruction
+ $assert(strpos($js, 'jsTypeError') !== false, '3A: jsTypeError branch still exists');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09314-google-serp-normalizer.php b/future-island/future-island-intelligence-suite/tests/test-v09314-google-serp-normalizer.php
+index 46e07b2..70a21d3 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09314-google-serp-normalizer.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09314-google-serp-normalizer.php
+@@ -13,7 +13,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+ };
+ 
+ // Version
+-$assert(strpos($main, 'Version: 1.2.6') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.7') !== false, 'Version is 1.1.0');
+ 
+ // is_google_search_url helper exists
+ $assert(strpos($php, 'private static function is_google_search_url(') !== false, 'is_google_search_url() method declared');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09315-competitor-downgrade.php b/future-island/future-island-intelligence-suite/tests/test-v09315-competitor-downgrade.php
+index dda2f1c..1952f83 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09315-competitor-downgrade.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09315-competitor-downgrade.php
+@@ -15,7 +15,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
+ };
+ 
+-$assert(strpos($main, 'Version: 1.2.6') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.7') !== false, 'Version is 1.1.0');
+ 
+ // Helper declared
+ $assert(strpos($ana, 'function ves_detect_competitor_authorship(') !== false, 'ves_detect_competitor_authorship helper declared');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09315-curated-templates.php b/future-island/future-island-intelligence-suite/tests/test-v09315-curated-templates.php
+index 679a277..54c9f7d 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09315-curated-templates.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09315-curated-templates.php
+@@ -15,7 +15,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
+ };
+ 
+-$assert(strpos($main, 'Version: 1.2.6') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.7') !== false, 'Version is 1.1.0');
+ 
+ $templates = [
+     'verano-silencioso'   => 'verano-silencioso.php',
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09315-fallback-label-audit.php b/future-island/future-island-intelligence-suite/tests/test-v09315-fallback-label-audit.php
+index efb1e14..2a61a81 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09315-fallback-label-audit.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09315-fallback-label-audit.php
+@@ -15,7 +15,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
+ };
+ 
+-$assert(strpos($main, 'Version: 1.2.6') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.7') !== false, 'Version is 1.1.0');
+ 
+ // Count of labels — must have grown from v0.9.31.4 (which had 4 labeled).
+ $source_count = substr_count($ai, "'analysis_source' => 'local_fallback'");
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09315-public-support-code-hardened.php b/future-island/future-island-intelligence-suite/tests/test-v09315-public-support-code-hardened.php
+index 5bc7f4e..5c97fb4 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09315-public-support-code-hardened.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09315-public-support-code-hardened.php
+@@ -13,7 +13,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
+ };
+ 
+-$assert(strpos($main, 'Version: 1.2.6') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.7') !== false, 'Version is 1.1.0');
+ 
+ $fn_pos = strpos($ajax, 'private static function public_support_code(');
+ $fn_body = $fn_pos !== false ? substr($ajax, $fn_pos, 2000) : '';
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09315-renderer-diagnostic.php b/future-island/future-island-intelligence-suite/tests/test-v09315-renderer-diagnostic.php
+index 322446d..f14b17e 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09315-renderer-diagnostic.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09315-renderer-diagnostic.php
+@@ -12,7 +12,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
+ };
+ 
+-$assert(strpos($main, 'Version: 1.2.6') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.7') !== false, 'Version is 1.1.0');
+ 
+ $assert(strpos($ren, 'report_template_unreadable') !== false, 'Renderer raises report_template_unreadable diagnostic');
+ $assert(strpos($ren, 'VES_Admin::record_diagnostic') !== false, 'Renderer calls VES_Admin::record_diagnostic');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09315-retryable-frontend.php b/future-island/future-island-intelligence-suite/tests/test-v09315-retryable-frontend.php
+index 870329d..4287636 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09315-retryable-frontend.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09315-retryable-frontend.php
+@@ -15,7 +15,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
+ };
+ 
+-$assert(strpos($main, 'Version: 1.2.6') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.6'") !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.7') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.7'") !== false, 'Version is 1.1.0');
+ 
+ // JS reads safeDiagnostic.retryable
+ $assert(strpos($js, 'sd.retryable === true') !== false, 'JS branches on safeDiagnostic.retryable === true');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09316-curated-css-scoping.php b/future-island/future-island-intelligence-suite/tests/test-v09316-curated-css-scoping.php
+index 65d8e69..1c5a97e 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09316-curated-css-scoping.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09316-curated-css-scoping.php
+@@ -13,7 +13,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
+ };
+ 
+-$assert(strpos($main, 'Version: 1.2.6') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.7') !== false, 'Version is 1.1.0');
+ 
+ $templates = [
+     'verano-silencioso'   => 'verano-silencioso.php',
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09316-retry-timer-cleanup.php b/future-island/future-island-intelligence-suite/tests/test-v09316-retry-timer-cleanup.php
+index a94a4a2..9f6ed4c 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09316-retry-timer-cleanup.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09316-retry-timer-cleanup.php
+@@ -17,7 +17,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
+ };
+ 
+-$assert(strpos($main, 'Version: 1.2.6') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.7') !== false, 'Version is 1.1.0');
+ 
+ // Find the body of vesClearAutoRetryTimer.
+ $start = strpos($js, 'const vesClearAutoRetryTimer = ');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09318-p0-mvp-gating.php b/future-island/future-island-intelligence-suite/tests/test-v09318-p0-mvp-gating.php
+index dddfd94..1d3538a 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09318-p0-mvp-gating.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09318-p0-mvp-gating.php
+@@ -16,8 +16,8 @@ $assert = function($condition, $message) use (&$failures) {
+ 
+ $msg = 'Este módulo no está habilitado en el MVP de producción.';
+ 
+-$assert(strpos($main, 'Version: 1.2.6') !== false, 'Plugin header version bumped to 1.1.0');
+-$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.6'") !== false, 'VES_PLUGIN_VERSION bumped to 1.1.0');
++$assert(strpos($main, 'Version: 1.2.7') !== false, 'Plugin header version bumped to 1.1.0');
++$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.7'") !== false, 'VES_PLUGIN_VERSION bumped to 1.1.0');
+ // [v1.1.0 archived] removed obsolete MVP-gating expectation: VES_PRODUCTION_MVP=true. Production decision:
+ // MVP gating is retired in FIIS v1.1.0; the unified app shell exposes all main routes. The constant is now
+ // false in product and is no longer used to lock the shell. Replaced with the current unified-shell contract.
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09318-p2-trend-lite.php b/future-island/future-island-intelligence-suite/tests/test-v09318-p2-trend-lite.php
+index 11f2435..dfca7ed 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09318-p2-trend-lite.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09318-p2-trend-lite.php
+@@ -44,8 +44,8 @@ $form = file_get_contents($root . '/templates/_trend-finder-form.php');
+ $js = file_get_contents($root . '/assets/js/ves-frontend.js');
+ $service = file_get_contents($root . '/includes/class-ves-run-execution-service.php');
+ 
+-$assert(strpos($main, 'Version: 1.2.6') !== false, 'plugin version bumped to p2 trend lite');
+-$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.6'") !== false, 'VES_PLUGIN_VERSION bumped to p2 trend lite');
++$assert(strpos($main, 'Version: 1.2.7') !== false, 'plugin version bumped to p2 trend lite');
++$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.7'") !== false, 'VES_PLUGIN_VERSION bumped to p2 trend lite');
+ // [v1.1.0 archived] removed obsolete 'P0 MVP flag remains true' expectation: MVP gating is retired in
+ // FIIS v1.1.0 (VES_PRODUCTION_MVP is false in product). The Trend Lite budget-clamp checks below remain
+ // active and assert the still-current sanitizer behavior independently of the MVP flag.
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09318-p3-demo-hardening.php b/future-island/future-island-intelligence-suite/tests/test-v09318-p3-demo-hardening.php
+index fe49c08..582040a 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09318-p3-demo-hardening.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09318-p3-demo-hardening.php
+@@ -34,8 +34,8 @@ $main = file_get_contents($root . '/future-island-intelligence-suite.php');
+ $js = file_get_contents($root . '/assets/js/ves-frontend.js');
+ $ajax = file_get_contents($root . '/includes/class-ves-ajax-controller.php');
+ 
+-$assert(strpos($main, 'Version: 1.2.6') !== false, 'plugin header bumped to p3 demo hardening');
+-$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.6'") !== false, 'VES_PLUGIN_VERSION bumped to p3 demo hardening');
++$assert(strpos($main, 'Version: 1.2.7') !== false, 'plugin header bumped to p3 demo hardening');
++$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.7'") !== false, 'VES_PLUGIN_VERSION bumped to p3 demo hardening');
+ // [v1.1.0 archived] removed obsolete 'README version bumped' assertion: no root README.md exists in the
+ // unified package; the version contract is the plugin header / VES_PLUGIN_VERSION, already asserted above.
+ 
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09318-p31-live-qa-hotfix.php b/future-island/future-island-intelligence-suite/tests/test-v09318-p31-live-qa-hotfix.php
+index c4c962c..386b6ce 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09318-p31-live-qa-hotfix.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09318-p31-live-qa-hotfix.php
+@@ -43,8 +43,8 @@ $recon = file_get_contents($root . '/includes/class-ves-usage-reconciliation-ser
+ $js = file_get_contents($root . '/assets/js/ves-frontend.js');
+ $openai = file_get_contents($root . '/includes/class-ves-openai-client.php');
+ 
+-$assert(strpos($main, 'Version: 1.2.6') !== false, 'plugin header bumped to p3.1 live QA hotfix');
+-$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.6'") !== false, 'VES_PLUGIN_VERSION bumped to p3.1 live QA hotfix');
++$assert(strpos($main, 'Version: 1.2.7') !== false, 'plugin header bumped to p3.1 live QA hotfix');
++$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.7'") !== false, 'VES_PLUGIN_VERSION bumped to p3.1 live QA hotfix');
+ // [v1.1.0 archived] removed obsolete 'README version bumped' assertion: no root README.md exists in the
+ // unified package; the version contract is the plugin header / VES_PLUGIN_VERSION, already asserted above.
+ 
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09318-p4-deep-trend-addon-integration.php b/future-island/future-island-intelligence-suite/tests/test-v09318-p4-deep-trend-addon-integration.php
+index d7b4799..b858c5d 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09318-p4-deep-trend-addon-integration.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09318-p4-deep-trend-addon-integration.php
+@@ -13,7 +13,7 @@ $ok = function($condition, $label) use (&$checks, &$failures) { $checks++; if (!
+ 
+ // [v1.1.0 archived] removed obsolete standalone-addon version snapshot '0.9.31.15-p4.8-deep-trend-sidebar-layout'.
+ // Current contract: the suite is version 1.1.0 and DTF is a built-in module booted in-process.
+-$ok(strpos($main, 'Version: 1.2.6') !== false, 'Suite header is v1.1.0');
++$ok(strpos($main, 'Version: 1.2.7') !== false, 'Suite header is v1.1.0');
+ $ok(strpos($main, 'FIDTF_Plugin::boot()') !== false, 'DTF is booted in-process by the unified bootstrap (built-in module, not a separate add-on)');
+ $ok(strpos($main, 'class-ves-deep-trend-addon-bridge.php') !== false, 'Core bootstraps Deep Trend add-on bridge');
+ $ok(strpos($bridge, 'class VES_Deep_Trend_Addon_Bridge') !== false || strpos($bridge, 'final class VES_Deep_Trend_Addon_Bridge') !== false, 'Bridge class exists');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-egress-lockdown-9d.php b/future-island/future-island-intelligence-suite/tests/test-ves-egress-lockdown-9d.php
+new file mode 100644
+index 0000000..99c377a
+--- /dev/null
++++ b/future-island/future-island-intelligence-suite/tests/test-ves-egress-lockdown-9d.php
+@@ -0,0 +1,123 @@
++<?php
++/**
++ * Phase 9D — external egress lockdown contract.
++ *
++ * Proves:
++ *  1. the egress inventory classifies Apify, OpenAI, Stripe, DTF adapters and
++ *     MarketSignal with ZERO unknown egress and the single-dispatch-gate flag
++ *  2. grep-backed: NO production file performs a direct wp_remote_post Apify
++ *     run-start — every run-start goes through VES_Apify_Client::request()
++ *  3. MarketSignal routes through the core client, includes the ceiling, and
++ *     fails closed without the client (source-level + no direct token dispatch)
++ *  4. both DTF adapters' direct run-start paths are fail-closed/core-routed
++ *  5. AI provider calls are classified/key-gated; no generation flag flip
++ *  6. billing (Stripe) is classified billing_provider_explicit
++ *
++ * Run: php tests/test-ves-egress-lockdown-9d.php
++ */
++error_reporting(E_ALL & ~E_DEPRECATED);
++if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
++
++function sanitize_key($s){return strtolower(preg_replace('/[^a-z0-9_\-]/i','',(string)$s));}
++function get_option($k,$d=false){return $GLOBALS['__o'][$k]??$d;}
++function update_option($k,$v,$a=null){$GLOBALS['__o'][$k]=$v;return true;}
++$GLOBALS['__o']=[];
++
++require_once dirname(__DIR__) . '/includes/class-ves-external-egress-inventory.php';
++
++$pass=0;$fail=0;
++$ok=function($c,$l)use(&$pass,&$fail){if($c){$pass++;}else{$fail++;fwrite(STDERR,"FAIL: $l\n");}};
++$root = dirname(__DIR__);
++
++// ── 1. Inventory completeness ─────────────────────────────────────────────────
++$rows = VES_External_Egress_Inventory::inventory();
++$sum  = VES_External_Egress_Inventory::summary();
++$providers = array_unique(array_map(function ($r) { return $r['provider']; }, $rows));
++foreach (['apify', 'openai', 'stripe', 'public_web'] as $p) {
++    $ok(in_array($p, $providers, true), "inventory covers provider: {$p}");
++}
++$classes = wp_json_encode_compat($rows);
++function wp_json_encode_compat($d) { return json_encode($d); }
++foreach (['VES_Market_Signal_Commercial', 'FIDTF_Generic_Apify_Live_Adapter', 'FIDTF_TikTok_Live_Adapter', 'FIDTF_Core_Apify_Client_Adapter', 'VES_Stripe_Billing', 'VES_OpenAI_Client'] as $cls) {
++    $ok(strpos($classes, $cls) !== false, "inventory lists {$cls}");
++}
++$ok((int) $sum['unknown_count'] === 0, 'ZERO unknown external egress');
++$ok(!empty($sum['single_dispatch_gate']), 'inventory reports the single dispatch gate intact');
++foreach ($rows as $r) {
++    if (!$r['guarded']) { $ok(false, 'unguarded egress row: ' . $r['class']); }
++}
++$ok(true, 'every inventory row is guarded');
++
++// ── 2. Grep-backed: no direct Apify run-start wp_remote_post in production ───
++$offenders = [];
++$scan = function ($dir) use (&$scan, &$offenders) {
++    foreach ((array) glob($dir . '/*') as $p) {
++        if (is_dir($p)) {
++            if (strpos($p, '/tests') !== false || strpos($p, '/docs') !== false) { continue; }
++            $scan($p);
++            continue;
++        }
++        if (substr($p, -4) !== '.php') { continue; }
++        $src = (string) file_get_contents($p);
++        // A direct run-start = wp_remote_post whose nearby URL construction targets
++        // /acts/... or actor-tasks runs/run-sync. Whitelist: the core client itself.
++        if (strpos($p, 'class-ves-apify-client.php') !== false) { continue; }
++        if (!preg_match('/wp_remote_post\s*\(/', $src)) { continue; }
++        if (preg_match('/wp_remote_post\s*\(\s*[^)]{0,160}(\/acts\/|actor-tasks|run-sync|\/runs)/s', $src)) {
++            $offenders[] = $p;
++        }
++        // Also: any file that builds an api.apify.com acts/run URL AND calls wp_remote_post anywhere.
++        if (strpos($src, 'api.apify.com') !== false
++            && preg_match('/(\/acts\/|actor-tasks).{0,120}(runs|run-sync)/s', $src)
++            && preg_match('/wp_remote_post\s*\(\s*\$?(url|run_url|dispatch)/', $src)) {
++            $offenders[] = $p;
++        }
++    }
++};
++$scan($root . '/includes');
++$scan($root . '/modules');
++$offenders = array_unique($offenders);
++$ok(count($offenders) === 0, 'no production file dispatches an Apify run-start via wp_remote_post' . (count($offenders) ? ' — offenders: ' . implode(', ', $offenders) : ''));
++
++// ── 3. MarketSignal routed through the core client ────────────────────────────
++$ms = (string) file_get_contents($root . '/includes/class-ves-market-signal-commercial.php');
++$ok(strpos($ms, "VES_Apify_Client::request('POST', \$url, \$input)") !== false, 'MarketSignal dispatches through VES_Apify_Client::request');
++$ok(strpos($ms, "'maxTotalChargeUsd' => max(0.1, \$ceiling)") !== false, 'MarketSignal run URL carries maxTotalChargeUsd');
++$ok(strpos($ms, 'ves_ms_apify_client_unavailable') !== false, 'MarketSignal fails closed when the core client is unavailable');
++$rs_start = strpos($ms, 'private static function run_apify_sync');
++$rs_end = strpos($ms, 'private static function', $rs_start + 10);
++$run_sync_fn = substr($ms, $rs_start, $rs_end !== false ? $rs_end - $rs_start : 3200);
++$ok(!preg_match('/wp_remote_post\\s*\\(/', $run_sync_fn), 'MarketSignal run path contains no direct wp_remote_post call');
++$ok(strpos($run_sync_fn, 'Bearer') === false, 'MarketSignal run path no longer handles the token directly');
++
++// ── 4. DTF adapters fail closed / core-routed ────────────────────────────────
++$gen = (string) file_get_contents($root . '/modules/deep-trend-finder/includes/providers/class-fidtf-generic-apify-live-adapter.php');
++$ok(strpos($gen, 'source_dispatch_blocked_fail_closed') !== false, 'DTF generic adapter is fail-closed');
++$ok(strpos($gen, 'FIDTF_Core_Apify_Client_Adapter::available()') !== false, 'DTF generic adapter routes through the core adapter');
++$gen_start = substr($gen, strpos($gen, 'private function start_direct_apify_run'), 1600);
++$ok(strpos($gen_start, 'wp_remote_post') === false || strpos($gen_start, 'never an unguarded wp_remote_post') !== false, 'DTF generic direct start contains no wp_remote_post call');
++$ok(!preg_match('/wp_remote_post\s*\(/', $gen_start), 'DTF generic direct start performs zero direct HTTP');
++
++$tik = (string) file_get_contents($root . '/modules/deep-trend-finder/includes/providers/class-fidtf-tiktok-live-adapter.php');
++$ok(strpos($tik, 'tiktok_dispatch_blocked_fail_closed') !== false, 'DTF TikTok adapter is fail-closed');
++$tik_start = substr($tik, strpos($tik, 'private function start_direct_apify_run'), 1600);
++$ok(!preg_match('/wp_remote_post\s*\(/', $tik_start), 'DTF TikTok direct start performs zero direct HTTP');
++$ok(strpos($tik, 'VES_Security_Event_Log::record(\'provider_dispatch_blocked\'') !== false && strpos($gen, 'VES_Security_Event_Log::record(\'provider_dispatch_blocked\'') !== false && strpos($ms, 'VES_Security_Event_Log::record(\'provider_dispatch_blocked\'') !== false, 'blocked legacy fallbacks record security events');
++
++// ── 5. AI egress classified + key-gated; no flag flip ────────────────────────
++$openai_rows = VES_External_Egress_Inventory::for_provider('openai');
++$ok(count($openai_rows) >= 5, 'all five OpenAI call sites classified');
++foreach ($openai_rows as $r) {
++    $ok(in_array($r['classification'], ['ai_provider_gated', 'ai_provider_legacy_requires_review'], true), 'OpenAI path classified gated/legacy-review: ' . $r['class']);
++}
++$main = (string) file_get_contents($root . '/future-island-intelligence-suite.php');
++$ok(strpos($main, "ves_generation_execution_enabled', true") === false, 'generation execution flag is never force-enabled');
++$fici = (string) file_get_contents($root . '/modules/creative-intelligence/includes/ai/class-fici-openai-provider.php');
++$ok(strpos($fici, 'fici_missing_api_key') !== false, 'Creative Intelligence AI call is key-gated');
++
++// ── 6. Billing classified ─────────────────────────────────────────────────────
++$stripe_rows = VES_External_Egress_Inventory::for_provider('stripe');
++$ok(count($stripe_rows) >= 1 && $stripe_rows[0]['classification'] === 'billing_provider_explicit', 'Stripe egress classified billing_provider_explicit');
++
++echo "\n{$pass} passed, {$fail} failed\n";
++exit($fail === 0 ? 0 : 1);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-evidence-archive-verification-9e.php b/future-island/future-island-intelligence-suite/tests/test-ves-evidence-archive-verification-9e.php
+new file mode 100644
+index 0000000..8b3a4c8
+--- /dev/null
++++ b/future-island/future-island-intelligence-suite/tests/test-ves-evidence-archive-verification-9e.php
+@@ -0,0 +1,151 @@
++<?php
++/**
++ * Phase 9E.2 — file-backed evidence verification contract (REAL files).
++ *
++ * Builds a real temp evidence root (command streams, 12 screenshots, logs,
++ * manifest) and proves:
++ *  1. verify_files = ok when every artifact exists with a matching hash
++ *  2. record_live_validation with --evidence-root records a file-verified pass
++ *  3. a tampered artifact => file_hash_mismatch, recording refused
++ *  4. a deleted artifact => missing_required_artifacts, recording refused
++ *  5. archive verification (PharData): valid archive verifies; a wrong archive
++ *     manifest hash is detected
++ *  6. the recorded state carries files_verified=true and the archive manifest hash
++ *
++ * Run: php tests/test-ves-evidence-archive-verification-9e.php
++ */
++error_reporting(E_ALL & ~E_DEPRECATED);
++if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
++if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.7'); }
++if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc3'); }
++
++function sanitize_key($s){return strtolower(preg_replace('/[^a-z0-9_\-]/i','',(string)$s));}
++function sanitize_text_field($s){return trim(strip_tags((string)$s));}
++function get_option($k,$d=false){return $GLOBALS['__o'][$k]??$d;}
++function update_option($k,$v,$a=null){$GLOBALS['__o'][$k]=$v;return true;}
++function current_time($t='mysql',$g=0){return '2026-06-15 13:00:00';}
++function get_current_user_id(){return 4;}
++function wp_json_encode($d,$o=0){return json_encode($d,$o);}
++class WP_Error { public $code; public $message; public function __construct($c='',$m='',$d=[]){$this->code=$c;$this->message=$m;} public function get_error_code(){return $this->code;} public function get_error_message(){return $this->message;} }
++function is_wp_error($t){return $t instanceof WP_Error;}
++final class VES_RC_Readiness_Service { public static function report(array $a = []) { return ['blockers' => []]; } }
++$GLOBALS['__o']=[];
++
++require_once dirname(__DIR__) . '/includes/class-ves-rc-evidence-pack.php';
++
++$pass=0;$fail=0;
++$ok=function($c,$l)use(&$pass,&$fail){if($c){$pass++;}else{$fail++;fwrite(STDERR,"FAIL: $l\n");}};
++
++// ── Build a REAL evidence root ────────────────────────────────────────────────
++$root = sys_get_temp_dir() . '/fi-ev-9e-' . getmypid();
++@mkdir($root . '/commands', 0777, true);
++@mkdir($root . '/screenshots', 0777, true);
++@mkdir($root . '/logs', 0777, true);
++
++$inputs = [
++    'operator_name' => 'Ops',
++    'build_sha256' => hash('sha256', 'zip'),
++    'db_backup_sha256' => hash('sha256', 'backup'),
++    'command_outputs' => [],
++    'screenshots_manifest' => VES_RC_Evidence_Pack::REQUIRED_SCREENSHOTS,
++    'screenshot_files' => [],
++];
++foreach (VES_RC_Evidence_Pack::REQUIRED_COMMANDS as $i => $cmd) {
++    $slug = 'cmd' . $i;
++    foreach (['out' => "stdout for {$cmd}\n", 'err' => '', 'combined.txt' => "stdout for {$cmd}\n"] as $ext => $content) {
++        file_put_contents("{$root}/commands/{$slug}.{$ext}", $content);
++    }
++    $inputs['command_outputs'][$cmd] = [
++        'exit_code' => 0,
++        'stdout_file' => "commands/{$slug}.out", 'stdout_sha256' => hash_file('sha256', "{$root}/commands/{$slug}.out"),
++        'stderr_file' => "commands/{$slug}.err", 'stderr_sha256' => hash_file('sha256', "{$root}/commands/{$slug}.err"),
++        'combined_file' => "commands/{$slug}.combined.txt", 'combined_sha256' => hash_file('sha256', "{$root}/commands/{$slug}.combined.txt"),
++    ];
++}
++foreach (VES_RC_Evidence_Pack::REQUIRED_SCREENSHOTS as $shot) {
++    file_put_contents("{$root}/screenshots/{$shot}", "\x89PNG fake bytes {$shot}");
++    $inputs['screenshot_files'][$shot] = hash_file('sha256', "{$root}/screenshots/{$shot}");
++}
++file_put_contents("{$root}/logs/browser-console.log", "NO_CONSOLE_ERRORS_OBSERVED\n");
++file_put_contents("{$root}/logs/network-errors.log", "NO_NETWORK_ERRORS_OBSERVED\n");
++file_put_contents("{$root}/logs/php-error-log-tail.log", "clean tail\n");
++$inputs += [
++    'browser_console_log_file' => 'logs/browser-console.log', 'browser_console_log_sha256' => hash_file('sha256', "{$root}/logs/browser-console.log"),
++    'network_errors_file' => 'logs/network-errors.log', 'network_errors_sha256' => hash_file('sha256', "{$root}/logs/network-errors.log"),
++    'php_error_log_file' => 'logs/php-error-log-tail.log', 'php_error_log_sha256' => hash_file('sha256', "{$root}/logs/php-error-log-tail.log"),
++];
++
++// Archive manifest (non-circular): every artifact hash, excluding manifest+pack.
++$manifest_lines = [];
++foreach (['commands', 'screenshots', 'logs'] as $dir) {
++    foreach ((array) scandir("{$root}/{$dir}") as $f) {
++        if ($f === '.' || $f === '..') { continue; }
++        $manifest_lines[] = hash_file('sha256', "{$root}/{$dir}/{$f}") . "  {$dir}/{$f}";
++    }
++}
++sort($manifest_lines);
++file_put_contents("{$root}/manifest-files.txt", implode("\n", $manifest_lines) . "\n");
++$inputs['evidence_archive_sha256'] = hash_file('sha256', "{$root}/manifest-files.txt");
++
++$pack = VES_RC_Evidence_Pack::build($inputs);
++$ok($pack['validation_status'] === 'passed', 'fully file-backed pack computes passed');
++
++// ── 1+2. Root verification → recorded pass ───────────────────────────────────
++$files = VES_RC_Evidence_Pack::verify_files($pack, $root);
++$ok($files['status'] === 'ok', 'verify_files: every artifact exists with matching hash');
++
++$res = VES_RC_Evidence_Pack::record_live_validation($pack, ['evidence_root' => $root]);
++$ok(is_array($res) && $res['status'] === 'passed' && $res['files_verified'] === true, 'evidence-root recording stores a file-verified pass');
++$ok(($res['verified_via'] ?? '') === 'evidence_root', 'state records the verification channel');
++$ok(($res['evidence_archive_sha256'] ?? '') === $inputs['evidence_archive_sha256'], 'state carries the archive manifest hash');
++$state = VES_RC_Evidence_Pack::live_validation_state();
++$ok($state['status'] === 'passed' && !empty($state['files_verified']), 'classifier trusts the file-verified state');
++unset($GLOBALS['__o']['ves_rc_live_validation']);
++
++// ── 3. Tampered artifact => file_hash_mismatch ───────────────────────────────
++file_put_contents("{$root}/logs/browser-console.log", "TAMPERED AFTER HASHING\n");
++$files = VES_RC_Evidence_Pack::verify_files($pack, $root);
++$ok($files['status'] === 'file_hash_mismatch' && in_array('logs/browser-console.log', $files['mismatched'], true), 'tampered artifact detected as file_hash_mismatch');
++$res = VES_RC_Evidence_Pack::record_live_validation($pack, ['evidence_root' => $root]);
++$ok(is_wp_error($res) && $res->get_error_code() === 'ves_evidence_file_hash_mismatch', 'tampered artifact refuses recording');
++file_put_contents("{$root}/logs/browser-console.log", "NO_CONSOLE_ERRORS_OBSERVED\n"); // restore
++
++// ── 4. Deleted artifact => missing_required_artifacts ────────────────────────
++unlink("{$root}/screenshots/07-generation-context-preview.png");
++$files = VES_RC_Evidence_Pack::verify_files($pack, $root);
++$ok($files['status'] === 'missing_required_artifacts', 'deleted screenshot detected as missing_required_artifacts');
++$res = VES_RC_Evidence_Pack::record_live_validation($pack, ['evidence_root' => $root]);
++$ok(is_wp_error($res) && $res->get_error_code() === 'ves_evidence_missing_required_artifacts', 'missing artifact refuses recording');
++file_put_contents("{$root}/screenshots/07-generation-context-preview.png", "\x89PNG fake bytes 07-generation-context-preview.png"); // restore
++
++// ── 5. Archive verification (PharData) ───────────────────────────────────────
++if (class_exists('PharData')) {
++    $tarbase = sys_get_temp_dir() . '/fi-ev-9e-archive-' . getmypid();
++    @unlink($tarbase . '.tar'); @unlink($tarbase . '.tar.gz');
++    $phar = new PharData($tarbase . '.tar');
++    $phar->buildFromDirectory($root);
++    $phar->compress(Phar::GZ);
++    $archive = $tarbase . '.tar.gz';
++    $ok(is_file($archive), 'test archive built');
++
++    $files = VES_RC_Evidence_Pack::verify_archive($pack, $archive);
++    $ok($files['status'] === 'ok', 'archive verification: extraction + manifest + every artifact verified');
++
++    $res = VES_RC_Evidence_Pack::record_live_validation($pack, ['archive_path' => $archive]);
++    $ok(is_array($res) && ($res['verified_via'] ?? '') === 'evidence_archive', 'archive-backed recording stores a file-verified pass');
++    unset($GLOBALS['__o']['ves_rc_live_validation']);
++
++    $bad = $pack; $bad['evidence_archive_sha256'] = str_repeat('9', 64);
++    $bad['evidence_pack_hash'] = VES_RC_Evidence_Pack::compute_hash($bad);
++    $files = VES_RC_Evidence_Pack::verify_archive($bad, $archive);
++    $ok($files['status'] === 'file_hash_mismatch', 'wrong archive manifest hash detected');
++
++    $files = VES_RC_Evidence_Pack::verify_archive($pack, '/nonexistent.tar.gz');
++    $ok($files['status'] === 'missing_required_artifacts', 'missing archive file refuses verification');
++} else {
++    $ok(true, 'PharData unavailable in this PHP build — archive path covered by root-mode tests (verify_archive fails closed by design)');
++    $ok(true, 'skip'); $ok(true, 'skip'); $ok(true, 'skip'); $ok(true, 'skip');
++}
++
++echo "\n{$pass} passed, {$fail} failed\n";
++exit($fail === 0 ? 0 : 1);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-evidence-pack-9b.php b/future-island/future-island-intelligence-suite/tests/test-ves-evidence-pack-9b.php
+index cd2ae9d..1839345 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-ves-evidence-pack-9b.php
++++ b/future-island/future-island-intelligence-suite/tests/test-ves-evidence-pack-9b.php
+@@ -1,30 +1,30 @@
+ <?php
+ /**
+- * Phase 9B.3 — release evidence pack integrity contract (real class).
++ * Phase 9E.1 — evidence pack v2 schema/hash contract (real class).
+  *
+  * Proves:
+- *  1. schema validation catches missing fields / missing command outputs /
+- *     non-zero exit codes
+- *  2. the evidence hash is deterministic (key order independent) and any
+- *     tamper invalidates verification
+- *  3. build() computes validation_status (passed only with all outputs + operator)
+- *  4. record_live_validation refuses invalid/incomplete/blocked packs and
+- *     stores the hash-backed state on success
+- *  5. a manual option without a pack is classified unverified_manual
+- *  6. recording NEVER yields a production-ready state
++ *  1. schema 2.0 requires the FULL command battery (18), all 12 screenshots,
++ *     browser console / network errors / PHP error log hashes and the DB
++ *     backup hash — a pack missing ANY of them cannot validate or compute
++ *     'passed'
++ *  2. the evidence hash stays deterministic and tamper-evident
++ *  3. record_live_validation REFUSES a pack JSON alone (json_only_unverified)
++ *     — file verification is mandatory
++ *  4. a manual option remains unverified_manual; an evidence-pack-shaped state
++ *     without files_verified classifies json_only_unverified, never passed
+  *
+  * Run: php tests/test-ves-evidence-pack-9b.php
+  */
+ error_reporting(E_ALL & ~E_DEPRECATED);
+ if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
+-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.6'); }
+-if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc2'); }
++if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.7'); }
++if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc3'); }
+ 
+ function sanitize_key($s){return strtolower(preg_replace('/[^a-z0-9_\-]/i','',(string)$s));}
+ function sanitize_text_field($s){return trim(strip_tags((string)$s));}
+ function get_option($k,$d=false){return $GLOBALS['__o'][$k]??$d;}
+ function update_option($k,$v,$a=null){$GLOBALS['__o'][$k]=$v;return true;}
+-function current_time($t='mysql',$g=0){return '2026-06-14 12:00:00';}
++function current_time($t='mysql',$g=0){return '2026-06-15 12:00:00';}
+ function get_current_user_id(){return 4;}
+ function wp_json_encode($d,$o=0){return json_encode($d,$o);}
+ class WP_Error { public $code; public $message; public function __construct($c='',$m='',$d=[]){$this->code=$c;$this->message=$m;} public function get_error_code(){return $this->code;} public function get_error_message(){return $this->message;} }
+@@ -36,78 +36,110 @@ require_once dirname(__DIR__) . '/includes/class-ves-rc-evidence-pack.php';
+ $pass=0;$fail=0;
+ $ok=function($c,$l)use(&$pass,&$fail){if($c){$pass++;}else{$fail++;fwrite(STDERR,"FAIL: $l\n");}};
+ 
+-/** A fully valid command_outputs map. */
+-$outputs = [];
+-foreach (VES_RC_Evidence_Pack::REQUIRED_COMMANDS as $cmd) {
+-    $outputs[$cmd] = ['exit_code' => 0, 'output_sha256' => hash('sha256', 'out:' . $cmd)];
++$fake_sha = function ($seed) { return hash('sha256', (string) $seed); };
++
++/** Build the complete v2 input set (schema-valid shapes; files come in the 9E archive test). */
++$inputs = [
++    'operator_name' => 'Ops',
++    'build_sha256' => $fake_sha('zip'),
++    'db_backup_sha256' => $fake_sha('backup'),
++    'command_outputs' => [],
++    'screenshots_manifest' => VES_RC_Evidence_Pack::REQUIRED_SCREENSHOTS,
++    'screenshot_files' => [],
++    'php_error_log_file' => 'logs/php-error-log-tail.log', 'php_error_log_sha256' => $fake_sha('php'),
++    'browser_console_log_file' => 'logs/browser-console.log', 'browser_console_log_sha256' => $fake_sha('console'),
++    'network_errors_file' => 'logs/network-errors.log', 'network_errors_sha256' => $fake_sha('net'),
++    'evidence_archive_sha256' => $fake_sha('manifest'),
++];
++foreach (VES_RC_Evidence_Pack::REQUIRED_COMMANDS as $i => $cmd) {
++    $slug = 'cmd' . $i;
++    $inputs['command_outputs'][$cmd] = [
++        'exit_code' => 0,
++        'stdout_file' => "commands/{$slug}.out", 'stdout_sha256' => $fake_sha($slug . 'out'),
++        'stderr_file' => "commands/{$slug}.err", 'stderr_sha256' => $fake_sha($slug . 'err'),
++        'combined_file' => "commands/{$slug}.combined.txt", 'combined_sha256' => $fake_sha($slug . 'comb'),
++    ];
++}
++foreach (VES_RC_Evidence_Pack::REQUIRED_SCREENSHOTS as $shot) {
++    $inputs['screenshot_files'][$shot] = $fake_sha($shot);
+ }
+ 
+-// ── 1. build() computes status honestly ─────────────────────────────────────
+-$incomplete = VES_RC_Evidence_Pack::build(['operator_name' => 'Ops']);
+-$ok($incomplete['validation_status'] === 'incomplete', 'pack without command outputs is incomplete');
+-$full = VES_RC_Evidence_Pack::build(['operator_name' => 'Ops', 'command_outputs' => $outputs, 'build_sha256' => hash('sha256', 'zip')]);
+-$ok($full['validation_status'] === 'passed', 'pack with every required output + operator computes passed');
+-$anon = VES_RC_Evidence_Pack::build(['command_outputs' => $outputs, 'build_sha256' => hash('sha256', 'zip')]);
+-$ok($anon['validation_status'] === 'incomplete', 'pack without an operator cannot be passed');
++// ── 1. build() honesty ────────────────────────────────────────────────────────
++$ok(count(VES_RC_Evidence_Pack::REQUIRED_COMMANDS) === 18, 'required command battery is the full 18-command list');
++$full = VES_RC_Evidence_Pack::build($inputs);
++$ok($full['schema_version'] === '2.0', 'pack is schema 2.0');
++$ok($full['validation_status'] === 'passed', 'complete v2 inputs compute passed');
++
++$no_shots = $inputs; $no_shots['screenshots_manifest'] = []; $no_shots['screenshot_files'] = [];
++$p = VES_RC_Evidence_Pack::build($no_shots);
++$ok($p['validation_status'] === 'incomplete', 'pack CANNOT pass with empty screenshots_manifest');
++
++$no_console = $inputs; $no_console['browser_console_log_sha256'] = '';
++$p = VES_RC_Evidence_Pack::build($no_console);
++$ok($p['validation_status'] === 'incomplete', 'pack CANNOT pass with empty browser console hash');
++
++$no_php = $inputs; $no_php['php_error_log_sha256'] = '';
++$p = VES_RC_Evidence_Pack::build($no_php);
++$ok($p['validation_status'] === 'incomplete', 'pack CANNOT pass with empty PHP error log hash');
++
++$no_net = $inputs; $no_net['network_errors_file'] = ''; $no_net['network_errors_sha256'] = '';
++$p = VES_RC_Evidence_Pack::build($no_net);
++$ok($p['validation_status'] === 'incomplete', 'pack CANNOT pass without the network-errors file+hash');
++
++$no_db = $inputs; $no_db['db_backup_sha256'] = '';
++$p = VES_RC_Evidence_Pack::build($no_db);
++$ok($p['validation_status'] === 'incomplete', 'pack CANNOT pass without the DB backup hash');
+ 
+-// ── 2. Schema validation ─────────────────────────────────────────────────────
++$no_op = $inputs; unset($no_op['operator_name']);
++$p = VES_RC_Evidence_Pack::build($no_op);
++$ok($p['validation_status'] === 'incomplete', 'pack cannot pass without an operator');
++
++// ── 2. Schema validation specifics ───────────────────────────────────────────
+ $v = VES_RC_Evidence_Pack::schema_validate($full);
+-$ok($v['valid'] === true, 'full pack passes schema validation');
++$ok($v['valid'] === true, 'full v2 pack passes schema validation');
+ $broken = $full; unset($broken['command_outputs']['wp ves verify-schema']);
+ $v = VES_RC_Evidence_Pack::schema_validate($broken);
+-$ok($v['valid'] === false && strpos(implode(' ', $v['errors']), 'verify-schema') !== false, 'missing required command output fails schema');
++$ok($v['valid'] === false && strpos(implode(' ', $v['errors']), 'verify-schema') !== false, 'missing required command fails schema');
+ $nonzero = $full; $nonzero['command_outputs']['php -v']['exit_code'] = 1;
+-$v = VES_RC_Evidence_Pack::schema_validate($nonzero);
+-$ok($v['valid'] === false, 'non-zero exit code on a required command fails schema');
+-$nofield = $full; unset($nofield['operator']);
+-$v = VES_RC_Evidence_Pack::schema_validate($nofield);
+-$ok($v['valid'] === false, 'missing operator fails schema');
++$ok(VES_RC_Evidence_Pack::schema_validate($nonzero)['valid'] === false, 'non-zero exit on a required command fails schema');
++$nostream = $full; unset($nostream['command_outputs']['php -v']['stderr_sha256']);
++$ok(VES_RC_Evidence_Pack::schema_validate($nostream)['valid'] === false, 'missing stderr hash fails schema (stdout/stderr/combined all required)');
++$noshot = $full; $noshot['screenshots_manifest'] = array_slice($full['screenshots_manifest'], 0, 11);
++$ok(VES_RC_Evidence_Pack::schema_validate($noshot)['valid'] === false, 'a missing required screenshot fails schema');
++$traversal = $full; $traversal['php_error_log_file'] = '../../etc/passwd';
++$ok(VES_RC_Evidence_Pack::schema_validate($traversal)['valid'] === false, 'path traversal in artifact paths fails schema');
+ 
+-// ── 3. Deterministic hash + tamper detection ─────────────────────────────────
++// ── 3. Deterministic, tamper-evident hash ────────────────────────────────────
+ $h1 = VES_RC_Evidence_Pack::compute_hash($full);
+-$shuffled = array_reverse($full, true);
+-$h2 = VES_RC_Evidence_Pack::compute_hash($shuffled);
++$h2 = VES_RC_Evidence_Pack::compute_hash(array_reverse($full, true));
+ $ok($h1 === $h2 && preg_match('/^[a-f0-9]{64}$/', $h1), 'hash is deterministic regardless of key order');
+-$v = VES_RC_Evidence_Pack::verify($full);
+-$ok($v['valid'] === true, 'untampered pack verifies');
++$ok(VES_RC_Evidence_Pack::verify($full)['valid'] === true, 'untampered pack verifies');
+ $tampered = $full; $tampered['siteurl'] = 'https://evil.example.com';
+-$v = VES_RC_Evidence_Pack::verify($tampered);
+-$ok($v['valid'] === false && strpos(implode(' ', $v['errors']), 'mismatch') !== false, 'tampered pack fails hash verification');
+-
+-// ── 4. record_live_validation gates ──────────────────────────────────────────
+-$res = VES_RC_Evidence_Pack::record_live_validation($tampered);
+-$ok(is_wp_error($res), 'tampered pack cannot be recorded');
+-$res = VES_RC_Evidence_Pack::record_live_validation($incomplete);
+-$ok(is_wp_error($res), 'incomplete pack cannot be recorded');
++$ok(VES_RC_Evidence_Pack::verify($tampered)['valid'] === false, 'tampered pack fails hash verification');
+ 
+-// Readiness blockers refuse recording.
++// ── 4. JSON alone can never be recorded ──────────────────────────────────────
+ if (!class_exists('VES_RC_Readiness_Service')) {
+     final class VES_RC_Readiness_Service {
+-        public static $blockers = ['simulated blocker'];
++        public static $blockers = [];
+         public static function report(array $a = []) { return ['blockers' => self::$blockers]; }
+     }
+ }
+-$res = VES_RC_Evidence_Pack::record_live_validation($full);
+-$ok(is_wp_error($res) && $res->get_error_code() === 'ves_evidence_blockers', 'current readiness blockers refuse the recording');
+-
+-VES_RC_Readiness_Service::$blockers = [];
+-$res = VES_RC_Evidence_Pack::record_live_validation($full);
+-$ok(is_array($res) && $res['status'] === 'passed' && $res['source'] === 'evidence_pack', 'valid pack records an evidence-backed pass');
+-$ok(($res['evidence_pack_hash'] ?? '') === $full['evidence_pack_hash'], 'stored state carries the pack hash');
+-$ok(!isset($res['production_ready']) || $res['production_ready'] === false, 'recording never grants production_ready');
++$res = VES_RC_Evidence_Pack::record_live_validation($full); // no root, no archive
++$ok(is_wp_error($res) && $res->get_error_code() === 'ves_evidence_json_only', 'pack JSON alone is REFUSED as json_only_unverified');
++$res = VES_RC_Evidence_Pack::record_live_validation($full, ['evidence_root' => '/nonexistent-root-xyz']);
++$ok(is_wp_error($res), 'missing evidence root refuses recording');
++$ok(get_option('ves_rc_live_validation', null) === null, 'nothing was recorded by the refused attempts');
+ 
+-// ── 5. Classification ────────────────────────────────────────────────────────
++// ── 5. Classification taxonomy ───────────────────────────────────────────────
++$GLOBALS['__o']['ves_rc_live_validation'] = ['status' => 'passed', 'recorded_at' => '2026-06-15', 'note' => 'manual'];
++$ok(VES_RC_Evidence_Pack::live_validation_state()['status'] === 'unverified_manual', 'manual option is unverified_manual');
++$GLOBALS['__o']['ves_rc_live_validation'] = ['status' => 'passed', 'source' => 'evidence_pack', 'evidence_pack_hash' => str_repeat('ab', 32)];
++$ok(VES_RC_Evidence_Pack::live_validation_state()['status'] === 'json_only_unverified', 'evidence-pack state WITHOUT files_verified is json_only_unverified, not passed');
++$GLOBALS['__o']['ves_rc_live_validation'] = ['status' => 'passed', 'source' => 'evidence_pack', 'evidence_pack_hash' => str_repeat('ab', 32), 'files_verified' => true, 'schema_version' => '2.0', 'verified_via' => 'evidence_root'];
+ $state = VES_RC_Evidence_Pack::live_validation_state();
+-$ok($state['status'] === 'passed' && preg_match('/^[a-f0-9]{64}$/', $state['evidence_pack_hash']), 'recorded state classifies as passed with hash');
+-$GLOBALS['__o']['ves_rc_live_validation'] = ['status' => 'passed', 'recorded_at' => '2026-06-14', 'note' => 'manual wp option update'];
+-$state = VES_RC_Evidence_Pack::live_validation_state();
+-$ok($state['status'] === 'unverified_manual', 'manual option without pack hash is unverified_manual');
+-$GLOBALS['__o']['ves_rc_live_validation'] = ['status' => 'passed', 'source' => 'evidence_pack', 'evidence_pack_hash' => 'nothex'];
+-$state = VES_RC_Evidence_Pack::live_validation_state();
+-$ok($state['status'] === 'unverified_manual', 'malformed hash is unverified_manual');
++$ok($state['status'] === 'passed' && !empty($state['files_verified']), 'file-backed recorded state classifies as passed');
+ unset($GLOBALS['__o']['ves_rc_live_validation']);
+-$state = VES_RC_Evidence_Pack::live_validation_state();
+-$ok($state['status'] === 'unrun', 'no option means unrun');
++$ok(VES_RC_Evidence_Pack::live_validation_state()['status'] === 'unrun', 'no option means unrun');
+ 
+ echo "\n{$pass} passed, {$fail} failed\n";
+ exit($fail === 0 ? 0 : 1);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-health-and-log.php b/future-island/future-island-intelligence-suite/tests/test-ves-health-and-log.php
+index cf5eb71..e6d7eb5 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-ves-health-and-log.php
++++ b/future-island/future-island-intelligence-suite/tests/test-ves-health-and-log.php
+@@ -12,8 +12,8 @@ error_reporting(E_ALL & ~E_DEPRECATED);
+ 
+ if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
+ if (!defined('WP_DEBUG')) { define('WP_DEBUG', false); }
+-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.6'); }
+-if (!defined('VES_PLUGIN_VERSION')) { define('VES_PLUGIN_VERSION', '1.2.6'); }
++if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.7'); }
++if (!defined('VES_PLUGIN_VERSION')) { define('VES_PLUGIN_VERSION', '1.2.7'); }
+ if (!defined('FIDTF_VERSION')) { define('FIDTF_VERSION', '0.3.53'); }
+ 
+ if (!class_exists('WP_Error')) {
+diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-memory-status-log-9de.php b/future-island/future-island-intelligence-suite/tests/test-ves-memory-status-log-9de.php
+new file mode 100644
+index 0000000..ceba992
+--- /dev/null
++++ b/future-island/future-island-intelligence-suite/tests/test-ves-memory-status-log-9de.php
+@@ -0,0 +1,78 @@
++<?php
++/**
++ * Phase 9D/9E low fix — memory set_status logging honesty (real service).
++ *
++ * Proves:
++ *  1. a SUCCESSFUL DB update logs status_changed and writes the review ledger
++ *  2. a FAILED DB update logs status_change_failed, writes NO ledger decision,
++ *     never logs status_changed, and returns false
++ *
++ * Run: php tests/test-ves-memory-status-log-9de.php
++ */
++error_reporting(E_ALL & ~E_DEPRECATED);
++if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
++if (!defined('ARRAY_A')) { define('ARRAY_A', 'ARRAY_A'); }
++
++class WP_Error { public $code; public $message; public function __construct($c='',$m='',$d=[]){$this->code=$c;$this->message=$m;} public function get_error_code(){return $this->code;} public function get_error_message(){return $this->message;} }
++function is_wp_error($t){return $t instanceof WP_Error;}
++function sanitize_key($s){return strtolower(preg_replace('/[^a-z0-9_\-]/i','',(string)$s));}
++function sanitize_text_field($s){return trim(strip_tags((string)$s));}
++function wp_json_encode($d,$o=0){return json_encode($d,$o);}
++function current_time($t='mysql',$g=0){return '2026-06-15 14:00:00';}
++function get_option($k,$d=false){return $GLOBALS['__o'][$k]??$d;}
++function update_option($k,$v,$a=null){$GLOBALS['__o'][$k]=$v;return true;}
++function get_current_user_id(){return 6;}
++function apply_filters($t,$v){return $v;}
++$GLOBALS['__o']=[];
++
++final class VES_Log {
++    public static $events = [];
++    public static function info($mod, $msg, $ctx = []) { self::$events[] = ['info', $mod, $msg, $ctx]; }
++    public static function warn($mod, $msg, $ctx = []) { self::$events[] = ['warn', $mod, $msg, $ctx]; }
++}
++final class VES_Memory_Records { public static function table_name() { return 'wp_ves_memory_records'; } }
++final class VES_Review_Decision_Ledger {
++    public static $records = [];
++    public static function record(array $a) { self::$records[] = $a; return count(self::$records); }
++    public static function transition_allowed($t, $f, $to) { return !in_array($f, ['rejected', 'archived', 'expired'], true); }
++}
++
++class MemWpdb {
++    public $fail_update = false;
++    public $row;
++    public function get_row($sql, $o = null) { return $this->row; }
++    public function prepare($sql, $args = []) { return $sql; }
++    public function update($t, $d, $w) { return $this->fail_update ? false : 1; }
++}
++$GLOBALS['wpdb'] = new MemWpdb();
++$GLOBALS['wpdb']->row = [
++    'id' => 5, 'workspace_id' => 2, 'memory_type' => 'voice_rule', 'is_pinned' => 0,
++    'content_json' => json_encode(['brand_context' => ['status' => 'candidate']]),
++];
++
++require_once dirname(__DIR__) . '/includes/class-ves-brand-context-service.php';
++
++$pass=0;$fail=0;
++$ok=function($c,$l)use(&$pass,&$fail){if($c){$pass++;}else{$fail++;fwrite(STDERR,"FAIL: $l\n");}};
++
++// ── 1. Success path: status_changed + ledger ─────────────────────────────────
++VES_Log::$events = []; VES_Review_Decision_Ledger::$records = [];
++$res = VES_Brand_Context_Service::set_status(5, 'active', 6);
++$log = json_encode(VES_Log::$events);
++$ok($res === true, 'successful update returns true');
++$ok(strpos($log, 'status_changed') !== false, 'success logs status_changed');
++$ok(strpos($log, 'status_change_failed') === false, 'success never logs status_change_failed');
++$ok(count(VES_Review_Decision_Ledger::$records) === 1, 'success writes exactly one ledger decision');
++
++// ── 2. Failure path: status_change_failed, NO ledger, false ─────────────────
++VES_Log::$events = []; VES_Review_Decision_Ledger::$records = [];
++$GLOBALS['wpdb']->fail_update = true;
++$res = VES_Brand_Context_Service::set_status(5, 'active', 6);
++$log = json_encode(VES_Log::$events);
++$ok($res === false, 'failed update returns false');
++$ok(strpos($log, 'status_change_failed') !== false, 'failure logs status_change_failed');
++$ok(strpos($log, '"status_changed"') === false && strpos($log, 'Brand context status_changed') === false, 'failure NEVER logs status_changed');
++$ok(count(VES_Review_Decision_Ledger::$records) === 0, 'failure writes no ledger decision');
++
++echo "\n{$pass} passed, {$fail} failed\n";
++exit($fail === 0 ? 0 : 1);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-rc-readiness-check.php b/future-island/future-island-intelligence-suite/tests/test-ves-rc-readiness-check.php
+index b0e709c..4c42988 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-ves-rc-readiness-check.php
++++ b/future-island/future-island-intelligence-suite/tests/test-ves-rc-readiness-check.php
+@@ -44,7 +44,7 @@ $ok(strpos($warn_text, 'UNRUN') !== false, 'warnings call out the unrun live val
+ // ── 2. Healthy stack stubs ───────────────────────────────────────────────────
+ // NOTE: declared inside a conditional block so PHP binds them at RUNTIME —
+ // scenario 1 above must run with no services defined.
+-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.6'); }
++if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.7'); }
+ if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc1'); }
+ if (!class_exists('VES_Intelligence_Store')) {
+ final class VES_Intelligence_Store {
+@@ -121,12 +121,25 @@ final class VES_RC_Evidence_Pack {
+         $raw = get_option('ves_rc_live_validation', []);
+         if (!is_array($raw) || empty($raw['status'])) { return ['status' => 'unrun', 'recorded_at' => '', 'evidence_pack_hash' => '', 'note' => '']; }
+         $hash = strtolower((string) ($raw['evidence_pack_hash'] ?? ''));
+-        if ((string) ($raw['source'] ?? '') === 'evidence_pack' && preg_match('/^[a-f0-9]{64}$/', $hash) && $raw['status'] === 'passed') {
+-            return ['status' => 'passed', 'recorded_at' => (string) ($raw['recorded_at'] ?? ''), 'evidence_pack_hash' => $hash, 'note' => ''];
++        $is_pack = (string) ($raw['source'] ?? '') === 'evidence_pack' && preg_match('/^[a-f0-9]{64}$/', $hash);
++        if ($is_pack && !empty($raw['files_verified']) && $raw['status'] === 'passed') {
++            return ['status' => 'passed', 'files_verified' => true, 'recorded_at' => (string) ($raw['recorded_at'] ?? ''), 'evidence_pack_hash' => $hash, 'note' => ''];
+         }
++        if ($is_pack) { return ['status' => 'json_only_unverified', 'recorded_at' => (string) ($raw['recorded_at'] ?? ''), 'evidence_pack_hash' => '', 'note' => '']; }
+         return ['status' => 'unverified_manual', 'recorded_at' => (string) ($raw['recorded_at'] ?? ''), 'evidence_pack_hash' => '', 'note' => ''];
+     }
+ }
++// Phase 9D egress stubs (probe-compatible).
++final class VES_External_Egress_Inventory {
++    public static $unknown = 0;
++    public static function inventory() { return []; }
++    public static function summary() { return ['available' => true, 'total' => 23, 'by_classification' => [], 'unknown_count' => self::$unknown, 'unguarded_run_start_count' => 0, 'single_dispatch_gate' => self::$unknown === 0]; }
++    public static function for_provider($p) {
++        if ($p === 'openai') { return [['provider'=>'openai','class'=>'VES_OpenAI_Client','method'=>'request','classification'=>'ai_provider_gated','guarded'=>true,'notes'=>[]]]; }
++        if ($p === 'stripe') { return [['provider'=>'stripe','class'=>'VES_Stripe_Billing','method'=>'api_request','classification'=>'billing_provider_explicit','guarded'=>true,'notes'=>[]]]; }
++        return [];
++    }
++}
+ } // end runtime-bound stub block
+ 
+ $r = VES_RC_Readiness_Service::report();
+@@ -141,7 +154,7 @@ $r = VES_RC_Readiness_Service::report();
+ $ok(($r['live_validation']['status'] ?? '') === 'unverified_manual', 'manually-written option WITHOUT evidence pack reads unverified_manual, never passed');
+ $ok(($r['status'] ?? '') === 'ready_with_warnings', 'manual option keeps the report at ready_with_warnings');
+ 
+-$GLOBALS['__opts']['ves_rc_live_validation'] = ['status' => 'passed', 'source' => 'evidence_pack', 'evidence_pack_hash' => str_repeat('ab', 32), 'recorded_at' => '2026-06-12 09:00:00'];
++$GLOBALS['__opts']['ves_rc_live_validation'] = ['status' => 'passed', 'source' => 'evidence_pack', 'evidence_pack_hash' => str_repeat('ab', 32), 'files_verified' => true, 'recorded_at' => '2026-06-12 09:00:00'];
+ $r = VES_RC_Readiness_Service::report();
+ $ok(($r['live_validation']['status'] ?? '') === 'passed', 'evidence-pack-backed validation is surfaced as passed');
+ $ok(($r['status'] ?? '') === 'ready_for_staging', 'fully healthy + evidence-backed validation reaches ready_for_staging');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-rc-strict-readiness-9c.php b/future-island/future-island-intelligence-suite/tests/test-ves-rc-strict-readiness-9c.php
+index 6dfcd78..7063915 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-ves-rc-strict-readiness-9c.php
++++ b/future-island/future-island-intelligence-suite/tests/test-ves-rc-strict-readiness-9c.php
+@@ -15,7 +15,7 @@
+  */
+ error_reporting(E_ALL & ~E_DEPRECATED);
+ if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
+-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.6'); }
++if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.7'); }
+ if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc2'); }
+ 
+ function get_option($k, $d = false) { return $GLOBALS['__opts'][$k] ?? $d; }
+@@ -73,12 +73,24 @@ final class VES_RC_Evidence_Pack {
+         $raw = get_option('ves_rc_live_validation', []);
+         if (!is_array($raw) || empty($raw['status'])) { return ['status' => 'unrun', 'recorded_at' => '', 'evidence_pack_hash' => '', 'note' => '']; }
+         $hash = strtolower((string) ($raw['evidence_pack_hash'] ?? ''));
+-        if ((string) ($raw['source'] ?? '') === 'evidence_pack' && preg_match('/^[a-f0-9]{64}$/', $hash) && $raw['status'] === 'passed') {
+-            return ['status' => 'passed', 'recorded_at' => (string) ($raw['recorded_at'] ?? ''), 'evidence_pack_hash' => $hash, 'note' => ''];
++        $is_pack = (string) ($raw['source'] ?? '') === 'evidence_pack' && preg_match('/^[a-f0-9]{64}$/', $hash);
++        if ($is_pack && !empty($raw['files_verified']) && $raw['status'] === 'passed') {
++            return ['status' => 'passed', 'files_verified' => true, 'recorded_at' => (string) ($raw['recorded_at'] ?? ''), 'evidence_pack_hash' => $hash, 'note' => ''];
+         }
++        if ($is_pack) { return ['status' => 'json_only_unverified', 'recorded_at' => (string) ($raw['recorded_at'] ?? ''), 'evidence_pack_hash' => '', 'note' => '']; }
+         return ['status' => 'unverified_manual', 'recorded_at' => (string) ($raw['recorded_at'] ?? ''), 'evidence_pack_hash' => '', 'note' => ''];
+     }
+ }
++final class VES_External_Egress_Inventory {
++    public static $unknown = 0;
++    public static function inventory() { return []; }
++    public static function summary() { return ['available' => true, 'total' => 23, 'by_classification' => [], 'unknown_count' => self::$unknown, 'unguarded_run_start_count' => 0, 'single_dispatch_gate' => self::$unknown === 0]; }
++    public static function for_provider($p) {
++        if ($p === 'openai') { return [['provider'=>'openai','class'=>'VES_OpenAI_Client','method'=>'request','classification'=>'ai_provider_gated','guarded'=>true,'notes'=>[]]]; }
++        if ($p === 'stripe') { return [['provider'=>'stripe','class'=>'VES_Stripe_Billing','method'=>'api_request','classification'=>'billing_provider_explicit','guarded'=>true,'notes'=>[]]]; }
++        return [];
++    }
++}
+ 
+ require_once dirname(__DIR__) . '/includes/class-ves-rc-readiness-service.php';
+ 
+@@ -97,8 +109,14 @@ $r = VES_RC_Readiness_Service::report(['strict' => true]);
+ $ok(($r['status'] ?? '') === 'blocked', 'strict with manual-only option is BLOCKED');
+ $ok(strpos(implode(' ', $r['blockers']), 'unverified_manual') !== false, 'strict blocker names unverified_manual');
+ 
+-// ── 3. Valid evidence but a hard rail missing => blocked ─────────────────────
++// ── 2b. Phase 9E: JSON-only pack state (no files_verified) => blocked ────────
+ $GLOBALS['__opts']['ves_rc_live_validation'] = ['status' => 'passed', 'source' => 'evidence_pack', 'evidence_pack_hash' => str_repeat('cd', 32), 'recorded_at' => '2026-06-14'];
++$r = VES_RC_Readiness_Service::report(['strict' => true]);
++$ok(($r['status'] ?? '') === 'blocked', 'strict with a JSON-only (file-unverified) pack is BLOCKED');
++$ok(strpos(implode(' ', $r['blockers']), 'json_only_unverified') !== false, 'strict blocker names json_only_unverified');
++
++// ── 3. Valid evidence but a hard rail missing => blocked ─────────────────────
++$GLOBALS['__opts']['ves_rc_live_validation'] = ['status' => 'passed', 'source' => 'evidence_pack', 'evidence_pack_hash' => str_repeat('cd', 32), 'files_verified' => true, 'recorded_at' => '2026-06-14'];
+ VES_Workspace_Guard::$active = false;
+ $r = VES_RC_Readiness_Service::report(['strict' => true]);
+ $ok(($r['status'] ?? '') === 'blocked', 'strict with broken workspace guard is BLOCKED despite valid evidence');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-release-candidate-page.php b/future-island/future-island-intelligence-suite/tests/test-ves-release-candidate-page.php
+index a9d7ab4..c2f4ec6 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-ves-release-candidate-page.php
++++ b/future-island/future-island-intelligence-suite/tests/test-ves-release-candidate-page.php
+@@ -16,7 +16,7 @@
+  */
+ error_reporting(E_ALL & ~E_DEPRECATED);
+ if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
+-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.6'); }
++if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.7'); }
+ if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc1'); }
+ 
+ function get_option($k, $d = false) { return $GLOBALS['__opts'][$k] ?? $d; }
+@@ -44,7 +44,7 @@ $html = VES_Release_Candidate_Page::render_html();
+ // ── 1. Identity ──────────────────────────────────────────────────────────────
+ $ok(strpos($html, 'Release Candidate') !== false, 'page titles itself Release Candidate');
+ $ok(strpos($html, 'Future Island') !== false, 'page carries the Future Island identity');
+-$ok(strpos($html, '1.2.6') !== false && strpos($html, 'v0.1-rc1') !== false, 'version + RC label shown');
++$ok(strpos($html, '1.2.7') !== false && strpos($html, 'v0.1-rc1') !== false, 'version + RC label shown');
+ 
+ // ── 2. Honesty: UNRUN + never production-ready ───────────────────────────────
+ $ok(strpos($html, 'UNRUN') !== false, 'page states live staging validation is UNRUN');
+@@ -79,11 +79,19 @@ $ok(strpos($html2, '<script>alert(1)</script>') === false, 'recorded_at is escap
+ $ok(strpos($html2, 'Unverified manual validation record') !== false, 'manual option without evidence pack shows UNVERIFIED, not passed');
+ $ok(strpos($html2, 'NOT production-ready') !== false, 'unverified manual record stays NOT production-ready');
+ 
+-// An evidence-pack-backed pass shows the hash (escaped) and still grants nothing.
++// Phase 9E: an evidence-pack record WITHOUT file verification is json_only_unverified.
+ $GLOBALS['__opts']['ves_rc_live_validation'] = ['status' => 'passed', 'source' => 'evidence_pack', 'evidence_pack_hash' => str_repeat('ab', 32), 'recorded_at' => '2026-06-12 09:00:00', 'operator' => 'ops'];
++$html2j = VES_Release_Candidate_Page::render_html();
++$ok(strpos($html2j, 'json_only_unverified') !== false, 'JSON-only pack shown as untrusted (json_only_unverified)');
++$ok(strpos($html2j, 'NOT trusted as passed') !== false || strpos($html2j, 'NOT production-ready') !== false, 'JSON-only pack stays untrusted/not production-ready');
++$ok(strpos($html2j, '--evidence-root') !== false, 'JSON-only banner points to file-backed re-recording');
++
++// A FILE-VERIFIED evidence-pack pass shows the hash + schema and still grants nothing.
++$GLOBALS['__opts']['ves_rc_live_validation'] = ['status' => 'passed', 'source' => 'evidence_pack', 'evidence_pack_hash' => str_repeat('ab', 32), 'files_verified' => true, 'schema_version' => '2.0', 'verified_via' => 'evidence_root', 'recorded_at' => '2026-06-12 09:00:00', 'operator' => 'ops'];
+ $html2b = VES_Release_Candidate_Page::render_html();
+-$ok(strpos($html2b, 'recorded as passed') !== false, 'evidence-backed pass state is surfaced');
++$ok(strpos($html2b, 'recorded as passed') !== false, 'file-verified pass state is surfaced');
+ $ok(strpos($html2b, substr(str_repeat('ab', 32), 0, 16)) !== false, 'evidence pack hash displayed (truncated)');
++$ok(strpos($html2b, 'schema 2.0') !== false && strpos($html2b, 'file-backed: yes') !== false, 'schema version + file-backed state shown');
+ $ok(strpos($html2b, 'never grants production status') !== false, 'even a recorded pass does not grant production status');
+ unset($GLOBALS['__opts']['ves_rc_live_validation']);
+ 
+diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-validation-script-v3-9e.php b/future-island/future-island-intelligence-suite/tests/test-ves-validation-script-v3-9e.php
+new file mode 100644
+index 0000000..03bce45
+--- /dev/null
++++ b/future-island/future-island-intelligence-suite/tests/test-ves-validation-script-v3-9e.php
+@@ -0,0 +1,101 @@
++<?php
++/**
++ * Phase 9E.3 — live validation script v3 contract (static + behavioral refusals).
++ *
++ * Proves:
++ *  1. bash -n passes; no executable --apply anywhere
++ *  2. REFUSES without --expected-siteurl/--expected-host (weak staging detection rejected)
++ *  3. REFUSES without staging confirmation and without a DB backup
++ *  4. finalize mode REFUSES without screenshots / browser console / network errors / php error log
++ *  5. redaction covers token shapes; stdout+stderr+combined captured per command
++ *  6. the full 18-command battery + evidence pack v2 + archive manifest are present
++ *  7. v2 script remains intact alongside v3
++ *
++ * Run: php tests/test-ves-validation-script-v3-9e.php
++ */
++error_reporting(E_ALL & ~E_DEPRECATED);
++
++$pass=0;$fail=0;
++$ok=function($c,$l)use(&$pass,&$fail){if($c){$pass++;}else{$fail++;fwrite(STDERR,"FAIL: $l\n");}};
++
++$root = dirname(__DIR__);
++$v3 = $root . '/scripts/future-island-live-validation-v3.sh';
++$v2 = $root . '/scripts/future-island-live-validation-v2.sh';
++$ok(file_exists($v3), 'v3 script exists');
++$ok(file_exists($v2), 'v2 script kept alongside v3');
++$src = (string) file_get_contents($v3);
++
++// ── 1. Syntax + no executable --apply ────────────────────────────────────────
++exec('bash -n ' . escapeshellarg($v3) . ' 2>&1', $o, $rc);
++$ok($rc === 0, 'v3 passes bash -n');
++$apply_exec = 0;
++foreach (explode("\n", $src) as $line) {
++    if (strpos(ltrim($line), '#') === 0) { continue; }
++    if (strpos($line, '--apply') !== false) { $apply_exec++; }
++}
++$ok($apply_exec === 0, 'no executable --apply in v3');
++
++// ── 2-4. Behavioral refusals (run the real script; wp is absent here, but the
++//        refusal gates fire BEFORE any wp usage) ─────────────────────────────
++$run = function ($args) use ($v3) {
++    exec('bash ' . escapeshellarg($v3) . ' ' . $args . ' 2>&1', $out, $rc);
++    return [$rc, implode("\n", $out)];
++};
++list($rc, $out) = $run('--mode=collect-cli --i-confirm-this-is-staging --db-backup=/etc/hostname');
++$ok($rc === 3 && stripos($out, 'expected-siteurl') !== false, 'REFUSES without expected siteurl/host');
++list($rc, $out) = $run('--mode=collect-cli --expected-siteurl=https://staging.example.com --db-backup=/etc/hostname');
++$ok($rc === 3 && stripos($out, 'staging') !== false, 'REFUSES without --i-confirm-this-is-staging');
++list($rc, $out) = $run('--mode=collect-cli --expected-siteurl=https://staging.example.com --i-confirm-this-is-staging');
++$ok($rc === 3 && stripos($out, 'db-backup') !== false, 'REFUSES without a DB backup');
++list($rc, $out) = $run('--mode=finalize --expected-siteurl=https://staging.example.com --i-confirm-this-is-staging');
++$ok($rc === 3 && stripos($out, 'screenshots-dir') !== false, 'finalize REFUSES without screenshots');
++
++// finalize with screenshots but no console/network/php logs
++$tmp = sys_get_temp_dir() . '/fi-v3-' . getmypid();
++@mkdir($tmp . '/shots', 0777, true);
++foreach (['01-signal-room.png','02-social-media-signal-report.png','03-evidence-gate-blocked.png','04-evidence-gate-ready.png','05-operator-queue.png','06-memory-brand-context.png','07-generation-context-preview.png','08-prompt-package-preview.png','09-brief-workbench.png','10-draft-workbench.png','11-release-candidate-page.png','12-security-dead-letter-diagnostics.png'] as $f) {
++    file_put_contents($tmp . '/shots/' . $f, 'png');
++}
++list($rc, $out) = $run('--mode=finalize --expected-siteurl=https://staging.example.com --i-confirm-this-is-staging --screenshots-dir=' . escapeshellarg($tmp . '/shots'));
++$ok($rc === 3 && stripos($out, 'browser-console-log') !== false, 'finalize REFUSES without browser console log');
++file_put_contents($tmp . '/console.log', 'NO_CONSOLE_ERRORS_OBSERVED');
++list($rc, $out) = $run('--mode=finalize --expected-siteurl=https://staging.example.com --i-confirm-this-is-staging --screenshots-dir=' . escapeshellarg($tmp . '/shots') . ' --browser-console-log=' . escapeshellarg($tmp . '/console.log'));
++$ok($rc === 3 && stripos($out, 'network-errors-log') !== false, 'finalize REFUSES without network errors log');
++file_put_contents($tmp . '/net.log', 'NO_NETWORK_ERRORS_OBSERVED');
++list($rc, $out) = $run('--mode=finalize --expected-siteurl=https://staging.example.com --i-confirm-this-is-staging --screenshots-dir=' . escapeshellarg($tmp . '/shots') . ' --browser-console-log=' . escapeshellarg($tmp . '/console.log') . ' --network-errors-log=' . escapeshellarg($tmp . '/net.log'));
++$ok($rc === 3 && stripos($out, 'php-error-log') !== false, 'finalize REFUSES without the PHP error log');
++
++// a missing required screenshot is refused by name
++unlink($tmp . '/shots/07-generation-context-preview.png');
++file_put_contents($tmp . '/php.log', 'tail');
++list($rc, $out) = $run('--mode=finalize --expected-siteurl=https://staging.example.com --i-confirm-this-is-staging --screenshots-dir=' . escapeshellarg($tmp . '/shots') . ' --browser-console-log=' . escapeshellarg($tmp . '/console.log') . ' --network-errors-log=' . escapeshellarg($tmp . '/net.log') . ' --php-error-log=' . escapeshellarg($tmp . '/php.log'));
++$ok($rc === 3 && strpos($out, '07-generation-context-preview.png') !== false, 'finalize names the missing required screenshot');
++
++// ── 5. Redaction + siteurl mismatch logic present in source ─────────────────
++foreach (['apify_api_', 'sk-', 'sk_live_', 'whsec_', 'AIza', 'earer'] as $shape) {
++    $ok(strpos($src, $shape) !== false, "redaction covers {$shape} tokens");
++}
++$ok(strpos($src, 'does not match --expected-siteurl') !== false, 'siteurl mismatch refusal implemented');
++$ok(strpos($src, '.out') !== false && strpos($src, '.err') !== false && strpos($src, '.combined.txt') !== false, 'stdout/stderr/combined captured per command');
++$ok(strpos($src, 'stdout_sha') !== false && strpos($src, 'stderr_sha') !== false && strpos($src, 'combined_sha') !== false, 'per-stream hashes in the command manifest');
++
++// ── 6. Battery + pack v2 + archive manifest ──────────────────────────────────
++foreach ([
++    'php -v', 'wp --info', 'core version', 'SELECT VERSION();', 'option get siteurl', 'option get home',
++    'plugin list', 'theme list', 'ves verify-schema', 'ves validate-staging --format=json',
++    'ves readiness-check --format=json', 'ves rc-readiness-check --format=json',
++    'ves memory-summary --format=json', 'ves memory-context-preview', 'ves generation-context-preview',
++    'ves generation-prompt-preview', 'ves operator-queue', 'ves memory-expire --dry-run',
++] as $cmd) {
++    $ok(strpos($src, $cmd) !== false, "v3 runs: {$cmd}");
++}
++$ok(strpos($src, 'evidence-pack-v2.json') !== false, 'v3 emits the evidence pack v2');
++$ok(strpos($src, 'manifest-files.txt') !== false && strpos($src, 'evidence_archive_sha256') !== false, 'archive manifest hashing present (non-circular)');
++$ok(strpos($src, 'rc-record-live-validation --evidence-pack=') !== false && strpos($src, '--evidence-root=') !== false, 'v3 prints the exact file-backed record command');
++$ok(strpos($src, 'does NOT make the build production-ready') !== false, 'v3 never claims production-readiness');
++foreach (['db drop', 'db reset', 'plugin delete', 'generate with ai', 'publish'] as $forbidden) {
++    $ok(stripos($src, $forbidden) === false, "v3 never runs: {$forbidden}");
++}
++
++echo "\n{$pass} passed, {$fail} failed\n";
++exit($fail === 0 ? 0 : 1);

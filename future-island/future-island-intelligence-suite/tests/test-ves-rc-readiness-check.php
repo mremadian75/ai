@@ -44,7 +44,7 @@ $ok(strpos($warn_text, 'UNRUN') !== false, 'warnings call out the unrun live val
 // ── 2. Healthy stack stubs ───────────────────────────────────────────────────
 // NOTE: declared inside a conditional block so PHP binds them at RUNTIME —
 // scenario 1 above must run with no services defined.
-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.6'); }
+if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.7'); }
 if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc1'); }
 if (!class_exists('VES_Intelligence_Store')) {
 final class VES_Intelligence_Store {
@@ -121,10 +121,23 @@ final class VES_RC_Evidence_Pack {
         $raw = get_option('ves_rc_live_validation', []);
         if (!is_array($raw) || empty($raw['status'])) { return ['status' => 'unrun', 'recorded_at' => '', 'evidence_pack_hash' => '', 'note' => '']; }
         $hash = strtolower((string) ($raw['evidence_pack_hash'] ?? ''));
-        if ((string) ($raw['source'] ?? '') === 'evidence_pack' && preg_match('/^[a-f0-9]{64}$/', $hash) && $raw['status'] === 'passed') {
-            return ['status' => 'passed', 'recorded_at' => (string) ($raw['recorded_at'] ?? ''), 'evidence_pack_hash' => $hash, 'note' => ''];
+        $is_pack = (string) ($raw['source'] ?? '') === 'evidence_pack' && preg_match('/^[a-f0-9]{64}$/', $hash);
+        if ($is_pack && !empty($raw['files_verified']) && $raw['status'] === 'passed') {
+            return ['status' => 'passed', 'files_verified' => true, 'recorded_at' => (string) ($raw['recorded_at'] ?? ''), 'evidence_pack_hash' => $hash, 'note' => ''];
         }
+        if ($is_pack) { return ['status' => 'json_only_unverified', 'recorded_at' => (string) ($raw['recorded_at'] ?? ''), 'evidence_pack_hash' => '', 'note' => '']; }
         return ['status' => 'unverified_manual', 'recorded_at' => (string) ($raw['recorded_at'] ?? ''), 'evidence_pack_hash' => '', 'note' => ''];
+    }
+}
+// Phase 9D egress stubs (probe-compatible).
+final class VES_External_Egress_Inventory {
+    public static $unknown = 0;
+    public static function inventory() { return []; }
+    public static function summary() { return ['available' => true, 'total' => 23, 'by_classification' => [], 'unknown_count' => self::$unknown, 'unguarded_run_start_count' => 0, 'single_dispatch_gate' => self::$unknown === 0]; }
+    public static function for_provider($p) {
+        if ($p === 'openai') { return [['provider'=>'openai','class'=>'VES_OpenAI_Client','method'=>'request','classification'=>'ai_provider_gated','guarded'=>true,'notes'=>[]]]; }
+        if ($p === 'stripe') { return [['provider'=>'stripe','class'=>'VES_Stripe_Billing','method'=>'api_request','classification'=>'billing_provider_explicit','guarded'=>true,'notes'=>[]]]; }
+        return [];
     }
 }
 } // end runtime-bound stub block
@@ -141,7 +154,7 @@ $r = VES_RC_Readiness_Service::report();
 $ok(($r['live_validation']['status'] ?? '') === 'unverified_manual', 'manually-written option WITHOUT evidence pack reads unverified_manual, never passed');
 $ok(($r['status'] ?? '') === 'ready_with_warnings', 'manual option keeps the report at ready_with_warnings');
 
-$GLOBALS['__opts']['ves_rc_live_validation'] = ['status' => 'passed', 'source' => 'evidence_pack', 'evidence_pack_hash' => str_repeat('ab', 32), 'recorded_at' => '2026-06-12 09:00:00'];
+$GLOBALS['__opts']['ves_rc_live_validation'] = ['status' => 'passed', 'source' => 'evidence_pack', 'evidence_pack_hash' => str_repeat('ab', 32), 'files_verified' => true, 'recorded_at' => '2026-06-12 09:00:00'];
 $r = VES_RC_Readiness_Service::report();
 $ok(($r['live_validation']['status'] ?? '') === 'passed', 'evidence-pack-backed validation is surfaced as passed');
 $ok(($r['status'] ?? '') === 'ready_for_staging', 'fully healthy + evidence-backed validation reaches ready_for_staging');

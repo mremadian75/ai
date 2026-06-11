@@ -18,7 +18,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
 };
 
 // Version
-$assert(strpos($main, 'Version: 1.2.6') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.6'") !== false, 'Version is 1.1.0');
+$assert(strpos($main, 'Version: 1.2.7') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.7'") !== false, 'Version is 1.1.0');
 
 // 3A: jsTypeError branch no longer emits F5 instruction
 $assert(strpos($js, 'jsTypeError') !== false, '3A: jsTypeError branch still exists');

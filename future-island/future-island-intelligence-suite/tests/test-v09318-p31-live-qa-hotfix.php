@@ -43,8 +43,8 @@ $recon = file_get_contents($root . '/includes/class-ves-usage-reconciliation-ser
 $js = file_get_contents($root . '/assets/js/ves-frontend.js');
 $openai = file_get_contents($root . '/includes/class-ves-openai-client.php');
 
-$assert(strpos($main, 'Version: 1.2.6') !== false, 'plugin header bumped to p3.1 live QA hotfix');
-$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.6'") !== false, 'VES_PLUGIN_VERSION bumped to p3.1 live QA hotfix');
+$assert(strpos($main, 'Version: 1.2.7') !== false, 'plugin header bumped to p3.1 live QA hotfix');
+$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.7'") !== false, 'VES_PLUGIN_VERSION bumped to p3.1 live QA hotfix');
 // [v1.1.0 archived] removed obsolete 'README version bumped' assertion: no root README.md exists in the
 // unified package; the version contract is the plugin header / VES_PLUGIN_VERSION, already asserted above.
 

@@ -350,19 +350,25 @@ final class FIDTF_Generic_Apify_Live_Adapter {
         return $this->normalize_refresh_response($response, $run_id, $limit, $context);
     }
 
+    /**
+     * Phase 9D.2 — legacy direct run-start is DISABLED. A paid Apify dispatch
+     * may only happen through the core gate (FIDTF_Core_Apify_Client_Adapter →
+     * VES_Apify_Client::request with fail-closed allowlist + hard charge
+     * ceiling). When the core client is unavailable this FAILS CLOSED with a
+     * scrubbed security event — it never falls back to an unguarded
+     * wp_remote_post. Read paths (refresh/datasets) below remain read-only.
+     */
     private function start_direct_apify_run(array $context, array $actor_input) {
-        $token = FIDTF_Settings::tiktok_apify_token();
-        if ($token === '' || !function_exists('wp_remote_post')) {
-            return new WP_Error('source_provider_unavailable', $this->label() . ' provider is not configured.', ['status' => 503, 'retryable' => false]);
+        if (class_exists('FIDTF_Core_Apify_Client_Adapter') && FIDTF_Core_Apify_Client_Adapter::available()) {
+            return $this->start_with_core_client($context, $actor_input);
         }
-        $url = self::API_BASE . '/acts/' . $this->actor_path((string) ($context['actor_id'] ?? '')) . '/runs?waitForFinish=0&timeout=0';
-        $response = wp_remote_post($url, [
-            'headers' => ['Authorization' => 'Bearer ' . $token, 'Content-Type' => 'application/json'],
-            'body' => wp_json_encode($actor_input),
-            'timeout' => 20,
-        ]);
-        if (is_wp_error($response)) { return $this->map_http_error($response); }
-        return $this->normalize_direct_http_response($response, $context, $actor_input);
+        if (class_exists('VES_Security_Event_Log')) {
+            VES_Security_Event_Log::record('provider_dispatch_blocked', 'DTF generic Apify dispatch blocked: core provider client unavailable (fail-closed, legacy direct path disabled).', [
+                'module' => 'deep_trend_finder',
+                'source_key' => sanitize_key((string) ($context['source_key'] ?? $this->source_key)),
+            ]);
+        }
+        return new WP_Error('source_dispatch_blocked_fail_closed', $this->label() . ' dispatch is blocked: the guarded provider client is unavailable and direct dispatch is disabled.', ['status' => 503, 'retryable' => false, 'request_attempted' => false]);
     }
 
     private function refresh_direct_apify_run(array $context, string $provider_run_id) {

@@ -15,7 +15,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
 };
 
-$assert(strpos($main, 'Version: 1.2.6') !== false, 'Version is 1.1.0');
+$assert(strpos($main, 'Version: 1.2.7') !== false, 'Version is 1.1.0');
 
 // Helper declared
 $assert(strpos($ana, 'function ves_detect_competitor_authorship(') !== false, 'ves_detect_competitor_authorship helper declared');

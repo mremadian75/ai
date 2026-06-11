@@ -378,6 +378,13 @@ final class VES_Brand_Context_Service {
             'is_pinned' => $pin,
             'updated_at' => function_exists('current_time') ? current_time('mysql') : gmdate('Y-m-d H:i:s'),
         ], ['id' => $id]);
+        // Phase 9D/9E low fix — never log success before the DB proves it:
+        // status_changed ONLY after a successful update; failures get their own
+        // honest event, the ledger is skipped, and the caller receives false.
+        if ($ok === false) {
+            self::log('status_change_failed', ['memory_id' => $id, 'status' => $status, 'actor' => (int) $actor_id]);
+            return false;
+        }
         self::log('status_changed', ['memory_id' => $id, 'status' => $status, 'actor' => (int) $actor_id]);
         // Phase 9B.1 — every successful memory review action appends one immutable
         // ledger decision (duplicate submissions collapse on the idempotency key).

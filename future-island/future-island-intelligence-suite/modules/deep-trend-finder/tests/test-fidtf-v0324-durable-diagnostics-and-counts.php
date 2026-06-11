@@ -22,7 +22,10 @@ ok(strpos($source_job, 'source_job_columns') !== false, 'source-job service intr
 ok(strpos($source_job, "provider_dataset_total_rows") !== false, 'job updates persist provider total count');
 ok(strpos($source_job, "flattened_raw_items") !== false, 'job updates persist flattened item count');
 
-ok(strpos($direct_adapter, 'normalize_http_run_response($response, $context, $actor_input)') !== false, 'direct Apify start preserves context in run response normalization');
+// Phase 9D.2: the legacy direct run-start is gone — the adapter routes through the
+// guarded core client or FAILS CLOSED (no direct wp_remote_post run-start remains).
+ok(strpos($direct_adapter, 'tiktok_dispatch_blocked_fail_closed') !== false && strpos($direct_adapter, 'FIDTF_Core_Apify_Client_Adapter') !== false, 'direct Apify start is fail-closed and routed through the core client gate (9D.2)');
+ok(!preg_match('/wp_remote_post\\s*\\(/', $direct_adapter), 'TikTok adapter contains no direct wp_remote_post run-start call');
 ok(strpos($direct_adapter, 'discovery_actor_input') !== false, 'direct Apify diagnostics preserve sanitized actor input after completion');
 ok(strpos($direct_adapter, '$this->limit_from_actor_input($actor_input)') !== false, 'direct Apify fetch uses requested actor limit, not global default');
 

@@ -48,8 +48,8 @@ $assert(strpos($filter_all_block, "'info'") !== false || strpos($filter_all_bloc
 
 // 6. Version check.
 $main = file_get_contents($root . '/future-island-intelligence-suite.php');
-$assert(strpos($main, 'Version: 1.2.6') !== false, 'Plugin header must declare Version: 1.2.6');
-$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.6'") !== false, 'VES_PLUGIN_VERSION must be 1.1.0');
+$assert(strpos($main, 'Version: 1.2.7') !== false, 'Plugin header must declare Version: 1.2.7');
+$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.7'") !== false, 'VES_PLUGIN_VERSION must be 1.1.0');
 
 if ($fail === 0) {
     echo "OK v0.9.31.6 extended error categories — $pass assertions passed\n";

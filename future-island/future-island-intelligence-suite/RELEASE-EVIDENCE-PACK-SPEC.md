@@ -1,4 +1,8 @@
-# Release Evidence Pack — Specification (schema 1.0)
+# Release Evidence Pack — Specification (schema 1.0) — SUPERSEDED
+
+> **Phase 9E:** schema 1.0 is superseded by **schema 2.0** — see
+> `RELEASE-EVIDENCE-PACK-V2-SPEC.md`. v1 packs can no longer be recorded as
+> passed; this document remains for historical reference only.
 
 Phase 9B.3. A live staging validation may only be recorded as **passed** through
 a structured, hash-verified evidence pack. A bare

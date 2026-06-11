@@ -13,7 +13,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
 };
 
 // Version
-$assert(strpos($main, 'Version: 1.2.6') !== false, 'Version is 1.1.0');
+$assert(strpos($main, 'Version: 1.2.7') !== false, 'Version is 1.1.0');
 
 // is_google_search_url helper exists
 $assert(strpos($php, 'private static function is_google_search_url(') !== false, 'is_google_search_url() method declared');

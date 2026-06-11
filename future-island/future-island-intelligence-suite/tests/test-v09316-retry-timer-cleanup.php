@@ -17,7 +17,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
 };
 
-$assert(strpos($main, 'Version: 1.2.6') !== false, 'Version is 1.1.0');
+$assert(strpos($main, 'Version: 1.2.7') !== false, 'Version is 1.1.0');
 
 // Find the body of vesClearAutoRetryTimer.
 $start = strpos($js, 'const vesClearAutoRetryTimer = ');

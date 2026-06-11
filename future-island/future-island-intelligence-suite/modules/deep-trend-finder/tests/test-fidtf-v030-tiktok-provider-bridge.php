@@ -117,10 +117,11 @@ $fidtf_options[FIDTF_Settings::OPTION] = $settings;
 $fidtf_filter_handlers = [];
 $fidtf_last_http_request = [];
 $direct = $provider->dispatch($source_plan, $request);
-ok(!is_wp_error($direct) && ($direct['provider_run_id'] ?? '') === 'apify-run-1', 'direct Apify bridge starts async actor run');
-ok(strpos($fidtf_last_http_request['url'] ?? '', '/acts/clockworks~tiktok-scraper/runs') !== false, 'direct Apify bridge uses async actor runs endpoint');
-ok(($fidtf_last_http_request['args']['headers']['Authorization'] ?? '') === 'Bearer apify-secret-test-token', 'direct Apify bridge sends token only in server-side Authorization header');
-ok(strpos(wp_json_encode($fidtf_last_http_request['args']['body'] ?? ''), 'apify-secret-test-token') === false, 'direct Apify bridge never includes token in request body');
+// Phase 9D.2: WITHOUT the guarded core client the legacy apify_bridge mode is
+// FAIL-CLOSED — blocked with a safe error, ZERO direct HTTP, token never leaves.
+ok(is_wp_error($direct) && $direct->get_error_code() === 'tiktok_dispatch_blocked_fail_closed', 'direct Apify bridge is fail-closed without the core client (9D.2)');
+ok(($fidtf_last_http_request['url'] ?? '') === '', 'fail-closed bridge made no direct HTTP call');
+ok(strpos(wp_json_encode($fidtf_last_http_request), 'apify-secret-test-token') === false, 'token never left the process on the blocked path');
 
 $frontend = file_get_contents(dirname(__DIR__) . '/assets/js/fidtf-frontend.js');
 ok(strpos($frontend, 'apify-secret-test-token') === false && strpos($frontend, 'Authorization') === false, 'frontend bundle contains no provider token or Authorization header');

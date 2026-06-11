@@ -11,7 +11,7 @@ $checks = [];
 $add = function($name, $ok) use (&$checks) { $checks[] = [$name, (bool) $ok]; };
 
 // 1. Version matches
-$add('version is 1.2.6', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.2.6') !== false);
+$add('version is 1.2.7', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.2.7') !== false);
 
 // 2. provider_actor_rental_required gets its own branch before the generic config array
 $rental_pos  = strpos($ajax, 'provider_actor_rental_required');

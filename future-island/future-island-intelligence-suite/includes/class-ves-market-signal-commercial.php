@@ -611,39 +611,45 @@ final class VES_Market_Signal_Commercial {
     }
 
     private static function run_apify_sync($prompt, $settings, $user_id) {
-        $token = self::get_apify_token($settings);
-        if ($token === '') { return new WP_Error('ves_ms_apify_missing_token', __('Apify API token is not configured.', 'ves'), ['status' => 500]); }
+        // Phase 9D.2 — NO direct wp_remote_post to Apify here anymore. Every
+        // MarketSignal run-start goes through the single core dispatch gate
+        // (fail-closed allowlist + hard maxTotalChargeUsd + header-only token +
+        // security events). If the core client is unavailable, dispatch is
+        // BLOCKED — never a silent direct fallback.
+        if (!class_exists('VES_Apify_Client') || !method_exists('VES_Apify_Client', 'request')) {
+            if (class_exists('VES_Security_Event_Log')) {
+                VES_Security_Event_Log::record('provider_dispatch_blocked', 'MarketSignal Apify dispatch blocked: core provider client unavailable (fail-closed).', ['module' => 'market_signal']);
+            }
+            return new WP_Error('ves_ms_apify_client_unavailable', __('The provider dispatch service is unavailable; MarketSignal cannot start a run.', 'ves'), ['status' => 503]);
+        }
         $task_id = self::clean_actor_id((string) ($settings['apify_task_id'] ?? ''));
         $actor_id = self::clean_actor_id((string) ($settings['apify_actor_id'] ?? ''));
         if ($task_id === '' && $actor_id === '') { return new WP_Error('ves_ms_apify_missing_actor', __('Apify Actor ID or Task ID is required.', 'ves'), ['status' => 500]); }
         $apify_id = str_replace('/', '~', $task_id !== '' ? $task_id : $actor_id);
         $base = $task_id !== '' ? 'https://api.apify.com/v2/actor-tasks/' : 'https://api.apify.com/v2/acts/';
+        $ceiling = function_exists('ves_hard_max_charge_usd') ? (float) ves_hard_max_charge_usd()
+            : (class_exists('VES_Config') && method_exists('VES_Config', 'hard_max_charge_usd') ? (float) VES_Config::hard_max_charge_usd() : 3.0);
         $url = add_query_arg([
             'format' => 'json',
             'clean' => 'true',
             'maxItems' => max(1, min(100, (int) ($settings['apify_max_items'] ?? 20))),
             'timeout' => max(20, min(240, (int) ($settings['apify_timeout_seconds'] ?? 60))),
+            'maxTotalChargeUsd' => max(0.1, $ceiling),
         ], $base . rawurlencode($apify_id) . '/run-sync-get-dataset-items');
         $input = self::build_apify_input($prompt, $settings);
-        $response = wp_remote_post($url, [
-            'timeout' => max(30, min(260, (int) ($settings['apify_timeout_seconds'] ?? 60) + 20)),
-            'headers' => [
-                'Authorization' => 'Bearer ' . $token,
-                'Content-Type' => 'application/json; charset=utf-8',
-                'Accept' => 'application/json',
-                'User-Agent' => 'MarketSignal-WordPress-ChatGPT-Apify/' . (defined('VES_PLUGIN_VERSION') ? VES_PLUGIN_VERSION : '1.0'),
-            ],
-            'body' => wp_json_encode($input, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-        ]);
         $ms_actor = $task_id !== '' ? $task_id : $actor_id;
-        if (is_wp_error($response)) { self::record_apify_scrape($user_id, $ms_actor, 0, 'failed', 'transport_error'); return $response; }
-        $code = (int) wp_remote_retrieve_response_code($response);
-        $raw = (string) wp_remote_retrieve_body($response);
+        $response = VES_Apify_Client::request('POST', $url, $input);
+        if (is_wp_error($response)) {
+            $reason = sanitize_key((string) $response->get_error_code());
+            self::record_apify_scrape($user_id, $ms_actor, 0, 'failed', $reason !== '' ? $reason : 'transport_error');
+            return $response;
+        }
+        $code = (int) ($response['code'] ?? 0);
         if ($code < 200 || $code >= 300) {
             self::record_apify_scrape($user_id, $ms_actor, 0, 'failed', 'http_' . $code);
-            return new WP_Error('ves_ms_apify_http_error', 'Apify returned HTTP ' . $code . '.', ['status' => 502, 'body' => self::truncate($raw, 600)]);
+            return new WP_Error('ves_ms_apify_http_error', 'Apify returned HTTP ' . $code . '.', ['status' => 502]);
         }
-        $items = json_decode($raw, true);
+        $items = $response['body'] ?? null;
         if (!is_array($items)) {
             self::record_apify_scrape($user_id, $ms_actor, 0, 'failed', 'invalid_json');
             return new WP_Error('ves_ms_apify_bad_json', __('Apify did not return valid JSON dataset items.', 'ves'), ['status' => 502]);

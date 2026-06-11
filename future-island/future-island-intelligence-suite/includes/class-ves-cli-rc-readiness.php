@@ -109,10 +109,13 @@ final class VES_CLI_RC_Readiness {
 
     /**
      * wp ves rc-record-live-validation --evidence-pack=<file.json>
-     * Phase 9B.3 — the ONLY trusted way to record a live validation pass. The
-     * pack must verify (schema + deterministic hash + required command outputs
-     * with exit code 0 + validation_status=passed) and no readiness blockers may
-     * exist. Never produces a production-ready state.
+     *   ( --evidence-root=<folder> | --evidence-archive=<file.tar.gz> )
+     * Phase 9E.2 — the ONLY trusted way to record a live validation pass. The
+     * pack must verify (schema 2.0 + deterministic hash + full required command
+     * battery + browser artifacts) AND every referenced artifact file must exist
+     * with a matching SHA-256 in the evidence root or extracted archive. A pack
+     * JSON alone is json_only_unverified and is refused. Never produces a
+     * production-ready state.
      */
     public static function record_live_validation($args, $assoc) {
         if (function_exists('current_user_can') && function_exists('is_user_logged_in') && is_user_logged_in() && !current_user_can('manage_options')) {
@@ -126,16 +129,28 @@ final class VES_CLI_RC_Readiness {
             \WP_CLI::error('--evidence-pack must point to a readable JSON file.');
             return;
         }
+        $root = isset($assoc['evidence-root']) ? (string) $assoc['evidence-root'] : '';
+        $archive = isset($assoc['evidence-archive']) ? (string) $assoc['evidence-archive'] : '';
+        if ($root === '' && $archive === '') {
+            if (class_exists('VES_Security_Event_Log')) { VES_Security_Event_Log::record('invalid_cli_args', 'rc-record-live-validation called without --evidence-root/--evidence-archive (json-only refused).'); }
+            \WP_CLI::error('Refused: provide --evidence-root=<folder> or --evidence-archive=<file.tar.gz>. A pack JSON alone is json_only_unverified and cannot be recorded as passed.');
+            return;
+        }
         $pack = json_decode((string) file_get_contents($file), true);
         if (!is_array($pack)) { \WP_CLI::error('Evidence pack file is not valid JSON.'); return; }
-        $result = VES_RC_Evidence_Pack::record_live_validation($pack);
+        $opts = [];
+        if ($root !== '') { $opts['evidence_root'] = $root; }
+        if ($archive !== '') { $opts['archive_path'] = $archive; }
+        $result = VES_RC_Evidence_Pack::record_live_validation($pack, $opts);
         if (function_exists('is_wp_error') && is_wp_error($result)) {
             \WP_CLI::error('Refused: ' . $result->get_error_message());
             return;
         }
-        \WP_CLI::log('Recorded live validation (evidence-backed).');
-        \WP_CLI::log('evidence_pack_hash: ' . (string) $result['evidence_pack_hash']);
-        \WP_CLI::log('build_sha256:       ' . (string) $result['build_sha256']);
+        \WP_CLI::log('Recorded live validation (evidence-backed, file-verified via ' . (string) $result['verified_via'] . ').');
+        \WP_CLI::log('schema_version:      ' . (string) $result['schema_version']);
+        \WP_CLI::log('evidence_pack_hash:  ' . (string) $result['evidence_pack_hash']);
+        \WP_CLI::log('archive_manifest:    ' . (string) $result['evidence_archive_sha256']);
+        \WP_CLI::log('build_sha256:        ' . (string) $result['build_sha256']);
         \WP_CLI::success('Live validation recorded. This does NOT make the build production-ready.');
     }
 }

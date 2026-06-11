@@ -15,7 +15,7 @@
  */
 error_reporting(E_ALL & ~E_DEPRECATED);
 if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.6'); }
+if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.7'); }
 if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc2'); }
 
 function get_option($k, $d = false) { return $GLOBALS['__opts'][$k] ?? $d; }
@@ -73,10 +73,22 @@ final class VES_RC_Evidence_Pack {
         $raw = get_option('ves_rc_live_validation', []);
         if (!is_array($raw) || empty($raw['status'])) { return ['status' => 'unrun', 'recorded_at' => '', 'evidence_pack_hash' => '', 'note' => '']; }
         $hash = strtolower((string) ($raw['evidence_pack_hash'] ?? ''));
-        if ((string) ($raw['source'] ?? '') === 'evidence_pack' && preg_match('/^[a-f0-9]{64}$/', $hash) && $raw['status'] === 'passed') {
-            return ['status' => 'passed', 'recorded_at' => (string) ($raw['recorded_at'] ?? ''), 'evidence_pack_hash' => $hash, 'note' => ''];
+        $is_pack = (string) ($raw['source'] ?? '') === 'evidence_pack' && preg_match('/^[a-f0-9]{64}$/', $hash);
+        if ($is_pack && !empty($raw['files_verified']) && $raw['status'] === 'passed') {
+            return ['status' => 'passed', 'files_verified' => true, 'recorded_at' => (string) ($raw['recorded_at'] ?? ''), 'evidence_pack_hash' => $hash, 'note' => ''];
         }
+        if ($is_pack) { return ['status' => 'json_only_unverified', 'recorded_at' => (string) ($raw['recorded_at'] ?? ''), 'evidence_pack_hash' => '', 'note' => '']; }
         return ['status' => 'unverified_manual', 'recorded_at' => (string) ($raw['recorded_at'] ?? ''), 'evidence_pack_hash' => '', 'note' => ''];
+    }
+}
+final class VES_External_Egress_Inventory {
+    public static $unknown = 0;
+    public static function inventory() { return []; }
+    public static function summary() { return ['available' => true, 'total' => 23, 'by_classification' => [], 'unknown_count' => self::$unknown, 'unguarded_run_start_count' => 0, 'single_dispatch_gate' => self::$unknown === 0]; }
+    public static function for_provider($p) {
+        if ($p === 'openai') { return [['provider'=>'openai','class'=>'VES_OpenAI_Client','method'=>'request','classification'=>'ai_provider_gated','guarded'=>true,'notes'=>[]]]; }
+        if ($p === 'stripe') { return [['provider'=>'stripe','class'=>'VES_Stripe_Billing','method'=>'api_request','classification'=>'billing_provider_explicit','guarded'=>true,'notes'=>[]]]; }
+        return [];
     }
 }
 
@@ -97,8 +109,14 @@ $r = VES_RC_Readiness_Service::report(['strict' => true]);
 $ok(($r['status'] ?? '') === 'blocked', 'strict with manual-only option is BLOCKED');
 $ok(strpos(implode(' ', $r['blockers']), 'unverified_manual') !== false, 'strict blocker names unverified_manual');
 
-// ── 3. Valid evidence but a hard rail missing => blocked ─────────────────────
+// ── 2b. Phase 9E: JSON-only pack state (no files_verified) => blocked ────────
 $GLOBALS['__opts']['ves_rc_live_validation'] = ['status' => 'passed', 'source' => 'evidence_pack', 'evidence_pack_hash' => str_repeat('cd', 32), 'recorded_at' => '2026-06-14'];
+$r = VES_RC_Readiness_Service::report(['strict' => true]);
+$ok(($r['status'] ?? '') === 'blocked', 'strict with a JSON-only (file-unverified) pack is BLOCKED');
+$ok(strpos(implode(' ', $r['blockers']), 'json_only_unverified') !== false, 'strict blocker names json_only_unverified');
+
+// ── 3. Valid evidence but a hard rail missing => blocked ─────────────────────
+$GLOBALS['__opts']['ves_rc_live_validation'] = ['status' => 'passed', 'source' => 'evidence_pack', 'evidence_pack_hash' => str_repeat('cd', 32), 'files_verified' => true, 'recorded_at' => '2026-06-14'];
 VES_Workspace_Guard::$active = false;
 $r = VES_RC_Readiness_Service::report(['strict' => true]);
 $ok(($r['status'] ?? '') === 'blocked', 'strict with broken workspace guard is BLOCKED despite valid evidence');

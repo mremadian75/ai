@@ -1,39 +1,55 @@
-# Future Island — Live Browser Validation Checklist v2 (Phase 9C.2)
+# Future Island — Live Browser Validation Checklist v3 (Phase 9E.4)
 
 Operator: ____________ Date: ____________ Staging URL: ____________
-Evidence folder: `fi-evidence-<timestamp>/screenshots/`
+Evidence folder: `fi-evidence-<timestamp>/`
 
-Run `scripts/future-island-browser-smoke.sh --base-url=…` first for URL
-reachability, then complete every item below **manually with screenshots**.
-The smoke script cannot replace this checklist. If any item fails, the
-validation fails — record it honestly.
+**This is human visual evidence, not automated proof.** The smoke script only
+checks URLs respond; every item below needs a human eye and a saved artifact.
+Evidence Pack v2 cannot compute `passed` without these files — exact names
+matter, they are hashed into the pack. If any item fails, the validation fails;
+record it honestly.
 
-## Required screenshots
+## Required screenshots → `screenshots/`
 
-1. - [ ] **Signal Room** — workflow spine, operator queue, readiness strip, honest empty states, no fake charts
-2. - [ ] **Social Media / Signal Report** — Informe de señales, Evidence Snapshot, Observed / Inferred / Cannot conclude
-3. - [ ] **Evidence Gate** — BOTH states: an insight without evidence blocked, and one with evidence ready
-4. - [ ] **Operator Queue** — counts match `wp ves operator-queue --workspace=1 --format=json`
-5. - [ ] **Memory / Brand Context** — trusted vs candidate separated; rejected/archived/expired diagnostics; memory-is-not-evidence notice
-6. - [ ] **Generation Context Preview** — candidate/rejected/archived/expired excluded
-7. - [ ] **Prompt Package Preview** — blocked package hides full context; `provider_execution_allowed: false`
-8. - [ ] **Brief Workbench** — evidence binder, disabled/safe review controls, NO generate button
-9. - [ ] **Draft Workbench** — output slots, disabled/safe review controls, NO publish button
-10. - [ ] **Release Candidate page** — rails table (provider fail-closed, charge ceiling, workspace guard, review ledger, settlement, trend idempotency, dead-letter, security log), live-validation banner state, no production-ready claim
-11. - [ ] **Security / dead-letter diagnostics** — the Audit & rails section on the RC page (or honest "unavailable" state)
-12. - [ ] **Any error state encountered** — with its support code
+| File (exact name) | Must show |
+| --- | --- |
+| `01-signal-room.png` | workflow spine, operator queue, readiness strip, honest empty states |
+| `02-social-media-signal-report.png` | Informe de señales, Evidence Snapshot, Observed/Inferred/Cannot-conclude |
+| `03-evidence-gate-blocked.png` | an insight WITHOUT evidence blocked from approval |
+| `04-evidence-gate-ready.png` | an insight WITH evidence in a ready/approvable state |
+| `05-operator-queue.png` | queue counts matching `wp ves operator-queue --workspace=1 --format=json` |
+| `06-memory-brand-context.png` | trusted vs candidate separation; memory-is-not-evidence notice |
+| `07-generation-context-preview.png` | candidate/rejected/archived/expired excluded |
+| `08-prompt-package-preview.png` | blocked package hides context; `provider_execution_allowed: false` |
+| `09-brief-workbench.png` | evidence binder; disabled/safe review controls; NO generate button |
+| `10-draft-workbench.png` | output slots; disabled/safe review controls; NO publish button |
+| `11-release-candidate-page.png` | rails table + evidence-state banner; no production-ready claim |
+| `12-security-dead-letter-diagnostics.png` | Audit & rails section (decisions, dead letters, security events) |
 
-## Required exports
+## Required logs → `logs/`
 
-- [ ] Browser console log for each page (saved as `browser-console-<page>.txt`)
-- [ ] Failed network requests export (HAR or list) — none unexplained
-- [ ] PHP error log tail (~300 lines, redacted) — captured by the validation script
-- [ ] Explicit note: did ANY **Generate / Publish / Auto-approve** button appear anywhere? (must be NO)
+| File (exact name) | Rule |
+| --- | --- |
+| `browser-console.log` | console export from each page; if clean, file must contain `NO_CONSOLE_ERRORS_OBSERVED` |
+| `network-errors.log` | failed requests export; if clean, file must contain `NO_NETWORK_ERRORS_OBSERVED` |
+| `php-error-log-tail.log` | last ~300 lines, redacted (the v3 script captures this) |
 
-## Sign-off
+The files must EXIST even when empty of findings — absence blocks `passed`.
 
-- [ ] All screenshots saved into the evidence folder before the pack hash is finalized
-- [ ] `wp ves rc-record-live-validation --evidence-pack=…` run ONLY if everything above passed
-- [ ] `wp ves rc-readiness-check --strict --format=json` output saved
+## Required notes
+
+- [ ] Did ANY **Generate / Publish / Auto-approve** button appear anywhere? (must be NO — note where if yes)
+- [ ] Spanish/English copy consistent on the pilot surfaces
+- [ ] No fake/placeholder metrics observed
+
+## Flow
+
+1. `bash scripts/future-island-browser-smoke.sh --base-url=…` (reachability only).
+2. Walk every surface, capture the 12 screenshots with the exact names above.
+3. Export console + network logs (or write the explicit NO_*_OBSERVED markers).
+4. Finalize: `bash scripts/future-island-live-validation-v3.sh --mode=finalize --evidence-dir=… --screenshots-dir=… --browser-console-log=… --network-errors-log=… --php-error-log=… --expected-siteurl=… --i-confirm-this-is-staging`
+5. Record: `wp ves rc-record-live-validation --evidence-pack=…/evidence-pack-v2.json --evidence-root=…`
+6. Gate: `wp ves rc-readiness-check --strict --format=json`
 
 Result: ☐ PASSED ☐ FAILED — Signature: ____________
+(A pass here still does NOT make the build production-ready.)

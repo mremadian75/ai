@@ -50,6 +50,7 @@ final class VES_RC_Readiness_Service {
         'VES_Security_Event_Log'                  => 'Security event log',
         'VES_Job_Rails'                           => 'Queue retry/dead-letter rails',
         'VES_RC_Evidence_Pack'                    => 'Release evidence pack',
+        'VES_External_Egress_Inventory'           => 'External egress inventory',
     ];
 
     /** WP-CLI commands an operator needs for the staging checklist. */
@@ -77,6 +78,10 @@ final class VES_RC_Readiness_Service {
         $checks[] = self::check_operator_surfaces();
         $checks[] = self::check_usage_ledger();
         $checks[] = self::check_provider_safety();
+        $checks[] = self::check_external_egress();
+        $checks[] = self::check_apify_single_gate();
+        $checks[] = self::check_ai_egress();
+        $checks[] = self::check_billing_egress();
         $checks[] = self::check_workspace_guard();
         $checks[] = self::check_review_ledger();
         $checks[] = self::check_settlement();
@@ -104,7 +109,7 @@ final class VES_RC_Readiness_Service {
                 $blockers[] = 'STRICT: live validation has not passed with a verified evidence pack (state: ' . (string) ($live['status'] ?? 'unrun') . ').';
             }
             foreach ($checks as $c) {
-                if (in_array($c['id'], ['provider_safety', 'workspace_guard', 'review_ledger', 'lifecycle_matrix', 'trend_idempotency', 'job_rails'], true) && ($c['status'] ?? '') !== 'ok') {
+                if (in_array($c['id'], ['provider_safety', 'external_egress', 'apify_single_gate', 'ai_egress', 'workspace_guard', 'review_ledger', 'lifecycle_matrix', 'trend_idempotency', 'job_rails'], true) && ($c['status'] ?? '') !== 'ok') {
                     $blockers[] = 'STRICT: hard rail not fully active: ' . (string) $c['label'] . ' — ' . (string) $c['detail'];
                 }
             }
@@ -284,6 +289,70 @@ final class VES_RC_Readiness_Service {
         return self::row('provider_safety', 'Provider safety', 'ok', 'Fail-closed allowlist + hard charge ceiling active; token via Authorization header only.');
     }
 
+    /** Phase 9D.5 — every external egress path is classified; unknown = blocked. */
+    private static function check_external_egress() {
+        if (!class_exists('VES_External_Egress_Inventory') || !method_exists('VES_External_Egress_Inventory', 'summary')) {
+            return self::row('external_egress', 'External egress inventory', 'block', 'VES_External_Egress_Inventory unavailable — external egress cannot be evaluated.');
+        }
+        $sum = ['unknown_count' => 1, 'total' => 0];
+        try { $sum = VES_External_Egress_Inventory::summary(); } catch (\Throwable $e) { /* pessimistic */ }
+        if ((int) ($sum['unknown_count'] ?? 1) > 0) {
+            return self::row('external_egress', 'External egress inventory', 'block', (int) $sum['unknown_count'] . ' UNCLASSIFIED external egress path(s) — classify or block them.');
+        }
+        return self::row('external_egress', 'External egress inventory', 'ok', (int) ($sum['total'] ?? 0) . ' external paths classified; zero unknown egress.');
+    }
+
+    /** Phase 9D.5 — no paid Apify run-start outside the single core gate. */
+    private static function check_apify_single_gate() {
+        if (!class_exists('VES_External_Egress_Inventory')) {
+            return self::row('apify_single_gate', 'Apify single dispatch gate', 'block', 'Egress inventory unavailable — dispatch routing cannot be evaluated.');
+        }
+        $sum = ['single_dispatch_gate' => false];
+        try { $sum = VES_External_Egress_Inventory::summary(); } catch (\Throwable $e) { /* pessimistic */ }
+        $client_gate = class_exists('VES_Apify_Client') && defined('VES_Apify_Client::MIN_CHARGE_CEILING_USD');
+        if (empty($sum['single_dispatch_gate']) || !$client_gate) {
+            return self::row('apify_single_gate', 'Apify single dispatch gate', 'block', 'A paid run-start path exists outside the guarded core client, or the core gate is missing.');
+        }
+        return self::row('apify_single_gate', 'Apify single dispatch gate', 'ok', 'All paid run-starts route through VES_Apify_Client::request(); legacy direct paths fail closed.');
+    }
+
+    /** Phase 9D.5 — AI egress classified; generation execution stays OFF. */
+    private static function check_ai_egress() {
+        if (!class_exists('VES_External_Egress_Inventory')) {
+            return self::row('ai_egress', 'AI provider egress', 'block', 'Egress inventory unavailable — AI egress cannot be evaluated.');
+        }
+        $rows = [];
+        try { $rows = VES_External_Egress_Inventory::for_provider('openai'); } catch (\Throwable $e) { $rows = []; }
+        if (count($rows) === 0) {
+            return self::row('ai_egress', 'AI provider egress', 'block', 'No OpenAI egress classification found — inventory is incomplete.');
+        }
+        foreach ($rows as $r) {
+            if (empty($r['guarded']) || ($r['classification'] ?? '') === 'unknown_external_egress_blocker') {
+                return self::row('ai_egress', 'AI provider egress', 'block', 'Unguarded/unclassified AI egress: ' . (string) ($r['class'] ?? '?'));
+            }
+        }
+        $exec_on = function_exists('get_option') && (bool) get_option('ves_generation_execution_enabled', false);
+        if ($exec_on) {
+            return self::row('ai_egress', 'AI provider egress', 'warn', count($rows) . ' AI path(s) classified/gated, but ves_generation_execution_enabled is ON (expected OFF).');
+        }
+        return self::row('ai_egress', 'AI provider egress', 'ok', count($rows) . ' AI path(s) classified and gated; generation execution disabled (default).');
+    }
+
+    /** Phase 9D.5 — billing egress is explicit and isolated. */
+    private static function check_billing_egress() {
+        if (!class_exists('VES_External_Egress_Inventory')) {
+            return self::row('billing_egress', 'Billing provider egress', 'block', 'Egress inventory unavailable — billing egress cannot be evaluated.');
+        }
+        $rows = [];
+        try { $rows = VES_External_Egress_Inventory::for_provider('stripe'); } catch (\Throwable $e) { $rows = []; }
+        foreach ($rows as $r) {
+            if (($r['classification'] ?? '') !== 'billing_provider_explicit') {
+                return self::row('billing_egress', 'Billing provider egress', 'block', 'Billing path not explicitly classified: ' . (string) ($r['class'] ?? '?'));
+            }
+        }
+        return self::row('billing_egress', 'Billing provider egress', 'ok', count($rows) . ' billing path(s) classified billing_provider_explicit (isolated from usage credits).');
+    }
+
     private static function check_workspace_guard() {
         if (!class_exists('VES_Workspace_Guard') || !method_exists('VES_Workspace_Guard', 'guard_active')) {
             return self::row('workspace_guard', 'Workspace isolation guard', 'block', 'VES_Workspace_Guard unavailable.');
@@ -383,6 +452,10 @@ final class VES_RC_Readiness_Service {
         if ($status === 'passed' && !empty($state['evidence_pack_hash'])) {
             return self::row('live_validation', 'Live staging validation', 'ok',
                 'Passed via verified evidence pack ' . substr((string) $state['evidence_pack_hash'], 0, 12) . '… at ' . (string) ($state['recorded_at'] ?? 'unknown time') . '.');
+        }
+        if ($status === 'json_only_unverified') {
+            return self::row('live_validation', 'Live staging validation', 'warn',
+                'An evidence-pack record exists but its artifact FILES were never verified (json_only_unverified) — re-record with --evidence-root or --evidence-archive.');
         }
         if ($status === 'unverified_manual') {
             return self::row('live_validation', 'Live staging validation', 'warn',

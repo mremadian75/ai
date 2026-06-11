@@ -98,25 +98,25 @@ final class FIDTF_TikTok_Live_Adapter {
         return $adapter->refresh($context, $this->limit_from_actor_input($actor_input));
     }
 
+    /**
+     * Phase 9D.2 — legacy direct run-start is DISABLED. TikTok dispatch may only
+     * go through the core gate (FIDTF_Core_Apify_Client_Adapter →
+     * VES_Apify_Client::request with fail-closed allowlist + hard charge
+     * ceiling). Without the core client this FAILS CLOSED with a scrubbed
+     * security event — never an unguarded wp_remote_post. Reads stay read-only.
+     */
     private function start_direct_apify_run(array $context, array $actor_input) {
-        $token = FIDTF_Settings::tiktok_apify_token();
-        if ($token === '') {
-            return new WP_Error('tiktok_provider_unavailable', 'TikTok provider is not configured.', ['status' => 503, 'retryable' => false]);
+        if (class_exists('FIDTF_Core_Apify_Client_Adapter') && FIDTF_Core_Apify_Client_Adapter::available()) {
+            $core = $this->run_with_core_client($context, [], $actor_input);
+            if (is_array($core) || is_wp_error($core)) { return $this->sanitize_external_result($core); }
         }
-        if (!function_exists('wp_remote_post')) {
-            return new WP_Error('tiktok_provider_unavailable', 'WordPress HTTP API is unavailable.', ['status' => 503, 'retryable' => false]);
+        if (class_exists('VES_Security_Event_Log')) {
+            VES_Security_Event_Log::record('provider_dispatch_blocked', 'DTF TikTok Apify dispatch blocked: core provider client unavailable (fail-closed, legacy direct path disabled).', [
+                'module' => 'deep_trend_finder',
+                'source_key' => 'tiktok',
+            ]);
         }
-
-        $url = self::API_BASE . '/acts/' . $this->actor_path(FIDTF_Settings::tiktok_discovery_actor_id()) . '/runs';
-        $response = wp_remote_post($url, [
-            'headers' => [
-                'Authorization' => 'Bearer ' . $token,
-                'Content-Type' => 'application/json',
-            ],
-            'body' => wp_json_encode($actor_input),
-            'timeout' => 20,
-        ]);
-        return $this->normalize_http_run_response($response, $context, $actor_input);
+        return new WP_Error('tiktok_dispatch_blocked_fail_closed', 'TikTok dispatch is blocked: the guarded provider client is unavailable and direct dispatch is disabled.', ['status' => 503, 'retryable' => false, 'request_attempted' => false]);
     }
 
     private function apify_run_succeeded(string $status): bool {

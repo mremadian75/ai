@@ -59,7 +59,21 @@ final class VES_Release_Candidate_Page {
         $h .= '</header>';
 
         // Honest top banner.
-        if (($live['status'] ?? '') === 'unverified_manual') {
+        $missing_for_trust = is_array($live['missing_for_trust'] ?? null) ? $live['missing_for_trust'] : [];
+        $missing_html = '';
+        if (count($missing_for_trust) > 0) {
+            $missing_html = ' Missing for trust: ';
+            $parts = [];
+            foreach ($missing_for_trust as $m) { $parts[] = self::e((string) $m); }
+            $missing_html .= implode(' · ', $parts) . '.';
+        }
+        if (($live['status'] ?? '') === 'json_only_unverified') {
+            $h .= '<div class="fiis-rc-banner fiis-rc-banner-warn"><strong>Evidence pack recorded WITHOUT file verification (json_only_unverified).</strong> '
+                . 'The pack JSON exists but its artifact files (command outputs, screenshots, logs) were never verified on disk, so it is NOT trusted as passed.'
+                . $missing_html
+                . ' Re-record with <span class="fiis-rc-mono">wp ves rc-record-live-validation --evidence-pack=… --evidence-root=…</span>. '
+                . 'This build remains <strong>NOT production-ready</strong>.</div>';
+        } elseif (($live['status'] ?? '') === 'unverified_manual') {
             $h .= '<div class="fiis-rc-banner fiis-rc-banner-warn"><strong>Unverified manual validation record.</strong> '
                 . 'A live-validation option exists but carries no verifiable evidence pack hash, so it is NOT trusted as passed. '
                 . 'Re-run the validation script and record through <span class="fiis-rc-mono">wp ves rc-record-live-validation --evidence-pack=…</span>. '
@@ -67,11 +81,12 @@ final class VES_Release_Candidate_Page {
         } elseif (!$live_passed) {
             $h .= '<div class="fiis-rc-banner fiis-rc-banner-warn"><strong>Live staging validation: UNRUN.</strong> '
                 . 'This build is statically verified only. It is <strong>NOT production-ready</strong> and must not be installed on a production site. '
-                . 'Run the commands below on a staging copy first.</div>';
+                . 'Run the commands below on a staging copy first.' . $missing_html . '</div>';
         } else {
             $h .= '<div class="fiis-rc-banner fiis-rc-banner-info"><strong>Live staging validation recorded as passed</strong> ('
                 . self::e((string) ($live['recorded_at'] ?? '')) . ') via evidence pack '
-                . '<span class="fiis-rc-mono">' . self::e(substr((string) ($live['evidence_pack_hash'] ?? ''), 0, 16)) . '…</span>. '
+                . '<span class="fiis-rc-mono">' . self::e(substr((string) ($live['evidence_pack_hash'] ?? ''), 0, 16)) . '…</span>'
+                . ((string) ($live['schema_version'] ?? '') !== '' ? ' (schema ' . self::e((string) $live['schema_version']) . ', file-backed: ' . (!empty($live['files_verified']) ? 'yes' : 'NO') . ')' : '') . '. '
                 . 'Verify the operator evidence (command outputs + screenshots). '
                 . 'Even with a recorded pass, production release still requires operator approval and monitored pilot usage — this page never grants production status.</div>';
         }

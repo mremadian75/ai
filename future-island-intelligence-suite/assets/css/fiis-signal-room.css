@@ -55,3 +55,30 @@
 .ves-wrap .fi-output-slots li{border:1px dashed var(--fi-bdr);border-radius:8px;padding:8px 10px;font-size:12px}
 .ves-wrap .fi-review-rail button[disabled]{opacity:.55;cursor:not-allowed}
 @media (max-width:782px){.ves-wrap .fi-workflow-spine ol{gap:4px}.ves-wrap .fiis-sr-step{min-width:84px}}
+
+/* ── v0.3.55 Intake signal-room layout ─────────────────────────────────────────
+   The pipeline is the workspace (center); intake forms live on a right rail;
+   by-id forms are a collapsed debug panel. No equal-card dashboard grid. */
+.ves-wrap.fi-signal-room{max-width:1280px}
+.ves-wrap .fi-room-context{border-bottom:2px solid var(--fi-ink);padding-bottom:14px;margin-bottom:16px}
+.ves-wrap .fi-room-context h1{margin:2px 0 4px;letter-spacing:-.01em}
+.ves-wrap .fi-room-workspace{font:600 11px/1.4 ui-monospace,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--fi-muted);margin:4px 0 0}
+.ves-wrap .fi-room-grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-items:start}
+.ves-wrap .fi-room-main{min-width:0}
+.ves-wrap .fi-room-rail{display:flex;flex-direction:column;gap:12px;position:sticky;top:46px}
+.ves-wrap .fi-room-rail .fi-intake-card{margin:0}
+.ves-wrap .fi-intake-card{border:1px solid var(--fi-bdr);border-radius:12px;background:#fff;padding:14px 16px;margin:0 0 14px}
+.ves-wrap .fi-intake-card h2{margin:0 0 6px;font-size:14px;text-transform:uppercase;letter-spacing:.05em;color:var(--fi-blue-2)}
+.ves-wrap .fi-intake-card h3{margin:14px 0 6px;font-size:13px}
+.ves-wrap .fi-intake-hint{color:var(--fi-muted);font-size:12.5px;margin:0 0 10px}
+.ves-wrap .fi-intake-inline-action{display:inline-block;margin:0 4px 4px 0}
+.ves-wrap .fi-intake-disabled{font-size:12px;color:var(--fi-muted)}
+.ves-wrap .fi-intake-danger{color:var(--fi-red);border-color:var(--fi-red)}
+.ves-wrap .fi-intake-advanced{margin-top:18px;border:1px dashed var(--fi-bdr);border-radius:12px;background:var(--fi-paper);padding:10px 14px}
+.ves-wrap .fi-intake-advanced>summary{cursor:pointer;font:600 12px/1.5 ui-monospace,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--fi-muted)}
+.ves-wrap .fi-intake-advanced-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;margin-top:12px}
+.ves-wrap .fi-intake-mono{font:12px ui-monospace,Menlo,monospace;overflow-wrap:anywhere}
+@media (max-width: 1024px){
+  .ves-wrap .fi-room-grid{grid-template-columns:1fr}
+  .ves-wrap .fi-room-rail{position:static}
+}

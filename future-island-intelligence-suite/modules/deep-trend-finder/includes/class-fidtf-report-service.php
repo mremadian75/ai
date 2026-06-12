@@ -785,6 +785,7 @@ final class FIDTF_Report_Service {
             'company' => $company,
             'research_mode' => sanitize_key((string) ($meta['research_mode'] ?? $run['research_mode'] ?? 'creative_validation')),
             'market' => sanitize_text_field((string) ($run['market'] ?? '')),
+            'audience' => sanitize_text_field((string) ($meta['audience'] ?? $run['audience'] ?? '')),
             'language' => sanitize_key((string) ($run['language'] ?? '')),
             'keywords' => self::clean_terms((array) $keywords, 24),
             'core_terms' => $core,
@@ -1472,38 +1473,61 @@ final class FIDTF_Report_Service {
         return array_values(array_unique($out));
     }
 
+    /**
+     * v0.3.55 — campaign-facing Google Ads field preview.
+     *
+     * The copy is what a CONSUMER would see in a live ad about the topic, for
+     * the market/audience under research. Internal-process language ("test the
+     * signal route", "validate before campaign") is meta-copy, not ad copy —
+     * it can never ship to a platform field. All workflow framing (status,
+     * caveat, proof-needed) travels in metadata, never inside the copy text.
+     */
     private static function google_ads_asset_block(array $terms, array $hashtags, array $formats, array $quality, array $intel, array $focus, array $source_summary): array {
-        $term = self::plain_asset_term(self::label_from_ranked($terms, 0, 'signal route'));
-        $format = self::plain_asset_term(self::label_from_ranked($formats, 0, 'short-form test'));
+        $topic = self::campaign_topic($terms, $focus);
+        $topic_title = self::asset_title_case($topic);
+        $market = self::campaign_phrase((string) ($focus['market'] ?? ''), 16);
+        $audience = self::campaign_phrase((string) ($focus['audience'] ?? ''), 32);
+        $format = self::plain_asset_term(self::label_from_ranked($formats, 0, 'short-form video'), 'short-form video');
+        $where = $market !== '' ? ' in ' . $market : '';
+        $who = $audience !== '' ? $audience : 'your audience';
+
         $demand_rows = self::demand_evidence_rows($source_summary);
         $decision_ready = (int) ($quality['decision_ready_rows'] ?? 0);
         $source_families = count(self::sources_with_evidence($source_summary));
-        $status = ($decision_ready >= 10 && $source_families >= 2 && $demand_rows >= 3) ? 'ready_for_internal_test' : 'hypothesis';
+        $usable_rows = (int) array_sum((array) ($quality['tier_counts'] ?? []));
+        if ($usable_rows <= 0 && $decision_ready <= 0) {
+            $status = 'blocked_insufficient_evidence';
+        } elseif ($decision_ready >= 10 && $source_families >= 2 && $demand_rows >= 3) {
+            $status = 'ready_for_internal_test';
+        } else {
+            $status = 'hypothesis';
+        }
         $evidence_caveat = 'Draft assets only. Public signals support a test route, not final campaign certainty.';
         if ($demand_rows <= 0) {
             $evidence_caveat = 'Draft assets only. Creative/social evidence does not prove market demand.';
         }
         $proof_needed = self::proof_still_needed($source_summary, $quality, $intel, $focus);
+
         $headlines = [
-            'Test the ' . $term . ' route',
-            'Validate before campaign',
-            'Evidence-led content test',
-            'Turn signal into brief',
-            'Run a safer market test',
+            $topic_title . ' ideas' . ($market !== '' ? ' · ' . $market : ''),
+            'Discover ' . $topic_title,
+            'New ' . $topic . ' content',
+            $topic_title . ', made simple',
+            'Your ' . $topic . ' guide',
         ];
         $long = [
-            'Validate the ' . $term . ' route with evidence before investing in paid media',
-            'Turn public signals into a reviewed brief and field-ready asset draft',
-            'Test ' . $format . ' mechanics without claiming final market demand',
-            'Use this as an internal hypothesis before scaling campaign spend',
-            'Carry the evidence caveat into every copy variant and review decision',
+            'Discover the ' . $topic . ' moments ' . $who . ' are already sharing' . $where,
+            'New ' . $topic . ' ideas, formats and stories — made for ' . ($market !== '' ? $market : 'your market'),
+            'From ' . $format . ' to everyday moments: ' . $topic . ' content that connects',
+            'See what people are talking about around ' . $topic . $where . ' right now',
+            'Real ' . $topic . ' stories and formats, picked for ' . $who,
         ];
         $descriptions = [
-            'Use this draft to test the route, not to claim market certainty.',
-            'Evidence-backed copy fields with proof-needed notes attached.',
-            'Separate creative traction from demand before scaling media.',
-            'Move from signal to brief to reviewable ad-copy fields.',
-            'Keep claims conservative until another source confirms the pattern.',
+            'Explore ' . $topic . ' ideas and find the angle that fits your brand' . $where . '.',
+            'Fresh ' . $topic . ' content and formats, picked for ' . $who . '.',
+            'Join the ' . $topic . ' conversation with formats people already enjoy.',
+            'Discover ' . $format . ' takes on ' . $topic . ' worth your attention.',
+            $topic_title . $where . ': stories, ideas and moments that matter.',
         ];
         return [
             'platform' => 'Google Ads',
@@ -1512,22 +1536,50 @@ final class FIDTF_Report_Service {
             'cta_suggestion' => 'Learn more',
             'evidence_caveat' => $evidence_caveat,
             'proof_needed_note' => !empty($proof_needed) ? implode(' ', array_slice($proof_needed, 0, 2)) : 'Human review still required before launch.',
+            'derived_from' => [
+                'topic' => $topic,
+                'market' => $market,
+                'audience' => $audience,
+                'format' => $format,
+                'evidence_terms' => array_slice(array_map(static function ($t) { return is_array($t) ? (string) ($t['label'] ?? $t['term'] ?? '') : (string) $t; }, $terms), 0, 3),
+            ],
             'headlines' => self::asset_fields($headlines, 40, $status),
             'long_headlines' => self::asset_fields($long, 90, $status),
             'descriptions' => self::asset_fields($descriptions, 90, $status),
         ];
     }
 
+    /** Words that mark internal-process meta-copy or unsupported certainty — never valid inside platform copy. */
+    public static function banned_asset_copy_terms(): array {
+        return [
+            // internal/meta language
+            'future island', 'signal route', 'signal into', 'evidence caveat', 'proof-needed', 'proof needed',
+            'hypothesis', 'validate', 'validation', 'internal test', 'reviewed brief', 'asset draft',
+            'draft', 'workbench', 'evidence-backed', 'evidence-led', 'copy fields', 'market test',
+            'claim readiness', 'decision-ready',
+            // unsupported certainty
+            'guaranteed', '#1', 'number one', 'best in', 'proven demand', 'everyone is', 'viral success',
+        ];
+    }
+
     private static function asset_fields(array $texts, int $limit, string $status): array {
+        $banned = self::banned_asset_copy_terms();
         $out = [];
         foreach (array_slice($texts, 0, 5) as $text) {
             $text = trim(preg_replace('/\s+/', ' ', wp_strip_all_tags((string) $text)));
             $count = self::string_length($text);
+            $flags = [];
+            if ($count > $limit) { $flags[] = 'over_limit'; }
+            $lower = strtolower($text);
+            foreach ($banned as $needle) {
+                if (strpos($lower, $needle) !== false) { $flags[] = 'meta_copy_blocked'; break; }
+            }
             $out[] = [
                 'text' => $text,
                 'limit' => $limit,
                 'count' => $count,
-                'valid' => $count <= $limit,
+                'valid' => empty($flags),
+                'flags' => $flags,
                 'status' => $status,
                 'status_label' => self::human_label($status),
             ];
@@ -1535,10 +1587,35 @@ final class FIDTF_Report_Service {
         return $out;
     }
 
-    private static function plain_asset_term(string $term): string {
+    /** Topic phrase for campaign copy: best evidence term, then request keyword, never meta filler. */
+    private static function campaign_topic(array $terms, array $focus): string {
+        $candidates = [self::label_from_ranked($terms, 0, '')];
+        foreach ((array) ($focus['keywords'] ?? []) as $kw) { $candidates[] = (string) $kw; }
+        foreach ((array) ($focus['core_terms'] ?? []) as $ct) { $candidates[] = (string) $ct; }
+        foreach ($candidates as $candidate) {
+            $candidate = self::plain_asset_term((string) $candidate, '');
+            if ($candidate !== '') { return strtolower($candidate); }
+        }
+        return 'new ideas';
+    }
+
+    private static function campaign_phrase(string $value, int $max): string {
+        $value = trim(preg_replace('/\s+/', ' ', wp_strip_all_tags($value)));
+        if ($value === '') { return ''; }
+        if (self::string_length($value) <= $max) { return $value; }
+        $cut = function_exists('mb_substr') ? mb_substr($value, 0, $max) : substr($value, 0, $max);
+        $space = strrpos($cut, ' ');
+        return $space !== false && $space > 3 ? substr($cut, 0, $space) : $cut;
+    }
+
+    private static function asset_title_case(string $value): string {
+        return preg_replace_callback('/\b[a-z]/', static function ($m) { return strtoupper($m[0]); }, strtolower($value));
+    }
+
+    private static function plain_asset_term(string $term, string $fallback = 'new ideas'): string {
         $term = trim(preg_replace('/\s+/', ' ', wp_strip_all_tags($term)));
         $term = preg_replace('/^#/', '', (string) $term);
-        if ($term === '' || self::string_length($term) > 24) { return 'signal'; }
+        if ($term === '' || self::string_length($term) > 24) { return $fallback; }
         return $term;
     }
 
@@ -1621,8 +1698,13 @@ final class FIDTF_Report_Service {
             'single_point_not_enough' => 'Single point, not enough proof',
             'brief_ready_after_review' => 'Brief-ready after review',
             'hypothesis_only' => 'Hypothesis only',
+            'hypothesis' => 'Hypothesis — internal draft',
+            'blocked_insufficient_evidence' => 'Blocked — insufficient evidence',
+            'not_client_ready' => 'Not client-ready',
             'do_not_claim' => 'Do not claim',
             'source_actor_not_allowlisted' => 'Source actor not allowlisted',
+            'provider_actor_not_allowlisted' => 'Source actor not allowlisted on this server',
+            'provider_timeout_stale' => 'Source run timed out (watchdog)',
         ];
         $key = sanitize_key($value);
         if (isset($map[$key])) { return $map[$key]; }

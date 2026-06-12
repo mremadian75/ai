@@ -29,6 +29,12 @@ final class VES_Source_Intake {
     const ACTION_DRAFT    = 'ves_brief_to_draft';
     const ACTION_MEMORY   = 'ves_draft_to_memory';
     const ACTION_USAGE    = 'ves_draft_usage_event';
+    // v0.3.55: review decisions were reachable only by leaving the intake loop —
+    // an operator could create a draft insight here but never approve it, which
+    // blocked Insight → Brief on this surface entirely.
+    const ACTION_APPROVE_INSIGHT = 'ves_intake_approve_insight';
+    const ACTION_REJECT_INSIGHT  = 'ves_intake_reject_insight';
+    const ACTION_APPROVE_DRAFT   = 'ves_intake_approve_draft';
     const MAX_NOTES_CHARS = 4000;
 
     /** Signal types offered by the intake form — the store's canonical signal_type enum. */
@@ -44,6 +50,9 @@ final class VES_Source_Intake {
         add_action('admin_post_' . self::ACTION_DRAFT, [__CLASS__, 'handle_brief_to_draft']);
         add_action('admin_post_' . self::ACTION_MEMORY, [__CLASS__, 'handle_draft_to_memory']);
         add_action('admin_post_' . self::ACTION_USAGE, [__CLASS__, 'handle_record_usage_event']);
+        add_action('admin_post_' . self::ACTION_APPROVE_INSIGHT, [__CLASS__, 'handle_approve_insight']);
+        add_action('admin_post_' . self::ACTION_REJECT_INSIGHT, [__CLASS__, 'handle_reject_insight']);
+        add_action('admin_post_' . self::ACTION_APPROVE_DRAFT, [__CLASS__, 'handle_approve_draft']);
     }
 
     public static function register_menu() {
@@ -337,6 +346,67 @@ final class VES_Source_Intake {
         return ['draft_id' => (int) $draft_id];
     }
 
+    /**
+     * Approve an insight through the audited lifecycle (evidence + quality
+     * gates still decide — this is a doorway, not a bypass).
+     * @return array{insight_id:int}|WP_Error
+     */
+    public static function process_approve_insight(array $in) {
+        if (!class_exists('VES_Intelligence_Store')) { return self::err('ves_intake_store_missing', 'Intelligence store unavailable.'); }
+        if (!class_exists('VES_Insight_Lifecycle_Service')) { return self::err('ves_intake_lifecycle_missing', 'Insight lifecycle service unavailable.'); }
+        $ws = self::assert_workspace($in['workspace_id'] ?? 0);
+        if (self::is_err($ws)) { return $ws; }
+        $insight_id = (int) ($in['insight_id'] ?? 0);
+        $insight = $insight_id > 0 ? VES_Intelligence_Store::get_insight($insight_id) : null;
+        if (!is_array($insight) || empty($insight['id'])) { return self::err('ves_intake_insight_missing', 'Insight not found.'); }
+        $in_ws = self::assert_in_workspace('insight', $insight, $ws);
+        if (self::is_err($in_ws)) { return $in_ws; }
+        $result = VES_Insight_Lifecycle_Service::approve_insight($insight_id, [
+            'actor' => function_exists('get_current_user_id') ? (int) get_current_user_id() : 0,
+        ]);
+        if (self::is_err($result)) { return $result; }
+        return ['insight_id' => $insight_id];
+    }
+
+    /** @return array{insight_id:int}|WP_Error */
+    public static function process_reject_insight(array $in) {
+        if (!class_exists('VES_Intelligence_Store')) { return self::err('ves_intake_store_missing', 'Intelligence store unavailable.'); }
+        if (!class_exists('VES_Insight_Lifecycle_Service')) { return self::err('ves_intake_lifecycle_missing', 'Insight lifecycle service unavailable.'); }
+        $ws = self::assert_workspace($in['workspace_id'] ?? 0);
+        if (self::is_err($ws)) { return $ws; }
+        $insight_id = (int) ($in['insight_id'] ?? 0);
+        $insight = $insight_id > 0 ? VES_Intelligence_Store::get_insight($insight_id) : null;
+        if (!is_array($insight) || empty($insight['id'])) { return self::err('ves_intake_insight_missing', 'Insight not found.'); }
+        $in_ws = self::assert_in_workspace('insight', $insight, $ws);
+        if (self::is_err($in_ws)) { return $in_ws; }
+        $result = VES_Insight_Lifecycle_Service::reject_insight($insight_id, self::txt($in['reason'] ?? 'Rejected from intake review.', 300));
+        if (self::is_err($result)) { return $result; }
+        return ['insight_id' => $insight_id];
+    }
+
+    /**
+     * Approve a generated/edited draft so memory + usage steps can proceed.
+     * The store's transition ledger still validates the state change.
+     * @return array{draft_id:int}|WP_Error
+     */
+    public static function process_approve_draft(array $in) {
+        if (!class_exists('VES_Intelligence_Store')) { return self::err('ves_intake_store_missing', 'Intelligence store unavailable.'); }
+        $ws = self::assert_workspace($in['workspace_id'] ?? 0);
+        if (self::is_err($ws)) { return $ws; }
+        $draft_id = (int) ($in['draft_id'] ?? 0);
+        $draft = $draft_id > 0 ? VES_Intelligence_Store::get_draft($draft_id) : null;
+        if (!is_array($draft) || empty($draft['id'])) { return self::err('ves_intake_draft_missing', 'Draft not found.'); }
+        $in_ws = self::assert_in_workspace('draft', $draft, $ws);
+        if (self::is_err($in_ws)) { return $in_ws; }
+        if ((string) ($draft['status'] ?? '') === 'approved') { return ['draft_id' => $draft_id]; }
+        $result = VES_Intelligence_Store::update_draft_status($draft_id, 'approved', [
+            'approved_via' => 'intake_review',
+            'approved_by'  => function_exists('get_current_user_id') ? (int) get_current_user_id() : 0,
+        ]);
+        if (self::is_err($result)) { return $result; }
+        return ['draft_id' => $draft_id];
+    }
+
     /** @return array{memory_id:int}|WP_Error */
     public static function process_draft_to_memory(array $in) {
         if (!class_exists('VES_Intelligence_Store')) { return self::err('ves_intake_store_missing', 'Intelligence store unavailable.'); }
@@ -365,7 +435,10 @@ final class VES_Source_Intake {
             'source_entity_type' => 'draft',
             'source_entity_id' => (string) $draft_id,
             'status' => 'active',
-            'metadata' => ['created_via' => 'intake_draft_to_memory', 'requires_review' => true],
+            // approval_status travels in metadata because the store's status enum
+            // has no pending state; consumers must treat pending_review memory as
+            // continuity context, never as approved evidence.
+            'metadata' => ['created_via' => 'intake_draft_to_memory', 'requires_review' => true, 'approval_status' => 'pending_review'],
         ]);
         if (self::is_err($memory_id)) { return $memory_id; }
         return ['memory_id' => (int) $memory_id];
@@ -428,29 +501,36 @@ final class VES_Source_Intake {
         return 0;
     }
 
+    /**
+     * v0.3.55 — the copy lines are CAMPAIGN-FACING (what a consumer would see),
+     * derived from the brief topic/message/audience. Workflow framing (status,
+     * caveat, proof-needed) stays in the header lines, never inside the copy.
+     */
     private static function google_ads_prompt_preview_body(array $brief, string $key_message, string $audience): string {
-        $topic = self::cut((string) (($brief['title'] ?? '') ?: 'Evidence-backed route'), 70);
-        $base = self::cut($key_message !== '' ? $key_message : $topic, 54);
+        $topic = self::campaign_topic_from_brief($brief, $key_message);
+        $topic_title = preg_replace_callback('/\b[a-z]/', static function ($m) { return strtoupper($m[0]); }, strtolower($topic));
+        $who = self::asset_line($audience !== '' && $audience !== 'reviewed audience' ? $audience : 'your audience', 32);
+        $message = self::asset_line($key_message !== '' ? $key_message : ('Discover ' . $topic . ' content that connects'), 88);
         $headlines = [
-            self::asset_line('Test the route', 40),
-            self::asset_line('Validate before campaign', 40),
-            self::asset_line('Evidence-led content test', 40),
-            self::asset_line('Turn signal into brief', 40),
-            self::asset_line('Run a safer market test', 40),
+            self::asset_line($topic_title . ' ideas', 40),
+            self::asset_line('Discover ' . $topic_title, 40),
+            self::asset_line('New ' . $topic . ' content', 40),
+            self::asset_line($topic_title . ', made simple', 40),
+            self::asset_line('Your ' . $topic . ' guide', 40),
         ];
         $long = [
-            self::asset_line('Validate the route with evidence before investing in paid media', 90),
-            self::asset_line('Turn public signals into a reviewed brief and asset draft', 90),
-            self::asset_line('Test the message with ' . $audience . ' before scaling spend', 90),
-            self::asset_line('Use this as an internal hypothesis before campaign launch', 90),
-            self::asset_line('Carry the evidence caveat into every copy variant', 90),
+            self::asset_line($message, 90),
+            self::asset_line('Discover the ' . $topic . ' moments ' . $who . ' are already sharing', 90),
+            self::asset_line('New ' . $topic . ' ideas, formats and stories — updated regularly', 90),
+            self::asset_line('See what people are talking about around ' . $topic . ' right now', 90),
+            self::asset_line('Real ' . $topic . ' stories and formats, picked for ' . $who, 90),
         ];
         $descriptions = [
-            self::asset_line('Use this draft to test the route, not to claim market certainty.', 90),
-            self::asset_line('Evidence-backed copy fields with proof-needed notes attached.', 90),
-            self::asset_line('Separate creative traction from demand before scaling media.', 90),
-            self::asset_line('Move from signal to brief to reviewable ad-copy fields.', 90),
-            self::asset_line('Keep claims conservative until another source confirms the pattern.', 90),
+            self::asset_line('Explore ' . $topic . ' ideas and find the angle that fits your brand.', 90),
+            self::asset_line('Fresh ' . $topic . ' content and formats, picked for ' . $who . '.', 90),
+            self::asset_line('Join the ' . $topic . ' conversation with formats people already enjoy.', 90),
+            self::asset_line('New ' . $topic . ' takes worth your attention.', 90),
+            self::asset_line($topic_title . ': stories, ideas and moments that matter.', 90),
         ];
         $out = [];
         $out[] = 'Google Ads asset field preview';
@@ -470,6 +550,22 @@ final class VES_Source_Intake {
         return implode("\n", $out);
     }
 
+    /** Short consumer-facing topic phrase from the brief (title without workflow prefixes). */
+    private static function campaign_topic_from_brief(array $brief, string $key_message): string {
+        $title = self::txt((string) ($brief['title'] ?? ''), 80);
+        // Strip workflow prefixes briefs commonly carry ("Brief: …", "Insight from signal #4: …").
+        $title = preg_replace('/^(brief|insight|draft|signal)[^:]*:\s*/i', '', $title);
+        $title = trim(preg_replace('/\s+/', ' ', (string) $title));
+        if ($title !== '' && strlen($title) <= 28) { return strtolower($title); }
+        if ($title !== '') {
+            $cut = substr($title, 0, 28);
+            $space = strrpos($cut, ' ');
+            return strtolower(trim($space !== false && $space > 3 ? substr($cut, 0, $space) : $cut));
+        }
+        if ($key_message !== '') { return strtolower(self::asset_line($key_message, 28)); }
+        return 'new ideas';
+    }
+
     private static function asset_line(string $text, int $limit): string {
         $text = trim(preg_replace('/\s+/', ' ', strip_tags($text)));
         if (strlen($text) <= $limit) { return $text; }
@@ -485,6 +581,9 @@ final class VES_Source_Intake {
     public static function handle_brief_to_draft()    { self::handle(self::ACTION_DRAFT,   'process_brief_to_draft',    'draft_created',   'draft_id'); }
     public static function handle_draft_to_memory()   { self::handle(self::ACTION_MEMORY,  'process_draft_to_memory',   'memory_created',  'memory_id'); }
     public static function handle_record_usage_event(){ self::handle(self::ACTION_USAGE,   'process_record_usage_event','usage_recorded',  'usage_event_id'); }
+    public static function handle_approve_insight()   { self::handle(self::ACTION_APPROVE_INSIGHT, 'process_approve_insight', 'insight_approved', 'insight_id'); }
+    public static function handle_reject_insight()    { self::handle(self::ACTION_REJECT_INSIGHT,  'process_reject_insight',  'insight_rejected', 'insight_id'); }
+    public static function handle_approve_draft()     { self::handle(self::ACTION_APPROVE_DRAFT,   'process_approve_draft',   'draft_approved',   'draft_id'); }
 
     private static function handle($action, $method, $success_key, $id_key) {
         if (!function_exists('current_user_can') || !current_user_can('manage_options')) {
@@ -533,9 +632,12 @@ final class VES_Source_Intake {
                 'source_created'  => 'Source recorded',
                 'signal_created'  => 'Signal recorded',
                 'insight_created' => 'Evidence + draft insight created',
+                'insight_approved'=> 'Insight approved — it can now become a brief',
+                'insight_rejected'=> 'Insight rejected',
                 'brief_created'   => 'Brief created from the approved insight',
                 'draft_created'   => 'Google Ads draft block created from the brief',
-                'memory_created'  => 'Memory candidate created from the draft',
+                'draft_approved'  => 'Draft approved — memory and usage steps unlocked',
+                'memory_created'  => 'Memory candidate created from the draft (pending review)',
                 'usage_recorded'  => 'Usage event recorded for the approved output',
             ];
             if (isset($map[$notice])) {
@@ -560,6 +662,11 @@ final class VES_Source_Intake {
                 'ves_intake_usage_record_failed'  => 'Usage event could not be recorded.',
                 'ves_workspace_mismatch'          => 'That object belongs to a different workspace.',
                 'ves_brief_no_evidence'           => 'The insight has no linked evidence, so no brief can be built from it.',
+                'ves_intake_lifecycle_missing'    => 'Insight lifecycle service unavailable.',
+                'ves_insight_evidence_required'   => 'Cannot approve: the insight does not meet the minimum evidence requirements yet. Link more evidence first.',
+                'ves_insight_low_quality'         => 'Cannot approve: insight quality/confidence is below the approval threshold. Strengthen the evidence or summary first.',
+                'ves_intel_transition_blocked'    => 'That status change is not allowed from the current state.',
+                'ves_intel_invalid_enum'          => 'That status is not valid for this object.',
             ];
             $msg = isset($map[$err]) ? $map[$err] : 'The action could not be completed (' . $err . ').';
             return '<div class="notice notice-error"><p>' . self::e($msg) . '</p></div>';
@@ -581,105 +688,118 @@ final class VES_Source_Intake {
         $prefill_brief_id = isset($_GET['prefill_brief_id']) ? max(0, (int) $_GET['prefill_brief_id']) : 0;
         $prefill_draft_id = isset($_GET['prefill_draft_id']) ? max(0, (int) $_GET['prefill_draft_id']) : 0;
 
-        $h  = '<div class="wrap ves-wrap fi-intake-page">';
-        $h .= '<a class="fi-skip-link" href="#fi-intake-recent">' . self::e('Skip to recent objects') . '</a>';
-        $h .= '<p class="fi-breadcrumb fiis-sr-eyebrow">' . self::e('Future Island · Intake') . '</p>';
-        $h .= '<h1>' . self::e('Intake') . '</h1>';
-        $h .= '<p class="fi-intake-sub">' . self::e('Evidence first. Everything below records what YOU observed — nothing is fetched, nothing is generated, nothing is approved automatically.') . '</p>';
+        $h  = '<div class="wrap ves-wrap fi-intake-page fi-signal-room">';
+        $h .= '<a class="fi-skip-link" href="#fi-intake-recent">' . self::e('Skip to the pipeline') . '</a>';
+
+        // Context strip: what am I looking at, in which workspace, what loop.
+        $h .= '<header class="fi-room-context">';
+        $h .= '<p class="fi-breadcrumb fiis-sr-eyebrow">' . self::e('Future Island · Signal room') . '</p>';
+        $h .= '<h1>' . self::e('Intake & pipeline') . '</h1>';
+        $h .= '<p class="fi-intake-sub">' . self::e('Source → Signal → Insight → Brief → Output → Memory → Usage. Everything records what YOU observed — nothing is fetched, generated, or approved automatically.') . '</p>';
+        $h .= '<p class="fi-room-workspace">' . self::e('Workspace ' . $ws) . '</p>';
+        $h .= '</header>';
         $h .= self::notice_html();
 
-        // 1. Manual source
-        $h .= '<section class="fi-intake-card"><h2>' . self::e('1 · Record a manual source') . '</h2>';
-        $h .= '<p class="fi-intake-hint">' . self::e('An interview note, a meeting takeaway, a field observation. Same title + notes in a workspace dedupes to one source.') . '</p>';
+        $h .= '<div class="fi-room-grid">';
+
+        // ── Center: the pipeline IS the workspace. Each object row carries its
+        // own next-action rail, so the normal path never asks for an id.
+        $h .= '<main class="fi-room-main">' . self::recent_objects($ws) . '</main>';
+
+        // ── Right rail: add material + record a signal (the only steps that
+        // genuinely need free-text entry).
+        $h .= '<aside class="fi-room-rail">';
+        $h .= '<section class="fi-intake-card"><h2>' . self::e('Add a manual source') . '</h2>';
+        $h .= '<p class="fi-intake-hint">' . self::e('An interview note, a meeting takeaway, a field observation. Same title + notes dedupes to one source.') . '</p>';
         $h .= '<form method="post" action="' . self::eu($post_url) . '">' . $nonce(self::ACTION_SOURCE);
         $h .= '<input type="hidden" name="action" value="' . self::ea(self::ACTION_SOURCE) . '"><input type="hidden" name="intake_type" value="manual">';
-        $h .= '<p>' . $ws_field . '</p>';
+        $h .= '<input type="hidden" name="workspace_id" value="' . self::ea((string) $ws) . '">';
         $h .= '<p><label>Title<br><input type="text" name="source_title" maxlength="255" required class="regular-text"></label></p>';
-        $h .= '<p><label>Notes<br><textarea name="notes" rows="4" maxlength="' . self::ea((string) self::MAX_NOTES_CHARS) . '" class="large-text"></textarea></label></p>';
+        $h .= '<p><label>Notes<br><textarea name="notes" rows="3" maxlength="' . self::ea((string) self::MAX_NOTES_CHARS) . '" class="large-text"></textarea></label></p>';
         $h .= '<p><button type="submit" class="button button-primary">' . self::e('Record source') . '</button></p>';
         $h .= '</form></section>';
 
-        // 2. URL-record source
-        $h .= '<section class="fi-intake-card"><h2>' . self::e('2 · Record a URL reference') . '</h2>';
-        $h .= '<p class="fi-intake-hint">' . self::e('The URL is recorded as a reference only — it is never fetched, crawled, or scraped from here.') . '</p>';
+        $h .= '<section class="fi-intake-card"><h2>' . self::e('Add a URL reference') . '</h2>';
+        $h .= '<p class="fi-intake-hint">' . self::e('Recorded as a reference only — never fetched, crawled, or scraped from here.') . '</p>';
         $h .= '<form method="post" action="' . self::eu($post_url) . '">' . $nonce(self::ACTION_SOURCE);
         $h .= '<input type="hidden" name="action" value="' . self::ea(self::ACTION_SOURCE) . '"><input type="hidden" name="intake_type" value="url">';
-        $h .= '<p>' . $ws_field . '</p>';
+        $h .= '<input type="hidden" name="workspace_id" value="' . self::ea((string) $ws) . '">';
         $h .= '<p><label>URL<br><input type="url" name="source_url" maxlength="2000" required class="regular-text" placeholder="https://"></label></p>';
         $h .= '<p><label>Title (optional)<br><input type="text" name="source_title" maxlength="255" class="regular-text"></label></p>';
-        $h .= '<p><label>Notes<br><textarea name="notes" rows="3" maxlength="' . self::ea((string) self::MAX_NOTES_CHARS) . '" class="large-text"></textarea></label></p>';
+        $h .= '<p><label>Notes<br><textarea name="notes" rows="2" maxlength="' . self::ea((string) self::MAX_NOTES_CHARS) . '" class="large-text"></textarea></label></p>';
         $h .= '<p><button type="submit" class="button button-primary">' . self::e('Record URL reference') . '</button></p>';
         $h .= '</form></section>';
 
-        // 3. Signal from source
-        $h .= '<section class="fi-intake-card" id="fi-intake-signal"><h2>' . self::e('3 · Record a signal from a source') . '</h2>';
-        $h .= '<p class="fi-intake-hint">' . self::e('What did the source actually show? The store normalizes, dedupes and scores it deterministically — no AI involved.') . '</p>';
+        // Record a signal: source id arrives prefilled from the pipeline's
+        // "Use for signal" action; typing it by hand is the fallback, not the path.
+        $h .= '<section class="fi-intake-card" id="fi-intake-signal"><h2>' . self::e('Record a signal') . '</h2>';
+        $h .= '<p class="fi-intake-hint">' . self::e($prefill_source_id > 0 ? 'Recording what source #' . $prefill_source_id . ' showed.' : 'Pick a source in the pipeline ("Use for signal") — its id arrives here prefilled.') . '</p>';
         $h .= '<form method="post" action="' . self::eu($post_url) . '">' . $nonce(self::ACTION_SIGNAL);
         $h .= '<input type="hidden" name="action" value="' . self::ea(self::ACTION_SIGNAL) . '">';
-        $h .= '<p>' . $ws_field . ' <label>Source id <input type="number" name="source_id" min="1" value="' . self::ea((string) $prefill_source_id) . '" required></label> ';
+        $h .= '<input type="hidden" name="workspace_id" value="' . self::ea((string) $ws) . '">';
+        $h .= '<p><label>Source id <input type="number" name="source_id" min="1" value="' . self::ea((string) $prefill_source_id) . '" required></label> ';
         $h .= '<label>Type <select name="signal_type">';
         foreach (self::SIGNAL_TYPES as $t) { $h .= '<option value="' . self::ea($t) . '">' . self::e($t) . '</option>'; }
         $h .= '</select></label></p>';
         $h .= '<p><label>Title (what was observed)<br><input type="text" name="title" maxlength="255" required class="regular-text"></label></p>';
         $h .= '<p><label>Summary<br><textarea name="summary" rows="3" maxlength="' . self::ea((string) self::MAX_NOTES_CHARS) . '" class="large-text"></textarea></label></p>';
-        $h .= '<p><label>Value (optional, e.g. a number or short quote) <input type="text" name="value_text" maxlength="120"></label> ';
+        $h .= '<p><label>Value (optional) <input type="text" name="value_text" maxlength="120"></label> ';
         $h .= '<label>Observed at <input type="datetime-local" name="occurred_at"></label></p>';
         $h .= '<p><button type="submit" class="button button-primary">' . self::e('Record signal') . '</button></p>';
         $h .= '</form></section>';
+        $h .= '</aside>';
+        $h .= '</div>'; // .fi-room-grid
 
-        // 4. Evidence + draft insight from signal
-        $h .= '<section class="fi-intake-card"><h2>' . self::e('4 · Promote a signal to evidence + draft insight') . '</h2>';
-        $h .= '<p class="fi-intake-hint">' . self::e('Creates a traceable evidence record from the signal and a DRAFT insight linked to it. Review states only advance through the audited lifecycle — never from here.') . '</p>';
+        // ── Advanced: by-id forms are DEBUG tools, collapsed by default. The
+        // normal path is the action rail on each pipeline row above.
+        $h .= '<details class="fi-intake-advanced"' . (($prefill_signal_id || $prefill_insight_id || $prefill_brief_id || $prefill_draft_id) ? ' open' : '') . '>';
+        $h .= '<summary>' . self::e('Advanced: run a step by object id (debug path)') . '</summary>';
+        $h .= '<div class="fi-intake-advanced-grid">';
+
+        $h .= '<section class="fi-intake-card"><h3>' . self::e('Promote a signal to evidence + draft insight') . '</h3>';
         $h .= '<form method="post" action="' . self::eu($post_url) . '">' . $nonce(self::ACTION_INSIGHT);
         $h .= '<input type="hidden" name="action" value="' . self::ea(self::ACTION_INSIGHT) . '">';
         $h .= '<p>' . $ws_field . ' <label>Signal id <input type="number" name="signal_id" min="1" value="' . self::ea((string) $prefill_signal_id) . '" required></label> ';
         $h .= '<label>Insight type <select name="insight_type">';
         foreach (VES_Intelligence_Store::INSIGHT_TYPES as $t) { $h .= '<option value="' . self::ea($t) . '"' . ($t === 'opportunity' ? ' selected' : '') . '>' . self::e($t) . '</option>'; }
         $h .= '</select></label> ';
-        $h .= '<label>Opportunity score (0–100, used when type is opportunity) <input type="number" name="opportunity_score" min="0" max="100" value="0"></label></p>';
+        $h .= '<label>Opportunity score (0–100) <input type="number" name="opportunity_score" min="0" max="100" value="0"></label></p>';
         $h .= '<p><label>Insight title (the finding)<br><input type="text" name="title" maxlength="255" required class="regular-text"></label></p>';
         $h .= '<p><label>Summary<br><textarea name="summary" rows="3" maxlength="' . self::ea((string) self::MAX_NOTES_CHARS) . '" class="large-text"></textarea></label></p>';
         $h .= '<p><label>Recommendation (optional)<br><textarea name="recommendation" rows="2" maxlength="2000" class="large-text"></textarea></label></p>';
-        $h .= '<p><button type="submit" class="button button-primary">' . self::e('Create evidence + draft insight') . '</button></p>';
+        $h .= '<p><button type="submit" class="button">' . self::e('Create evidence + draft insight') . '</button></p>';
         $h .= '</form></section>';
 
-        // 5. Brief from APPROVED insight
-        $h .= '<section class="fi-intake-card"><h2>' . self::e('5 · Build a brief from an APPROVED insight') . '</h2>';
-        $h .= '<p class="fi-intake-hint">' . self::e('Human review always comes first: only an approved insight can become a brief. Its evidence links carry through to the brief.') . '</p>';
+        $h .= '<section class="fi-intake-card"><h3>' . self::e('Build a brief from an APPROVED insight') . '</h3>';
         $h .= '<form method="post" action="' . self::eu($post_url) . '">' . $nonce(self::ACTION_BRIEF);
         $h .= '<input type="hidden" name="action" value="' . self::ea(self::ACTION_BRIEF) . '">';
         $h .= '<p>' . $ws_field . ' <label>Insight id <input type="number" name="insight_id" min="1" value="' . self::ea((string) $prefill_insight_id) . '" required></label> ';
-        $h .= '<button type="submit" class="button button-primary">' . self::e('Build brief') . '</button></p>';
+        $h .= '<button type="submit" class="button">' . self::e('Build brief') . '</button></p>';
         $h .= '</form></section>';
 
-        // 6. Draft / Google Ads asset preview from brief.
-        $h .= '<section class="fi-intake-card"><h2>' . self::e('6 · Generate Google Ads draft block from a brief') . '</h2>';
-        $h .= '<p class="fi-intake-hint">' . self::e('Creates field-ready draft copy with character-count notes and an evidence caveat. No Google Ads API call, no publishing.') . '</p>';
+        $h .= '<section class="fi-intake-card"><h3>' . self::e('Generate Google Ads draft block from a brief') . '</h3>';
         $h .= '<form method="post" action="' . self::eu($post_url) . '">' . $nonce(self::ACTION_DRAFT);
         $h .= '<input type="hidden" name="action" value="' . self::ea(self::ACTION_DRAFT) . '">';
         $h .= '<p>' . $ws_field . ' <label>Brief id <input type="number" name="brief_id" min="1" value="' . self::ea((string) $prefill_brief_id) . '" required></label> ';
-        $h .= '<button type="submit" class="button button-primary">' . self::e('Create Google Ads draft block') . '</button></p>';
+        $h .= '<button type="submit" class="button">' . self::e('Create Google Ads draft block') . '</button></p>';
         $h .= '</form></section>';
 
-        // 7. Draft to memory candidate.
-        $h .= '<section class="fi-intake-card"><h2>' . self::e('7 · Create memory candidate from a draft') . '</h2>';
-        $h .= '<p class="fi-intake-hint">' . self::e('Stores a reviewable learning object from the draft. Memory is continuity, not evidence.') . '</p>';
+        $h .= '<section class="fi-intake-card"><h3>' . self::e('Create memory candidate from a draft') . '</h3>';
         $h .= '<form method="post" action="' . self::eu($post_url) . '">' . $nonce(self::ACTION_MEMORY);
         $h .= '<input type="hidden" name="action" value="' . self::ea(self::ACTION_MEMORY) . '">';
         $h .= '<p>' . $ws_field . ' <label>Draft id <input type="number" name="draft_id" min="1" value="' . self::ea((string) $prefill_draft_id) . '" required></label> ';
-        $h .= '<button type="submit" class="button button-primary">' . self::e('Create memory candidate') . '</button></p>';
+        $h .= '<button type="submit" class="button">' . self::e('Create memory candidate') . '</button></p>';
         $h .= '</form></section>';
 
-        // 8. Approved draft usage event.
-        $h .= '<section class="fi-intake-card"><h2>' . self::e('8 · Record usage event for an approved output') . '</h2>';
-        $h .= '<p class="fi-intake-hint">' . self::e('Records an auditable zero-cost operator usage event only after the draft is approved.') . '</p>';
+        $h .= '<section class="fi-intake-card"><h3>' . self::e('Record usage event for an approved output') . '</h3>';
         $h .= '<form method="post" action="' . self::eu($post_url) . '">' . $nonce(self::ACTION_USAGE);
         $h .= '<input type="hidden" name="action" value="' . self::ea(self::ACTION_USAGE) . '">';
         $h .= '<p>' . $ws_field . ' <label>Approved draft id <input type="number" name="draft_id" min="1" value="' . self::ea((string) $prefill_draft_id) . '" required></label> ';
         $h .= '<button type="submit" class="button button-secondary">' . self::e('Record usage event') . '</button></p>';
         $h .= '</form></section>';
 
-        $h .= self::recent_objects($ws);
+        $h .= '</div></details>';
+
         $h .= '<p class="fi-memory-policy">' . self::e('No AI generation, no auto-approval, no publishing, no fetching. Memory is not evidence.') . '</p>';
         $h .= '</div>';
         return $h;
@@ -688,6 +808,13 @@ final class VES_Source_Intake {
     private static function page_url($ws, array $args = []): string {
         $base = function_exists('admin_url') ? admin_url('tools.php') : 'tools.php';
         $args = array_merge(['page' => self::PAGE_SLUG, 'workspace_id' => max(1, (int) $ws)], $args);
+        return function_exists('add_query_arg') ? add_query_arg($args, $base) : $base . '?' . http_build_query($args);
+    }
+
+    /** Deep link into the brief/draft workbench pages registered by VES_Admin. */
+    private static function workbench_url(string $page, array $args = []): string {
+        $base = function_exists('admin_url') ? admin_url('tools.php') : 'tools.php';
+        $args = array_merge(['page' => preg_replace('/[^a-z0-9\-]/', '', $page)], $args);
         return function_exists('add_query_arg') ? add_query_arg($args, $base) : $base . '?' . http_build_query($args);
     }
 
@@ -706,7 +833,8 @@ final class VES_Source_Intake {
     /** Read-only recent-objects tables with traceability columns. */
     private static function recent_objects($ws) {
         if (!class_exists('VES_Intelligence_Store')) { return ''; }
-        $h = '<section class="fi-intake-card" id="fi-intake-recent"><h2>' . self::e('Recent objects (workspace ' . (int) $ws . ')') . '</h2>';
+        $h = '<section class="fi-intake-card" id="fi-intake-recent"><h2>' . self::e('Pipeline — recent objects (workspace ' . (int) $ws . ')') . '</h2>';
+        $h .= '<p class="fi-intake-hint">' . self::e('Each row carries its own next action: promote, approve/reject, build, export, record. No id copying on the normal path.') . '</p>';
         try {
             $sources = (array) VES_Intelligence_Store::list_sources(['workspace_id' => $ws, 'limit' => 8]);
             $signals = (array) VES_Intelligence_Store::list_signals(['workspace_id' => $ws, 'limit' => 8]);
@@ -756,10 +884,18 @@ final class VES_Source_Intake {
                 $status = (string) ($i['status'] ?? 'draft');
                 $pstate = method_exists('VES_Intelligence_Store', 'insight_presentation_state') ? VES_Intelligence_Store::insight_presentation_state($i) : $status;
                 $evi = is_array($i['evidence_ids'] ?? null) ? count($i['evidence_ids']) : 0;
-                $action = $status === 'approved'
-                    ? self::action_form(self::ACTION_BRIEF, ['workspace_id' => $ws, 'insight_id' => $id], 'Build brief')
-                    : '<span class="fi-intake-disabled">Approve before brief</span>';
-                $h .= '<tr><td>' . self::e((string) $id) . '</td><td>' . self::e((string) ($i['insight_type'] ?? '')) . '</td><td>' . self::e((string) ($i['title'] ?? '')) . '</td><td>' . $badge($pstate) . '</td><td>' . self::e($evi . ' linked') . '</td><td>' . $action . '</td></tr>';
+                $wb = '<a class="button button-small" href="' . self::eu(self::workbench_url('fi-brief-workbench', ['insight_id' => $id, 'workspace_id' => $ws])) . '">' . self::e('Workbench') . '</a> ';
+                if ($status === 'approved') {
+                    $action = self::action_form(self::ACTION_BRIEF, ['workspace_id' => $ws, 'insight_id' => $id], 'Build brief');
+                } elseif (in_array($status, ['draft', 'reviewed'], true)) {
+                    // The decision lives HERE now: review without leaving the loop.
+                    // The lifecycle service still enforces evidence/quality gates.
+                    $action = self::action_form(self::ACTION_APPROVE_INSIGHT, ['workspace_id' => $ws, 'insight_id' => $id], 'Approve')
+                        . self::action_form(self::ACTION_REJECT_INSIGHT, ['workspace_id' => $ws, 'insight_id' => $id], 'Reject', 'button button-small fi-intake-danger');
+                } else {
+                    $action = '<span class="fi-intake-disabled">' . self::e($status === 'rejected' ? 'Rejected — terminal state' : 'No action in this state') . '</span>';
+                }
+                $h .= '<tr><td>' . self::e((string) $id) . '</td><td>' . self::e((string) ($i['insight_type'] ?? '')) . '</td><td>' . self::e((string) ($i['title'] ?? '')) . '</td><td>' . $badge($pstate) . '</td><td>' . self::e($evi . ' linked') . '</td><td>' . $wb . $action . '</td></tr>';
             }
             $h .= '</tbody></table>';
         }
@@ -770,8 +906,9 @@ final class VES_Source_Intake {
             $h .= '<table class="widefat striped"><thead><tr><th>id</th><th>insight</th><th>title</th><th>state</th><th>next action</th></tr></thead><tbody>';
             foreach ($briefs as $b) {
                 $id = (int) ($b['id'] ?? 0);
+                $wb = '<a class="button button-small" href="' . self::eu(self::workbench_url('fi-draft-workbench', ['brief_id' => $id, 'workspace_id' => $ws])) . '">' . self::e('Workbench') . '</a> ';
                 $action = self::action_form(self::ACTION_DRAFT, ['workspace_id' => $ws, 'brief_id' => $id], 'Create Google Ads block');
-                $h .= '<tr><td>' . self::e((string) $id) . '</td><td>' . self::e('#' . (int) ($b['insight_id'] ?? 0)) . '</td><td>' . self::e((string) ($b['title'] ?? '')) . '</td><td>' . $badge((string) ($b['status'] ?? 'draft')) . '</td><td>' . $action . '</td></tr>';
+                $h .= '<tr><td>' . self::e((string) $id) . '</td><td>' . self::e('#' . (int) ($b['insight_id'] ?? 0)) . '</td><td>' . self::e((string) ($b['title'] ?? '')) . '</td><td>' . $badge((string) ($b['status'] ?? 'draft')) . '</td><td>' . $wb . $action . '</td></tr>';
             }
             $h .= '</tbody></table>';
         }
@@ -784,10 +921,14 @@ final class VES_Source_Intake {
                 $id = (int) ($d['id'] ?? 0);
                 $status = (string) ($d['status'] ?? 'generated');
                 $memory = self::action_form(self::ACTION_MEMORY, ['workspace_id' => $ws, 'draft_id' => $id], 'Create memory');
-                $usage = $status === 'approved'
-                    ? self::action_form(self::ACTION_USAGE, ['workspace_id' => $ws, 'draft_id' => $id], 'Record usage', 'button button-small button-secondary')
-                    : '<span class="fi-intake-disabled">Approve before usage</span>';
-                $h .= '<tr><td>' . self::e((string) $id) . '</td><td>' . self::e('#' . (int) ($d['brief_id'] ?? 0)) . '</td><td>' . self::e((string) ($d['channel'] ?? '')) . '</td><td>' . self::e((string) ($d['title'] ?? '')) . '</td><td>' . $badge($status) . '</td><td>' . $memory . $usage . '</td></tr>';
+                if ($status === 'approved') {
+                    $review = self::action_form(self::ACTION_USAGE, ['workspace_id' => $ws, 'draft_id' => $id], 'Record usage', 'button button-small button-secondary');
+                } elseif (in_array($status, ['generated', 'edited'], true)) {
+                    $review = self::action_form(self::ACTION_APPROVE_DRAFT, ['workspace_id' => $ws, 'draft_id' => $id], 'Approve output');
+                } else {
+                    $review = '<span class="fi-intake-disabled">' . self::e('No review action in this state') . '</span>';
+                }
+                $h .= '<tr><td>' . self::e((string) $id) . '</td><td>' . self::e('#' . (int) ($d['brief_id'] ?? 0)) . '</td><td>' . self::e((string) ($d['channel'] ?? '')) . '</td><td>' . self::e((string) ($d['title'] ?? '')) . '</td><td>' . $badge($status) . '</td><td>' . $memory . $review . '</td></tr>';
             }
             $h .= '</tbody></table>';
         }

@@ -42,6 +42,21 @@ The files must EXIST even when empty of findings — absence blocks `passed`.
 - [ ] Spanish/English copy consistent on the pilot surfaces
 - [ ] No fake/placeholder metrics observed
 
+## Responsive / UX manual QA (Phase 3 — workbench rails + intake)
+
+Resize (or device-emulate) at **320, 375, 430, 768 and 1024 px** widths and confirm on
+the Brief Workbench, Draft Workbench, Intake page and Release Candidate page:
+
+- [ ] ≥1101px: workbench shows THREE rails — evidence (left), object (center), decision/status (right)
+- [ ] ≤1100px: evidence rail folds BELOW object + decision (two columns, then full-width evidence)
+- [ ] ≤782px: rails stack to ONE column in order object → decision → evidence; no horizontal scrolling of the page itself
+- [ ] 320–430px: no clipped text; long mono strings (hashes, URLs) wrap or scroll inside their card, never the viewport
+- [ ] Decision-status card shows: state badge + what it means + a concrete "Next:" action — on every workbench state
+- [ ] Intake forms are usable with keyboard only (tab order top→bottom; skip link lands on recent objects)
+- [ ] RC "Staging checklist" table scrolls horizontally inside its section on small screens
+- [ ] Focus outlines visible on every interactive control (focus-visible)
+- [ ] prefers-reduced-motion honored (no animation observed when enabled)
+
 ## Flow
 
 1. `bash scripts/future-island-browser-smoke.sh --base-url=…` (reachability only).

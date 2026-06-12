@@ -16,7 +16,7 @@
  */
 error_reporting(E_ALL & ~E_DEPRECATED);
 if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.9'); }
+if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.3.0'); }
 if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc1'); }
 
 function get_option($k, $d = false) { return $GLOBALS['__opts'][$k] ?? $d; }
@@ -44,7 +44,7 @@ $html = VES_Release_Candidate_Page::render_html();
 // ── 1. Identity ──────────────────────────────────────────────────────────────
 $ok(strpos($html, 'Release Candidate') !== false, 'page titles itself Release Candidate');
 $ok(strpos($html, 'Future Island') !== false, 'page carries the Future Island identity');
-$ok(strpos($html, '1.2.9') !== false && strpos($html, 'v0.1-rc1') !== false, 'version + RC label shown');
+$ok(strpos($html, '1.3.0') !== false && strpos($html, 'v0.1-rc1') !== false, 'version + RC label shown');
 
 // ── 2. Honesty: UNRUN + never production-ready ───────────────────────────────
 $ok(strpos($html, 'UNRUN') !== false, 'page states live staging validation is UNRUN');
@@ -100,6 +100,35 @@ $GLOBALS['__opts']['ves_generation_execution_enabled'] = true;
 $html3 = VES_Release_Candidate_Page::render_html();
 $ok(strpos($html3, '>ON<') !== false, 'an enabled flag is shown as ON, not hidden');
 $GLOBALS['__opts']['ves_generation_execution_enabled'] = false;
+
+// ── 7. Phase 1 — explicit FAILED + unknown_error banners ─────────────────────
+$GLOBALS['__opts']['ves_rc_live_validation'] = ['status' => 'failed', 'recorded_at' => '2026-06-12 09:00:00'];
+$html4 = VES_Release_Candidate_Page::render_html();
+$ok(strpos($html4, 'Live staging validation: FAILED.') !== false, 'a recorded failed run gets an explicit FAILED banner');
+$ok(strpos($html4, 'NOT production-ready') !== false, 'failed state stays NOT production-ready');
+$ok(strpos($html4, 'recorded as passed') === false, 'failed state never shows the passed banner');
+
+$GLOBALS['__opts']['ves_rc_live_validation'] = 'corrupt-garbage-not-array';
+$html5 = VES_Release_Candidate_Page::render_html();
+$ok(strpos($html5, 'unknown_error') !== false && stripos($html5, 'unreadable') !== false, 'a corrupt record is surfaced as unknown_error/unreadable');
+$ok(strpos($html5, 'NOT production-ready') !== false, 'unknown_error stays NOT production-ready');
+unset($GLOBALS['__opts']['ves_rc_live_validation']);
+
+// ── 8. Phase 1 — staging checklist section ───────────────────────────────────
+$html6 = VES_Release_Candidate_Page::render_html();
+$ok(strpos($html6, 'Staging checklist') !== false && strpos($html6, 'fiis-rc-checklist') !== false, 'staging checklist section renders');
+$ok(strpos($html6, '<th>Next action</th>') !== false, 'checklist has a next-action column');
+foreach (['Release build', 'Live staging validation', 'Archive verification', 'Generation execution', 'Database schema', 'Memory context preview', 'Prompt package preview', 'Operator queue'] as $row) {
+    $ok(strpos($html6, '<td>' . $row . '</td>') !== false, "checklist row present: {$row}");
+}
+$ok(strpos($html6, 'future-island-live-validation-v3.sh') !== false, 'UNRUN next action points at the validation script');
+$ok(strpos($html6, 'can never look greener') !== false, 'checklist carries the never-greener honesty note');
+// Failed validation flips the checklist row too (consistency with the banner).
+$GLOBALS['__opts']['ves_rc_live_validation'] = ['status' => 'failed', 'recorded_at' => '2026-06-12 09:00:00'];
+$html7 = VES_Release_Candidate_Page::render_html();
+$ok(strpos($html7, 're-record a passing file-backed pack') !== false, 'failed state changes the checklist next action');
+unset($GLOBALS['__opts']['ves_rc_live_validation']);
+$ok($GLOBALS['__opt_writes'] === [], 'all renders (including the checklist) performed zero option writes');
 
 echo "\n{$pass} passed, {$fail} failed\n";
 exit($fail === 0 ? 0 : 1);

@@ -89,6 +89,30 @@ foreach (['brief' => $brief_html, 'draft' => $draft_html] as $kind => $html) {
 }
 $ok(substr_count($brief_html, 'fi-workbench-nav') === 1, 'exactly one nav per page');
 
+// ── 4b. Phase 3 — three-rail operator layout ─────────────────────────────────
+foreach (['brief' => $brief_html, 'draft' => $draft_html] as $kind => $html) {
+    $ok(substr_count($html, 'fi-wb-rails') === 1, "{$kind}: exactly one rails grid");
+    foreach (['fi-wb-rail-evidence', 'fi-wb-rail-object', 'fi-wb-rail-decision'] as $rail) {
+        $ok(substr_count($html, $rail) === 1, "{$kind}: rail {$rail} present once");
+    }
+    $left  = substr($html, strpos($html, 'fi-wb-rail-evidence'), strpos($html, 'fi-wb-rail-object') - strpos($html, 'fi-wb-rail-evidence'));
+    $mid   = substr($html, strpos($html, 'fi-wb-rail-object'), strpos($html, 'fi-wb-rail-decision') - strpos($html, 'fi-wb-rail-object'));
+    $right = substr($html, strpos($html, 'fi-wb-rail-decision'));
+    $ok(strpos($left, 'fi-evidence-binder') !== false, "{$kind}: evidence binder lives in the LEFT rail");
+    $ok(strpos($mid, 'id="fi-wb-target"') !== false, "{$kind}: object under review lives in the CENTER rail");
+    $ok(strpos($right, 'fi-decision-card') !== false && strpos($right, 'fi-review-rail') !== false && strpos($right, 'id="fi-wb-package"') !== false,
+        "{$kind}: decision card + package + review live in the RIGHT rail");
+    $ok(strpos($right, 'Decision status') !== false && strpos($right, 'Next:') !== false, "{$kind}: decision card states the label AND the next action");
+    $ok(strpos($html, 'role="region"') !== false && strpos($html, 'aria-label="Evidence"') !== false, "{$kind}: rails are labeled regions for assistive tech");
+}
+$ok(strpos($brief_html, 'Human-approved. A brief can be built') !== false, 'approved insight decision card explains the state honestly');
+// Rails CSS: grid areas + stacking breakpoints + overflow-safe columns.
+$ok(strpos($css, '.ves-wrap .fi-wb-rails') !== false && strpos($css, 'grid-template-areas: "evidence object decision"') !== false, 'rails grid defined with named areas');
+$ok(strpos($css, '"object decision" "evidence evidence"') !== false, 'tablet breakpoint folds evidence below');
+$ok(strpos($css, '"object" "decision" "evidence"') !== false, 'phone breakpoint stacks to one column (320–430px safe)');
+$ok(strpos($css, 'minmax(0, 1fr)') !== false, 'rails use minmax(0,1fr) so long mono strings cannot blow out the grid');
+$ok(strpos($css, '.ves-wrap .fi-decision-card') !== false && strpos($css, '.ves-wrap .fi-decision-next') !== false, 'decision card styled by the UI system');
+
 // ── 5. RC page copy affordance is inert-safe ─────────────────────────────────
 $rc = (string) file_get_contents($root . '/includes/class-ves-release-candidate-page.php');
 $ok(strpos($rc, 'class="fiis-rc-copy"') !== false && strpos($rc, 'type="button"') !== false, 'copy buttons are explicit type=button');

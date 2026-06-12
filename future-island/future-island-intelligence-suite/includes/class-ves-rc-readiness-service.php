@@ -461,6 +461,14 @@ final class VES_RC_Readiness_Service {
             return self::row('live_validation', 'Live staging validation', 'warn',
                 'A manually-written validation option exists WITHOUT a verifiable evidence pack — treated as UNVERIFIED, not passed.');
         }
+        if ($status === 'failed') {
+            return self::row('live_validation', 'Live staging validation', 'block',
+                'A live staging validation was recorded as FAILED. Fix the failures, re-run the validation script, and re-record a passing, file-backed pack.');
+        }
+        if ($status === 'unknown_error') {
+            return self::row('live_validation', 'Live staging validation', 'block',
+                'A live-validation record exists but could not be read (corrupt or unexpected shape). Treated as NOT validated — re-record from evidence.');
+        }
         return self::row('live_validation', 'Live staging validation', 'warn',
             'UNRUN / not recorded. The RC is statically verified only — production claims are forbidden until the live checklist passes.');
     }

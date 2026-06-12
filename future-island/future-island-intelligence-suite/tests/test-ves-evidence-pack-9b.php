@@ -17,7 +17,7 @@
  */
 error_reporting(E_ALL & ~E_DEPRECATED);
 if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.9'); }
+if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.3.0'); }
 if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc3'); }
 
 function sanitize_key($s){return strtolower(preg_replace('/[^a-z0-9_\-]/i','',(string)$s));}
@@ -140,6 +140,19 @@ $state = VES_RC_Evidence_Pack::live_validation_state();
 $ok($state['status'] === 'passed' && !empty($state['files_verified']), 'file-backed recorded state classifies as passed');
 unset($GLOBALS['__o']['ves_rc_live_validation']);
 $ok(VES_RC_Evidence_Pack::live_validation_state()['status'] === 'unrun', 'no option means unrun');
+
+// Phase 1 — explicit failed + unknown_error states (never silently optimistic).
+$GLOBALS['__o']['ves_rc_live_validation'] = ['status' => 'failed', 'recorded_at' => '2026-06-12 09:00:00'];
+$state = VES_RC_Evidence_Pack::live_validation_state();
+$ok($state['status'] === 'failed', 'a recorded FAILED run classifies as failed (not unverified_manual)');
+$ok(strpos((string) $state['note'], 'FAILED') !== false && empty($state['evidence_pack_hash']), 'failed state is explicit and carries no trusted hash');
+$GLOBALS['__o']['ves_rc_live_validation'] = 'corrupt-not-an-array';
+$ok(VES_RC_Evidence_Pack::live_validation_state()['status'] === 'unknown_error', 'garbage record classifies as unknown_error, never as unrun');
+$GLOBALS['__o']['ves_rc_live_validation'] = ['recorded_at' => '2026-06-12']; // present but statusless
+$ok(VES_RC_Evidence_Pack::live_validation_state()['status'] === 'unknown_error', 'statusless record classifies as unknown_error');
+$GLOBALS['__o']['ves_rc_live_validation'] = ['status' => ['nested' => 'garbage']]; // non-string status
+$ok(VES_RC_Evidence_Pack::live_validation_state()['status'] === 'unknown_error', 'non-string status classifies as unknown_error');
+unset($GLOBALS['__o']['ves_rc_live_validation']);
 
 echo "\n{$pass} passed, {$fail} failed\n";
 exit($fail === 0 ? 0 : 1);

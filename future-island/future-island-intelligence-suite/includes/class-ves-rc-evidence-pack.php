@@ -226,12 +226,23 @@ final class VES_RC_Evidence_Pack {
         return ['status' => 'ok', 'missing' => [], 'mismatched' => []];
     }
 
+    /** Safety cap for the decompressed evidence tar (the spec'd pack is a few MB). */
+    const MAX_DECOMPRESSED_BYTES = 1073741824; // 1 GiB
+
     /**
-     * Verify a tar.gz evidence archive: extract to a temp dir (PharData) and run
-     * verify_files against the extraction. The pack's evidence_archive_sha256 is
-     * the ARCHIVE MANIFEST hash (sha256 of manifest-files.txt — non-circular) and
-     * is re-verified against the extracted manifest. Failure to extract/verify
-     * NEVER records a pass.
+     * Verify a tar(.gz) evidence archive and run verify_files against the
+     * extraction. Hardened path:
+     *   1. gzip archives are decompressed to a plain .tar in the temp dir first
+     *      (streamed, size-capped) — PharData's direct .tar.gz extraction can
+     *      silently produce zero-byte files on some PHP/zlib builds;
+     *   2. every entry name is pre-scanned (no absolute paths, no '..' segments)
+     *      before extraction;
+     *   3. every extracted file must match its archived size — zero-byte or
+     *      truncated extraction is detected explicitly and fails closed;
+     *   4. the temp dir is removed on EVERY return path.
+     * The pack's evidence_archive_sha256 is the ARCHIVE MANIFEST hash (sha256 of
+     * manifest-files.txt — non-circular) and is re-verified against the extracted
+     * manifest. Failure to extract/verify NEVER records a pass.
      * @return array{status:string,missing:array,mismatched:array,root:string}
      */
     public static function verify_archive(array $pack, $archive_path) {
@@ -243,24 +254,95 @@ final class VES_RC_Evidence_Pack {
             return ['status' => 'missing_required_artifacts', 'missing' => ['PharData unavailable: cannot extract archive for verification'], 'mismatched' => [], 'root' => ''];
         }
         $tmp = rtrim(sys_get_temp_dir(), '/') . '/ves-evidence-' . substr(hash('sha256', $archive_path . microtime()), 0, 12);
+        if (!@mkdir($tmp, 0700, true) || !is_dir($tmp)) {
+            return ['status' => 'missing_required_artifacts', 'missing' => ['temp extraction directory could not be created'], 'mismatched' => [], 'root' => ''];
+        }
+        $fail = static function ($detail) use ($tmp) {
+            self::cleanup_dir($tmp);
+            return ['status' => 'missing_required_artifacts', 'missing' => [(string) $detail], 'mismatched' => [], 'root' => ''];
+        };
+        // 1. Decompress gzip → plain .tar ourselves (detected by magic bytes, not name).
+        $tar_path = $archive_path;
+        $magic = (string) @file_get_contents($archive_path, false, null, 0, 2);
+        if ($magic === "\x1f\x8b") {
+            if (!function_exists('gzopen')) {
+                return $fail('zlib unavailable: cannot decompress the gzip evidence archive');
+            }
+            $tar_path = $tmp . '/evidence.tar';
+            $gz = @gzopen($archive_path, 'rb');
+            if ($gz === false) { return $fail('archive decompression failed: cannot open gzip stream'); }
+            $out = @fopen($tar_path, 'wb');
+            if ($out === false) { @gzclose($gz); return $fail('archive decompression failed: cannot write temp tar'); }
+            $written = 0;
+            while (!gzeof($gz)) {
+                $chunk = gzread($gz, 1048576);
+                if ($chunk === false) { @fclose($out); @gzclose($gz); return $fail('archive decompression failed: corrupt or truncated gzip stream'); }
+                if ($chunk === '') { break; }
+                $written += strlen($chunk);
+                if ($written > self::MAX_DECOMPRESSED_BYTES) {
+                    @fclose($out); @gzclose($gz);
+                    return $fail('archive decompression refused: decompressed size exceeds the 1 GiB safety cap');
+                }
+                fwrite($out, $chunk);
+            }
+            @fclose($out); @gzclose($gz);
+            if ($written === 0 || (int) @filesize($tar_path) === 0) {
+                return $fail('archive decompression produced an empty tar (corrupt, truncated, or empty gzip stream)');
+            }
+        }
+        // 2. Pre-scan entry names; record per-entry sizes for the extraction audit.
+        $entry_sizes = [];
+        $xdir = $tmp . '/x';
         try {
-            @mkdir($tmp, 0700, true);
-            $phar = new PharData($archive_path);
-            $phar->extractTo($tmp, null, true);
+            $phar = new PharData($tar_path);
+            $prefix = 'phar://' . $tar_path . '/';
+            foreach (new RecursiveIteratorIterator($phar) as $entry) {
+                $rel = str_replace('\\', '/', (string) $entry->getPathname());
+                $norm_prefix = str_replace('\\', '/', $prefix);
+                if (strpos($rel, $norm_prefix) === 0) { $rel = substr($rel, strlen($norm_prefix)); }
+                if (!self::safe_archive_entry($rel)) {
+                    return $fail('archive refused: unsafe entry path inside archive (absolute or traversal)');
+                }
+                if ($entry->isFile()) { $entry_sizes[$rel] = (int) $entry->getSize(); }
+            }
+            if (count($entry_sizes) === 0) {
+                return $fail('archive contains no files');
+            }
+            if (!@mkdir($xdir, 0700, true) || !is_dir($xdir)) {
+                return $fail('temp extraction directory could not be created');
+            }
+            $phar->extractTo($xdir, null, true);
         } catch (\Throwable $e) {
-            return ['status' => 'missing_required_artifacts', 'missing' => ['archive extraction failed: ' . basename($archive_path)], 'mismatched' => [], 'root' => ''];
+            return $fail('archive extraction failed: ' . basename($archive_path));
+        }
+        // 3. Extraction audit: every entry present at its full archived size.
+        $short = [];
+        foreach ($entry_sizes as $rel => $size) {
+            $abs = $xdir . '/' . $rel;
+            $got = is_file($abs) ? (int) @filesize($abs) : -1;
+            if ($got !== $size) {
+                $short[] = $rel . ($got === 0 && $size > 0 ? ' (extracted as zero bytes)' : ' (extraction incomplete)');
+                if (count($short) >= 8) { break; }
+            }
+        }
+        if (count($short) > 0) {
+            self::cleanup_dir($tmp);
+            return ['status' => 'missing_required_artifacts', 'missing' => $short, 'mismatched' => [], 'root' => ''];
         }
         // The archive contains the evidence folder; locate the root that holds the manifest.
-        $root = $tmp;
+        $root = $xdir;
         $manifest = $root . '/manifest-files.txt';
         if (!is_file($manifest)) {
-            $entries = glob($tmp . '/*', GLOB_ONLYDIR);
+            $entries = glob($xdir . '/*', GLOB_ONLYDIR);
             foreach ((array) $entries as $dir) {
                 if (is_file($dir . '/manifest-files.txt')) { $root = $dir; $manifest = $dir . '/manifest-files.txt'; break; }
             }
         }
         if (!is_file($manifest)) {
-            return ['status' => 'missing_required_artifacts', 'missing' => ['manifest-files.txt not found in archive'], 'mismatched' => [], 'root' => ''];
+            return $fail('manifest-files.txt not found in archive');
+        }
+        if ((int) @filesize($manifest) === 0) {
+            return $fail('manifest-files.txt extracted as zero bytes (extraction edge case; archive not trusted)');
         }
         $manifest_sha = (string) hash_file('sha256', $manifest);
         $declared = strtolower((string) ($pack['evidence_archive_sha256'] ?? ''));
@@ -272,6 +354,17 @@ final class VES_RC_Evidence_Pack {
         $result['root'] = '';
         self::cleanup_dir($tmp);
         return $result;
+    }
+
+    /** Archive entry names must be relative and traversal-free. */
+    private static function safe_archive_entry($p) {
+        $p = (string) $p;
+        if ($p === '' || strpos($p, "\0") !== false) { return false; }
+        if ($p[0] === '/' || preg_match('/^[A-Za-z]:/', $p)) { return false; }
+        foreach (explode('/', $p) as $seg) {
+            if ($seg === '..') { return false; }
+        }
+        return true;
     }
 
     /** Best-effort recursive removal of the temp extraction dir (bounded to /tmp). */
@@ -355,16 +448,32 @@ final class VES_RC_Evidence_Pack {
     }
 
     /**
-     * Classify the stored live-validation option (9E.2 taxonomy):
+     * Classify the stored live-validation option (9E.2 taxonomy + Phase 1 states):
      *   passed              — evidence-pack recorded WITH file verification
+     *   failed              — a validation run was explicitly recorded as FAILED
      *   json_only_unverified — evidence-pack-shaped state without files_verified
      *   unverified_manual   — any other manual option
      *   unrun               — nothing recorded
+     *   unknown_error       — something IS recorded but is unreadable/garbage
+     *                         (never silently reported as unrun)
      */
     public static function live_validation_state() {
-        $raw = function_exists('get_option') ? get_option(self::OPTION_LIVE_VALIDATION, []) : [];
-        if (!is_array($raw) || empty($raw['status'])) {
+        $raw = function_exists('get_option') ? get_option(self::OPTION_LIVE_VALIDATION, null) : null;
+        if ($raw === null || $raw === false) {
             return ['status' => 'unrun', 'recorded_at' => '', 'evidence_pack_hash' => '', 'schema_version' => '', 'note' => 'No live staging validation has been recorded on this install.', 'missing_for_trust' => ['evidence pack', 'file-backed verification', 'browser artifacts']];
+        }
+        if (!is_array($raw) || empty($raw['status']) || !is_string($raw['status'])) {
+            return ['status' => 'unknown_error', 'recorded_at' => '', 'evidence_pack_hash' => '', 'schema_version' => '', 'note' => 'A live-validation record exists but could not be read (corrupt or unexpected shape). Treat as NOT validated; re-record from evidence.', 'missing_for_trust' => ['a readable, verified evidence-pack record']];
+        }
+        if (self::clean_key((string) $raw['status']) === 'failed') {
+            return [
+                'status'            => 'failed',
+                'recorded_at'       => self::clean_text((string) ($raw['recorded_at'] ?? ''), 40),
+                'evidence_pack_hash' => '',
+                'schema_version'    => self::clean_text((string) ($raw['schema_version'] ?? ''), 8),
+                'note'              => 'A live staging validation was recorded as FAILED. The release must not proceed until a passing, file-backed run is recorded.',
+                'missing_for_trust' => ['a PASSING, file-backed evidence pack (fix the failures, re-run the validation script, re-record)'],
+            ];
         }
         $hash = strtolower((string) ($raw['evidence_pack_hash'] ?? ''));
         $is_pack = (string) ($raw['source'] ?? '') === 'evidence_pack' && self::is_hash($hash);

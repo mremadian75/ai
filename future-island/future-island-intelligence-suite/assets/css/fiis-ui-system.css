@@ -302,6 +302,55 @@
   opacity: 0.85;
 }
 
+/* ── 6b. Workbench three-rail layout (Phase 3) ────────────────────────────────
+   evidence (left) / object under review (center) / decision + status (right).
+   minmax(0, 1fr) keeps long mono strings from blowing out the grid; rails
+   stack to a single readable column on phones (320–430px safe). */
+.ves-wrap .fi-wb-rails {
+  display: grid;
+  gap: var(--fi-space-4);
+  grid-template-columns: minmax(220px, 300px) minmax(0, 1fr) minmax(240px, 340px);
+  grid-template-areas: "evidence object decision";
+  align-items: start;
+}
+.ves-wrap .fi-wb-rail { min-width: 0; }
+.ves-wrap .fi-wb-rail-evidence { grid-area: evidence; }
+.ves-wrap .fi-wb-rail-object   { grid-area: object; }
+.ves-wrap .fi-wb-rail-decision { grid-area: decision; }
+@media (max-width: 1100px) {
+  .ves-wrap .fi-wb-rails {
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
+    grid-template-areas: "object decision" "evidence evidence";
+  }
+}
+@media (max-width: 782px) {
+  .ves-wrap .fi-wb-rails {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "object" "decision" "evidence";
+  }
+}
+
+.ves-wrap .fi-decision-card {
+  background: var(--fi-surface);
+  border: 1px solid var(--fi-bdr);
+  border-radius: var(--fi-radius);
+  padding: var(--fi-space-4);
+  margin: 0 0 var(--fi-space-4);
+}
+.ves-wrap .fi-decision-card h3 {
+  margin-top: 0;
+}
+.ves-wrap .fi-decision-explain {
+  color: var(--fi-ink);
+  margin: var(--fi-space-2) 0;
+}
+.ves-wrap .fi-decision-next {
+  border-left: 3px solid var(--fi-lime); /* tactical "go" accent — next action only */
+  padding-left: var(--fi-space-3);
+  color: var(--fi-muted);
+  margin: var(--fi-space-2) 0 0;
+}
+
 /* ── 7. Workbench navigation ──────────────────────────────────────────────── */
 .ves-wrap .fi-workbench-nav {
   display: flex;

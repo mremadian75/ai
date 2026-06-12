@@ -16,7 +16,7 @@
  */
 error_reporting(E_ALL & ~E_DEPRECATED);
 if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.9'); }
+if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.3.0'); }
 if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc3'); }
 
 function sanitize_key($s){return strtolower(preg_replace('/[^a-z0-9_\-]/i','',(string)$s));}
@@ -142,9 +142,80 @@ if (class_exists('PharData')) {
 
     $files = VES_RC_Evidence_Pack::verify_archive($pack, '/nonexistent.tar.gz');
     $ok($files['status'] === 'missing_required_artifacts', 'missing archive file refuses verification');
+
+    // ── 5b. Hardened extraction path (Phase 0) ───────────────────────────────
+    $tmp_glob = function () { return glob(rtrim(sys_get_temp_dir(), '/') . '/ves-evidence-*') ?: []; };
+    $tmp_before = $tmp_glob();
+
+    // A plain UNCOMPRESSED .tar verifies through the non-gzip branch.
+    $plain_tar = sys_get_temp_dir() . '/fi-ev-9e-plain-' . getmypid() . '.tar';
+    @unlink($plain_tar);
+    $p2 = new PharData($plain_tar);
+    $p2->buildFromDirectory($root);
+    $files = VES_RC_Evidence_Pack::verify_archive($pack, $plain_tar);
+    $ok($files['status'] === 'ok', 'plain uncompressed .tar verifies');
+
+    // Raw tar writer for hostile fixtures (PharData refuses to author them).
+    $mk_tar = function (array $entries) {
+        $tar = '';
+        foreach ($entries as $name => $content) {
+            $h  = str_pad(substr((string) $name, 0, 100), 100, "\0");
+            $h .= "0000644\0" . "0000000\0" . "0000000\0";
+            $h .= sprintf('%011o', strlen($content)) . "\0";
+            $h .= sprintf('%011o', 0) . "\0";
+            $h .= '        ' . '0' . str_repeat("\0", 100);
+            $h .= "ustar\0" . "00" . str_repeat("\0", 64);
+            $h .= "0000000\0" . "0000000\0" . str_repeat("\0", 167);
+            $sum = 0; for ($i = 0; $i < 512; $i++) { $sum += ord($h[$i]); }
+            $h = substr($h, 0, 148) . sprintf('%06o', $sum) . "\0 " . substr($h, 156);
+            $tar .= $h . $content . str_repeat("\0", (512 - strlen($content) % 512) % 512);
+        }
+        return $tar . str_repeat("\0", 1024);
+    };
+
+    // Empty gzip stream => explicit "empty tar" refusal, not a confusing mismatch.
+    $empty_gz = sys_get_temp_dir() . '/fi-ev-9e-empty-' . getmypid() . '.tar.gz';
+    file_put_contents($empty_gz, gzencode(''));
+    $files = VES_RC_Evidence_Pack::verify_archive($pack, $empty_gz);
+    $ok($files['status'] === 'missing_required_artifacts' && strpos(implode(' ', $files['missing']), 'empty tar') !== false,
+        'empty gzip stream detected explicitly (empty-tar refusal)');
+
+    // Truncated gzip => fails closed (never ok).
+    $trunc_gz = sys_get_temp_dir() . '/fi-ev-9e-trunc-' . getmypid() . '.tar.gz';
+    $valid_bytes = (string) file_get_contents($archive);
+    file_put_contents($trunc_gz, substr($valid_bytes, 0, (int) (strlen($valid_bytes) * 0.6)));
+    $files = VES_RC_Evidence_Pack::verify_archive($pack, $trunc_gz);
+    $ok($files['status'] !== 'ok', 'truncated gzip archive fails closed');
+
+    // Path-traversal entry name => refused before extraction.
+    $evil_gz = sys_get_temp_dir() . '/fi-ev-9e-evil-' . getmypid() . '.tar.gz';
+    file_put_contents($evil_gz, gzencode($mk_tar(['../fi-ev-9e-escape.txt' => 'escape attempt'])));
+    $files = VES_RC_Evidence_Pack::verify_archive($pack, $evil_gz);
+    $ok($files['status'] === 'missing_required_artifacts', 'archive with traversal entry name refused');
+    $ok(!file_exists(dirname(sys_get_temp_dir() . '/x') . '/fi-ev-9e-escape.txt') && !file_exists(sys_get_temp_dir() . '/fi-ev-9e-escape.txt'),
+        'traversal entry never escaped onto disk');
+
+    // Archive without a manifest => clear refusal, and no temp dir left behind.
+    $noman_gz = sys_get_temp_dir() . '/fi-ev-9e-noman-' . getmypid() . '.tar.gz';
+    file_put_contents($noman_gz, gzencode($mk_tar(['hello.txt' => 'no manifest here'])));
+    $files = VES_RC_Evidence_Pack::verify_archive($pack, $noman_gz);
+    $ok($files['status'] === 'missing_required_artifacts' && strpos(implode(' ', $files['missing']), 'manifest-files.txt') !== false,
+        'archive without manifest refused with a clear detail');
+
+    // Zero-byte manifest inside the archive => explicit zero-byte refusal.
+    $zman_gz = sys_get_temp_dir() . '/fi-ev-9e-zman-' . getmypid() . '.tar.gz';
+    file_put_contents($zman_gz, gzencode($mk_tar(['manifest-files.txt' => ''])));
+    $files = VES_RC_Evidence_Pack::verify_archive($pack, $zman_gz);
+    $ok($files['status'] === 'missing_required_artifacts' && strpos(implode(' ', $files['missing']), 'zero bytes') !== false,
+        'zero-byte manifest detected explicitly');
+
+    // Every scenario above must clean its temp extraction dir.
+    $ok($tmp_glob() === $tmp_before, 'no ves-evidence-* temp dirs leaked by any verification path');
+
+    foreach ([$plain_tar, $empty_gz, $trunc_gz, $evil_gz, $noman_gz, $zman_gz] as $f) { @unlink($f); }
 } else {
     $ok(true, 'PharData unavailable in this PHP build — archive path covered by root-mode tests (verify_archive fails closed by design)');
-    $ok(true, 'skip'); $ok(true, 'skip'); $ok(true, 'skip'); $ok(true, 'skip');
+    for ($i = 0; $i < 12; $i++) { $ok(true, 'skip'); }
 }
 
 echo "\n{$pass} passed, {$fail} failed\n";

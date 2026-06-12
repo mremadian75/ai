@@ -40,37 +40,35 @@ final class VES_Workbench {
         if ($ws > 0 && class_exists('VES_Workspace_Guard') && VES_Workspace_Guard::assert_object_in_workspace('insight', $insight, $ws) !== true) { return $h . self::error('Insight is outside this workspace.') . '</div>'; }
         if ($ws > 0 && !class_exists('VES_Workspace_Guard') && (int) ($insight['workspace_id'] ?? 0) !== $ws) { return $h . self::error('Insight is outside this workspace.') . '</div>'; }
 
-        // 1. Target summary
+        // Object rail (center): target summary + brief preview.
         $status = (string) ($insight['status'] ?? 'unknown');
-        $h .= '<section id="fi-wb-target" class="fi-readiness-panel"><h3>' . self::e('Target') . '</h3>';
-        $h .= '<p class="fi-meta-line">' . self::e('insight') . ' <code>#' . self::e((string) (int) $insight['id']) . '</code> · '
+        $object  = '<section id="fi-wb-target" class="fi-readiness-panel"><h3>' . self::e('Target') . '</h3>';
+        $object .= '<p class="fi-meta-line">' . self::e('insight') . ' <code>#' . self::e((string) (int) $insight['id']) . '</code> · '
             . self::e('status') . ' ' . (class_exists('VES_Review_State') ? VES_Review_State::badge($status) : self::e($status)) . '</p>';
-        $h .= '<p>' . self::e(self::clip((string) ($insight['title'] ?? ($insight['summary'] ?? '')), 240)) . '</p></section>';
+        $object .= '<p>' . self::e(self::clip((string) ($insight['title'] ?? ($insight['summary'] ?? '')), 240)) . '</p></section>';
 
-        // 2. Evidence Binder
-        if (class_exists('VES_Evidence_Binder')) { $h .= '<div id="fi-wb-evidence">' . VES_Evidence_Binder::render_html($insight) . '</div>'; }
-
-        // 3. Brief preview (deterministic builder, no AI)
-        $h .= '<section id="fi-wb-brief" class="fi-readiness-panel"><h3>' . self::e('Brief preview') . '</h3>';
+        $object .= '<section id="fi-wb-brief" class="fi-readiness-panel"><h3>' . self::e('Brief preview') . '</h3>';
         if (class_exists('VES_Insight_Brief_Builder') && method_exists('VES_Insight_Brief_Builder', 'build_brief_from_insight')) {
             $payload = VES_Insight_Brief_Builder::build_brief_from_insight($insight_id);
             if (function_exists('is_wp_error') && is_wp_error($payload)) {
-                $h .= '<p class="fi-empty-state">' . (class_exists('VES_Review_State') ? VES_Review_State::badge('blocked') : '') . ' '
+                $object .= '<p class="fi-empty-state">' . (class_exists('VES_Review_State') ? VES_Review_State::badge('blocked') : '') . ' '
                     . self::e($payload->get_error_code() === 'ves_brief_no_evidence' ? 'Blocked: this insight has no evidence. A brief requires evidence.' : 'Brief cannot be built for this insight yet.') . '</p>';
             } elseif (is_array($payload)) {
-                $h .= '<p class="fi-meta-line">' . self::e('objective') . ': ' . self::e(self::clip((string) ($payload['objective'] ?? ''), 200)) . '</p>';
-                $h .= '<p class="fi-meta-line">' . self::e('key message') . ': ' . self::e(self::clip((string) ($payload['key_message'] ?? ''), 240)) . '</p>';
+                $object .= '<p class="fi-meta-line">' . self::e('objective') . ': ' . self::e(self::clip((string) ($payload['objective'] ?? ''), 200)) . '</p>';
+                $object .= '<p class="fi-meta-line">' . self::e('key message') . ': ' . self::e(self::clip((string) ($payload['key_message'] ?? ''), 240)) . '</p>';
             }
         } else {
-            $h .= '<p class="fi-empty-state">' . self::e('Brief builder unavailable.') . '</p>';
+            $object .= '<p class="fi-empty-state">' . self::e('Brief builder unavailable.') . '</p>';
         }
-        $h .= '</section>';
+        $object .= '</section>';
 
-        // 4. Prompt Package Preview (6C, no AI)
-        $h .= self::package_preview_section($ws, 'brief_generation', 'insight', $insight_id);
+        // Evidence rail (left) + decision rail (right: status card, package, review).
+        $evidence = class_exists('VES_Evidence_Binder') ? '<div id="fi-wb-evidence">' . VES_Evidence_Binder::render_html($insight) . '</div>' : '';
+        $decision = self::decision_card('insight', $insight)
+            . self::package_preview_section($ws, 'brief_generation', 'insight', $insight_id)
+            . self::review_rail('brief');
 
-        // 5. Disabled review controls (no safe transition handler exists yet)
-        $h .= self::review_rail('brief');
+        $h .= self::rails($evidence, $object, $decision);
         $h .= self::actions_note();
         $h .= '</div>';
         return $h;
@@ -102,38 +100,88 @@ final class VES_Workbench {
         $status = strtolower((string) ($brief['status'] ?? 'draft'));
         $ready = in_array($status, ['approved', 'ready', 'reviewed'], true);
 
-        // 1. Brief summary
-        $h .= '<section id="fi-wb-target" class="fi-readiness-panel"><h3>' . self::e('Brief') . '</h3>';
-        $h .= '<p class="fi-meta-line">' . self::e('brief') . ' <code>#' . self::e((string) (int) $brief['id']) . '</code> · '
+        // Object rail (center): brief summary + draft readiness + output slots.
+        $object  = '<section id="fi-wb-target" class="fi-readiness-panel"><h3>' . self::e('Brief') . '</h3>';
+        $object .= '<p class="fi-meta-line">' . self::e('brief') . ' <code>#' . self::e((string) (int) $brief['id']) . '</code> · '
             . self::e('status') . ' ' . (class_exists('VES_Review_State') ? VES_Review_State::badge($status) : self::e($status)) . '</p>';
-        $h .= '<p>' . self::e(self::clip((string) ($brief['objective'] ?? ($brief['summary'] ?? '')), 240)) . '</p></section>';
+        $object .= '<p>' . self::e(self::clip((string) ($brief['objective'] ?? ($brief['summary'] ?? '')), 240)) . '</p></section>';
 
-        // 2. Draft readiness — non-approved brief BLOCKS draft
-        $h .= '<section id="fi-wb-readiness" class="fi-readiness-panel"><h3>' . self::e('Draft readiness') . '</h3>';
+        $object .= '<section id="fi-wb-readiness" class="fi-readiness-panel"><h3>' . self::e('Draft readiness') . '</h3>';
         if (!$ready) {
-            $h .= '<p>' . (class_exists('VES_Review_State') ? VES_Review_State::badge('blocked') : '') . ' '
+            $object .= '<p>' . (class_exists('VES_Review_State') ? VES_Review_State::badge('blocked') : '') . ' '
                 . self::e('Blocked: a draft requires an approved/ready brief. Approve the brief first.') . '</p>';
         } else {
-            $h .= '<p>' . (class_exists('VES_Review_State') ? VES_Review_State::badge('ready') : '') . ' ' . self::e('Brief is approved/ready.') . '</p>';
+            $object .= '<p>' . (class_exists('VES_Review_State') ? VES_Review_State::badge('ready') : '') . ' ' . self::e('Brief is approved/ready.') . '</p>';
         }
-        $h .= '</section>';
+        $object .= '</section>';
 
-        // 3. Evidence Binder (from the brief)
-        if (class_exists('VES_Evidence_Binder')) { $h .= '<div id="fi-wb-evidence">' . VES_Evidence_Binder::render_html($brief) . '</div>'; }
+        $object .= '<section id="fi-wb-slots" class="fi-readiness-panel"><h3>' . self::e('Output slots (guidance — not generated)') . '</h3><ul class="fi-output-slots">';
+        foreach (self::DRAFT_SLOTS as $slot) { $object .= '<li><code>' . self::e($slot) . '</code> <span class="fi-empty-state">' . self::e('—') . '</span></li>'; }
+        $object .= '</ul></section>';
 
-        // 4. Output format guidance — placeholder slots only
-        $h .= '<section id="fi-wb-slots" class="fi-readiness-panel"><h3>' . self::e('Output slots (guidance — not generated)') . '</h3><ul class="fi-output-slots">';
-        foreach (self::DRAFT_SLOTS as $slot) { $h .= '<li><code>' . self::e($slot) . '</code> <span class="fi-empty-state">' . self::e('—') . '</span></li>'; }
-        $h .= '</ul></section>';
+        // Evidence rail (left) + decision rail (right).
+        $evidence = class_exists('VES_Evidence_Binder') ? '<div id="fi-wb-evidence">' . VES_Evidence_Binder::render_html($brief) . '</div>' : '';
+        $decision = self::decision_card('brief', $brief)
+            . self::package_preview_section($ws, 'draft_generation', 'brief', $brief_id)
+            . self::review_rail('draft');
 
-        // 5. Prompt Package Preview
-        $h .= self::package_preview_section($ws, 'draft_generation', 'brief', $brief_id);
-
-        // 6. Disabled review controls
-        $h .= self::review_rail('draft');
+        $h .= self::rails($evidence, $object, $decision);
         $h .= self::actions_note();
         $h .= '</div>';
         return $h;
+    }
+
+    /**
+     * Phase 3 — three-rail operator layout: evidence (left) / object under
+     * review (center) / decision + status (right). Pure wrappers — every
+     * section keeps its id, so the jump nav and pinned anchors are unchanged.
+     * Rails stack on narrow screens via the UI-system grid (782px/1100px).
+     */
+    private static function rails($evidence_html, $object_html, $decision_html) {
+        $h  = '<div class="fi-wb-rails">';
+        $h .= '<div class="fi-wb-rail fi-wb-rail-evidence" role="region" aria-label="' . self::ea('Evidence') . '">';
+        $h .= $evidence_html !== '' ? $evidence_html
+            : '<p class="fi-empty-state">' . self::e('Evidence binder unavailable on this install — evidence ids remain on the object record.') . '</p>';
+        $h .= '</div>';
+        $h .= '<div class="fi-wb-rail fi-wb-rail-object" role="region" aria-label="' . self::ea('Object under review') . '">' . $object_html . '</div>';
+        $h .= '<div class="fi-wb-rail fi-wb-rail-decision" role="region" aria-label="' . self::ea('Decision and status') . '">' . $decision_html . '</div>';
+        return $h . '</div>';
+    }
+
+    /**
+     * Phase 3 — decision-status card: the operator's UX state with a label
+     * (badge), what it means, and the concrete next action. Derived from the
+     * presentation-state vocabulary; unknown states are never trusted.
+     */
+    private static function decision_card($kind, array $row) {
+        if ($kind === 'insight') {
+            $state = (class_exists('VES_Intelligence_Store') && method_exists('VES_Intelligence_Store', 'insight_presentation_state'))
+                ? VES_Intelligence_Store::insight_presentation_state($row)
+                : strtolower((string) ($row['status'] ?? 'draft'));
+            $map = [
+                'draft'            => ['The insight is in draft.', 'Add evidence (promote its signal on the Intake page), then request review.'],
+                'needs_evidence'   => ['No evidence is linked — this insight cannot enter review.', 'Promote the underlying signal on the Intake page to create traceable evidence, then return here.'],
+                'ready_for_review' => ['Evidence is linked; the insight awaits operator review.', 'Read the evidence rail, then approve or reject from the operator queue.'],
+                'approved'         => ['Human-approved. A brief can be built from this insight.', 'Build the brief (Intake page, step 5) — its evidence ids carry through.'],
+                'rejected'         => ['Rejected — terminal.', 'Reopening requires the audited reopen override; it can never silently become approved.'],
+                'archived'         => ['Archived — diagnostic only.', 'Restore via the audited restore override if it must re-enter review.'],
+            ];
+        } else {
+            $state = strtolower((string) ($row['status'] ?? 'draft'));
+            $map = [
+                'draft'    => ['The brief awaits operator review.', 'Review the objective and key message against the evidence rail, then approve or reject.'],
+                'reviewed' => ['Reviewed; awaiting final approval.', 'Approve to allow draft staging, or reject.'],
+                'approved' => ['Approved. Draft staging may proceed — as a prompt-package preview only (AI execution is disabled).', 'Inspect the prompt package below; no provider is called and no content is fabricated.'],
+                'rejected' => ['Rejected — terminal.', 'A new brief requires a newly approved insight.'],
+                'archived' => ['Archived — diagnostic only.', 'Nothing proceeds from an archived brief.'],
+            ];
+        }
+        $info = isset($map[$state]) ? $map[$state] : ['Status not recognized.', 'Inspect the object record; unknown states are never trusted.'];
+        $badge = class_exists('VES_Review_State') ? VES_Review_State::badge($state) : self::e($state);
+        return '<section class="fi-decision-card"><h3>' . self::e('Decision status') . '</h3>'
+            . '<p class="fi-decision-state">' . $badge . '</p>'
+            . '<p class="fi-decision-explain">' . self::e($info[0]) . '</p>'
+            . '<p class="fi-decision-next"><strong>' . self::e('Next:') . '</strong> ' . self::e($info[1]) . '</p></section>';
     }
 
     private static function package_preview_section($ws, $use_case, $target_type, $target_id) {

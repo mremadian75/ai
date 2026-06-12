@@ -182,15 +182,15 @@ final class VES_Admin_Console {
             if (!class_exists('VES_RC_Readiness_Service')) { return ''; }
             $r = VES_RC_Readiness_Service::report();
             $live = is_array($r['live_validation'] ?? null) ? $r['live_validation'] : ['status' => 'unrun'];
-            $exec_on = function_exists('get_option') && (bool) get_option('ves_generation_execution_enabled', false);
+            $exec_on = self::execution_enabled_truth();
             $badge = function ($state, $label) {
                 return class_exists('VES_Review_State') ? VES_Review_State::badge($state, $label) : '<span class="fi-status-badge">' . self::e($label) . '</span>';
             };
             $status = (string) ($r['status'] ?? 'blocked');
             $status_state = $status === 'blocked' ? 'blocked' : ($status === 'ready_for_staging' ? 'ready' : 'warning');
             $lv = (string) ($live['status'] ?? 'unrun');
-            $lv_state = $lv === 'passed' ? 'recorded' : 'warning';
-            $lv_label = $lv === 'passed' ? 'passed (file-backed)' : ($lv === 'unrun' ? 'UNRUN' : str_replace('_', ' ', $lv));
+            $lv_state = $lv === 'passed' ? 'recorded' : (in_array($lv, ['failed', 'unknown_error'], true) ? 'blocked' : 'warning');
+            $lv_label = $lv === 'passed' ? 'passed (file-backed)' : ($lv === 'unrun' ? 'UNRUN' : ($lv === 'failed' ? 'FAILED' : str_replace('_', ' ', $lv)));
             $h  = '<div class="fiis-console-status" role="group" aria-label="' . self::ea('Suite status') . '">';
             $h .= '<span class="fiis-console-status-item"><span class="fiis-chip-k">' . self::e('RC status') . '</span>' . $badge($status_state, str_replace('_', ' ', $status)) . '</span>';
             $h .= '<span class="fiis-console-status-item"><span class="fiis-chip-k">' . self::e('Live validation') . '</span>' . $badge($lv_state, $lv_label) . '</span>';
@@ -202,6 +202,20 @@ final class VES_Admin_Console {
             self::log($e);
             return '';
         }
+    }
+
+    /**
+     * Single source of truth for the AI-execution flag (Phase 0 alignment):
+     * builder-first (option + filter), throw-safe, raw option as the fallback
+     * when the builder is unavailable. Identical across Console / Signal Room /
+     * RC page so the three surfaces can never disagree.
+     */
+    private static function execution_enabled_truth() {
+        $on = function_exists('get_option') ? (bool) get_option('ves_generation_execution_enabled', false) : false;
+        if (class_exists('VES_Generation_Prompt_Package_Builder') && method_exists('VES_Generation_Prompt_Package_Builder', 'execution_enabled')) {
+            try { $on = (bool) VES_Generation_Prompt_Package_Builder::execution_enabled(); } catch (\Throwable $e) { /* keep raw option value */ }
+        }
+        return $on;
     }
 
     private static function render_overview() {

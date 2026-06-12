@@ -44,8 +44,8 @@ $form = file_get_contents($root . '/templates/_trend-finder-form.php');
 $js = file_get_contents($root . '/assets/js/ves-frontend.js');
 $service = file_get_contents($root . '/includes/class-ves-run-execution-service.php');
 
-$assert(strpos($main, 'Version: 1.2.9') !== false, 'plugin version bumped to p2 trend lite');
-$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false, 'VES_PLUGIN_VERSION bumped to p2 trend lite');
+$assert(strpos($main, 'Version: 1.3.0') !== false, 'plugin version bumped to p2 trend lite');
+$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false, 'VES_PLUGIN_VERSION bumped to p2 trend lite');
 // [v1.1.0 archived] removed obsolete 'P0 MVP flag remains true' expectation: MVP gating is retired in
 // FIIS v1.1.0 (VES_PRODUCTION_MVP is false in product). The Trend Lite budget-clamp checks below remain
 // active and assert the still-current sanitizer behavior independently of the MVP flag.

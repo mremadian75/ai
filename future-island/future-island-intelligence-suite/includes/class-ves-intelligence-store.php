@@ -1070,6 +1070,45 @@ final class VES_Intelligence_Store {
         ];
     }
 
+    // ── Phase 2 — insight typing + presentation states (display layer; additive) ──
+
+    /**
+     * Public mirror of the canonical insight_type enum (kept in sync with
+     * enums()['insight_type']). 'opportunity' is a TYPE on the insight —
+     * never a standalone entity.
+     */
+    const INSIGHT_TYPES = ['opportunity', 'risk', 'trend', 'competitor', 'audience', 'content', 'aeo', 'market', 'other'];
+
+    public static function sanitize_insight_type($type): string {
+        $t = self::sanitize_key((string) $type, 40);
+        return in_array($t, self::enums()['insight_type'], true) ? $t : 'other';
+    }
+
+    /** Opportunity score lives in insight metadata (opportunity_score); bounded 0–100. */
+    public static function sanitize_opportunity_score($score): int {
+        return max(0, min(100, (int) $score));
+    }
+
+    /**
+     * Presentation state for an insight row in the operator vocabulary:
+     * draft / needs_evidence / ready_for_review / approved / rejected / archived.
+     * PURE DISPLAY derivation — persisted statuses (draft/reviewed/approved/
+     * rejected/archived) are unchanged, and this can never bypass the evidence
+     * gate enforced by update_insight_status / create_record.
+     */
+    public static function insight_presentation_state(array $row): string {
+        $status = self::sanitize_key((string) ($row['status'] ?? 'draft'), 24);
+        if (in_array($status, ['approved', 'rejected', 'archived'], true)) { return $status; }
+        if ($status === 'reviewed') { return 'ready_for_review'; }
+        $evidence = $row['evidence_ids'] ?? null;
+        if (!is_array($evidence)) {
+            $evidence = json_decode((string) ($row['evidence_ids_json'] ?? ''), true);
+        }
+        if (!is_array($evidence)) { return 'draft'; } // cannot evaluate linkage — stay honest
+        $evidence = array_filter(array_map('intval', $evidence));
+        return count($evidence) > 0 ? 'ready_for_review' : 'needs_evidence';
+    }
+
     /**
      * v0.1 RC — insight lifecycle transition matrix. Key = current status, value =
      * statuses reachable WITHOUT an explicit override. Same-status writes are allowed
@@ -1286,10 +1325,18 @@ final class VES_Intelligence_Store {
     public static function find_brief_by_insight(int $workspace_id, int $source_insight_id): int {
         global $wpdb;
         if ($workspace_id <= 0 || $source_insight_id <= 0 || !isset($wpdb) || !is_object($wpdb) || !method_exists($wpdb, 'get_var')) { return 0; }
-        $needle = '%"source_insight_id":' . (int) $source_insight_id . '%';
+        // Exact, indexed column first (Phase 2: the builder now sets insight_id).
+        $id = (int) $wpdb->get_var($wpdb->prepare(
+            'SELECT id FROM ' . self::table_name('brief') . ' WHERE workspace_id = %d AND insight_id = %d ORDER BY id ASC LIMIT 1',
+            $workspace_id, $source_insight_id
+        ));
+        if ($id > 0) { return $id; }
+        // Legacy rows (insight_id = 0): metadata match, delimiter-anchored so
+        // insight 7 can never match insight 70/71… (the bare ":7%" pattern did).
+        $base = '"source_insight_id":' . (int) $source_insight_id;
         return (int) $wpdb->get_var($wpdb->prepare(
-            'SELECT id FROM ' . self::table_name('brief') . " WHERE workspace_id = %d AND metadata LIKE %s ORDER BY id ASC LIMIT 1",
-            $workspace_id, $needle
+            'SELECT id FROM ' . self::table_name('brief') . " WHERE workspace_id = %d AND (metadata LIKE %s OR metadata LIKE %s) ORDER BY id ASC LIMIT 1",
+            $workspace_id, '%' . $base . ',%', '%' . $base . '}%'
         ));
     }
 

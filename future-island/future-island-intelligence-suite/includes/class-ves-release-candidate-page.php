@@ -78,6 +78,16 @@ final class VES_Release_Candidate_Page {
                 . 'A live-validation option exists but carries no verifiable evidence pack hash, so it is NOT trusted as passed. '
                 . 'Re-run the validation script and record through <span class="fiis-rc-mono">wp ves rc-record-live-validation --evidence-pack=…</span>. '
                 . 'This build remains <strong>NOT production-ready</strong>.</div>';
+        } elseif (($live['status'] ?? '') === 'failed') {
+            $h .= '<div class="fiis-rc-banner fiis-rc-banner-warn"><strong>Live staging validation: FAILED.</strong> '
+                . 'A validation run was recorded as failed' . ((string) ($live['recorded_at'] ?? '') !== '' ? ' (' . self::e((string) $live['recorded_at']) . ')' : '') . '. '
+                . 'Fix the recorded failures, re-run the validation script on staging, and re-record a passing, file-backed evidence pack. '
+                . 'This build is <strong>NOT production-ready</strong> and must not proceed to pilot.' . $missing_html . '</div>';
+        } elseif (($live['status'] ?? '') === 'unknown_error') {
+            $h .= '<div class="fiis-rc-banner fiis-rc-banner-warn"><strong>Live-validation record unreadable (unknown_error).</strong> '
+                . 'Something is stored but could not be read as a validation record — it is treated as NOT validated, never as a pass. '
+                . 'Re-record from evidence with <span class="fiis-rc-mono">wp ves rc-record-live-validation --evidence-pack=… --evidence-root=…</span>. '
+                . 'This build remains <strong>NOT production-ready</strong>.' . $missing_html . '</div>';
         } elseif (!$live_passed) {
             $h .= '<div class="fiis-rc-banner fiis-rc-banner-warn"><strong>Live staging validation: UNRUN.</strong> '
                 . 'This build is statically verified only. It is <strong>NOT production-ready</strong> and must not be installed on a production site. '
@@ -90,6 +100,10 @@ final class VES_Release_Candidate_Page {
                 . 'Verify the operator evidence (command outputs + screenshots). '
                 . 'Even with a recorded pass, production release still requires operator approval and monitored pilot usage — this page never grants production status.</div>';
         }
+
+        // Phase 1 — staging checklist: one honest, read-only state row per
+        // subsystem an operator must confirm on staging. Never a control.
+        $h .= self::staging_checklist_section($report, $live);
 
         // Build status.
         $h .= '<section class="fiis-rc-section"><h2>Build status</h2>';
@@ -254,13 +268,105 @@ final class VES_Release_Candidate_Page {
         return $h;
     }
 
-    private static function flags() {
-        // Prefer the builder's view of the flag (it applies filters); fall back to
-        // the raw option so a missing builder can never make an ON flag look OFF.
-        $exec_on = function_exists('get_option') ? (bool) get_option('ves_generation_execution_enabled', false) : false;
-        if (class_exists('VES_Generation_Prompt_Package_Builder')) {
-            try { $exec_on = (bool) VES_Generation_Prompt_Package_Builder::execution_enabled(); } catch (\Throwable $e) { /* keep option value */ }
+    /**
+     * Phase 1 — staging checklist. Read-only state table: release build, live
+     * validation, archive-verification capability, generation execution, schema,
+     * memory preview, prompt preview and operator queue — each with its truthful
+     * state and the operator's next action. Reuses already-computed readiness
+     * rows where they exist; never recomputes a rosier answer.
+     */
+    private static function staging_checklist_section(array $report, array $live) {
+        $by_id = [];
+        foreach ((array) ($report['checks'] ?? []) as $c) {
+            if (is_array($c) && isset($c['id'])) { $by_id[(string) $c['id']] = $c; }
         }
+        $check_state = function ($id, $missing_detail) use ($by_id) {
+            if (!isset($by_id[$id])) { return ['warning', $missing_detail]; }
+            $s = (string) ($by_id[$id]['status'] ?? 'warn');
+            $map = ['ok' => 'ready', 'warn' => 'warning', 'block' => 'blocked'];
+            return [$map[$s] ?? 'warning', (string) ($by_id[$id]['detail'] ?? '')];
+        };
+
+        $rows = [];
+        $rows[] = ['Release build',
+            ['ready', 'version ' . (string) ($report['plugin_version'] ?? '') . ((string) ($report['rc_label'] ?? '') !== '' ? ' · ' . (string) $report['rc_label'] : '')],
+            'Verify the installed ZIP SHA-256 against the release report before anything else.'];
+
+        $lv = (string) ($live['status'] ?? 'unrun');
+        $lv_map = [
+            'passed' => ['recorded', 'passed (file-backed)'],
+            'failed' => ['blocked', 'FAILED'],
+            'json_only_unverified' => ['warning', 'json-only — unverified'],
+            'unverified_manual' => ['warning', 'manual — unverified'],
+            'unknown_error' => ['blocked', 'unreadable record'],
+            'unrun' => ['warning', 'UNRUN'],
+        ];
+        $lv_next = [
+            'passed' => 'Keep the evidence archive; production still requires operator approval and a monitored pilot.',
+            'failed' => 'Fix the recorded failures, re-run the validation script, re-record a passing file-backed pack.',
+            'json_only_unverified' => 'Re-record with --evidence-root or --evidence-archive so every artifact file is verified.',
+            'unverified_manual' => 'Run scripts/future-island-live-validation-v3.sh on staging and record the evidence pack.',
+            'unknown_error' => 'The stored record is unreadable — re-record from evidence; never trust it as a pass.',
+            'unrun' => 'Run scripts/future-island-live-validation-v3.sh on a staging copy (never --apply).',
+        ];
+        $rows[] = ['Live staging validation', $lv_map[$lv] ?? $lv_map['unrun'], $lv_next[$lv] ?? $lv_next['unrun']];
+
+        $can_extract = class_exists('PharData');
+        $can_gz = function_exists('gzopen');
+        $rows[] = ['Archive verification',
+            $can_extract && $can_gz ? ['ready', 'PharData + zlib available'] : ['blocked', !$can_extract ? 'PharData unavailable' : 'zlib unavailable'],
+            $can_extract && $can_gz
+                ? 'Verify the evidence archive with wp ves rc-record-live-validation --evidence-archive=… (hardened extraction).'
+                : 'This PHP build cannot extract archives — verify with --evidence-root against the unpacked evidence folder instead.'];
+
+        $exec_on = self::execution_enabled_truth();
+        $rows[] = ['Generation execution',
+            $exec_on ? ['warning', 'ENABLED'] : ['disabled', 'OFF'],
+            $exec_on ? 'Switch ves_generation_execution_enabled OFF — v0.1 ships with no AI execution.' : 'Keep OFF for v0.1; prompt previews work without it.'];
+
+        list($schema_state, $schema_detail) = $check_state('schema', 'Schema check unavailable in this report.');
+        $rows[] = ['Database schema', [$schema_state, $schema_detail !== '' ? $schema_detail : $schema_state],
+            $schema_state === 'ready' ? 'Capture wp ves verify-schema output into the evidence pack.' : 'Run wp ves verify-schema (then --repair if instructed) before validating anything else.'];
+
+        $mem_ok = class_exists('VES_Generation_Context_Resolver') || class_exists('VES_Brand_Context_Service');
+        $rows[] = ['Memory context preview', $mem_ok ? ['ready', 'preview available'] : ['blocked', 'preview service missing'],
+            $mem_ok ? 'Run wp ves memory-context-preview and confirm no candidate/rejected/archived/expired record appears.' : 'Memory preview services missing — investigate before staging sign-off.'];
+
+        $prompt_ok = class_exists('VES_Generation_Prompt_Package_Builder');
+        $rows[] = ['Prompt package preview', $prompt_ok ? ['ready', 'builder available'] : ['blocked', 'builder missing'],
+            $prompt_ok ? 'Run wp ves generation-prompt-preview — it builds the package WITHOUT calling any provider.' : 'Prompt package builder missing — investigate before staging sign-off.'];
+
+        $queue_ok = class_exists('VES_Operator_Queue_Service');
+        $rows[] = ['Operator queue', $queue_ok ? ['ready', 'queues available'] : ['blocked', 'queue service missing'],
+            $queue_ok ? 'Review the Signal Room queues; capture 05-operator-queue.png for the evidence pack.' : 'Operator queue service missing — investigate before staging sign-off.'];
+
+        $h = '<section class="fiis-rc-section fiis-rc-checklist"><h2>Staging checklist</h2>';
+        $h .= '<table class="fiis-rc-table"><thead><tr><th>Subsystem</th><th>State</th><th>Next action</th></tr></thead><tbody>';
+        foreach ($rows as $r) {
+            $h .= '<tr><td>' . self::e((string) $r[0]) . '</td><td>' . self::badge((string) $r[1][0], (string) $r[1][1]) . '</td><td>' . self::e((string) $r[2]) . '</td></tr>';
+        }
+        $h .= '</tbody></table>';
+        $h .= '<p class="fiis-rc-note">Read-only. States come from the same classifiers the readiness service uses — this table can never look greener than the checks below it.</p>';
+        $h .= '</section>';
+        return $h;
+    }
+
+    /**
+     * Single source of truth for the AI-execution flag (Phase 0 alignment):
+     * builder-first (option + filter), throw-safe, raw option as the fallback
+     * when the builder is unavailable. Identical across Console / Signal Room /
+     * RC page so the three surfaces can never disagree.
+     */
+    private static function execution_enabled_truth() {
+        $on = function_exists('get_option') ? (bool) get_option('ves_generation_execution_enabled', false) : false;
+        if (class_exists('VES_Generation_Prompt_Package_Builder') && method_exists('VES_Generation_Prompt_Package_Builder', 'execution_enabled')) {
+            try { $on = (bool) VES_Generation_Prompt_Package_Builder::execution_enabled(); } catch (\Throwable $e) { /* keep raw option value */ }
+        }
+        return $on;
+    }
+
+    private static function flags() {
+        $exec_on = self::execution_enabled_truth();
         return [
             ['name' => 'ves_generation_execution_enabled', 'on' => $exec_on, 'note' => 'AI provider execution for generation. Must stay OFF for v0.1.'],
             ['name' => 'VES_PRODUCTION_MVP', 'on' => defined('VES_PRODUCTION_MVP') && VES_PRODUCTION_MVP, 'note' => 'Production MVP mode constant.'],

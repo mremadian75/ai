@@ -56,6 +56,11 @@ final class VES_Plugin {
         if (is_admin() && class_exists('VES_Admin')) {
             VES_Admin::register();
         }
+        if (is_admin() && class_exists('VES_Source_Intake')) {
+            try { VES_Source_Intake::register(); } catch (\Throwable $e) {
+                if (defined('WP_DEBUG') && WP_DEBUG) { error_log('[VES_Source_Intake] register failed: ' . $e->getMessage()); }
+            }
+        }
         if (is_admin() && class_exists('VES_Billing_Admin')) {
             VES_Billing_Admin::register();
         }

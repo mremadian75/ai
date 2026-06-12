@@ -32,6 +32,7 @@ final class VES_Insight_Brief_Builder {
 
         $payload = [
             'workspace_id'  => $workspace_id,
+            'insight_id'    => (int) $insight['id'], // first-class traceability column (metadata keeps source_insight_id too)
             'brief_type'    => (string) ($args['brief_type'] ?? 'content'),
             'title'         => 'Brief: ' . substr((string) ($insight['title'] ?? 'Insight'), 0, 180),
             'objective'     => $action !== '' ? $action : ('Act on the finding for "' . $term . '".'),

@@ -1,7 +1,8 @@
 # FUTURE ISLAND V0.1 — UI/UX UPGRADE PASS 2 — FINAL REPORT
 
 Plugin **1.2.9** · label **v0.1-rc5** · baseline: UI/UX pass 1 (1.2.8, 197 tests green)
-Date: 2026-06-16 · ZIP SHA-256: `e18b9fe2aa22411047ece08732ab864adae0b74f27cac40fb8cf6371d750374d`
+Date: 2026-06-12 · ZIP SHA-256: `ee3d534e041ea84131bc9949062912659cae98247d16e51306997f05e7ecdd86`
+*(Header corrected during Phase 0 release-integrity cleanup: the original header carried the pre-addendum ZIP hash `e18b9fe2…d750374d` and a wrong date; the shipped ZIP is the rebuilt one described in the addendum, and `sha256sum -c` confirms `ee3d534e…` on disk.)*
 
 ---
 

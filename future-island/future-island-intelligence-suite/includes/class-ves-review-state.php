@@ -13,6 +13,8 @@ final class VES_Review_State {
     const STATES = [
         'candidate'    => ['Candidate', 'candidate', 'Proposed; not trusted until approved.', 'info'],
         'needs_review' => ['Needs review', 'needs_review', 'Awaiting human review.', 'warn'],
+        'needs_evidence' => ['Needs evidence', 'needs_review', 'Cannot enter review without linked evidence.', 'warn'],
+        'ready_for_review' => ['Ready for review', 'candidate', 'Evidence linked; awaiting operator review.', 'info'],
         'approved'     => ['Approved', 'approved', 'Human-approved.', 'ok'],
         'rejected'     => ['Rejected', 'rejected', 'Rejected in review.', 'muted'],
         'archived'     => ['Archived', 'archived', 'Archived; diagnostic only.', 'muted'],

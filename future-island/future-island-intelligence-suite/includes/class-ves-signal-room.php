@@ -13,6 +13,20 @@ final class VES_Signal_Room {
 
     private static function e($s) { return function_exists('esc_html') ? esc_html((string) $s) : htmlspecialchars((string) $s, ENT_QUOTES); }
 
+    /**
+     * Single source of truth for the AI-execution flag (Phase 0 alignment):
+     * builder-first (option + filter), throw-safe, raw option as the fallback
+     * when the builder is unavailable. Identical across Console / Signal Room /
+     * RC page so the three surfaces can never disagree.
+     */
+    private static function execution_enabled_truth() {
+        $on = function_exists('get_option') ? (bool) get_option('ves_generation_execution_enabled', false) : false;
+        if (class_exists('VES_Generation_Prompt_Package_Builder') && method_exists('VES_Generation_Prompt_Package_Builder', 'execution_enabled')) {
+            try { $on = (bool) VES_Generation_Prompt_Package_Builder::execution_enabled(); } catch (\Throwable $e) { /* keep raw option value */ }
+        }
+        return $on;
+    }
+
     public static function snapshot($workspace_id = 0) {
         $ws = max(0, (int) $workspace_id);
         return [
@@ -21,7 +35,7 @@ final class VES_Signal_Room {
             'usage' => (class_exists('VES_AI_Usage_Tracker') && method_exists('VES_AI_Usage_Tracker', 'summary')) ? (array) VES_AI_Usage_Tracker::summary(24) : [],
             'flags' => [
                 'memory_generation_enabled' => (class_exists('VES_Generation_Context_Resolver') && method_exists('VES_Generation_Context_Resolver', 'is_enabled')) ? VES_Generation_Context_Resolver::is_enabled() : false,
-                'generation_execution_enabled' => (class_exists('VES_Generation_Prompt_Package_Builder') && method_exists('VES_Generation_Prompt_Package_Builder', 'execution_enabled')) ? VES_Generation_Prompt_Package_Builder::execution_enabled() : false,
+                'generation_execution_enabled' => self::execution_enabled_truth(),
             ],
             // UI/UX pass 2 — the strip reads the REAL evidence-pack classification
             // instead of a hardcoded 'pending'.
@@ -131,18 +145,21 @@ final class VES_Signal_Room {
         $lv = is_array($s['live_validation'] ?? null) ? $s['live_validation'] : ['status' => 'unrun'];
         $lv_map = [
             'passed' => ['passed (file-backed)', 'recorded'],
+            'failed' => ['FAILED', 'blocked'],
             'json_only_unverified' => ['json-only — unverified', 'warning'],
             'unverified_manual' => ['manual — unverified', 'warning'],
             'unrun' => ['UNRUN', 'warning'],
+            'unknown_error' => ['unreadable record — treat as not validated', 'blocked'],
         ];
         $lv_chip = $lv_map[(string) ($lv['status'] ?? 'unrun')] ?? $lv_map['unrun'];
         $h .= self::chip('Live staging validation', $lv_chip[0], $lv_chip[1]);
         $h .= self::chip('Usage ledger (24h)', isset($s['usage']['total']) ? ((int) $s['usage']['total'] . ' events') : 'not available', isset($s['usage']['total']) ? 'recorded' : 'disabled');
         $h .= '</div>';
 
-        $lv_note = ((string) ($lv['status'] ?? 'unrun') === 'passed')
+        $lv_status = (string) ($lv['status'] ?? 'unrun');
+        $lv_note = $lv_status === 'passed'
             ? 'Live staging validation recorded (file-backed) — still not production-ready without operator approval and a monitored pilot.'
-            : 'Live staging validation ' . ((string) ($lv['status'] ?? 'unrun') === 'unrun' ? 'UNRUN' : 'unverified') . ' — not production-ready.';
+            : 'Live staging validation ' . ($lv_status === 'unrun' ? 'UNRUN' : ($lv_status === 'failed' ? 'FAILED' : 'unverified')) . ' — not production-ready.';
         $h .= '<p class="fi-memory-policy fiis-sr-note">' . self::e('Read-only console. No generation runs here. Memory is not evidence. ' . $lv_note) . '</p>';
         $h .= '</div>';
         return $h;

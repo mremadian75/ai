@@ -686,7 +686,9 @@ if (!function_exists('ves_remote_text_asset')) {
         if (!$url || !filter_var($url, FILTER_VALIDATE_URL)) {
             return '';
         }
-        if (function_exists('ves_is_public_http_url') && !ves_is_public_http_url($url)) {
+        // Deep-review fix: FAIL CLOSED — if the public-URL validator is not loaded
+        // we refuse the fetch rather than skipping the SSRF guard.
+        if (!function_exists('ves_is_public_http_url') || !ves_is_public_http_url($url)) {
             return '';
         }
         $response = wp_remote_get($url, [

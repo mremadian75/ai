@@ -133,3 +133,20 @@ A hostile re-review of the 9D+9E work found **eight issues the 193 passing tests
 | note | v2 script silently produced schema-1.0 packs that recording now rejects. | Prints an explicit deprecation notice pointing to v3 (v2 retained). |
 
 Verified clean after fixes: `php -l` on all touched files, `bash -n` on both scripts, PHP 7.4 audit green, full suite 194/194 (tree + clean extraction). Live validation remains **UNRUN** — unchanged classification: `ready_for_live_staging`, **not production-ready**.
+
+---
+
+## ADDENDUM 2 — Second Deep Review (pipeline proof + SSRF hardening)
+
+A second hostile pass targeted the claims the first review still took on faith. Suite now **196/196 from the tree and from a clean extraction of the rebuilt ZIP** (SHA-256: `2e09209983d43bf6603f07386d03cfb933299f2a378e6adb1d1a5331569958ac`).
+
+| Kind | Finding | Outcome |
+| --- | --- | --- |
+| **PROVEN** | The 9E design's largest untested assumption — that the v3 script's python-assembled, python-hashed evidence pack verifies under PHP's independent canonical hash — had no executable proof. | New `test-ves-v3-end-to-end-9e.php` (17 assertions) drives the REAL pipeline against a fake `wp` binary: v3 `--mode=full` → 18-command capture → pack assembly (`validation_status: passed`) → **PHP `verify()` accepts the python-computed hash** → file-backed recording passes via `--evidence-root` AND via the tar.gz `--evidence-archive` (PharData) → tampering one captured command output afterwards is refused with `file_hash_mismatch` and records nothing. The staging flow is now executable-proven end to end, not just per-component. |
+| **FIXED (medium-low)** | `ves_remote_text_asset` (subtitle/transcript fetcher) skipped its SSRF guard when `ves_is_public_http_url` wasn't loaded — fail-open by guard absence. | Fail-closed: missing validator now refuses the fetch. New 5-assertion test including a metadata-endpoint-shaped URL rejection with zero HTTP. |
+| **FIXED (note)** | Egress inventory named the admin connectivity test by a guessed method name. | Corrected to the real `handle_test_apify_connection`; its `manage_options` + `check_admin_referer` guards verified in source. |
+| **VERIFIED SAFE** | Suspected bug: the prompt-package QA assembly path passes a variable target type into the workspace guard. | The getter map constrains it to insight/brief/draft before the guard — no path exists to a bad-type refusal. |
+| note | Dead-letter `is_dead` checks the bounded 100-entry ring: a key evicted by newer dead letters may run again. | By design of the table-free store; acceptable at v0.1 scale, documented here. |
+| note | Job-rails retry counters use read-modify-write on options (no row lock). | Acceptable for single-site WP; revisit if multi-worker concurrency grows. |
+
+Classification unchanged: `ready_for_live_staging` — **not production-ready, live validation UNRUN**.

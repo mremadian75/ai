@@ -53,7 +53,7 @@ final class VES_External_Egress_Inventory {
             // ── Apify reads (status / datasets / account) — header token, no token-in-URL ──
             self::row('apify', 'VES_Apify_Client', 'fetch_run / fetch_items / abort_run', 'apify_read_guarded', true,
                 ['Core read paths; Authorization header; scrubbed diagnostics.']),
-            self::row('apify', 'VES_Admin', 'handle_apify_connection_test', 'apify_read_guarded', true,
+            self::row('apify', 'VES_Admin', 'handle_test_apify_connection', 'apify_read_guarded', true,
                 ['Admin-only /v2/users/me connectivity test; header token; capability + nonce gated.']),
             self::row('apify', 'VES_Ajax_Controller', 'dataset item fetch (host-validated)', 'apify_read_guarded', true,
                 ['Validates host === api.apify.com and /v2/datasets/ path before fetching.']),

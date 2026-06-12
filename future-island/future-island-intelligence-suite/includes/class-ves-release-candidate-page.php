@@ -139,8 +139,8 @@ final class VES_Release_Candidate_Page {
         // Phase 9 — audit & rails diagnostics (read-only, escaped, no fake green).
         $h .= self::rails_diagnostics_section();
 
-        // Known limitations — honest by design.
-        $h .= '<section class="fiis-rc-section"><details class="fiis-rc-details"><summary><h2>Known limitations</h2></summary><ul class="fiis-rc-list">';
+        // Known limitations — honest by design, and VISIBLE by default (open).
+        $h .= '<section class="fiis-rc-section"><details class="fiis-rc-details" open><summary><h2>Known limitations</h2></summary><ul class="fiis-rc-list">';
         foreach ([
             'Live staging validation has not been performed unless explicitly recorded above — static checks cannot replace it.',
             'AI generation is a preview contract only (prompt packages); no provider execution path is enabled.',

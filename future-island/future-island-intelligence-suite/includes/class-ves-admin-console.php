@@ -191,7 +191,7 @@ final class VES_Admin_Console {
             $lv = (string) ($live['status'] ?? 'unrun');
             $lv_state = $lv === 'passed' ? 'recorded' : 'warning';
             $lv_label = $lv === 'passed' ? 'passed (file-backed)' : ($lv === 'unrun' ? 'UNRUN' : str_replace('_', ' ', $lv));
-            $h  = '<div class="fiis-console-status" role="status" aria-label="' . self::ea('Suite status') . '">';
+            $h  = '<div class="fiis-console-status" role="group" aria-label="' . self::ea('Suite status') . '">';
             $h .= '<span class="fiis-console-status-item"><span class="fiis-chip-k">' . self::e('RC status') . '</span>' . $badge($status_state, str_replace('_', ' ', $status)) . '</span>';
             $h .= '<span class="fiis-console-status-item"><span class="fiis-chip-k">' . self::e('Live validation') . '</span>' . $badge($lv_state, $lv_label) . '</span>';
             $h .= '<span class="fiis-console-status-item"><span class="fiis-chip-k">' . self::e('AI execution') . '</span>' . $badge($exec_on ? 'warning' : 'disabled', $exec_on ? 'ON' : 'OFF') . '</span>';

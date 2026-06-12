@@ -149,5 +149,27 @@ $rc2 = (string) file_get_contents($root . '/includes/class-ves-release-candidate
 $ok(strpos($rc2, 'color-scheme:dark') !== false, 'RC page dark block declares color-scheme');
 $ok(strpos($rc2, 'overflow-x:auto') !== false, 'RC page tables scroll on small screens');
 
+// ── 9. DEEP-REVIEW pass — dark-mode scoping is patchwork-safe ────────────────
+$css3 = (string) file_get_contents($css_path);
+// Dark token flips apply ONLY to wholly self-governed surfaces; the member app
+// (.ves-wrap / fiis-app literal colors) and the console stay explicitly light.
+$dark_start = strpos($css3, '@media (prefers-color-scheme: dark)');
+$dark_end = strpos($css3, '@media print');
+$dark_block = substr($css3, $dark_start, $dark_end !== false ? $dark_end - $dark_start : 4000);
+$ok(strpos($dark_block, '.ves-wrap') === false, 'dark flip EXCLUDES .ves-wrap (no half-dark member app over fiis-app literals)');
+$ok(strpos($dark_block, '.fiis-console') === false, 'dark flip EXCLUDES the console (light wp-admin chrome)');
+$ok(strpos($dark_block, '.fiis-signal-room') !== false && strpos($dark_block, '.fiis-rc-page') !== false, 'dark flip covers the self-governed Signal Room + RC pages');
+$ok(strpos($css3, ".ves-wrap,\n.fiis-console { color-scheme: light; }") !== false, 'member app + console declare explicit light color-scheme (native controls match)');
+$ok(strpos($dark_block, '.fiis-signal-room .fi-status-badge') !== false, 'room-css literal badges made coherent in the dark room');
+$ok(strpos($dark_block, '.fiis-signal-room .fi-skip-link:focus') !== false, 'skip link gets dark-mode contrast treatment');
+$ok(strpos($css3, 'rgba(231, 225, 212, 0.35); /* fallback when color-mix is unsupported */') !== false, 'color-mix() has a plain rgba fallback');
+
+// RC page: limitations are visible by default (honest-by-default), still collapsible.
+$rc3 = (string) file_get_contents($root . '/includes/class-ves-release-candidate-page.php');
+$ok(strpos($rc3, '<details class="fiis-rc-details" open><summary><h2>Known limitations</h2>') !== false, 'Known limitations default OPEN');
+// Console strip uses group semantics, not a live region.
+$console3 = (string) file_get_contents($root . '/includes/class-ves-admin-console.php');
+$ok(strpos($console3, 'role="group" aria-label=') !== false && strpos($console3, 'role="status"') === false, 'console strip is role=group (no spurious live region)');
+
 echo "\n{$pass} passed, {$fail} failed\n";
 exit($fail === 0 ? 0 : 1);

@@ -36,8 +36,19 @@
   --fi-space-4: 16px; --fi-space-5: 24px; --fi-space-6: 36px;
   --fi-font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
   --fi-font-edit: Georgia, "Times New Roman", serif;
-  color-scheme: light dark; /* native controls/scrollbars follow the theme */
 }
+
+/* Deep-review fix: color-scheme is declared ONLY where the surface is wholly
+ * governed by self-contained styles (Signal Room page, RC page). The member app
+ * (.ves-wrap with fiis-app's literal-color components) and the console (inside
+ * light wp-admin chrome) stay explicitly LIGHT so native controls always match
+ * their rendering — no half-dark patchwork. Member-app dark mode is a roadmap
+ * item pending a literal-color audit of fiis-app.css / ves-frontend.css. */
+.fiis-signal-room,
+.fiis-rc-page { color-scheme: light dark; }
+.ves-wrap,
+.fiis-console { color-scheme: light; }
+.ves-wrap .fiis-signal-room { color-scheme: light dark; } /* the room inside its admin wrap */
 
 /* ── 1b. Skip link — hidden until keyboard focus ──────────────────────────── */
 .ves-wrap .fi-skip-link,
@@ -261,6 +272,7 @@
   border-left: 3px solid var(--fi-sand);
   padding: var(--fi-space-2) var(--fi-space-3);
   margin: 0 0 var(--fi-space-2);
+  background: rgba(231, 225, 212, 0.35); /* fallback when color-mix is unsupported */
   background: color-mix(in srgb, var(--fi-sand) 35%, transparent);
 }
 .ves-wrap .fi-operator-queue li:hover { border-left-color: var(--fi-blue); }
@@ -353,7 +365,6 @@
 
 /* ── 10. Dark mode — same identity, inverted paper ────────────────────────── */
 @media (prefers-color-scheme: dark) {
-  .ves-wrap,
   .fiis-signal-room,
   .fiis-rc-page {
     --fi-ink: #ece8dd;
@@ -371,9 +382,16 @@
     --fi-focus: #7d9ff0;
     --fi-shadow: 0 1px 0 rgba(0, 0, 0, 0.4), 0 6px 18px -12px rgba(0, 0, 0, 0.8);
   }
-  .ves-wrap, .fiis-signal-room, .fiis-rc-page { background: var(--fi-paper); color: var(--fi-ink); }
-  .ves-wrap .fi-meta-line code,
+  .fiis-signal-room, .fiis-rc-page { background: var(--fi-paper); color: var(--fi-ink); }
+  .fiis-signal-room .fi-meta-line code,
   .fiis-rc-page .fiis-rc-mono code { background: var(--fi-sand); color: var(--fi-ink); }
+  /* Room-css literals (#fff badges/chips) made coherent in the dark room. */
+  .fiis-signal-room .fi-status-badge { background: var(--fi-surface); color: var(--fi-ink); border-color: var(--fi-bdr); }
+  .fiis-signal-room .fiis-sr-card,
+  .fiis-signal-room .fi-readiness-panel,
+  .fiis-signal-room .fi-operator-queue,
+  .fiis-signal-room .fiis-sr-step { background: var(--fi-surface); border-color: var(--fi-bdr); }
+  .fiis-signal-room .fi-skip-link:focus { color: var(--fi-paper); } /* dark text on the light dark-mode blue */
   .fiis-rc-page .fiis-rc-section,
   .fiis-rc-page .fiis-rc-banner,
   .fiis-rc-page .fiis-rc-table td { background: var(--fi-surface); color: var(--fi-ink); border-color: var(--fi-bdr); }

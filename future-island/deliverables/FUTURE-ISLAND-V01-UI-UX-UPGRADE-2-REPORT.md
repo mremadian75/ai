@@ -49,3 +49,21 @@ No routing, no new mutation surfaces, no Workbench/Report markup beyond pass 1, 
 
 ## 6. Final decision
 Reviewable, on-branch (PR #2), **ready_for_live_staging** — **not production-ready, live validation UNRUN**. The Signal Room screenshot (`01-signal-room.png`) in the staging checklist will now capture the truthful validation chip, and once an operator records a file-backed pass, both the room and the console hub will reflect it — without ever claiming production readiness.
+
+---
+
+## ADDENDUM — Deep Review of the UI/UX passes (corrective)
+
+A hostile review of UI passes 1+2 found **one medium and four low issues**, all fixed; the UI contract test grew to 78 assertions and the suite stays **197/197 from the tree and from a clean extraction of the rebuilt ZIP** (new SHA-256: `ee3d534e041ea84131bc9949062912659cae98247d16e51306997f05e7ecdd86`).
+
+| Sev | Found | Fix |
+| --- | --- | --- |
+| **medium** | **Dark mode would have produced a half-dark patchwork in the member app**: the token flip covered `.ves-wrap`, but `fiis-app.css` carries 186 literal hex colors (`var(--card, #fff)` components) that never flip — dark-OS members would see a dark page with white cards. | Dark mode is now scoped ONLY to wholly self-governed surfaces (the Signal Room admin page and the RC page); `.ves-wrap` and `.fiis-console` declare explicit `color-scheme: light` so native controls always match their rendering. Member-app dark mode is a documented roadmap item pending a literal-color audit. Pinned by test (dark block proven to exclude `.ves-wrap`/`.fiis-console`). |
+| low | The console declared `color-scheme: light dark` with zero dark styling — native widgets/scrollbars flipped dark inside an all-light page. | Explicit light. |
+| low | Room-CSS literal `#fff` badges/cards were incoherent inside the now-dark Signal Room; the skip link's white-on-light-blue failed contrast in dark mode. | Dark overrides for the room's badges/cards/steps; skip-link dark-mode text color. |
+| low | `color-mix()` (Chrome 111+) had no fallback for older admin browsers. | Plain `rgba` fallback line precedes it. |
+| low (honesty-by-default) | "Known limitations" on the RC page defaulted to a **collapsed** disclosure — honest content shouldn't hide behind a click. | `<details open>` — visible by default, still collapsible. Pinned. |
+| note | Console strip used `role="status"` (a live region) for a static render. | `role="group"` with the aria-label. |
+| verified safe | Signal Room admin page wraps in `.ves-wrap` (the UI-system components do apply there); workbench admin pages remain coherently light; `summary > h2` nesting is valid HTML. | — |
+
+Classification unchanged: `ready_for_live_staging` — **not production-ready, live validation UNRUN**.

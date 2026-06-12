@@ -1,13 +1,22 @@
 diff --git a/future-island/future-island-intelligence-suite/assets/css/fiis-ui-system.css b/future-island/future-island-intelligence-suite/assets/css/fiis-ui-system.css
-index 8f2a05a..f052118 100644
+index 8f2a05a..f07c9d0 100644
 --- a/future-island/future-island-intelligence-suite/assets/css/fiis-ui-system.css
 +++ b/future-island/future-island-intelligence-suite/assets/css/fiis-ui-system.css
-@@ -36,6 +36,73 @@
-   --fi-space-4: 16px; --fi-space-5: 24px; --fi-space-6: 36px;
-   --fi-font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+@@ -38,6 +38,84 @@
    --fi-font-edit: Georgia, "Times New Roman", serif;
-+  color-scheme: light dark; /* native controls/scrollbars follow the theme */
-+}
+ }
+ 
++/* Deep-review fix: color-scheme is declared ONLY where the surface is wholly
++ * governed by self-contained styles (Signal Room page, RC page). The member app
++ * (.ves-wrap with fiis-app's literal-color components) and the console (inside
++ * light wp-admin chrome) stay explicitly LIGHT so native controls always match
++ * their rendering — no half-dark patchwork. Member-app dark mode is a roadmap
++ * item pending a literal-color audit of fiis-app.css / ves-frontend.css. */
++.fiis-signal-room,
++.fiis-rc-page { color-scheme: light dark; }
++.ves-wrap,
++.fiis-console { color-scheme: light; }
++.ves-wrap .fiis-signal-room { color-scheme: light dark; } /* the room inside its admin wrap */
 +
 +/* ── 1b. Skip link — hidden until keyboard focus ──────────────────────────── */
 +.ves-wrap .fi-skip-link,
@@ -73,9 +82,46 @@ index 8f2a05a..f052118 100644
 +  flex-basis: 100%;
 +  font-size: 11px;
 +  color: var(--fi-muted);
- }
- 
++}
++
  /* ── 2. Editorial typography ──────────────────────────────────────────────── */
+ .ves-wrap .fi-breadcrumb,
+ .ves-wrap .fiis-sr-eyebrow,
+@@ -194,6 +272,7 @@
+   border-left: 3px solid var(--fi-sand);
+   padding: var(--fi-space-2) var(--fi-space-3);
+   margin: 0 0 var(--fi-space-2);
++  background: rgba(231, 225, 212, 0.35); /* fallback when color-mix is unsupported */
+   background: color-mix(in srgb, var(--fi-sand) 35%, transparent);
+ }
+ .ves-wrap .fi-operator-queue li:hover { border-left-color: var(--fi-blue); }
+@@ -286,7 +365,6 @@
+ 
+ /* ── 10. Dark mode — same identity, inverted paper ────────────────────────── */
+ @media (prefers-color-scheme: dark) {
+-  .ves-wrap,
+   .fiis-signal-room,
+   .fiis-rc-page {
+     --fi-ink: #ece8dd;
+@@ -304,9 +382,16 @@
+     --fi-focus: #7d9ff0;
+     --fi-shadow: 0 1px 0 rgba(0, 0, 0, 0.4), 0 6px 18px -12px rgba(0, 0, 0, 0.8);
+   }
+-  .ves-wrap, .fiis-signal-room, .fiis-rc-page { background: var(--fi-paper); color: var(--fi-ink); }
+-  .ves-wrap .fi-meta-line code,
++  .fiis-signal-room, .fiis-rc-page { background: var(--fi-paper); color: var(--fi-ink); }
++  .fiis-signal-room .fi-meta-line code,
+   .fiis-rc-page .fiis-rc-mono code { background: var(--fi-sand); color: var(--fi-ink); }
++  /* Room-css literals (#fff badges/chips) made coherent in the dark room. */
++  .fiis-signal-room .fi-status-badge { background: var(--fi-surface); color: var(--fi-ink); border-color: var(--fi-bdr); }
++  .fiis-signal-room .fiis-sr-card,
++  .fiis-signal-room .fi-readiness-panel,
++  .fiis-signal-room .fi-operator-queue,
++  .fiis-signal-room .fiis-sr-step { background: var(--fi-surface); border-color: var(--fi-bdr); }
++  .fiis-signal-room .fi-skip-link:focus { color: var(--fi-paper); } /* dark text on the light dark-mode blue */
+   .fiis-rc-page .fiis-rc-section,
+   .fiis-rc-page .fiis-rc-banner,
+   .fiis-rc-page .fiis-rc-table td { background: var(--fi-surface); color: var(--fi-ink); border-color: var(--fi-bdr); }
 diff --git a/future-island/future-island-intelligence-suite/future-island-intelligence-suite.php b/future-island/future-island-intelligence-suite/future-island-intelligence-suite.php
 index de947b2..b5e71bd 100644
 --- a/future-island/future-island-intelligence-suite/future-island-intelligence-suite.php
@@ -111,7 +157,7 @@ index de947b2..b5e71bd 100644
  if (!defined('VES_PLUGIN_DIR'))             { define('VES_PLUGIN_DIR',             FIS_PLUGIN_DIR); }
  if (!defined('VES_PLUGIN_URL'))             { define('VES_PLUGIN_URL',             FIS_PLUGIN_URL); }
 diff --git a/future-island/future-island-intelligence-suite/includes/class-ves-admin-console.php b/future-island/future-island-intelligence-suite/includes/class-ves-admin-console.php
-index 0fc0baf..77f36f3 100644
+index 0fc0baf..64b2110 100644
 --- a/future-island/future-island-intelligence-suite/includes/class-ves-admin-console.php
 +++ b/future-island/future-island-intelligence-suite/includes/class-ves-admin-console.php
 @@ -171,7 +171,41 @@ final class VES_Admin_Console {
@@ -138,7 +184,7 @@ index 0fc0baf..77f36f3 100644
 +            $lv = (string) ($live['status'] ?? 'unrun');
 +            $lv_state = $lv === 'passed' ? 'recorded' : 'warning';
 +            $lv_label = $lv === 'passed' ? 'passed (file-backed)' : ($lv === 'unrun' ? 'UNRUN' : str_replace('_', ' ', $lv));
-+            $h  = '<div class="fiis-console-status" role="status" aria-label="' . self::ea('Suite status') . '">';
++            $h  = '<div class="fiis-console-status" role="group" aria-label="' . self::ea('Suite status') . '">';
 +            $h .= '<span class="fiis-console-status-item"><span class="fiis-chip-k">' . self::e('RC status') . '</span>' . $badge($status_state, str_replace('_', ' ', $status)) . '</span>';
 +            $h .= '<span class="fiis-console-status-item"><span class="fiis-chip-k">' . self::e('Live validation') . '</span>' . $badge($lv_state, $lv_label) . '</span>';
 +            $h .= '<span class="fiis-console-status-item"><span class="fiis-chip-k">' . self::e('AI execution') . '</span>' . $badge($exec_on ? 'warning' : 'disabled', $exec_on ? 'ON' : 'OFF') . '</span>';
@@ -157,9 +203,20 @@ index 0fc0baf..77f36f3 100644
          $modules = [
              ['Deep Trend Finder', class_exists('FIDTF_Plugin') || class_exists('FIDTF_Admin')],
 diff --git a/future-island/future-island-intelligence-suite/includes/class-ves-release-candidate-page.php b/future-island/future-island-intelligence-suite/includes/class-ves-release-candidate-page.php
-index 443c4e6..1010299 100644
+index 443c4e6..e8c1702 100644
 --- a/future-island/future-island-intelligence-suite/includes/class-ves-release-candidate-page.php
 +++ b/future-island/future-island-intelligence-suite/includes/class-ves-release-candidate-page.php
+@@ -139,8 +139,8 @@ final class VES_Release_Candidate_Page {
+         // Phase 9 — audit & rails diagnostics (read-only, escaped, no fake green).
+         $h .= self::rails_diagnostics_section();
+ 
+-        // Known limitations — honest by design.
+-        $h .= '<section class="fiis-rc-section"><details class="fiis-rc-details"><summary><h2>Known limitations</h2></summary><ul class="fiis-rc-list">';
++        // Known limitations — honest by design, and VISIBLE by default (open).
++        $h .= '<section class="fiis-rc-section"><details class="fiis-rc-details" open><summary><h2>Known limitations</h2></summary><ul class="fiis-rc-list">';
+         foreach ([
+             'Live staging validation has not been performed unless explicitly recorded above — static checks cannot replace it.',
+             'AI generation is a preview contract only (prompt packages); no provider execution path is enabled.',
 @@ -320,12 +320,12 @@ final class VES_Release_Candidate_Page {
              . '.fiis-rc-details[open]>summary::after{content:" ▾"}'
              . '.fiis-rc-page a:focus-visible,.fiis-rc-page button:focus-visible,.fiis-rc-page summary:focus-visible{outline:2px solid var(--fi-blue);outline-offset:2px}'
@@ -262,10 +319,10 @@ index 206d8b4..7f3888b 100644
          return $h;
      }
 diff --git a/future-island/future-island-intelligence-suite/tests/test-fiis-ui-ux-upgrade.php b/future-island/future-island-intelligence-suite/tests/test-fiis-ui-ux-upgrade.php
-index ae98490..0dc6355 100644
+index ae98490..c723944 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-fiis-ui-ux-upgrade.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-fiis-ui-ux-upgrade.php
-@@ -99,5 +99,55 @@ $ok(strpos($rc, '<form') === false && strpos($rc, 'type="submit"') === false, 's
+@@ -99,5 +99,77 @@ $ok(strpos($rc, '<form') === false && strpos($rc, 'type="submit"') === false, 's
  $ok(strpos($rc, 'fiis-rc-details') !== false && strpos($rc, '<summary>') !== false, 'long sections are collapsible via native details/summary');
  $ok(strpos($rc, 'prefers-color-scheme:dark') !== false, 'RC page styles include dark mode');
  
@@ -318,6 +375,28 @@ index ae98490..0dc6355 100644
 +$rc2 = (string) file_get_contents($root . '/includes/class-ves-release-candidate-page.php');
 +$ok(strpos($rc2, 'color-scheme:dark') !== false, 'RC page dark block declares color-scheme');
 +$ok(strpos($rc2, 'overflow-x:auto') !== false, 'RC page tables scroll on small screens');
++
++// ── 9. DEEP-REVIEW pass — dark-mode scoping is patchwork-safe ────────────────
++$css3 = (string) file_get_contents($css_path);
++// Dark token flips apply ONLY to wholly self-governed surfaces; the member app
++// (.ves-wrap / fiis-app literal colors) and the console stay explicitly light.
++$dark_start = strpos($css3, '@media (prefers-color-scheme: dark)');
++$dark_end = strpos($css3, '@media print');
++$dark_block = substr($css3, $dark_start, $dark_end !== false ? $dark_end - $dark_start : 4000);
++$ok(strpos($dark_block, '.ves-wrap') === false, 'dark flip EXCLUDES .ves-wrap (no half-dark member app over fiis-app literals)');
++$ok(strpos($dark_block, '.fiis-console') === false, 'dark flip EXCLUDES the console (light wp-admin chrome)');
++$ok(strpos($dark_block, '.fiis-signal-room') !== false && strpos($dark_block, '.fiis-rc-page') !== false, 'dark flip covers the self-governed Signal Room + RC pages');
++$ok(strpos($css3, ".ves-wrap,\n.fiis-console { color-scheme: light; }") !== false, 'member app + console declare explicit light color-scheme (native controls match)');
++$ok(strpos($dark_block, '.fiis-signal-room .fi-status-badge') !== false, 'room-css literal badges made coherent in the dark room');
++$ok(strpos($dark_block, '.fiis-signal-room .fi-skip-link:focus') !== false, 'skip link gets dark-mode contrast treatment');
++$ok(strpos($css3, 'rgba(231, 225, 212, 0.35); /* fallback when color-mix is unsupported */') !== false, 'color-mix() has a plain rgba fallback');
++
++// RC page: limitations are visible by default (honest-by-default), still collapsible.
++$rc3 = (string) file_get_contents($root . '/includes/class-ves-release-candidate-page.php');
++$ok(strpos($rc3, '<details class="fiis-rc-details" open><summary><h2>Known limitations</h2>') !== false, 'Known limitations default OPEN');
++// Console strip uses group semantics, not a live region.
++$console3 = (string) file_get_contents($root . '/includes/class-ves-admin-console.php');
++$ok(strpos($console3, 'role="group" aria-label=') !== false && strpos($console3, 'role="status"') === false, 'console strip is role=group (no spurious live region)');
 +
  echo "\n{$pass} passed, {$fail} failed\n";
  exit($fail === 0 ? 0 : 1);

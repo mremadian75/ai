@@ -1,0 +1,9 @@
+future-island-deep-trend-finder-addon.php
+includes/class-fidtf-normalizer.php
+includes/class-fidtf-relevance-filter.php
+includes/class-fidtf-report-service.php
+tests/test-fidtf-v0346-marketing-decision-readiness.php
+tests/test-fidtf-v0347-live-evidence-readiness-debug.php
+tests/test-fidtf-v0348-live-market-fit-and-decision-gates.php
+docs/CHANGELOG_deep-trend-finder-addon-v0.3.48-live-market-fit-and-decision-gates.md
+docs/FILES_CHANGED_deep-trend-finder-addon-v0.3.48-live-market-fit-and-decision-gates.txt

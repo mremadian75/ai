@@ -1,0 +1,488 @@
+.fici-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(320px, 0.75fr);
+  gap: 24px;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #111827;
+}
+
+.fici-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 22px;
+  padding: 24px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+}
+
+.fici-section-head {
+  margin-bottom: 18px;
+}
+
+.fici-section-head h2,
+.fici-section-head h3,
+.fici-result h3 {
+  margin: 0 0 8px;
+  line-height: 1.12;
+}
+
+.fici-section-head p,
+.fici-result p {
+  margin: 0 0 10px;
+  color: #4b5563;
+}
+
+.fici-eyebrow {
+  display: inline-flex;
+  margin-bottom: 8px;
+  color: #8b2553;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.fici-form {
+  display: grid;
+  gap: 16px;
+}
+
+.fici-form label {
+  display: grid;
+  gap: 8px;
+  font-weight: 650;
+  color: #111827;
+}
+
+.fici-form small {
+  display: block;
+  color: #667085;
+  margin: 2px 0 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.fici-form input,
+.fici-form textarea,
+.fici-form select {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 13px;
+  padding: 11px 12px;
+  font: inherit;
+  background: #fff;
+}
+
+.fici-form input:focus,
+.fici-form textarea:focus,
+.fici-form select:focus {
+  outline: 0;
+  border-color: #8b2553;
+  box-shadow: 0 0 0 3px rgba(139, 37, 83, .12);
+}
+
+.fici-form button,
+.fici-history-actions button {
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font-weight: 800;
+  background: #111827;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.fici-history-actions button {
+  padding: 8px 12px;
+  font-size: 12px;
+}
+
+.fici-form button:disabled {
+  opacity: .65;
+  cursor: wait;
+}
+
+.fici-grid,
+.fici-score-grid,
+.fici-result-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.fici-score-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 16px 0;
+}
+
+.fici-score-grid div {
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 14px;
+  background: #f9fafb;
+}
+
+.fici-score-grid span {
+  display: block;
+  font-size: 28px;
+  font-weight: 900;
+  margin-top: 4px;
+}
+
+.fici-result {
+  grid-column: 1 / -1;
+}
+
+.fici-result-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: flex-start;
+  border-bottom: 1px solid #eef0f3;
+  padding-bottom: 18px;
+  margin-bottom: 18px;
+}
+
+.fici-credit-badge {
+  min-width: 96px;
+  text-align: center;
+  border-radius: 18px;
+  background: #111827;
+  color: #fff;
+  font-weight: 900;
+  font-size: 28px;
+  padding: 14px;
+}
+
+.fici-credit-badge span {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  opacity: .75;
+}
+
+.fici-result-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 16px;
+  background: #fcfcfd;
+}
+
+.fici-result-card h4 {
+  margin: 0 0 10px;
+}
+
+.fici-result-card ul {
+  padding-left: 18px;
+  margin: 0;
+}
+
+.fici-result-card li + li {
+  margin-top: 6px;
+}
+
+.fici-estimate,
+.fici-status {
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  border-radius: 14px;
+  padding: 12px 14px;
+  color: #374151;
+}
+
+.fici-status {
+  border-color: rgba(139, 37, 83, .25);
+  background: rgba(139, 37, 83, .06);
+}
+
+.fici-history-list {
+  display: grid;
+  gap: 12px;
+}
+
+.fici-history-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 14px;
+  background: #fcfcfd;
+}
+
+.fici-history-item p {
+  color: #4b5563;
+  margin: 8px 0;
+}
+
+.fici-history-top,
+.fici-mini-metrics,
+.fici-history-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.fici-history-actions {
+  align-content: flex-start;
+  justify-content: flex-end;
+}
+
+.fici-pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  background: #eef2ff;
+  color: #3730a3;
+}
+
+.is-complete .fici-pill {
+  background: #ecfdf3;
+  color: #027a48;
+}
+
+.is-failed .fici-pill {
+  background: #fef3f2;
+  color: #b42318;
+}
+
+.fici-mini-metrics span {
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 12px;
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.fici-danger {
+  background: #fff1f2 !important;
+  color: #be123c !important;
+}
+
+.fici-muted,
+.fici-empty {
+  color: #667085;
+}
+
+.fici-error {
+  border: 1px solid #fecaca;
+  background: #fff1f2;
+  color: #991b1b;
+  border-radius: 18px;
+  padding: 16px;
+}
+
+.fici-platform-row {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr) 42px;
+  gap: 10px;
+  align-items: center;
+  margin: 8px 0;
+  font-size: 13px;
+}
+
+.fici-bar {
+  height: 9px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  overflow: hidden;
+}
+
+.fici-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #8b2553;
+}
+
+@media (max-width: 960px) {
+  .fici-panel,
+  .fici-grid,
+  .fici-score-grid,
+  .fici-result-grid,
+  .fici-history-item {
+    grid-template-columns: 1fr;
+  }
+
+  .fici-result-header {
+    display: block;
+  }
+
+  .fici-credit-badge {
+    margin-top: 14px;
+  }
+}
+
+.fici-workspace-strip {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  border: 1px solid #e5e7eb;
+  background: #fafafa;
+  border-radius: 18px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+}
+
+.fici-workspace-strip strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 15px;
+}
+
+.fici-workspace-strip p {
+  margin: 0;
+  color: #667085;
+  font-size: 13px;
+}
+
+.fici-workspace-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+.fici-workspace-meta span,
+.fici-saved-badges span {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 11px;
+  font-weight: 800;
+  background: #f3f4f6;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.fici-action-panel {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: center;
+  border: 1px solid rgba(139, 37, 83, .18);
+  background: rgba(139, 37, 83, .045);
+  border-radius: 18px;
+  padding: 16px;
+  margin: 0 0 18px;
+}
+
+.fici-action-panel p {
+  margin: 4px 0 0;
+  color: #667085;
+  font-size: 13px;
+}
+
+.fici-action-buttons {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.fici-action-buttons button {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 13px;
+  background: #8b2553;
+  color: #ffffff;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.fici-action-buttons button:disabled {
+  background: #e5e7eb;
+  color: #667085;
+  cursor: default;
+}
+
+.fici-saved-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.fici-saved-badges span {
+  background: #ecfdf3;
+  color: #027a48;
+}
+
+@media (max-width: 960px) {
+  .fici-workspace-strip,
+  .fici-action-panel {
+    display: block;
+  }
+
+  .fici-workspace-meta,
+  .fici-action-buttons {
+    align-items: flex-start;
+    justify-content: flex-start;
+    margin-top: 12px;
+  }
+}
+
+/* v0.9.24.79 — Creative Intelligence UX hardening */
+.fici-dropzone {
+  border: 1px dashed rgba(37, 99, 235, .35);
+  background: linear-gradient(180deg, rgba(239,246,255,.65), rgba(255,255,255,.9));
+  border-radius: 16px;
+  padding: 16px;
+}
+.fici-dropzone.is-dragover {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37,99,235,.12);
+}
+.fici-drop-hint {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #64748b;
+}
+.fici-preflight {
+  border-radius: 14px;
+  border: 1px solid rgba(15,23,42,.12);
+  background: #f8fafc;
+  padding: 12px 14px;
+  display: grid;
+  gap: 4px;
+  color: #334155;
+}
+.fici-preflight strong { color: #0f172a; }
+.fici-preflight p { margin: 0; color: #64748b; }
+.fici-frame-preview {
+  border-radius: 14px;
+  border: 1px solid rgba(15,23,42,.12);
+  padding: 12px;
+  background: #fff;
+}
+.fici-frame-preview > div {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+.fici-frame-preview img {
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid rgba(15,23,42,.08);
+}
+.fici-history-item p {
+  line-height: 1.55;
+}
+@media (max-width: 768px) {
+  .fici-panel { grid-template-columns: 1fr !important; }
+  .fici-frame-preview > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

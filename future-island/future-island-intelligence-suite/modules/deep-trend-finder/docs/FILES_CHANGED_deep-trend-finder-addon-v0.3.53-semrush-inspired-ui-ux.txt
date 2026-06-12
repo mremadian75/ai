@@ -1,0 +1,7 @@
+future-island-deep-trend-finder-addon.php
+templates/shortcode-deep-trend-finder.php
+assets/css/fidtf-frontend.css
+assets/js/fidtf-frontend.js
+tests/test-fidtf-v0353-semrush-inspired-ui.php
+docs/CHANGELOG_deep-trend-finder-addon-v0.3.53-semrush-inspired-ui-ux.md
+docs/FILES_CHANGED_deep-trend-finder-addon-v0.3.53-semrush-inspired-ui-ux.txt

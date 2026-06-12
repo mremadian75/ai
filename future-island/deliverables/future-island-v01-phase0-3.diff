@@ -1,0 +1,2664 @@
+diff --git a/future-island/deliverables/FUTURE-ISLAND-V01-UI-UX-UPGRADE-2-REPORT.md b/future-island/deliverables/FUTURE-ISLAND-V01-UI-UX-UPGRADE-2-REPORT.md
+index 4f95e70..0bf47bf 100644
+--- a/future-island/deliverables/FUTURE-ISLAND-V01-UI-UX-UPGRADE-2-REPORT.md
++++ b/future-island/deliverables/FUTURE-ISLAND-V01-UI-UX-UPGRADE-2-REPORT.md
+@@ -1,7 +1,8 @@
+ # FUTURE ISLAND V0.1 — UI/UX UPGRADE PASS 2 — FINAL REPORT
+ 
+ Plugin **1.2.9** · label **v0.1-rc5** · baseline: UI/UX pass 1 (1.2.8, 197 tests green)
+-Date: 2026-06-16 · ZIP SHA-256: `e18b9fe2aa22411047ece08732ab864adae0b74f27cac40fb8cf6371d750374d`
++Date: 2026-06-12 · ZIP SHA-256: `ee3d534e041ea84131bc9949062912659cae98247d16e51306997f05e7ecdd86`
++*(Header corrected during Phase 0 release-integrity cleanup: the original header carried the pre-addendum ZIP hash `e18b9fe2…d750374d` and a wrong date; the shipped ZIP is the rebuilt one described in the addendum, and `sha256sum -c` confirms `ee3d534e…` on disk.)*
+ 
+ ---
+ 
+diff --git a/future-island/deliverables/future-island-intelligence-suite-v01-phase0-3.zip b/future-island/deliverables/future-island-intelligence-suite-v01-phase0-3.zip
+new file mode 100644
+index 0000000..2b7afd8
+Binary files /dev/null and b/future-island/deliverables/future-island-intelligence-suite-v01-phase0-3.zip differ
+diff --git a/future-island/deliverables/future-island-intelligence-suite-v01-phase0-3.zip.sha256 b/future-island/deliverables/future-island-intelligence-suite-v01-phase0-3.zip.sha256
+new file mode 100644
+index 0000000..6209ad3
+--- /dev/null
++++ b/future-island/deliverables/future-island-intelligence-suite-v01-phase0-3.zip.sha256
+@@ -0,0 +1 @@
++3a4decf885b4432f20ad6ad5aa95e1865748d224d73f4e1b0270d056a2904eed  deliverables/future-island-intelligence-suite-v01-phase0-3.zip
+diff --git a/future-island/future-island-intelligence-suite/LIVE-BROWSER-VALIDATION-CHECKLIST.md b/future-island/future-island-intelligence-suite/LIVE-BROWSER-VALIDATION-CHECKLIST.md
+index 34e8831..8ed856f 100644
+--- a/future-island/future-island-intelligence-suite/LIVE-BROWSER-VALIDATION-CHECKLIST.md
++++ b/future-island/future-island-intelligence-suite/LIVE-BROWSER-VALIDATION-CHECKLIST.md
+@@ -42,6 +42,21 @@ The files must EXIST even when empty of findings — absence blocks `passed`.
+ - [ ] Spanish/English copy consistent on the pilot surfaces
+ - [ ] No fake/placeholder metrics observed
+ 
++## Responsive / UX manual QA (Phase 3 — workbench rails + intake)
++
++Resize (or device-emulate) at **320, 375, 430, 768 and 1024 px** widths and confirm on
++the Brief Workbench, Draft Workbench, Intake page and Release Candidate page:
++
++- [ ] ≥1101px: workbench shows THREE rails — evidence (left), object (center), decision/status (right)
++- [ ] ≤1100px: evidence rail folds BELOW object + decision (two columns, then full-width evidence)
++- [ ] ≤782px: rails stack to ONE column in order object → decision → evidence; no horizontal scrolling of the page itself
++- [ ] 320–430px: no clipped text; long mono strings (hashes, URLs) wrap or scroll inside their card, never the viewport
++- [ ] Decision-status card shows: state badge + what it means + a concrete "Next:" action — on every workbench state
++- [ ] Intake forms are usable with keyboard only (tab order top→bottom; skip link lands on recent objects)
++- [ ] RC "Staging checklist" table scrolls horizontally inside its section on small screens
++- [ ] Focus outlines visible on every interactive control (focus-visible)
++- [ ] prefers-reduced-motion honored (no animation observed when enabled)
++
+ ## Flow
+ 
+ 1. `bash scripts/future-island-browser-smoke.sh --base-url=…` (reachability only).
+diff --git a/future-island/future-island-intelligence-suite/assets/css/fiis-ui-system.css b/future-island/future-island-intelligence-suite/assets/css/fiis-ui-system.css
+index f07c9d0..cd4e3c8 100644
+--- a/future-island/future-island-intelligence-suite/assets/css/fiis-ui-system.css
++++ b/future-island/future-island-intelligence-suite/assets/css/fiis-ui-system.css
+@@ -302,6 +302,55 @@
+   opacity: 0.85;
+ }
+ 
++/* ── 6b. Workbench three-rail layout (Phase 3) ────────────────────────────────
++   evidence (left) / object under review (center) / decision + status (right).
++   minmax(0, 1fr) keeps long mono strings from blowing out the grid; rails
++   stack to a single readable column on phones (320–430px safe). */
++.ves-wrap .fi-wb-rails {
++  display: grid;
++  gap: var(--fi-space-4);
++  grid-template-columns: minmax(220px, 300px) minmax(0, 1fr) minmax(240px, 340px);
++  grid-template-areas: "evidence object decision";
++  align-items: start;
++}
++.ves-wrap .fi-wb-rail { min-width: 0; }
++.ves-wrap .fi-wb-rail-evidence { grid-area: evidence; }
++.ves-wrap .fi-wb-rail-object   { grid-area: object; }
++.ves-wrap .fi-wb-rail-decision { grid-area: decision; }
++@media (max-width: 1100px) {
++  .ves-wrap .fi-wb-rails {
++    grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
++    grid-template-areas: "object decision" "evidence evidence";
++  }
++}
++@media (max-width: 782px) {
++  .ves-wrap .fi-wb-rails {
++    grid-template-columns: minmax(0, 1fr);
++    grid-template-areas: "object" "decision" "evidence";
++  }
++}
++
++.ves-wrap .fi-decision-card {
++  background: var(--fi-surface);
++  border: 1px solid var(--fi-bdr);
++  border-radius: var(--fi-radius);
++  padding: var(--fi-space-4);
++  margin: 0 0 var(--fi-space-4);
++}
++.ves-wrap .fi-decision-card h3 {
++  margin-top: 0;
++}
++.ves-wrap .fi-decision-explain {
++  color: var(--fi-ink);
++  margin: var(--fi-space-2) 0;
++}
++.ves-wrap .fi-decision-next {
++  border-left: 3px solid var(--fi-lime); /* tactical "go" accent — next action only */
++  padding-left: var(--fi-space-3);
++  color: var(--fi-muted);
++  margin: var(--fi-space-2) 0 0;
++}
++
+ /* ── 7. Workbench navigation ──────────────────────────────────────────────── */
+ .ves-wrap .fi-workbench-nav {
+   display: flex;
+diff --git a/future-island/future-island-intelligence-suite/future-island-intelligence-suite.php b/future-island/future-island-intelligence-suite/future-island-intelligence-suite.php
+index b5e71bd..c590c6f 100644
+--- a/future-island/future-island-intelligence-suite/future-island-intelligence-suite.php
++++ b/future-island/future-island-intelligence-suite/future-island-intelligence-suite.php
+@@ -2,7 +2,7 @@
+ /**
+  * Plugin Name: Future Island Intelligence Suite
+  * Description: Unified marketing intelligence platform. Includes the full Social Scraper Suite (VES Core) and the Deep Trend Finder module in a single WordPress plugin — no separate add-on required.
+- * Version: 1.2.9
++ * Version: 1.3.0
+  * Requires PHP: 7.4
+  * Author: Future Island / Vietnam Estudio
+  * Text Domain: future-island-intelligence-suite
+@@ -15,9 +15,9 @@ if (!defined('ABSPATH')) {
+ // -----------------------------------------------------------------------
+ // Suite-level constants
+ // -----------------------------------------------------------------------
+-define('FIS_VERSION',     '1.2.9');
++define('FIS_VERSION',     '1.3.0');
+ // Product-level release label: Future Island v0.1 Release Candidate.
+-define('FIS_RC_LABEL',    'v0.1-rc5');
++define('FIS_RC_LABEL',    'v0.1-rc6');
+ define('FIS_PLUGIN_FILE', __FILE__);
+ define('FIS_PLUGIN_DIR',  plugin_dir_path(__FILE__));
+ define('FIS_PLUGIN_URL',  plugin_dir_url(__FILE__));
+@@ -25,7 +25,7 @@ define('FIS_PLUGIN_URL',  plugin_dir_url(__FILE__));
+ // -----------------------------------------------------------------------
+ // VES Core constants (keep all existing VES code working unchanged)
+ // -----------------------------------------------------------------------
+-if (!defined('VES_PLUGIN_VERSION'))         { define('VES_PLUGIN_VERSION',         '1.2.9'); }
++if (!defined('VES_PLUGIN_VERSION'))         { define('VES_PLUGIN_VERSION',         '1.3.0'); }
+ if (!defined('VES_PLUGIN_FILE'))            { define('VES_PLUGIN_FILE',            FIS_PLUGIN_FILE); }
+ if (!defined('VES_PLUGIN_DIR'))             { define('VES_PLUGIN_DIR',             FIS_PLUGIN_DIR); }
+ if (!defined('VES_PLUGIN_URL'))             { define('VES_PLUGIN_URL',             FIS_PLUGIN_URL); }
+@@ -132,6 +132,7 @@ $fis_ves_files = [
+     FIS_PLUGIN_DIR . 'includes/class-ves-market-signal-commercial.php',
+     FIS_PLUGIN_DIR . 'includes/class-ves-market-signal-interface.php',
+     FIS_PLUGIN_DIR . 'includes/class-ves-admin.php',
++    FIS_PLUGIN_DIR . 'includes/class-ves-source-intake.php',
+     FIS_PLUGIN_DIR . 'includes/class-ves-billing.php',
+     FIS_PLUGIN_DIR . 'includes/class-ves-stripe-billing.php',
+     FIS_PLUGIN_DIR . 'includes/class-ves-promo-social-credits.php',
+diff --git a/future-island/future-island-intelligence-suite/includes/class-ves-admin-console.php b/future-island/future-island-intelligence-suite/includes/class-ves-admin-console.php
+index 64b2110..65413c8 100644
+--- a/future-island/future-island-intelligence-suite/includes/class-ves-admin-console.php
++++ b/future-island/future-island-intelligence-suite/includes/class-ves-admin-console.php
+@@ -182,15 +182,15 @@ final class VES_Admin_Console {
+             if (!class_exists('VES_RC_Readiness_Service')) { return ''; }
+             $r = VES_RC_Readiness_Service::report();
+             $live = is_array($r['live_validation'] ?? null) ? $r['live_validation'] : ['status' => 'unrun'];
+-            $exec_on = function_exists('get_option') && (bool) get_option('ves_generation_execution_enabled', false);
++            $exec_on = self::execution_enabled_truth();
+             $badge = function ($state, $label) {
+                 return class_exists('VES_Review_State') ? VES_Review_State::badge($state, $label) : '<span class="fi-status-badge">' . self::e($label) . '</span>';
+             };
+             $status = (string) ($r['status'] ?? 'blocked');
+             $status_state = $status === 'blocked' ? 'blocked' : ($status === 'ready_for_staging' ? 'ready' : 'warning');
+             $lv = (string) ($live['status'] ?? 'unrun');
+-            $lv_state = $lv === 'passed' ? 'recorded' : 'warning';
+-            $lv_label = $lv === 'passed' ? 'passed (file-backed)' : ($lv === 'unrun' ? 'UNRUN' : str_replace('_', ' ', $lv));
++            $lv_state = $lv === 'passed' ? 'recorded' : (in_array($lv, ['failed', 'unknown_error'], true) ? 'blocked' : 'warning');
++            $lv_label = $lv === 'passed' ? 'passed (file-backed)' : ($lv === 'unrun' ? 'UNRUN' : ($lv === 'failed' ? 'FAILED' : str_replace('_', ' ', $lv)));
+             $h  = '<div class="fiis-console-status" role="group" aria-label="' . self::ea('Suite status') . '">';
+             $h .= '<span class="fiis-console-status-item"><span class="fiis-chip-k">' . self::e('RC status') . '</span>' . $badge($status_state, str_replace('_', ' ', $status)) . '</span>';
+             $h .= '<span class="fiis-console-status-item"><span class="fiis-chip-k">' . self::e('Live validation') . '</span>' . $badge($lv_state, $lv_label) . '</span>';
+@@ -204,6 +204,20 @@ final class VES_Admin_Console {
+         }
+     }
+ 
++    /**
++     * Single source of truth for the AI-execution flag (Phase 0 alignment):
++     * builder-first (option + filter), throw-safe, raw option as the fallback
++     * when the builder is unavailable. Identical across Console / Signal Room /
++     * RC page so the three surfaces can never disagree.
++     */
++    private static function execution_enabled_truth() {
++        $on = function_exists('get_option') ? (bool) get_option('ves_generation_execution_enabled', false) : false;
++        if (class_exists('VES_Generation_Prompt_Package_Builder') && method_exists('VES_Generation_Prompt_Package_Builder', 'execution_enabled')) {
++            try { $on = (bool) VES_Generation_Prompt_Package_Builder::execution_enabled(); } catch (\Throwable $e) { /* keep raw option value */ }
++        }
++        return $on;
++    }
++
+     private static function render_overview() {
+         echo self::status_strip(); // UI/UX pass 2 — one-glance suite state (read-only, honest)
+         echo '<div class="fiis-console-cards">';
+diff --git a/future-island/future-island-intelligence-suite/includes/class-ves-admin.php b/future-island/future-island-intelligence-suite/includes/class-ves-admin.php
+index 43ba249..e796a96 100644
+--- a/future-island/future-island-intelligence-suite/includes/class-ves-admin.php
++++ b/future-island/future-island-intelligence-suite/includes/class-ves-admin.php
+@@ -76,7 +76,7 @@ final class VES_Admin {
+     /** Phase 7A — load the Future Island design layer on our pages. */
+     public static function enqueue_fi_assets($hook) {
+         $page = isset($_GET['page']) ? sanitize_key((string) $_GET['page']) : '';
+-        if (!in_array($page, ['fi-signal-room', 'fi-brief-workbench', 'fi-draft-workbench', 'ves-memory-knowledge'], true)) { return; }
++        if (!in_array($page, ['fi-signal-room', 'fi-brief-workbench', 'fi-draft-workbench', 'fi-intake', 'ves-memory-knowledge'], true)) { return; }
+         $base = defined('VES_PLUGIN_URL') ? VES_PLUGIN_URL : '';
+         $ver = defined('VES_PLUGIN_VERSION') ? VES_PLUGIN_VERSION : '1.0.0';
+         if (function_exists('wp_enqueue_style')) {
+diff --git a/future-island/future-island-intelligence-suite/includes/class-ves-insight-brief-builder.php b/future-island/future-island-intelligence-suite/includes/class-ves-insight-brief-builder.php
+index 0afc077..ffd3c33 100644
+--- a/future-island/future-island-intelligence-suite/includes/class-ves-insight-brief-builder.php
++++ b/future-island/future-island-intelligence-suite/includes/class-ves-insight-brief-builder.php
+@@ -32,6 +32,7 @@ final class VES_Insight_Brief_Builder {
+ 
+         $payload = [
+             'workspace_id'  => $workspace_id,
++            'insight_id'    => (int) $insight['id'], // first-class traceability column (metadata keeps source_insight_id too)
+             'brief_type'    => (string) ($args['brief_type'] ?? 'content'),
+             'title'         => 'Brief: ' . substr((string) ($insight['title'] ?? 'Insight'), 0, 180),
+             'objective'     => $action !== '' ? $action : ('Act on the finding for "' . $term . '".'),
+diff --git a/future-island/future-island-intelligence-suite/includes/class-ves-intelligence-store.php b/future-island/future-island-intelligence-suite/includes/class-ves-intelligence-store.php
+index d100249..25de677 100644
+--- a/future-island/future-island-intelligence-suite/includes/class-ves-intelligence-store.php
++++ b/future-island/future-island-intelligence-suite/includes/class-ves-intelligence-store.php
+@@ -1070,6 +1070,45 @@ final class VES_Intelligence_Store {
+         ];
+     }
+ 
++    // ── Phase 2 — insight typing + presentation states (display layer; additive) ──
++
++    /**
++     * Public mirror of the canonical insight_type enum (kept in sync with
++     * enums()['insight_type']). 'opportunity' is a TYPE on the insight —
++     * never a standalone entity.
++     */
++    const INSIGHT_TYPES = ['opportunity', 'risk', 'trend', 'competitor', 'audience', 'content', 'aeo', 'market', 'other'];
++
++    public static function sanitize_insight_type($type): string {
++        $t = self::sanitize_key((string) $type, 40);
++        return in_array($t, self::enums()['insight_type'], true) ? $t : 'other';
++    }
++
++    /** Opportunity score lives in insight metadata (opportunity_score); bounded 0–100. */
++    public static function sanitize_opportunity_score($score): int {
++        return max(0, min(100, (int) $score));
++    }
++
++    /**
++     * Presentation state for an insight row in the operator vocabulary:
++     * draft / needs_evidence / ready_for_review / approved / rejected / archived.
++     * PURE DISPLAY derivation — persisted statuses (draft/reviewed/approved/
++     * rejected/archived) are unchanged, and this can never bypass the evidence
++     * gate enforced by update_insight_status / create_record.
++     */
++    public static function insight_presentation_state(array $row): string {
++        $status = self::sanitize_key((string) ($row['status'] ?? 'draft'), 24);
++        if (in_array($status, ['approved', 'rejected', 'archived'], true)) { return $status; }
++        if ($status === 'reviewed') { return 'ready_for_review'; }
++        $evidence = $row['evidence_ids'] ?? null;
++        if (!is_array($evidence)) {
++            $evidence = json_decode((string) ($row['evidence_ids_json'] ?? ''), true);
++        }
++        if (!is_array($evidence)) { return 'draft'; } // cannot evaluate linkage — stay honest
++        $evidence = array_filter(array_map('intval', $evidence));
++        return count($evidence) > 0 ? 'ready_for_review' : 'needs_evidence';
++    }
++
+     /**
+      * v0.1 RC — insight lifecycle transition matrix. Key = current status, value =
+      * statuses reachable WITHOUT an explicit override. Same-status writes are allowed
+@@ -1286,10 +1325,18 @@ final class VES_Intelligence_Store {
+     public static function find_brief_by_insight(int $workspace_id, int $source_insight_id): int {
+         global $wpdb;
+         if ($workspace_id <= 0 || $source_insight_id <= 0 || !isset($wpdb) || !is_object($wpdb) || !method_exists($wpdb, 'get_var')) { return 0; }
+-        $needle = '%"source_insight_id":' . (int) $source_insight_id . '%';
++        // Exact, indexed column first (Phase 2: the builder now sets insight_id).
++        $id = (int) $wpdb->get_var($wpdb->prepare(
++            'SELECT id FROM ' . self::table_name('brief') . ' WHERE workspace_id = %d AND insight_id = %d ORDER BY id ASC LIMIT 1',
++            $workspace_id, $source_insight_id
++        ));
++        if ($id > 0) { return $id; }
++        // Legacy rows (insight_id = 0): metadata match, delimiter-anchored so
++        // insight 7 can never match insight 70/71… (the bare ":7%" pattern did).
++        $base = '"source_insight_id":' . (int) $source_insight_id;
+         return (int) $wpdb->get_var($wpdb->prepare(
+-            'SELECT id FROM ' . self::table_name('brief') . " WHERE workspace_id = %d AND metadata LIKE %s ORDER BY id ASC LIMIT 1",
+-            $workspace_id, $needle
++            'SELECT id FROM ' . self::table_name('brief') . " WHERE workspace_id = %d AND (metadata LIKE %s OR metadata LIKE %s) ORDER BY id ASC LIMIT 1",
++            $workspace_id, '%' . $base . ',%', '%' . $base . '}%'
+         ));
+     }
+ 
+diff --git a/future-island/future-island-intelligence-suite/includes/class-ves-plugin.php b/future-island/future-island-intelligence-suite/includes/class-ves-plugin.php
+index 1a1356a..a0d23b5 100644
+--- a/future-island/future-island-intelligence-suite/includes/class-ves-plugin.php
++++ b/future-island/future-island-intelligence-suite/includes/class-ves-plugin.php
+@@ -56,6 +56,11 @@ final class VES_Plugin {
+         if (is_admin() && class_exists('VES_Admin')) {
+             VES_Admin::register();
+         }
++        if (is_admin() && class_exists('VES_Source_Intake')) {
++            try { VES_Source_Intake::register(); } catch (\Throwable $e) {
++                if (defined('WP_DEBUG') && WP_DEBUG) { error_log('[VES_Source_Intake] register failed: ' . $e->getMessage()); }
++            }
++        }
+         if (is_admin() && class_exists('VES_Billing_Admin')) {
+             VES_Billing_Admin::register();
+         }
+diff --git a/future-island/future-island-intelligence-suite/includes/class-ves-rc-evidence-pack.php b/future-island/future-island-intelligence-suite/includes/class-ves-rc-evidence-pack.php
+index e73387b..37474b3 100644
+--- a/future-island/future-island-intelligence-suite/includes/class-ves-rc-evidence-pack.php
++++ b/future-island/future-island-intelligence-suite/includes/class-ves-rc-evidence-pack.php
+@@ -226,12 +226,23 @@ final class VES_RC_Evidence_Pack {
+         return ['status' => 'ok', 'missing' => [], 'mismatched' => []];
+     }
+ 
++    /** Safety cap for the decompressed evidence tar (the spec'd pack is a few MB). */
++    const MAX_DECOMPRESSED_BYTES = 1073741824; // 1 GiB
++
+     /**
+-     * Verify a tar.gz evidence archive: extract to a temp dir (PharData) and run
+-     * verify_files against the extraction. The pack's evidence_archive_sha256 is
+-     * the ARCHIVE MANIFEST hash (sha256 of manifest-files.txt — non-circular) and
+-     * is re-verified against the extracted manifest. Failure to extract/verify
+-     * NEVER records a pass.
++     * Verify a tar(.gz) evidence archive and run verify_files against the
++     * extraction. Hardened path:
++     *   1. gzip archives are decompressed to a plain .tar in the temp dir first
++     *      (streamed, size-capped) — PharData's direct .tar.gz extraction can
++     *      silently produce zero-byte files on some PHP/zlib builds;
++     *   2. every entry name is pre-scanned (no absolute paths, no '..' segments)
++     *      before extraction;
++     *   3. every extracted file must match its archived size — zero-byte or
++     *      truncated extraction is detected explicitly and fails closed;
++     *   4. the temp dir is removed on EVERY return path.
++     * The pack's evidence_archive_sha256 is the ARCHIVE MANIFEST hash (sha256 of
++     * manifest-files.txt — non-circular) and is re-verified against the extracted
++     * manifest. Failure to extract/verify NEVER records a pass.
+      * @return array{status:string,missing:array,mismatched:array,root:string}
+      */
+     public static function verify_archive(array $pack, $archive_path) {
+@@ -243,24 +254,95 @@ final class VES_RC_Evidence_Pack {
+             return ['status' => 'missing_required_artifacts', 'missing' => ['PharData unavailable: cannot extract archive for verification'], 'mismatched' => [], 'root' => ''];
+         }
+         $tmp = rtrim(sys_get_temp_dir(), '/') . '/ves-evidence-' . substr(hash('sha256', $archive_path . microtime()), 0, 12);
++        if (!@mkdir($tmp, 0700, true) || !is_dir($tmp)) {
++            return ['status' => 'missing_required_artifacts', 'missing' => ['temp extraction directory could not be created'], 'mismatched' => [], 'root' => ''];
++        }
++        $fail = static function ($detail) use ($tmp) {
++            self::cleanup_dir($tmp);
++            return ['status' => 'missing_required_artifacts', 'missing' => [(string) $detail], 'mismatched' => [], 'root' => ''];
++        };
++        // 1. Decompress gzip → plain .tar ourselves (detected by magic bytes, not name).
++        $tar_path = $archive_path;
++        $magic = (string) @file_get_contents($archive_path, false, null, 0, 2);
++        if ($magic === "\x1f\x8b") {
++            if (!function_exists('gzopen')) {
++                return $fail('zlib unavailable: cannot decompress the gzip evidence archive');
++            }
++            $tar_path = $tmp . '/evidence.tar';
++            $gz = @gzopen($archive_path, 'rb');
++            if ($gz === false) { return $fail('archive decompression failed: cannot open gzip stream'); }
++            $out = @fopen($tar_path, 'wb');
++            if ($out === false) { @gzclose($gz); return $fail('archive decompression failed: cannot write temp tar'); }
++            $written = 0;
++            while (!gzeof($gz)) {
++                $chunk = gzread($gz, 1048576);
++                if ($chunk === false) { @fclose($out); @gzclose($gz); return $fail('archive decompression failed: corrupt or truncated gzip stream'); }
++                if ($chunk === '') { break; }
++                $written += strlen($chunk);
++                if ($written > self::MAX_DECOMPRESSED_BYTES) {
++                    @fclose($out); @gzclose($gz);
++                    return $fail('archive decompression refused: decompressed size exceeds the 1 GiB safety cap');
++                }
++                fwrite($out, $chunk);
++            }
++            @fclose($out); @gzclose($gz);
++            if ($written === 0 || (int) @filesize($tar_path) === 0) {
++                return $fail('archive decompression produced an empty tar (corrupt, truncated, or empty gzip stream)');
++            }
++        }
++        // 2. Pre-scan entry names; record per-entry sizes for the extraction audit.
++        $entry_sizes = [];
++        $xdir = $tmp . '/x';
+         try {
+-            @mkdir($tmp, 0700, true);
+-            $phar = new PharData($archive_path);
+-            $phar->extractTo($tmp, null, true);
++            $phar = new PharData($tar_path);
++            $prefix = 'phar://' . $tar_path . '/';
++            foreach (new RecursiveIteratorIterator($phar) as $entry) {
++                $rel = str_replace('\\', '/', (string) $entry->getPathname());
++                $norm_prefix = str_replace('\\', '/', $prefix);
++                if (strpos($rel, $norm_prefix) === 0) { $rel = substr($rel, strlen($norm_prefix)); }
++                if (!self::safe_archive_entry($rel)) {
++                    return $fail('archive refused: unsafe entry path inside archive (absolute or traversal)');
++                }
++                if ($entry->isFile()) { $entry_sizes[$rel] = (int) $entry->getSize(); }
++            }
++            if (count($entry_sizes) === 0) {
++                return $fail('archive contains no files');
++            }
++            if (!@mkdir($xdir, 0700, true) || !is_dir($xdir)) {
++                return $fail('temp extraction directory could not be created');
++            }
++            $phar->extractTo($xdir, null, true);
+         } catch (\Throwable $e) {
+-            return ['status' => 'missing_required_artifacts', 'missing' => ['archive extraction failed: ' . basename($archive_path)], 'mismatched' => [], 'root' => ''];
++            return $fail('archive extraction failed: ' . basename($archive_path));
++        }
++        // 3. Extraction audit: every entry present at its full archived size.
++        $short = [];
++        foreach ($entry_sizes as $rel => $size) {
++            $abs = $xdir . '/' . $rel;
++            $got = is_file($abs) ? (int) @filesize($abs) : -1;
++            if ($got !== $size) {
++                $short[] = $rel . ($got === 0 && $size > 0 ? ' (extracted as zero bytes)' : ' (extraction incomplete)');
++                if (count($short) >= 8) { break; }
++            }
++        }
++        if (count($short) > 0) {
++            self::cleanup_dir($tmp);
++            return ['status' => 'missing_required_artifacts', 'missing' => $short, 'mismatched' => [], 'root' => ''];
+         }
+         // The archive contains the evidence folder; locate the root that holds the manifest.
+-        $root = $tmp;
++        $root = $xdir;
+         $manifest = $root . '/manifest-files.txt';
+         if (!is_file($manifest)) {
+-            $entries = glob($tmp . '/*', GLOB_ONLYDIR);
++            $entries = glob($xdir . '/*', GLOB_ONLYDIR);
+             foreach ((array) $entries as $dir) {
+                 if (is_file($dir . '/manifest-files.txt')) { $root = $dir; $manifest = $dir . '/manifest-files.txt'; break; }
+             }
+         }
+         if (!is_file($manifest)) {
+-            return ['status' => 'missing_required_artifacts', 'missing' => ['manifest-files.txt not found in archive'], 'mismatched' => [], 'root' => ''];
++            return $fail('manifest-files.txt not found in archive');
++        }
++        if ((int) @filesize($manifest) === 0) {
++            return $fail('manifest-files.txt extracted as zero bytes (extraction edge case; archive not trusted)');
+         }
+         $manifest_sha = (string) hash_file('sha256', $manifest);
+         $declared = strtolower((string) ($pack['evidence_archive_sha256'] ?? ''));
+@@ -274,6 +356,17 @@ final class VES_RC_Evidence_Pack {
+         return $result;
+     }
+ 
++    /** Archive entry names must be relative and traversal-free. */
++    private static function safe_archive_entry($p) {
++        $p = (string) $p;
++        if ($p === '' || strpos($p, "\0") !== false) { return false; }
++        if ($p[0] === '/' || preg_match('/^[A-Za-z]:/', $p)) { return false; }
++        foreach (explode('/', $p) as $seg) {
++            if ($seg === '..') { return false; }
++        }
++        return true;
++    }
++
+     /** Best-effort recursive removal of the temp extraction dir (bounded to /tmp). */
+     private static function cleanup_dir($dir) {
+         $dir = (string) $dir;
+@@ -355,17 +448,33 @@ final class VES_RC_Evidence_Pack {
+     }
+ 
+     /**
+-     * Classify the stored live-validation option (9E.2 taxonomy):
++     * Classify the stored live-validation option (9E.2 taxonomy + Phase 1 states):
+      *   passed              — evidence-pack recorded WITH file verification
++     *   failed              — a validation run was explicitly recorded as FAILED
+      *   json_only_unverified — evidence-pack-shaped state without files_verified
+      *   unverified_manual   — any other manual option
+      *   unrun               — nothing recorded
++     *   unknown_error       — something IS recorded but is unreadable/garbage
++     *                         (never silently reported as unrun)
+      */
+     public static function live_validation_state() {
+-        $raw = function_exists('get_option') ? get_option(self::OPTION_LIVE_VALIDATION, []) : [];
+-        if (!is_array($raw) || empty($raw['status'])) {
++        $raw = function_exists('get_option') ? get_option(self::OPTION_LIVE_VALIDATION, null) : null;
++        if ($raw === null || $raw === false) {
+             return ['status' => 'unrun', 'recorded_at' => '', 'evidence_pack_hash' => '', 'schema_version' => '', 'note' => 'No live staging validation has been recorded on this install.', 'missing_for_trust' => ['evidence pack', 'file-backed verification', 'browser artifacts']];
+         }
++        if (!is_array($raw) || empty($raw['status']) || !is_string($raw['status'])) {
++            return ['status' => 'unknown_error', 'recorded_at' => '', 'evidence_pack_hash' => '', 'schema_version' => '', 'note' => 'A live-validation record exists but could not be read (corrupt or unexpected shape). Treat as NOT validated; re-record from evidence.', 'missing_for_trust' => ['a readable, verified evidence-pack record']];
++        }
++        if (self::clean_key((string) $raw['status']) === 'failed') {
++            return [
++                'status'            => 'failed',
++                'recorded_at'       => self::clean_text((string) ($raw['recorded_at'] ?? ''), 40),
++                'evidence_pack_hash' => '',
++                'schema_version'    => self::clean_text((string) ($raw['schema_version'] ?? ''), 8),
++                'note'              => 'A live staging validation was recorded as FAILED. The release must not proceed until a passing, file-backed run is recorded.',
++                'missing_for_trust' => ['a PASSING, file-backed evidence pack (fix the failures, re-run the validation script, re-record)'],
++            ];
++        }
+         $hash = strtolower((string) ($raw['evidence_pack_hash'] ?? ''));
+         $is_pack = (string) ($raw['source'] ?? '') === 'evidence_pack' && self::is_hash($hash);
+         $files_verified = !empty($raw['files_verified']);
+diff --git a/future-island/future-island-intelligence-suite/includes/class-ves-rc-readiness-service.php b/future-island/future-island-intelligence-suite/includes/class-ves-rc-readiness-service.php
+index 62bd134..7cc73c8 100644
+--- a/future-island/future-island-intelligence-suite/includes/class-ves-rc-readiness-service.php
++++ b/future-island/future-island-intelligence-suite/includes/class-ves-rc-readiness-service.php
+@@ -461,6 +461,14 @@ final class VES_RC_Readiness_Service {
+             return self::row('live_validation', 'Live staging validation', 'warn',
+                 'A manually-written validation option exists WITHOUT a verifiable evidence pack — treated as UNVERIFIED, not passed.');
+         }
++        if ($status === 'failed') {
++            return self::row('live_validation', 'Live staging validation', 'block',
++                'A live staging validation was recorded as FAILED. Fix the failures, re-run the validation script, and re-record a passing, file-backed pack.');
++        }
++        if ($status === 'unknown_error') {
++            return self::row('live_validation', 'Live staging validation', 'block',
++                'A live-validation record exists but could not be read (corrupt or unexpected shape). Treated as NOT validated — re-record from evidence.');
++        }
+         return self::row('live_validation', 'Live staging validation', 'warn',
+             'UNRUN / not recorded. The RC is statically verified only — production claims are forbidden until the live checklist passes.');
+     }
+diff --git a/future-island/future-island-intelligence-suite/includes/class-ves-release-candidate-page.php b/future-island/future-island-intelligence-suite/includes/class-ves-release-candidate-page.php
+index e8c1702..84b372f 100644
+--- a/future-island/future-island-intelligence-suite/includes/class-ves-release-candidate-page.php
++++ b/future-island/future-island-intelligence-suite/includes/class-ves-release-candidate-page.php
+@@ -78,6 +78,16 @@ final class VES_Release_Candidate_Page {
+                 . 'A live-validation option exists but carries no verifiable evidence pack hash, so it is NOT trusted as passed. '
+                 . 'Re-run the validation script and record through <span class="fiis-rc-mono">wp ves rc-record-live-validation --evidence-pack=…</span>. '
+                 . 'This build remains <strong>NOT production-ready</strong>.</div>';
++        } elseif (($live['status'] ?? '') === 'failed') {
++            $h .= '<div class="fiis-rc-banner fiis-rc-banner-warn"><strong>Live staging validation: FAILED.</strong> '
++                . 'A validation run was recorded as failed' . ((string) ($live['recorded_at'] ?? '') !== '' ? ' (' . self::e((string) $live['recorded_at']) . ')' : '') . '. '
++                . 'Fix the recorded failures, re-run the validation script on staging, and re-record a passing, file-backed evidence pack. '
++                . 'This build is <strong>NOT production-ready</strong> and must not proceed to pilot.' . $missing_html . '</div>';
++        } elseif (($live['status'] ?? '') === 'unknown_error') {
++            $h .= '<div class="fiis-rc-banner fiis-rc-banner-warn"><strong>Live-validation record unreadable (unknown_error).</strong> '
++                . 'Something is stored but could not be read as a validation record — it is treated as NOT validated, never as a pass. '
++                . 'Re-record from evidence with <span class="fiis-rc-mono">wp ves rc-record-live-validation --evidence-pack=… --evidence-root=…</span>. '
++                . 'This build remains <strong>NOT production-ready</strong>.' . $missing_html . '</div>';
+         } elseif (!$live_passed) {
+             $h .= '<div class="fiis-rc-banner fiis-rc-banner-warn"><strong>Live staging validation: UNRUN.</strong> '
+                 . 'This build is statically verified only. It is <strong>NOT production-ready</strong> and must not be installed on a production site. '
+@@ -91,6 +101,10 @@ final class VES_Release_Candidate_Page {
+                 . 'Even with a recorded pass, production release still requires operator approval and monitored pilot usage — this page never grants production status.</div>';
+         }
+ 
++        // Phase 1 — staging checklist: one honest, read-only state row per
++        // subsystem an operator must confirm on staging. Never a control.
++        $h .= self::staging_checklist_section($report, $live);
++
+         // Build status.
+         $h .= '<section class="fiis-rc-section"><h2>Build status</h2>';
+         $h .= '<p>Overall: ' . self::badge($status) . ' &nbsp; Production-ready: ' . self::badge('blocked', 'No') . '</p>';
+@@ -254,13 +268,105 @@ final class VES_Release_Candidate_Page {
+         return $h;
+     }
+ 
+-    private static function flags() {
+-        // Prefer the builder's view of the flag (it applies filters); fall back to
+-        // the raw option so a missing builder can never make an ON flag look OFF.
+-        $exec_on = function_exists('get_option') ? (bool) get_option('ves_generation_execution_enabled', false) : false;
+-        if (class_exists('VES_Generation_Prompt_Package_Builder')) {
+-            try { $exec_on = (bool) VES_Generation_Prompt_Package_Builder::execution_enabled(); } catch (\Throwable $e) { /* keep option value */ }
++    /**
++     * Phase 1 — staging checklist. Read-only state table: release build, live
++     * validation, archive-verification capability, generation execution, schema,
++     * memory preview, prompt preview and operator queue — each with its truthful
++     * state and the operator's next action. Reuses already-computed readiness
++     * rows where they exist; never recomputes a rosier answer.
++     */
++    private static function staging_checklist_section(array $report, array $live) {
++        $by_id = [];
++        foreach ((array) ($report['checks'] ?? []) as $c) {
++            if (is_array($c) && isset($c['id'])) { $by_id[(string) $c['id']] = $c; }
+         }
++        $check_state = function ($id, $missing_detail) use ($by_id) {
++            if (!isset($by_id[$id])) { return ['warning', $missing_detail]; }
++            $s = (string) ($by_id[$id]['status'] ?? 'warn');
++            $map = ['ok' => 'ready', 'warn' => 'warning', 'block' => 'blocked'];
++            return [$map[$s] ?? 'warning', (string) ($by_id[$id]['detail'] ?? '')];
++        };
++
++        $rows = [];
++        $rows[] = ['Release build',
++            ['ready', 'version ' . (string) ($report['plugin_version'] ?? '') . ((string) ($report['rc_label'] ?? '') !== '' ? ' · ' . (string) $report['rc_label'] : '')],
++            'Verify the installed ZIP SHA-256 against the release report before anything else.'];
++
++        $lv = (string) ($live['status'] ?? 'unrun');
++        $lv_map = [
++            'passed' => ['recorded', 'passed (file-backed)'],
++            'failed' => ['blocked', 'FAILED'],
++            'json_only_unverified' => ['warning', 'json-only — unverified'],
++            'unverified_manual' => ['warning', 'manual — unverified'],
++            'unknown_error' => ['blocked', 'unreadable record'],
++            'unrun' => ['warning', 'UNRUN'],
++        ];
++        $lv_next = [
++            'passed' => 'Keep the evidence archive; production still requires operator approval and a monitored pilot.',
++            'failed' => 'Fix the recorded failures, re-run the validation script, re-record a passing file-backed pack.',
++            'json_only_unverified' => 'Re-record with --evidence-root or --evidence-archive so every artifact file is verified.',
++            'unverified_manual' => 'Run scripts/future-island-live-validation-v3.sh on staging and record the evidence pack.',
++            'unknown_error' => 'The stored record is unreadable — re-record from evidence; never trust it as a pass.',
++            'unrun' => 'Run scripts/future-island-live-validation-v3.sh on a staging copy (never --apply).',
++        ];
++        $rows[] = ['Live staging validation', $lv_map[$lv] ?? $lv_map['unrun'], $lv_next[$lv] ?? $lv_next['unrun']];
++
++        $can_extract = class_exists('PharData');
++        $can_gz = function_exists('gzopen');
++        $rows[] = ['Archive verification',
++            $can_extract && $can_gz ? ['ready', 'PharData + zlib available'] : ['blocked', !$can_extract ? 'PharData unavailable' : 'zlib unavailable'],
++            $can_extract && $can_gz
++                ? 'Verify the evidence archive with wp ves rc-record-live-validation --evidence-archive=… (hardened extraction).'
++                : 'This PHP build cannot extract archives — verify with --evidence-root against the unpacked evidence folder instead.'];
++
++        $exec_on = self::execution_enabled_truth();
++        $rows[] = ['Generation execution',
++            $exec_on ? ['warning', 'ENABLED'] : ['disabled', 'OFF'],
++            $exec_on ? 'Switch ves_generation_execution_enabled OFF — v0.1 ships with no AI execution.' : 'Keep OFF for v0.1; prompt previews work without it.'];
++
++        list($schema_state, $schema_detail) = $check_state('schema', 'Schema check unavailable in this report.');
++        $rows[] = ['Database schema', [$schema_state, $schema_detail !== '' ? $schema_detail : $schema_state],
++            $schema_state === 'ready' ? 'Capture wp ves verify-schema output into the evidence pack.' : 'Run wp ves verify-schema (then --repair if instructed) before validating anything else.'];
++
++        $mem_ok = class_exists('VES_Generation_Context_Resolver') || class_exists('VES_Brand_Context_Service');
++        $rows[] = ['Memory context preview', $mem_ok ? ['ready', 'preview available'] : ['blocked', 'preview service missing'],
++            $mem_ok ? 'Run wp ves memory-context-preview and confirm no candidate/rejected/archived/expired record appears.' : 'Memory preview services missing — investigate before staging sign-off.'];
++
++        $prompt_ok = class_exists('VES_Generation_Prompt_Package_Builder');
++        $rows[] = ['Prompt package preview', $prompt_ok ? ['ready', 'builder available'] : ['blocked', 'builder missing'],
++            $prompt_ok ? 'Run wp ves generation-prompt-preview — it builds the package WITHOUT calling any provider.' : 'Prompt package builder missing — investigate before staging sign-off.'];
++
++        $queue_ok = class_exists('VES_Operator_Queue_Service');
++        $rows[] = ['Operator queue', $queue_ok ? ['ready', 'queues available'] : ['blocked', 'queue service missing'],
++            $queue_ok ? 'Review the Signal Room queues; capture 05-operator-queue.png for the evidence pack.' : 'Operator queue service missing — investigate before staging sign-off.'];
++
++        $h = '<section class="fiis-rc-section fiis-rc-checklist"><h2>Staging checklist</h2>';
++        $h .= '<table class="fiis-rc-table"><thead><tr><th>Subsystem</th><th>State</th><th>Next action</th></tr></thead><tbody>';
++        foreach ($rows as $r) {
++            $h .= '<tr><td>' . self::e((string) $r[0]) . '</td><td>' . self::badge((string) $r[1][0], (string) $r[1][1]) . '</td><td>' . self::e((string) $r[2]) . '</td></tr>';
++        }
++        $h .= '</tbody></table>';
++        $h .= '<p class="fiis-rc-note">Read-only. States come from the same classifiers the readiness service uses — this table can never look greener than the checks below it.</p>';
++        $h .= '</section>';
++        return $h;
++    }
++
++    /**
++     * Single source of truth for the AI-execution flag (Phase 0 alignment):
++     * builder-first (option + filter), throw-safe, raw option as the fallback
++     * when the builder is unavailable. Identical across Console / Signal Room /
++     * RC page so the three surfaces can never disagree.
++     */
++    private static function execution_enabled_truth() {
++        $on = function_exists('get_option') ? (bool) get_option('ves_generation_execution_enabled', false) : false;
++        if (class_exists('VES_Generation_Prompt_Package_Builder') && method_exists('VES_Generation_Prompt_Package_Builder', 'execution_enabled')) {
++            try { $on = (bool) VES_Generation_Prompt_Package_Builder::execution_enabled(); } catch (\Throwable $e) { /* keep raw option value */ }
++        }
++        return $on;
++    }
++
++    private static function flags() {
++        $exec_on = self::execution_enabled_truth();
+         return [
+             ['name' => 'ves_generation_execution_enabled', 'on' => $exec_on, 'note' => 'AI provider execution for generation. Must stay OFF for v0.1.'],
+             ['name' => 'VES_PRODUCTION_MVP', 'on' => defined('VES_PRODUCTION_MVP') && VES_PRODUCTION_MVP, 'note' => 'Production MVP mode constant.'],
+diff --git a/future-island/future-island-intelligence-suite/includes/class-ves-review-state.php b/future-island/future-island-intelligence-suite/includes/class-ves-review-state.php
+index 1473eb1..da8f998 100644
+--- a/future-island/future-island-intelligence-suite/includes/class-ves-review-state.php
++++ b/future-island/future-island-intelligence-suite/includes/class-ves-review-state.php
+@@ -13,6 +13,8 @@ final class VES_Review_State {
+     const STATES = [
+         'candidate'    => ['Candidate', 'candidate', 'Proposed; not trusted until approved.', 'info'],
+         'needs_review' => ['Needs review', 'needs_review', 'Awaiting human review.', 'warn'],
++        'needs_evidence' => ['Needs evidence', 'needs_review', 'Cannot enter review without linked evidence.', 'warn'],
++        'ready_for_review' => ['Ready for review', 'candidate', 'Evidence linked; awaiting operator review.', 'info'],
+         'approved'     => ['Approved', 'approved', 'Human-approved.', 'ok'],
+         'rejected'     => ['Rejected', 'rejected', 'Rejected in review.', 'muted'],
+         'archived'     => ['Archived', 'archived', 'Archived; diagnostic only.', 'muted'],
+diff --git a/future-island/future-island-intelligence-suite/includes/class-ves-signal-room.php b/future-island/future-island-intelligence-suite/includes/class-ves-signal-room.php
+index 7f3888b..6e27625 100644
+--- a/future-island/future-island-intelligence-suite/includes/class-ves-signal-room.php
++++ b/future-island/future-island-intelligence-suite/includes/class-ves-signal-room.php
+@@ -13,6 +13,20 @@ final class VES_Signal_Room {
+ 
+     private static function e($s) { return function_exists('esc_html') ? esc_html((string) $s) : htmlspecialchars((string) $s, ENT_QUOTES); }
+ 
++    /**
++     * Single source of truth for the AI-execution flag (Phase 0 alignment):
++     * builder-first (option + filter), throw-safe, raw option as the fallback
++     * when the builder is unavailable. Identical across Console / Signal Room /
++     * RC page so the three surfaces can never disagree.
++     */
++    private static function execution_enabled_truth() {
++        $on = function_exists('get_option') ? (bool) get_option('ves_generation_execution_enabled', false) : false;
++        if (class_exists('VES_Generation_Prompt_Package_Builder') && method_exists('VES_Generation_Prompt_Package_Builder', 'execution_enabled')) {
++            try { $on = (bool) VES_Generation_Prompt_Package_Builder::execution_enabled(); } catch (\Throwable $e) { /* keep raw option value */ }
++        }
++        return $on;
++    }
++
+     public static function snapshot($workspace_id = 0) {
+         $ws = max(0, (int) $workspace_id);
+         return [
+@@ -21,7 +35,7 @@ final class VES_Signal_Room {
+             'usage' => (class_exists('VES_AI_Usage_Tracker') && method_exists('VES_AI_Usage_Tracker', 'summary')) ? (array) VES_AI_Usage_Tracker::summary(24) : [],
+             'flags' => [
+                 'memory_generation_enabled' => (class_exists('VES_Generation_Context_Resolver') && method_exists('VES_Generation_Context_Resolver', 'is_enabled')) ? VES_Generation_Context_Resolver::is_enabled() : false,
+-                'generation_execution_enabled' => (class_exists('VES_Generation_Prompt_Package_Builder') && method_exists('VES_Generation_Prompt_Package_Builder', 'execution_enabled')) ? VES_Generation_Prompt_Package_Builder::execution_enabled() : false,
++                'generation_execution_enabled' => self::execution_enabled_truth(),
+             ],
+             // UI/UX pass 2 — the strip reads the REAL evidence-pack classification
+             // instead of a hardcoded 'pending'.
+@@ -131,18 +145,21 @@ final class VES_Signal_Room {
+         $lv = is_array($s['live_validation'] ?? null) ? $s['live_validation'] : ['status' => 'unrun'];
+         $lv_map = [
+             'passed' => ['passed (file-backed)', 'recorded'],
++            'failed' => ['FAILED', 'blocked'],
+             'json_only_unverified' => ['json-only — unverified', 'warning'],
+             'unverified_manual' => ['manual — unverified', 'warning'],
+             'unrun' => ['UNRUN', 'warning'],
++            'unknown_error' => ['unreadable record — treat as not validated', 'blocked'],
+         ];
+         $lv_chip = $lv_map[(string) ($lv['status'] ?? 'unrun')] ?? $lv_map['unrun'];
+         $h .= self::chip('Live staging validation', $lv_chip[0], $lv_chip[1]);
+         $h .= self::chip('Usage ledger (24h)', isset($s['usage']['total']) ? ((int) $s['usage']['total'] . ' events') : 'not available', isset($s['usage']['total']) ? 'recorded' : 'disabled');
+         $h .= '</div>';
+ 
+-        $lv_note = ((string) ($lv['status'] ?? 'unrun') === 'passed')
++        $lv_status = (string) ($lv['status'] ?? 'unrun');
++        $lv_note = $lv_status === 'passed'
+             ? 'Live staging validation recorded (file-backed) — still not production-ready without operator approval and a monitored pilot.'
+-            : 'Live staging validation ' . ((string) ($lv['status'] ?? 'unrun') === 'unrun' ? 'UNRUN' : 'unverified') . ' — not production-ready.';
++            : 'Live staging validation ' . ($lv_status === 'unrun' ? 'UNRUN' : ($lv_status === 'failed' ? 'FAILED' : 'unverified')) . ' — not production-ready.';
+         $h .= '<p class="fi-memory-policy fiis-sr-note">' . self::e('Read-only console. No generation runs here. Memory is not evidence. ' . $lv_note) . '</p>';
+         $h .= '</div>';
+         return $h;
+diff --git a/future-island/future-island-intelligence-suite/includes/class-ves-source-intake.php b/future-island/future-island-intelligence-suite/includes/class-ves-source-intake.php
+new file mode 100644
+index 0000000..1d1b756
+--- /dev/null
++++ b/future-island/future-island-intelligence-suite/includes/class-ves-source-intake.php
+@@ -0,0 +1,515 @@
++<?php
++if (!defined('ABSPATH')) { exit; }
++
++/**
++ * VES_Source_Intake — Phase 2 core-loop intake surface.
++ *
++ * The minimal REAL way material enters the loop by hand:
++ *   1. Manual text source        (operator notes — nothing fetched)
++ *   2. URL-record source         (the URL is RECORDED as a reference; it is
++ *                                 NEVER fetched — no SSRF surface, no scraping)
++ *   3. Signal from a source      (normalized + deterministically scored by the store)
++ *   4. Evidence + draft insight from a signal (traceable: evidence carries the
++ *                                 source/signal ids; insight links both)
++ *   5. Brief from an APPROVED insight (evidence ids carry through — human
++ *                                 review always happens before a brief exists)
++ *
++ * Security: manage_options + per-action nonce on every mutation; all input
++ * validated → sanitized → bounded; all output escaped; workspace membership
++ * asserted on every cross-object action; WP_Error on every failure path.
++ * No AI calls, no generation, no auto-approval, no publishing.
++ */
++final class VES_Source_Intake {
++
++    const PAGE_SLUG       = 'fi-intake';
++    const ACTION_SOURCE   = 'ves_intake_source';
++    const ACTION_SIGNAL   = 'ves_intake_signal';
++    const ACTION_INSIGHT  = 'ves_intake_signal_to_insight';
++    const ACTION_BRIEF    = 'ves_insight_to_brief';
++    const MAX_NOTES_CHARS = 4000;
++
++    /** Signal types offered by the intake form — the store's canonical signal_type enum. */
++    const SIGNAL_TYPES = ['mention', 'trend', 'competitor_move', 'citation', 'claim', 'content_pattern', 'audience_signal', 'market_signal', 'ai_visibility', 'other'];
++
++    public static function register() {
++        if (!function_exists('add_action')) { return; }
++        add_action('admin_menu', [__CLASS__, 'register_menu']);
++        add_action('admin_post_' . self::ACTION_SOURCE, [__CLASS__, 'handle_source']);
++        add_action('admin_post_' . self::ACTION_SIGNAL, [__CLASS__, 'handle_signal']);
++        add_action('admin_post_' . self::ACTION_INSIGHT, [__CLASS__, 'handle_signal_to_insight']);
++        add_action('admin_post_' . self::ACTION_BRIEF, [__CLASS__, 'handle_insight_to_brief']);
++    }
++
++    public static function register_menu() {
++        if (!function_exists('add_management_page')) { return; }
++        add_management_page('Future Island — Intake', 'FI Intake', 'manage_options', self::PAGE_SLUG, [__CLASS__, 'render_page']);
++    }
++
++    // ── Escaping helpers (shim-safe, same idiom as the other surfaces) ─────────
++    private static function e($s)  { return function_exists('esc_html') ? esc_html((string) $s) : htmlspecialchars((string) $s, ENT_QUOTES); }
++    private static function ea($s) { return function_exists('esc_attr') ? esc_attr((string) $s) : htmlspecialchars((string) $s, ENT_QUOTES); }
++    private static function eu($s) { return function_exists('esc_url') ? esc_url((string) $s) : htmlspecialchars((string) $s, ENT_QUOTES); }
++    private static function txt($s, $max = 255) {
++        $s = function_exists('sanitize_text_field') ? sanitize_text_field((string) $s) : trim(preg_replace('/[\r\n\t]+/', ' ', strip_tags((string) $s)));
++        return self::cut($s, $max);
++    }
++    private static function long_txt($s, $max = self::MAX_NOTES_CHARS) {
++        $s = function_exists('sanitize_textarea_field') ? sanitize_textarea_field((string) $s) : trim(strip_tags((string) $s));
++        return self::cut($s, $max);
++    }
++    private static function cut($s, $max) {
++        if (function_exists('mb_substr')) { return mb_substr((string) $s, 0, (int) $max); }
++        return substr((string) $s, 0, (int) $max);
++    }
++    private static function err($code, $message) { return new WP_Error($code, $message); }
++    private static function is_err($t) { return function_exists('is_wp_error') ? is_wp_error($t) : ($t instanceof WP_Error); }
++
++    /**
++     * Reference-URL shape check. The URL is never fetched, so this is about
++     * recording CLEAN references: http/https only, a host, no embedded
++     * credentials, bounded length. No DNS, no network.
++     */
++    public static function valid_reference_url($url) {
++        $url = trim((string) $url);
++        if ($url === '' || strlen($url) > 2000) { return false; }
++        $p = function_exists('wp_parse_url') ? wp_parse_url($url) : parse_url($url);
++        if (!is_array($p)) { return false; }
++        $scheme = strtolower((string) ($p['scheme'] ?? ''));
++        if (!in_array($scheme, ['http', 'https'], true)) { return false; }
++        if (empty($p['host'])) { return false; }
++        if (isset($p['user']) || isset($p['pass'])) { return false; }
++        return true;
++    }
++
++    private static function assert_workspace($ws) {
++        $ws = (int) $ws;
++        if ($ws <= 0) { return self::err('ves_intake_workspace', 'A positive workspace id is required.'); }
++        return $ws;
++    }
++
++    /** Workspace membership: guard class when present, direct comparison always. */
++    private static function assert_in_workspace($type, array $row, $ws) {
++        if (class_exists('VES_Workspace_Guard') && method_exists('VES_Workspace_Guard', 'assert_object_in_workspace')) {
++            $check = VES_Workspace_Guard::assert_object_in_workspace($type, $row, $ws);
++            if (self::is_err($check)) { return $check; }
++            return true;
++        }
++        if ((int) ($row['workspace_id'] ?? 0) !== (int) $ws) {
++            return self::err('ves_workspace_mismatch', ucfirst((string) $type) . ' belongs to a different workspace.');
++        }
++        return true;
++    }
++
++    // ── Core processors (testable; no nonce/redirect concerns) ─────────────────
++
++    /**
++     * Create a source from operator input. NOTHING is fetched — a URL intake
++     * records the reference; a manual intake records the operator's note.
++     * @return array{source_id:int}|WP_Error
++     */
++    public static function process_source(array $in) {
++        if (!class_exists('VES_Intelligence_Store')) { return self::err('ves_intake_store_missing', 'Intelligence store unavailable.'); }
++        $ws = self::assert_workspace($in['workspace_id'] ?? 0);
++        if (self::is_err($ws)) { return $ws; }
++        $type  = (string) ($in['intake_type'] ?? 'manual') === 'url' ? 'url' : 'manual';
++        $title = self::txt($in['source_title'] ?? '', 255);
++        $notes = self::long_txt($in['notes'] ?? '');
++
++        if ($type === 'url') {
++            $url = trim((string) ($in['source_url'] ?? ''));
++            if (!self::valid_reference_url($url)) {
++                return self::err('ves_intake_bad_url', 'Provide a plain http(s) URL without embedded credentials. The URL is recorded as a reference only — it is never fetched.');
++            }
++            $url = function_exists('esc_url_raw') ? esc_url_raw($url) : $url;
++            $host = (string) (parse_url($url, PHP_URL_HOST) ?: '');
++            $payload = [
++                'workspace_id' => $ws,
++                'source_type'  => 'web',
++                'provider'     => 'operator',
++                'source_url'   => $url,
++                'source_title' => $title !== '' ? $title : $host,
++                'metadata'     => [
++                    'retrieval_method' => 'url_reference',
++                    'fetch_status'     => 'not_fetched',
++                    'intake_notes'     => self::cut($notes, 2000),
++                    'entered_by'       => function_exists('get_current_user_id') ? (int) get_current_user_id() : 0,
++                ],
++            ];
++        } else {
++            if ($title === '') { return self::err('ves_intake_title_required', 'A title is required for a manual source.'); }
++            $payload = [
++                'workspace_id' => $ws,
++                'source_type'  => 'manual',
++                'provider'     => 'operator',
++                'source_title' => $title,
++                // Identity for dedup: same title+notes in a workspace is the same source.
++                'external_id'  => substr(hash('sha256', $title . '|' . $notes), 0, 32),
++                'raw_payload'  => $title . '|' . $notes,
++                'metadata'     => [
++                    'retrieval_method' => 'manual_intake',
++                    'fetch_status'     => 'not_fetched',
++                    'intake_notes'     => self::cut($notes, 2000),
++                    'entered_by'       => function_exists('get_current_user_id') ? (int) get_current_user_id() : 0,
++                ],
++            ];
++        }
++        $id = VES_Intelligence_Store::create_or_get_source($payload);
++        if (self::is_err($id)) { return $id; }
++        return ['source_id' => (int) $id];
++    }
++
++    /**
++     * Create a normalized, deterministically scored signal from an existing source.
++     * @return array{signal_id:int}|WP_Error
++     */
++    public static function process_signal(array $in) {
++        if (!class_exists('VES_Intelligence_Store')) { return self::err('ves_intake_store_missing', 'Intelligence store unavailable.'); }
++        $ws = self::assert_workspace($in['workspace_id'] ?? 0);
++        if (self::is_err($ws)) { return $ws; }
++        $source_id = (int) ($in['source_id'] ?? 0);
++        $source = $source_id > 0 ? VES_Intelligence_Store::get_source($source_id) : null;
++        if (!is_array($source) || empty($source['id'])) { return self::err('ves_intake_source_missing', 'Source not found. Create or pick a source first.'); }
++        $in_ws = self::assert_in_workspace('source', $source, $ws);
++        if (self::is_err($in_ws)) { return $in_ws; }
++
++        $title = self::txt($in['title'] ?? '', 255);
++        if ($title === '') { return self::err('ves_intake_title_required', 'A signal needs a title (what was observed).'); }
++        $stype = self::txt($in['signal_type'] ?? 'other', 40);
++        $stype = in_array($stype, self::SIGNAL_TYPES, true) ? $stype : 'other';
++
++        $occurred = '';
++        $raw_occurred = trim((string) ($in['occurred_at'] ?? ''));
++        if (preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/', $raw_occurred)) {
++            $occurred = str_replace('T', ' ', $raw_occurred) . ':00';
++        }
++
++        $id = VES_Intelligence_Store::create_or_get_signal([
++            'workspace_id' => $ws,
++            'source_id'    => (int) $source['id'],
++            'signal_type'  => $stype,
++            'title'        => $title,
++            'summary'      => self::long_txt($in['summary'] ?? ''),
++            'value_text'   => self::txt($in['value_text'] ?? '', 120),
++            'occurred_at'  => $occurred,
++            'source'       => $source, // lets the store score credibility/freshness
++            'metadata'     => [
++                'extraction_method' => 'manual_intake',
++                'entered_by'        => function_exists('get_current_user_id') ? (int) get_current_user_id() : 0,
++            ],
++        ]);
++        if (self::is_err($id)) { return $id; }
++        return ['signal_id' => (int) $id];
++    }
++
++    /**
++     * Promote a signal into evidence + a DRAFT insight (never reviewed/approved).
++     * The evidence record carries the source/signal ids and the source URL, so
++     * everything downstream stays traceable. Opportunity is an insight TYPE with
++     * a bounded metadata score — never a separate entity.
++     * @return array{evidence_id:int,insight_id:int}|WP_Error
++     */
++    public static function process_signal_to_insight(array $in) {
++        if (!class_exists('VES_Intelligence_Store')) { return self::err('ves_intake_store_missing', 'Intelligence store unavailable.'); }
++        $ws = self::assert_workspace($in['workspace_id'] ?? 0);
++        if (self::is_err($ws)) { return $ws; }
++        $signal_id = (int) ($in['signal_id'] ?? 0);
++        $signal = $signal_id > 0 ? VES_Intelligence_Store::get_signal($signal_id) : null;
++        if (!is_array($signal) || empty($signal['id'])) { return self::err('ves_intake_signal_missing', 'Signal not found. Record the signal first.'); }
++        $in_ws = self::assert_in_workspace('signal', $signal, $ws);
++        if (self::is_err($in_ws)) { return $in_ws; }
++
++        $title = self::txt($in['title'] ?? '', 255);
++        if ($title === '') { return self::err('ves_intake_title_required', 'An insight needs a title (the finding).'); }
++        $itype = VES_Intelligence_Store::sanitize_insight_type($in['insight_type'] ?? 'other');
++
++        $source = VES_Intelligence_Store::get_source((int) ($signal['source_id'] ?? 0));
++        $source_url = is_array($source) ? (string) ($source['source_url'] ?? '') : '';
++        $source_label = is_array($source) ? self::txt(($source['source_title'] ?? '') !== '' ? $source['source_title'] : ($source['provider'] ?? 'unknown'), 190) : 'unknown';
++
++        $evidence_text = 'Signal: ' . (string) ($signal['title'] ?? '');
++        if ((string) ($signal['summary'] ?? '') !== '') { $evidence_text .= "\nSummary: " . (string) $signal['summary']; }
++        if ((string) ($signal['value_text'] ?? '') !== '') { $evidence_text .= "\nValue: " . (string) $signal['value_text']; }
++
++        $evidence_id = VES_Intelligence_Store::create_evidence([
++            'workspace_id'    => $ws,
++            'source_id'       => (int) ($signal['source_id'] ?? 0),
++            'signal_id'       => (int) $signal['id'],
++            'evidence_type'   => 'observation',
++            'text'            => self::cut($evidence_text, self::MAX_NOTES_CHARS),
++            'source_url'      => $source_url,
++            'source_label'    => $source_label,
++            'observed_at'     => (string) ($signal['occurred_at'] ?? ''),
++            'confidence_score' => (float) ($signal['confidence_score'] ?? 0),
++            'metadata'        => ['created_via' => 'intake_promotion', 'signal_id' => (int) $signal['id']],
++        ]);
++        if (self::is_err($evidence_id)) { return $evidence_id; }
++
++        $meta = ['created_via' => 'intake_promotion', 'source_signal_id' => (int) $signal['id']];
++        if ($itype === 'opportunity') {
++            $meta['opportunity_score'] = VES_Intelligence_Store::sanitize_opportunity_score($in['opportunity_score'] ?? 0);
++        }
++        $insight_id = VES_Intelligence_Store::create_insight([
++            'workspace_id'   => $ws,
++            'insight_type'   => $itype,
++            'title'          => $title,
++            'summary'        => self::long_txt($in['summary'] ?? ''),
++            'recommendation' => self::long_txt($in['recommendation'] ?? '', 2000),
++            'status'         => 'draft', // review states advance ONLY through the audited lifecycle
++            'evidence_ids'   => [(int) $evidence_id],
++            'signal_ids'     => [(int) $signal['id']],
++            'metadata'       => $meta,
++        ]);
++        if (self::is_err($insight_id)) { return $insight_id; }
++        return ['evidence_id' => (int) $evidence_id, 'insight_id' => (int) $insight_id];
++    }
++
++    /**
++     * Brief from an APPROVED insight only — human review always precedes a brief.
++     * Evidence ids carry through via the builder (traceability preserved).
++     * @return array{brief_id:int}|WP_Error
++     */
++    public static function process_insight_to_brief(array $in) {
++        if (!class_exists('VES_Intelligence_Store')) { return self::err('ves_intake_store_missing', 'Intelligence store unavailable.'); }
++        if (!class_exists('VES_Insight_Brief_Builder')) { return self::err('ves_intake_builder_missing', 'Brief builder unavailable.'); }
++        $ws = self::assert_workspace($in['workspace_id'] ?? 0);
++        if (self::is_err($ws)) { return $ws; }
++        $insight_id = (int) ($in['insight_id'] ?? 0);
++        $insight = $insight_id > 0 ? VES_Intelligence_Store::get_insight($insight_id) : null;
++        if (!is_array($insight) || empty($insight['id'])) { return self::err('ves_intake_insight_missing', 'Insight not found.'); }
++        $in_ws = self::assert_in_workspace('insight', $insight, $ws);
++        if (self::is_err($in_ws)) { return $in_ws; }
++        if ((string) ($insight['status'] ?? '') !== 'approved') {
++            return self::err('ves_intake_insight_not_approved', 'Only an APPROVED insight can become a brief — approve it in review first.');
++        }
++        $brief_id = VES_Insight_Brief_Builder::create_brief_from_insight($insight_id);
++        if (self::is_err($brief_id)) { return $brief_id; }
++        return ['brief_id' => (int) $brief_id];
++    }
++
++    // ── admin-post wrappers: capability + nonce + redirect ─────────────────────
++
++    public static function handle_source()            { self::handle(self::ACTION_SOURCE,  'process_source',            'source_created',  'source_id'); }
++    public static function handle_signal()            { self::handle(self::ACTION_SIGNAL,  'process_signal',            'signal_created',  'signal_id'); }
++    public static function handle_signal_to_insight() { self::handle(self::ACTION_INSIGHT, 'process_signal_to_insight', 'insight_created', 'insight_id'); }
++    public static function handle_insight_to_brief()  { self::handle(self::ACTION_BRIEF,   'process_insight_to_brief',  'brief_created',   'brief_id'); }
++
++    private static function handle($action, $method, $success_key, $id_key) {
++        if (!function_exists('current_user_can') || !current_user_can('manage_options')) {
++            if (function_exists('wp_die')) { wp_die(self::e('Insufficient permissions.'), '', ['response' => 403]); }
++            return;
++        }
++        if (function_exists('check_admin_referer')) { check_admin_referer($action); }
++        $in = isset($_POST) && is_array($_POST) ? $_POST : [];
++        $in = function_exists('wp_unslash') ? wp_unslash($in) : $in;
++        $res = self::$method($in);
++        $args = ['page' => self::PAGE_SLUG, 'workspace_id' => max(1, (int) ($in['workspace_id'] ?? 1))];
++        if (self::is_err($res)) {
++            $args['fi_err'] = preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) $res->get_error_code()));
++        } else {
++            $args['fi_notice'] = $success_key;
++            $args['fi_id'] = (int) ($res[$id_key] ?? 0);
++        }
++        $url = function_exists('admin_url') ? admin_url('tools.php') : 'tools.php';
++        $url = function_exists('add_query_arg') ? add_query_arg($args, $url) : $url . '?' . http_build_query($args);
++        if (function_exists('wp_safe_redirect')) { wp_safe_redirect($url); }
++        if (!defined('VES_INTAKE_NO_EXIT')) { exit; }
++    }
++
++    // ── Page render (read-only except the nonce'd forms) ───────────────────────
++
++    public static function render_page() {
++        if (function_exists('current_user_can') && !current_user_can('manage_options')) { return; }
++        echo self::render_html(self::request_workspace());
++    }
++
++    private static function request_workspace() {
++        $ws = isset($_GET['workspace_id']) ? (int) $_GET['workspace_id'] : 0;
++        if ($ws <= 0 && class_exists('VES_Memory_Records') && method_exists('VES_Memory_Records', 'workspace_id_for_user') && function_exists('get_current_user_id')) {
++            $ws = (int) VES_Memory_Records::workspace_id_for_user(get_current_user_id());
++        }
++        return $ws > 0 ? $ws : 1;
++    }
++
++    /** Fixed code → operator message map; unknown codes get the generic line (no raw echo). */
++    private static function notice_html() {
++        $notice = isset($_GET['fi_notice']) ? preg_replace('/[^a-z0-9_]/', '', strtolower((string) $_GET['fi_notice'])) : '';
++        $err    = isset($_GET['fi_err']) ? preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) $_GET['fi_err'])) : '';
++        $id     = isset($_GET['fi_id']) ? (int) $_GET['fi_id'] : 0;
++        if ($notice !== '') {
++            $map = [
++                'source_created'  => 'Source recorded',
++                'signal_created'  => 'Signal recorded',
++                'insight_created' => 'Evidence + draft insight created',
++                'brief_created'   => 'Brief created from the approved insight',
++            ];
++            if (isset($map[$notice])) {
++                return '<div class="notice notice-success"><p>' . self::e($map[$notice] . ($id > 0 ? ' (id ' . $id . ').' : '.')) . '</p></div>';
++            }
++            return '';
++        }
++        if ($err !== '') {
++            $map = [
++                'ves_intake_workspace'            => 'A positive workspace id is required.',
++                'ves_intake_title_required'       => 'A title is required.',
++                'ves_intake_bad_url'              => 'The URL must be plain http(s) without embedded credentials. It is recorded as a reference only — never fetched.',
++                'ves_intake_source_missing'       => 'Source not found — create or pick a source first.',
++                'ves_intake_signal_missing'       => 'Signal not found — record the signal first.',
++                'ves_intake_insight_missing'      => 'Insight not found.',
++                'ves_intake_insight_not_approved' => 'Only an APPROVED insight can become a brief — approve it in review first.',
++                'ves_workspace_mismatch'          => 'That object belongs to a different workspace.',
++                'ves_brief_no_evidence'           => 'The insight has no linked evidence, so no brief can be built from it.',
++            ];
++            $msg = isset($map[$err]) ? $map[$err] : 'The action could not be completed (' . $err . ').';
++            return '<div class="notice notice-error"><p>' . self::e($msg) . '</p></div>';
++        }
++        return '';
++    }
++
++    public static function render_html($workspace_id) {
++        $ws = max(1, (int) $workspace_id);
++        $post_url = function_exists('admin_url') ? admin_url('admin-post.php') : 'admin-post.php';
++        $nonce = function ($action) {
++            if (function_exists('wp_nonce_field')) { return wp_nonce_field($action, '_wpnonce', true, false); }
++            return '';
++        };
++        $ws_field = '<label>Workspace <input type="number" name="workspace_id" min="1" value="' . self::ea((string) $ws) . '" required></label>';
++
++        $h  = '<div class="wrap ves-wrap fi-intake-page">';
++        $h .= '<a class="fi-skip-link" href="#fi-intake-recent">' . self::e('Skip to recent objects') . '</a>';
++        $h .= '<p class="fi-breadcrumb fiis-sr-eyebrow">' . self::e('Future Island · Intake') . '</p>';
++        $h .= '<h1>' . self::e('Intake') . '</h1>';
++        $h .= '<p class="fi-intake-sub">' . self::e('Evidence first. Everything below records what YOU observed — nothing is fetched, nothing is generated, nothing is approved automatically.') . '</p>';
++        $h .= self::notice_html();
++
++        // 1. Manual source
++        $h .= '<section class="fi-intake-card"><h2>' . self::e('1 · Record a manual source') . '</h2>';
++        $h .= '<p class="fi-intake-hint">' . self::e('An interview note, a meeting takeaway, a field observation. Same title + notes in a workspace dedupes to one source.') . '</p>';
++        $h .= '<form method="post" action="' . self::eu($post_url) . '">' . $nonce(self::ACTION_SOURCE);
++        $h .= '<input type="hidden" name="action" value="' . self::ea(self::ACTION_SOURCE) . '"><input type="hidden" name="intake_type" value="manual">';
++        $h .= '<p>' . $ws_field . '</p>';
++        $h .= '<p><label>Title<br><input type="text" name="source_title" maxlength="255" required class="regular-text"></label></p>';
++        $h .= '<p><label>Notes<br><textarea name="notes" rows="4" maxlength="' . self::ea((string) self::MAX_NOTES_CHARS) . '" class="large-text"></textarea></label></p>';
++        $h .= '<p><button type="submit" class="button button-primary">' . self::e('Record source') . '</button></p>';
++        $h .= '</form></section>';
++
++        // 2. URL-record source
++        $h .= '<section class="fi-intake-card"><h2>' . self::e('2 · Record a URL reference') . '</h2>';
++        $h .= '<p class="fi-intake-hint">' . self::e('The URL is recorded as a reference only — it is never fetched, crawled, or scraped from here.') . '</p>';
++        $h .= '<form method="post" action="' . self::eu($post_url) . '">' . $nonce(self::ACTION_SOURCE);
++        $h .= '<input type="hidden" name="action" value="' . self::ea(self::ACTION_SOURCE) . '"><input type="hidden" name="intake_type" value="url">';
++        $h .= '<p>' . $ws_field . '</p>';
++        $h .= '<p><label>URL<br><input type="url" name="source_url" maxlength="2000" required class="regular-text" placeholder="https://"></label></p>';
++        $h .= '<p><label>Title (optional)<br><input type="text" name="source_title" maxlength="255" class="regular-text"></label></p>';
++        $h .= '<p><label>Notes<br><textarea name="notes" rows="3" maxlength="' . self::ea((string) self::MAX_NOTES_CHARS) . '" class="large-text"></textarea></label></p>';
++        $h .= '<p><button type="submit" class="button button-primary">' . self::e('Record URL reference') . '</button></p>';
++        $h .= '</form></section>';
++
++        // 3. Signal from source
++        $h .= '<section class="fi-intake-card"><h2>' . self::e('3 · Record a signal from a source') . '</h2>';
++        $h .= '<p class="fi-intake-hint">' . self::e('What did the source actually show? The store normalizes, dedupes and scores it deterministically — no AI involved.') . '</p>';
++        $h .= '<form method="post" action="' . self::eu($post_url) . '">' . $nonce(self::ACTION_SIGNAL);
++        $h .= '<input type="hidden" name="action" value="' . self::ea(self::ACTION_SIGNAL) . '">';
++        $h .= '<p>' . $ws_field . ' <label>Source id <input type="number" name="source_id" min="1" required></label> ';
++        $h .= '<label>Type <select name="signal_type">';
++        foreach (self::SIGNAL_TYPES as $t) { $h .= '<option value="' . self::ea($t) . '">' . self::e($t) . '</option>'; }
++        $h .= '</select></label></p>';
++        $h .= '<p><label>Title (what was observed)<br><input type="text" name="title" maxlength="255" required class="regular-text"></label></p>';
++        $h .= '<p><label>Summary<br><textarea name="summary" rows="3" maxlength="' . self::ea((string) self::MAX_NOTES_CHARS) . '" class="large-text"></textarea></label></p>';
++        $h .= '<p><label>Value (optional, e.g. a number or short quote) <input type="text" name="value_text" maxlength="120"></label> ';
++        $h .= '<label>Observed at <input type="datetime-local" name="occurred_at"></label></p>';
++        $h .= '<p><button type="submit" class="button button-primary">' . self::e('Record signal') . '</button></p>';
++        $h .= '</form></section>';
++
++        // 4. Evidence + draft insight from signal
++        $h .= '<section class="fi-intake-card"><h2>' . self::e('4 · Promote a signal to evidence + draft insight') . '</h2>';
++        $h .= '<p class="fi-intake-hint">' . self::e('Creates a traceable evidence record from the signal and a DRAFT insight linked to it. Review states only advance through the audited lifecycle — never from here.') . '</p>';
++        $h .= '<form method="post" action="' . self::eu($post_url) . '">' . $nonce(self::ACTION_INSIGHT);
++        $h .= '<input type="hidden" name="action" value="' . self::ea(self::ACTION_INSIGHT) . '">';
++        $h .= '<p>' . $ws_field . ' <label>Signal id <input type="number" name="signal_id" min="1" required></label> ';
++        $h .= '<label>Insight type <select name="insight_type">';
++        foreach (VES_Intelligence_Store::INSIGHT_TYPES as $t) { $h .= '<option value="' . self::ea($t) . '"' . ($t === 'opportunity' ? ' selected' : '') . '>' . self::e($t) . '</option>'; }
++        $h .= '</select></label> ';
++        $h .= '<label>Opportunity score (0–100, used when type is opportunity) <input type="number" name="opportunity_score" min="0" max="100" value="0"></label></p>';
++        $h .= '<p><label>Insight title (the finding)<br><input type="text" name="title" maxlength="255" required class="regular-text"></label></p>';
++        $h .= '<p><label>Summary<br><textarea name="summary" rows="3" maxlength="' . self::ea((string) self::MAX_NOTES_CHARS) . '" class="large-text"></textarea></label></p>';
++        $h .= '<p><label>Recommendation (optional)<br><textarea name="recommendation" rows="2" maxlength="2000" class="large-text"></textarea></label></p>';
++        $h .= '<p><button type="submit" class="button button-primary">' . self::e('Create evidence + draft insight') . '</button></p>';
++        $h .= '</form></section>';
++
++        // 5. Brief from APPROVED insight
++        $h .= '<section class="fi-intake-card"><h2>' . self::e('5 · Build a brief from an APPROVED insight') . '</h2>';
++        $h .= '<p class="fi-intake-hint">' . self::e('Human review always comes first: only an approved insight can become a brief. Its evidence links carry through to the brief.') . '</p>';
++        $h .= '<form method="post" action="' . self::eu($post_url) . '">' . $nonce(self::ACTION_BRIEF);
++        $h .= '<input type="hidden" name="action" value="' . self::ea(self::ACTION_BRIEF) . '">';
++        $h .= '<p>' . $ws_field . ' <label>Insight id <input type="number" name="insight_id" min="1" required></label> ';
++        $h .= '<button type="submit" class="button button-primary">' . self::e('Build brief') . '</button></p>';
++        $h .= '</form></section>';
++
++        $h .= self::recent_objects($ws);
++        $h .= '<p class="fi-memory-policy">' . self::e('No AI generation, no auto-approval, no publishing, no fetching. Memory is not evidence.') . '</p>';
++        $h .= '</div>';
++        return $h;
++    }
++
++    /** Read-only recent-objects tables with traceability columns. */
++    private static function recent_objects($ws) {
++        if (!class_exists('VES_Intelligence_Store')) { return ''; }
++        $h = '<section class="fi-intake-card" id="fi-intake-recent"><h2>' . self::e('Recent objects (workspace ' . (int) $ws . ')') . '</h2>';
++        try {
++            $sources = (array) VES_Intelligence_Store::list_sources(['workspace_id' => $ws, 'limit' => 8]);
++            $signals = (array) VES_Intelligence_Store::list_signals(['workspace_id' => $ws, 'limit' => 8]);
++            $insights = (array) VES_Intelligence_Store::list_insights(['workspace_id' => $ws, 'limit' => 8]);
++            $briefs = (array) VES_Intelligence_Store::list_briefs(['workspace_id' => $ws, 'limit' => 8]);
++        } catch (\Throwable $e) {
++            return $h . '<p>' . self::e('Recent objects unavailable.') . '</p></section>';
++        }
++        $badge = function ($state, $label = null) {
++            return class_exists('VES_Review_State') ? VES_Review_State::badge($state, $label) : self::e($label !== null ? $label : (string) $state);
++        };
++
++        $h .= '<h3>' . self::e('Sources') . '</h3>';
++        if (count($sources) === 0) { $h .= '<p class="fi-queue-hint">' . self::e('No sources yet — record one above.') . '</p>'; }
++        else {
++            $h .= '<table class="widefat striped"><thead><tr><th>id</th><th>type</th><th>title</th><th>reference</th></tr></thead><tbody>';
++            foreach ($sources as $s) {
++                $url = (string) ($s['source_url'] ?? '');
++                $h .= '<tr><td>' . self::e((string) (int) ($s['id'] ?? 0)) . '</td><td>' . self::e((string) ($s['source_type'] ?? '')) . '</td><td>' . self::e((string) ($s['source_title'] ?? '')) . '</td><td>' . ($url !== '' ? '<span class="fi-intake-mono">' . self::e(self::cut($url, 80)) . '</span>' : self::e('—')) . '</td></tr>';
++            }
++            $h .= '</tbody></table>';
++        }
++
++        $h .= '<h3>' . self::e('Signals') . '</h3>';
++        if (count($signals) === 0) { $h .= '<p class="fi-queue-hint">' . self::e('No signals yet — a signal records what a source showed.') . '</p>'; }
++        else {
++            $h .= '<table class="widefat striped"><thead><tr><th>id</th><th>source</th><th>type</th><th>title</th><th>seen</th></tr></thead><tbody>';
++            foreach ($signals as $s) {
++                $h .= '<tr><td>' . self::e((string) (int) ($s['id'] ?? 0)) . '</td><td>' . self::e('#' . (int) ($s['source_id'] ?? 0)) . '</td><td>' . self::e((string) ($s['signal_type'] ?? '')) . '</td><td>' . self::e((string) ($s['title'] ?? '')) . '</td><td>' . self::e((string) (int) ($s['recurrence_count'] ?? 1) . '×') . '</td></tr>';
++            }
++            $h .= '</tbody></table>';
++        }
++
++        $h .= '<h3>' . self::e('Insights') . '</h3>';
++        if (count($insights) === 0) { $h .= '<p class="fi-queue-hint">' . self::e('No insights yet — promote a signal when a finding emerges.') . '</p>'; }
++        else {
++            $h .= '<table class="widefat striped"><thead><tr><th>id</th><th>type</th><th>title</th><th>state</th><th>evidence</th></tr></thead><tbody>';
++            foreach ($insights as $i) {
++                $pstate = method_exists('VES_Intelligence_Store', 'insight_presentation_state') ? VES_Intelligence_Store::insight_presentation_state($i) : (string) ($i['status'] ?? 'draft');
++                $evi = is_array($i['evidence_ids'] ?? null) ? count($i['evidence_ids']) : 0;
++                $h .= '<tr><td>' . self::e((string) (int) ($i['id'] ?? 0)) . '</td><td>' . self::e((string) ($i['insight_type'] ?? '')) . '</td><td>' . self::e((string) ($i['title'] ?? '')) . '</td><td>' . $badge($pstate) . '</td><td>' . self::e($evi . ' linked') . '</td></tr>';
++            }
++            $h .= '</tbody></table>';
++        }
++
++        $h .= '<h3>' . self::e('Briefs') . '</h3>';
++        if (count($briefs) === 0) { $h .= '<p class="fi-queue-hint">' . self::e('No briefs yet — approve an insight, then build its brief above.') . '</p>'; }
++        else {
++            $h .= '<table class="widefat striped"><thead><tr><th>id</th><th>insight</th><th>title</th><th>state</th></tr></thead><tbody>';
++            foreach ($briefs as $b) {
++                $h .= '<tr><td>' . self::e((string) (int) ($b['id'] ?? 0)) . '</td><td>' . self::e('#' . (int) ($b['insight_id'] ?? 0)) . '</td><td>' . self::e((string) ($b['title'] ?? '')) . '</td><td>' . $badge((string) ($b['status'] ?? 'draft')) . '</td></tr>';
++            }
++            $h .= '</tbody></table>';
++        }
++        $h .= '</section>';
++        return $h;
++    }
++}
+diff --git a/future-island/future-island-intelligence-suite/includes/class-ves-workbench.php b/future-island/future-island-intelligence-suite/includes/class-ves-workbench.php
+index b42e67a..aca75f6 100644
+--- a/future-island/future-island-intelligence-suite/includes/class-ves-workbench.php
++++ b/future-island/future-island-intelligence-suite/includes/class-ves-workbench.php
+@@ -40,37 +40,35 @@ final class VES_Workbench {
+         if ($ws > 0 && class_exists('VES_Workspace_Guard') && VES_Workspace_Guard::assert_object_in_workspace('insight', $insight, $ws) !== true) { return $h . self::error('Insight is outside this workspace.') . '</div>'; }
+         if ($ws > 0 && !class_exists('VES_Workspace_Guard') && (int) ($insight['workspace_id'] ?? 0) !== $ws) { return $h . self::error('Insight is outside this workspace.') . '</div>'; }
+ 
+-        // 1. Target summary
++        // Object rail (center): target summary + brief preview.
+         $status = (string) ($insight['status'] ?? 'unknown');
+-        $h .= '<section id="fi-wb-target" class="fi-readiness-panel"><h3>' . self::e('Target') . '</h3>';
+-        $h .= '<p class="fi-meta-line">' . self::e('insight') . ' <code>#' . self::e((string) (int) $insight['id']) . '</code> · '
++        $object  = '<section id="fi-wb-target" class="fi-readiness-panel"><h3>' . self::e('Target') . '</h3>';
++        $object .= '<p class="fi-meta-line">' . self::e('insight') . ' <code>#' . self::e((string) (int) $insight['id']) . '</code> · '
+             . self::e('status') . ' ' . (class_exists('VES_Review_State') ? VES_Review_State::badge($status) : self::e($status)) . '</p>';
+-        $h .= '<p>' . self::e(self::clip((string) ($insight['title'] ?? ($insight['summary'] ?? '')), 240)) . '</p></section>';
++        $object .= '<p>' . self::e(self::clip((string) ($insight['title'] ?? ($insight['summary'] ?? '')), 240)) . '</p></section>';
+ 
+-        // 2. Evidence Binder
+-        if (class_exists('VES_Evidence_Binder')) { $h .= '<div id="fi-wb-evidence">' . VES_Evidence_Binder::render_html($insight) . '</div>'; }
+-
+-        // 3. Brief preview (deterministic builder, no AI)
+-        $h .= '<section id="fi-wb-brief" class="fi-readiness-panel"><h3>' . self::e('Brief preview') . '</h3>';
++        $object .= '<section id="fi-wb-brief" class="fi-readiness-panel"><h3>' . self::e('Brief preview') . '</h3>';
+         if (class_exists('VES_Insight_Brief_Builder') && method_exists('VES_Insight_Brief_Builder', 'build_brief_from_insight')) {
+             $payload = VES_Insight_Brief_Builder::build_brief_from_insight($insight_id);
+             if (function_exists('is_wp_error') && is_wp_error($payload)) {
+-                $h .= '<p class="fi-empty-state">' . (class_exists('VES_Review_State') ? VES_Review_State::badge('blocked') : '') . ' '
++                $object .= '<p class="fi-empty-state">' . (class_exists('VES_Review_State') ? VES_Review_State::badge('blocked') : '') . ' '
+                     . self::e($payload->get_error_code() === 'ves_brief_no_evidence' ? 'Blocked: this insight has no evidence. A brief requires evidence.' : 'Brief cannot be built for this insight yet.') . '</p>';
+             } elseif (is_array($payload)) {
+-                $h .= '<p class="fi-meta-line">' . self::e('objective') . ': ' . self::e(self::clip((string) ($payload['objective'] ?? ''), 200)) . '</p>';
+-                $h .= '<p class="fi-meta-line">' . self::e('key message') . ': ' . self::e(self::clip((string) ($payload['key_message'] ?? ''), 240)) . '</p>';
++                $object .= '<p class="fi-meta-line">' . self::e('objective') . ': ' . self::e(self::clip((string) ($payload['objective'] ?? ''), 200)) . '</p>';
++                $object .= '<p class="fi-meta-line">' . self::e('key message') . ': ' . self::e(self::clip((string) ($payload['key_message'] ?? ''), 240)) . '</p>';
+             }
+         } else {
+-            $h .= '<p class="fi-empty-state">' . self::e('Brief builder unavailable.') . '</p>';
++            $object .= '<p class="fi-empty-state">' . self::e('Brief builder unavailable.') . '</p>';
+         }
+-        $h .= '</section>';
++        $object .= '</section>';
+ 
+-        // 4. Prompt Package Preview (6C, no AI)
+-        $h .= self::package_preview_section($ws, 'brief_generation', 'insight', $insight_id);
++        // Evidence rail (left) + decision rail (right: status card, package, review).
++        $evidence = class_exists('VES_Evidence_Binder') ? '<div id="fi-wb-evidence">' . VES_Evidence_Binder::render_html($insight) . '</div>' : '';
++        $decision = self::decision_card('insight', $insight)
++            . self::package_preview_section($ws, 'brief_generation', 'insight', $insight_id)
++            . self::review_rail('brief');
+ 
+-        // 5. Disabled review controls (no safe transition handler exists yet)
+-        $h .= self::review_rail('brief');
++        $h .= self::rails($evidence, $object, $decision);
+         $h .= self::actions_note();
+         $h .= '</div>';
+         return $h;
+@@ -102,40 +100,90 @@ final class VES_Workbench {
+         $status = strtolower((string) ($brief['status'] ?? 'draft'));
+         $ready = in_array($status, ['approved', 'ready', 'reviewed'], true);
+ 
+-        // 1. Brief summary
+-        $h .= '<section id="fi-wb-target" class="fi-readiness-panel"><h3>' . self::e('Brief') . '</h3>';
+-        $h .= '<p class="fi-meta-line">' . self::e('brief') . ' <code>#' . self::e((string) (int) $brief['id']) . '</code> · '
++        // Object rail (center): brief summary + draft readiness + output slots.
++        $object  = '<section id="fi-wb-target" class="fi-readiness-panel"><h3>' . self::e('Brief') . '</h3>';
++        $object .= '<p class="fi-meta-line">' . self::e('brief') . ' <code>#' . self::e((string) (int) $brief['id']) . '</code> · '
+             . self::e('status') . ' ' . (class_exists('VES_Review_State') ? VES_Review_State::badge($status) : self::e($status)) . '</p>';
+-        $h .= '<p>' . self::e(self::clip((string) ($brief['objective'] ?? ($brief['summary'] ?? '')), 240)) . '</p></section>';
++        $object .= '<p>' . self::e(self::clip((string) ($brief['objective'] ?? ($brief['summary'] ?? '')), 240)) . '</p></section>';
+ 
+-        // 2. Draft readiness — non-approved brief BLOCKS draft
+-        $h .= '<section id="fi-wb-readiness" class="fi-readiness-panel"><h3>' . self::e('Draft readiness') . '</h3>';
++        $object .= '<section id="fi-wb-readiness" class="fi-readiness-panel"><h3>' . self::e('Draft readiness') . '</h3>';
+         if (!$ready) {
+-            $h .= '<p>' . (class_exists('VES_Review_State') ? VES_Review_State::badge('blocked') : '') . ' '
++            $object .= '<p>' . (class_exists('VES_Review_State') ? VES_Review_State::badge('blocked') : '') . ' '
+                 . self::e('Blocked: a draft requires an approved/ready brief. Approve the brief first.') . '</p>';
+         } else {
+-            $h .= '<p>' . (class_exists('VES_Review_State') ? VES_Review_State::badge('ready') : '') . ' ' . self::e('Brief is approved/ready.') . '</p>';
++            $object .= '<p>' . (class_exists('VES_Review_State') ? VES_Review_State::badge('ready') : '') . ' ' . self::e('Brief is approved/ready.') . '</p>';
+         }
+-        $h .= '</section>';
+-
+-        // 3. Evidence Binder (from the brief)
+-        if (class_exists('VES_Evidence_Binder')) { $h .= '<div id="fi-wb-evidence">' . VES_Evidence_Binder::render_html($brief) . '</div>'; }
++        $object .= '</section>';
+ 
+-        // 4. Output format guidance — placeholder slots only
+-        $h .= '<section id="fi-wb-slots" class="fi-readiness-panel"><h3>' . self::e('Output slots (guidance — not generated)') . '</h3><ul class="fi-output-slots">';
+-        foreach (self::DRAFT_SLOTS as $slot) { $h .= '<li><code>' . self::e($slot) . '</code> <span class="fi-empty-state">' . self::e('—') . '</span></li>'; }
+-        $h .= '</ul></section>';
++        $object .= '<section id="fi-wb-slots" class="fi-readiness-panel"><h3>' . self::e('Output slots (guidance — not generated)') . '</h3><ul class="fi-output-slots">';
++        foreach (self::DRAFT_SLOTS as $slot) { $object .= '<li><code>' . self::e($slot) . '</code> <span class="fi-empty-state">' . self::e('—') . '</span></li>'; }
++        $object .= '</ul></section>';
+ 
+-        // 5. Prompt Package Preview
+-        $h .= self::package_preview_section($ws, 'draft_generation', 'brief', $brief_id);
++        // Evidence rail (left) + decision rail (right).
++        $evidence = class_exists('VES_Evidence_Binder') ? '<div id="fi-wb-evidence">' . VES_Evidence_Binder::render_html($brief) . '</div>' : '';
++        $decision = self::decision_card('brief', $brief)
++            . self::package_preview_section($ws, 'draft_generation', 'brief', $brief_id)
++            . self::review_rail('draft');
+ 
+-        // 6. Disabled review controls
+-        $h .= self::review_rail('draft');
++        $h .= self::rails($evidence, $object, $decision);
+         $h .= self::actions_note();
+         $h .= '</div>';
+         return $h;
+     }
+ 
++    /**
++     * Phase 3 — three-rail operator layout: evidence (left) / object under
++     * review (center) / decision + status (right). Pure wrappers — every
++     * section keeps its id, so the jump nav and pinned anchors are unchanged.
++     * Rails stack on narrow screens via the UI-system grid (782px/1100px).
++     */
++    private static function rails($evidence_html, $object_html, $decision_html) {
++        $h  = '<div class="fi-wb-rails">';
++        $h .= '<div class="fi-wb-rail fi-wb-rail-evidence" role="region" aria-label="' . self::ea('Evidence') . '">';
++        $h .= $evidence_html !== '' ? $evidence_html
++            : '<p class="fi-empty-state">' . self::e('Evidence binder unavailable on this install — evidence ids remain on the object record.') . '</p>';
++        $h .= '</div>';
++        $h .= '<div class="fi-wb-rail fi-wb-rail-object" role="region" aria-label="' . self::ea('Object under review') . '">' . $object_html . '</div>';
++        $h .= '<div class="fi-wb-rail fi-wb-rail-decision" role="region" aria-label="' . self::ea('Decision and status') . '">' . $decision_html . '</div>';
++        return $h . '</div>';
++    }
++
++    /**
++     * Phase 3 — decision-status card: the operator's UX state with a label
++     * (badge), what it means, and the concrete next action. Derived from the
++     * presentation-state vocabulary; unknown states are never trusted.
++     */
++    private static function decision_card($kind, array $row) {
++        if ($kind === 'insight') {
++            $state = (class_exists('VES_Intelligence_Store') && method_exists('VES_Intelligence_Store', 'insight_presentation_state'))
++                ? VES_Intelligence_Store::insight_presentation_state($row)
++                : strtolower((string) ($row['status'] ?? 'draft'));
++            $map = [
++                'draft'            => ['The insight is in draft.', 'Add evidence (promote its signal on the Intake page), then request review.'],
++                'needs_evidence'   => ['No evidence is linked — this insight cannot enter review.', 'Promote the underlying signal on the Intake page to create traceable evidence, then return here.'],
++                'ready_for_review' => ['Evidence is linked; the insight awaits operator review.', 'Read the evidence rail, then approve or reject from the operator queue.'],
++                'approved'         => ['Human-approved. A brief can be built from this insight.', 'Build the brief (Intake page, step 5) — its evidence ids carry through.'],
++                'rejected'         => ['Rejected — terminal.', 'Reopening requires the audited reopen override; it can never silently become approved.'],
++                'archived'         => ['Archived — diagnostic only.', 'Restore via the audited restore override if it must re-enter review.'],
++            ];
++        } else {
++            $state = strtolower((string) ($row['status'] ?? 'draft'));
++            $map = [
++                'draft'    => ['The brief awaits operator review.', 'Review the objective and key message against the evidence rail, then approve or reject.'],
++                'reviewed' => ['Reviewed; awaiting final approval.', 'Approve to allow draft staging, or reject.'],
++                'approved' => ['Approved. Draft staging may proceed — as a prompt-package preview only (AI execution is disabled).', 'Inspect the prompt package below; no provider is called and no content is fabricated.'],
++                'rejected' => ['Rejected — terminal.', 'A new brief requires a newly approved insight.'],
++                'archived' => ['Archived — diagnostic only.', 'Nothing proceeds from an archived brief.'],
++            ];
++        }
++        $info = isset($map[$state]) ? $map[$state] : ['Status not recognized.', 'Inspect the object record; unknown states are never trusted.'];
++        $badge = class_exists('VES_Review_State') ? VES_Review_State::badge($state) : self::e($state);
++        return '<section class="fi-decision-card"><h3>' . self::e('Decision status') . '</h3>'
++            . '<p class="fi-decision-state">' . $badge . '</p>'
++            . '<p class="fi-decision-explain">' . self::e($info[0]) . '</p>'
++            . '<p class="fi-decision-next"><strong>' . self::e('Next:') . '</strong> ' . self::e($info[1]) . '</p></section>';
++    }
++
+     private static function package_preview_section($ws, $use_case, $target_type, $target_id) {
+         if (!class_exists('VES_Generation_Prompt_Package_Builder')) { return ''; }
+         $pkg = VES_Generation_Prompt_Package_Builder::build(['workspace_id' => (int) $ws, 'use_case' => $use_case, 'target_type' => $target_type, 'target_id' => (int) $target_id]);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-fiis-ui-ux-upgrade.php b/future-island/future-island-intelligence-suite/tests/test-fiis-ui-ux-upgrade.php
+index c723944..b30944b 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-fiis-ui-ux-upgrade.php
++++ b/future-island/future-island-intelligence-suite/tests/test-fiis-ui-ux-upgrade.php
+@@ -89,6 +89,30 @@ foreach (['brief' => $brief_html, 'draft' => $draft_html] as $kind => $html) {
+ }
+ $ok(substr_count($brief_html, 'fi-workbench-nav') === 1, 'exactly one nav per page');
+ 
++// ── 4b. Phase 3 — three-rail operator layout ─────────────────────────────────
++foreach (['brief' => $brief_html, 'draft' => $draft_html] as $kind => $html) {
++    $ok(substr_count($html, 'fi-wb-rails') === 1, "{$kind}: exactly one rails grid");
++    foreach (['fi-wb-rail-evidence', 'fi-wb-rail-object', 'fi-wb-rail-decision'] as $rail) {
++        $ok(substr_count($html, $rail) === 1, "{$kind}: rail {$rail} present once");
++    }
++    $left  = substr($html, strpos($html, 'fi-wb-rail-evidence'), strpos($html, 'fi-wb-rail-object') - strpos($html, 'fi-wb-rail-evidence'));
++    $mid   = substr($html, strpos($html, 'fi-wb-rail-object'), strpos($html, 'fi-wb-rail-decision') - strpos($html, 'fi-wb-rail-object'));
++    $right = substr($html, strpos($html, 'fi-wb-rail-decision'));
++    $ok(strpos($left, 'fi-evidence-binder') !== false, "{$kind}: evidence binder lives in the LEFT rail");
++    $ok(strpos($mid, 'id="fi-wb-target"') !== false, "{$kind}: object under review lives in the CENTER rail");
++    $ok(strpos($right, 'fi-decision-card') !== false && strpos($right, 'fi-review-rail') !== false && strpos($right, 'id="fi-wb-package"') !== false,
++        "{$kind}: decision card + package + review live in the RIGHT rail");
++    $ok(strpos($right, 'Decision status') !== false && strpos($right, 'Next:') !== false, "{$kind}: decision card states the label AND the next action");
++    $ok(strpos($html, 'role="region"') !== false && strpos($html, 'aria-label="Evidence"') !== false, "{$kind}: rails are labeled regions for assistive tech");
++}
++$ok(strpos($brief_html, 'Human-approved. A brief can be built') !== false, 'approved insight decision card explains the state honestly');
++// Rails CSS: grid areas + stacking breakpoints + overflow-safe columns.
++$ok(strpos($css, '.ves-wrap .fi-wb-rails') !== false && strpos($css, 'grid-template-areas: "evidence object decision"') !== false, 'rails grid defined with named areas');
++$ok(strpos($css, '"object decision" "evidence evidence"') !== false, 'tablet breakpoint folds evidence below');
++$ok(strpos($css, '"object" "decision" "evidence"') !== false, 'phone breakpoint stacks to one column (320–430px safe)');
++$ok(strpos($css, 'minmax(0, 1fr)') !== false, 'rails use minmax(0,1fr) so long mono strings cannot blow out the grid');
++$ok(strpos($css, '.ves-wrap .fi-decision-card') !== false && strpos($css, '.ves-wrap .fi-decision-next') !== false, 'decision card styled by the UI system');
++
+ // ── 5. RC page copy affordance is inert-safe ─────────────────────────────────
+ $rc = (string) file_get_contents($root . '/includes/class-ves-release-candidate-page.php');
+ $ok(strpos($rc, 'class="fiis-rc-copy"') !== false && strpos($rc, 'type="button"') !== false, 'copy buttons are explicit type=button');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-full-plugin-hardening-audit.php b/future-island/future-island-intelligence-suite/tests/test-full-plugin-hardening-audit.php
+index 5f7c66c..1726256 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-full-plugin-hardening-audit.php
++++ b/future-island/future-island-intelligence-suite/tests/test-full-plugin-hardening-audit.php
+@@ -16,8 +16,8 @@ $assert = function($condition, $message) use (&$failures, &$passes) {
+ $read = function($rel) use ($root) { return file_get_contents($root . '/' . $rel); };
+ 
+ $main = $read('future-island-intelligence-suite.php');
+-$assert(strpos($main, 'Version: 1.2.9') !== false, 'Plugin header version is 1.1.0');
+-$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false, 'VES_PLUGIN_VERSION constant is 1.1.0');
++$assert(strpos($main, 'Version: 1.3.0') !== false, 'Plugin header version is 1.1.0');
++$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false, 'VES_PLUGIN_VERSION constant is 1.1.0');
+ 
+ $publicTemplates = [
+     'templates/_scraper-form.php',
+diff --git a/future-island/future-island-intelligence-suite/tests/test-settings-dispatch-runtime-fix.php b/future-island/future-island-intelligence-suite/tests/test-settings-dispatch-runtime-fix.php
+index 507a011..0b869f0 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-settings-dispatch-runtime-fix.php
++++ b/future-island/future-island-intelligence-suite/tests/test-settings-dispatch-runtime-fix.php
+@@ -11,7 +11,7 @@ foreach ($files as $k => $f) { $src[$k] = file_get_contents($f); }
+ $checks = [];
+ $add = function($name, $ok) use (&$checks) { $checks[] = [$name, (bool) $ok]; };
+ 
+-$add('version bumped to 1.1.0', strpos($src['main'], 'Version: 1.2.9') !== false && strpos($src['main'], "VES_PLUGIN_VERSION',         '1.2.9'") !== false);
++$add('version bumped to 1.1.0', strpos($src['main'], 'Version: 1.3.0') !== false && strpos($src['main'], "VES_PLUGIN_VERSION',         '1.3.0'") !== false);
+ $add('settings page has top visible save actionbar', strpos($src['admin'], 'ves-settings-actionbar') !== false && strpos($src['admin'], "submit_button('Guardar cambios', 'primary', 'submit', false") !== false);
+ $add('settings page keeps bottom save button', substr_count($src['admin'], "submit_button('Guardar cambios'") >= 2);
+ $add('runtime lock reset admin action registered', strpos($src['admin'], "admin_post_ves_clear_runtime_locks") !== false && strpos($src['admin'], 'handle_clear_runtime_locks') !== false);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v093015-fatal-classification.php b/future-island/future-island-intelligence-suite/tests/test-v093015-fatal-classification.php
+index 7912c98..c9cedc6 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v093015-fatal-classification.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v093015-fatal-classification.php
+@@ -8,7 +8,7 @@ $main = file_get_contents($root . '/future-island-intelligence-suite.php');
+ $checks = [];
+ $add = function ($label, $ok) use (&$checks) { $checks[] = [$label, (bool) $ok]; };
+ 
+-$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.9') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false);
++$add('version bumped to 1.1.0', strpos($main, 'Version: 1.3.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false);
+ $add('caught Throwable after provider dispatch is not labeled ajax_fatal', strpos($controller, '$is_fatal_context = in_array($source') !== false && strpos($controller, "if (!empty(\$context['provider_call_attempted'])) { return 'post_dispatch_fatal'; }") !== false && strpos($controller, "return 'ajax_fatal';") !== false);
+ $add('caught Throwable after provider run receives post-provider category', strpos($controller, "if (!empty(\$context['provider_run_created'])) { return 'post_provider_run_fatal'; }") !== false);
+ $add('post-dispatch fatal has user-safe message', strpos($controller, "if (\$category === 'post_dispatch_fatal')") !== false && strpos($controller, 'The source request was attempted, but the response could not be processed') !== false);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v093015-pre-dispatch-degradation.php b/future-island/future-island-intelligence-suite/tests/test-v093015-pre-dispatch-degradation.php
+index 2e17c89..701c63a 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v093015-pre-dispatch-degradation.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v093015-pre-dispatch-degradation.php
+@@ -6,7 +6,7 @@ $js = file_get_contents($root . '/assets/js/ves-frontend.js');
+ $checks = [];
+ $add = function($name, $ok) use (&$checks) { $checks[] = [$name, (bool) $ok]; };
+ 
+-$add('version bumped to 1.2.9 in main plugin', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.2.9') !== false);
++$add('version bumped to 1.3.0 in main plugin', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.3.0') !== false);
+ $add('platform input validation throwable is degraded instead of ajax fatal', strpos($ajax, 'platform_input_validation_throwable_degraded') !== false && strpos($ajax, '$platform_input_valid = is_array($input) && !empty($input);') !== false);
+ $add('duplicate guard throwable continues to provider dispatch', strpos($ajax, 'duplicate_guard_throwable_degraded') !== false && strpos($ajax, 'duplicate_guard_degraded_continue_dispatch') !== false);
+ $add('provider cost guard throwable is non-blocking for admins', strpos($ajax, 'provider_cost_guard_throwable_degraded') !== false && strpos($ajax, "if (!current_user_can('manage_options'))") !== false);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v093016-context-preservation.php b/future-island/future-island-intelligence-suite/tests/test-v093016-context-preservation.php
+index f28ea44..53198e5 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v093016-context-preservation.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v093016-context-preservation.php
+@@ -18,7 +18,7 @@ if (preg_match('/private static function error\([\s\S]*?private static function
+     $error_fn = $m[0];
+ }
+ 
+-$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.9') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false);
++$add('version bumped to 1.1.0', strpos($main, 'Version: 1.3.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false);
+ $add('error() merges active run context before classification', strpos($error_fn, '$active_context = is_array(self::$active_run_context) ? self::$active_run_context : [];') !== false && strpos($error_fn, '$context = array_merge($active_context, $context);') !== false && strpos($error_fn, 'last_successful_stage') !== false);
+ $add('explicit error() context preserves post-dispatch state', strpos($error_fn, 'post-dispatch failures') !== false && strpos($error_fn, 'provider_call_attempted/provider_run_created') !== false);
+ $add('shutdown handler classifies with active context', strpos($shutdown, "self::classify_error_category('ajax_shutdown_fatal'") !== false && strpos($shutdown, '$fatal_context = array_merge($active_context') !== false);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v093017-error-category-ordering.php b/future-island/future-island-intelligence-suite/tests/test-v093017-error-category-ordering.php
+index dce6f3b..04b581f 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v093017-error-category-ordering.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v093017-error-category-ordering.php
+@@ -12,7 +12,7 @@ $add = function($name, $ok) use (&$checks) {
+     $checks[] = [$name, (bool) $ok];
+     echo ($ok ? '[PASS] ' : '[FAIL] ') . $name . PHP_EOL;
+ };
+-$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.9') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false);
++$add('version bumped to 1.1.0', strpos($main, 'Version: 1.3.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false);
+ $add('classification uses fatal-only context gate', strpos($controller, '$is_fatal_context = in_array($source') !== false && strpos($controller, "'ajax_start_fatal'") !== false && strpos($controller, "'ajax_shutdown_fatal'") !== false);
+ $add('provider flags are only checked inside fatal context', preg_match('/if \(\$is_fatal_context\) \{\s*if \(!empty\(\$context\[\'provider_run_created\'\]\)\)/s', $controller) === 1);
+ $add('actor_dispatch_error branch remains after fatal gate', strpos($controller, "$source === 'actor_dispatch_error'") !== false && strpos($controller, '$is_provider_runtime_error') !== false && strpos($controller, 'provider_run_id_missing') !== false);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v093018-provider-error-classification.php b/future-island/future-island-intelligence-suite/tests/test-v093018-provider-error-classification.php
+index e338059..cd79b4e 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v093018-provider-error-classification.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v093018-provider-error-classification.php
+@@ -7,7 +7,7 @@ $ajax = file_get_contents($root . '/includes/class-ves-ajax-controller.php');
+ $main = file_get_contents($root . '/future-island-intelligence-suite.php');
+ $checks = [];
+ $add = function($label, $condition) use (&$checks) { $checks[$label] = (bool) $condition; };
+-$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.9') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false);
++$add('version bumped to 1.1.0', strpos($main, 'Version: 1.3.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false);
+ $add('token classification is not broad token substring', strpos($ajax, 'strpos($haystack, \'token\') !== false) { return \'missing_backend_token\'; }') === false);
+ $add('public run tokens classified as module access', strpos($ajax, "public_run_token") !== false && strpos($ajax, "return 'module_access_denied';") !== false);
+ $add('provider runtime includes poll errors', strpos($ajax, 'strpos($source, \'actor_poll\') !== false') !== false);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v093019-member-safe-diagnostic.php b/future-island/future-island-intelligence-suite/tests/test-v093019-member-safe-diagnostic.php
+index d5a4e8b..556db44 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v093019-member-safe-diagnostic.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v093019-member-safe-diagnostic.php
+@@ -35,7 +35,7 @@ $extractBlock = static function(string $src, string $needle, int $window = 5000)
+ };
+ 
+ // Version bump.
+-$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.9') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false);
++$add('version bumped to 1.1.0', strpos($main, 'Version: 1.3.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false);
+ 
+ // build_safe_diagnostic helper exists and is leak-free by construction.
+ $add('build_safe_diagnostic helper exists', strpos($ajax, 'private static function build_safe_diagnostic(') !== false);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v093020-post-usage-settlement-degraded.php b/future-island/future-island-intelligence-suite/tests/test-v093020-post-usage-settlement-degraded.php
+index f4bf684..77d5725 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v093020-post-usage-settlement-degraded.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v093020-post-usage-settlement-degraded.php
+@@ -22,7 +22,7 @@ $checks = [];
+ $add = function ($label, $cond) use (&$checks) { $checks[$label] = (bool) $cond; };
+ 
+ // Version bump.
+-$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.9') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false);
++$add('version bumped to 1.1.0', strpos($main, 'Version: 1.3.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false);
+ 
+ // --- Fix 1: post_standard_usage_or_error() must not call self::error() on WP_Error ---
+ // Locate the function body.
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v093021-provider-rental-message.php b/future-island/future-island-intelligence-suite/tests/test-v093021-provider-rental-message.php
+index 43c55e9..62eca17 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v093021-provider-rental-message.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v093021-provider-rental-message.php
+@@ -11,7 +11,7 @@ $checks = [];
+ $add = function($name, $ok) use (&$checks) { $checks[] = [$name, (bool) $ok]; };
+ 
+ // 1. Version matches
+-$add('version is 1.2.9', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.2.9') !== false);
++$add('version is 1.3.0', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.3.0') !== false);
+ 
+ // 2. provider_actor_rental_required gets its own branch before the generic config array
+ $rental_pos  = strpos($ajax, 'provider_actor_rental_required');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09310-fi-brand-tokens.php b/future-island/future-island-intelligence-suite/tests/test-v09310-fi-brand-tokens.php
+index 3092b26..ec244fd 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09310-fi-brand-tokens.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09310-fi-brand-tokens.php
+@@ -10,7 +10,7 @@ $checks = [];
+ $add = function($name, $ok) use (&$checks) { $checks[] = [$name, (bool) $ok]; };
+ 
+ // Version
+-$add('version is 1.2.9', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.2.9') !== false);
++$add('version is 1.3.0', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.3.0') !== false);
+ 
+ // FI Azul primary color in ves-frontend.css
+ $add('FI Azul #3A61E1 in ves-frontend.css', strpos($css, '#3A61E1') !== false);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09310-responsive-dataviz.php b/future-island/future-island-intelligence-suite/tests/test-v09310-responsive-dataviz.php
+index 95069a9..2810dc4 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09310-responsive-dataviz.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09310-responsive-dataviz.php
+@@ -10,7 +10,7 @@ $checks = [];
+ $add = function($name, $ok) use (&$checks) { $checks[] = [$name, (bool) $ok]; };
+ 
+ // Version
+-$add('version is 1.2.9', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.2.9') !== false);
++$add('version is 1.3.0', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.3.0') !== false);
+ 
+ // Responsive SEO table: stacked card view
+ $add('SEO table thead hidden on mobile in ves-frontend.css', strpos($css, '.ves-seo-table thead') !== false && strpos($css, 'display: none') !== false);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09311-provider-classification-locks.php b/future-island/future-island-intelligence-suite/tests/test-v09311-provider-classification-locks.php
+index 68152e1..ac31bb3 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09311-provider-classification-locks.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09311-provider-classification-locks.php
+@@ -15,7 +15,7 @@ $checks = [];
+ $add = function($name, $ok) use (&$checks) { $checks[] = [$name, (bool) $ok]; };
+ 
+ // ── Version ───────────────────────────────────────────────────
+-$add('version is 1.1.0', strpos($main, 'Version: 1.2.9') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false);
++$add('version is 1.1.0', strpos($main, 'Version: 1.3.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false);
+ 
+ // ── Phase 4: SEO 403 rental classified before generic access-denied ──
+ $rental_chk = strpos($ajax, 'if ($rental_required) { return \'provider_actor_rental_required\'; }');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09313-error-categories-extended.php b/future-island/future-island-intelligence-suite/tests/test-v09313-error-categories-extended.php
+index dde362f..2c5defc 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09313-error-categories-extended.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09313-error-categories-extended.php
+@@ -48,8 +48,8 @@ $assert(strpos($filter_all_block, "'info'") !== false || strpos($filter_all_bloc
+ 
+ // 6. Version check.
+ $main = file_get_contents($root . '/future-island-intelligence-suite.php');
+-$assert(strpos($main, 'Version: 1.2.9') !== false, 'Plugin header must declare Version: 1.2.9');
+-$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false, 'VES_PLUGIN_VERSION must be 1.1.0');
++$assert(strpos($main, 'Version: 1.3.0') !== false, 'Plugin header must declare Version: 1.3.0');
++$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false, 'VES_PLUGIN_VERSION must be 1.1.0');
+ 
+ if ($fail === 0) {
+     echo "OK v0.9.31.6 extended error categories — $pass assertions passed\n";
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09314-ai-fallback-label.php b/future-island/future-island-intelligence-suite/tests/test-v09314-ai-fallback-label.php
+index ad38c31..2c6cc7a 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09314-ai-fallback-label.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09314-ai-fallback-label.php
+@@ -16,7 +16,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+ };
+ 
+ // Version
+-$assert(strpos($main, 'Version: 1.2.9') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.3.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false, 'Version is 1.1.0');
+ 
+ // PHP: all fallback returns include analysis_source=local_fallback
+ $assert(substr_count($ai, "'analysis_source' => 'local_fallback'") >= 3, 'PHP: at least 3 fallback return paths set analysis_source=local_fallback');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09314-error-retryable-taxonomy.php b/future-island/future-island-intelligence-suite/tests/test-v09314-error-retryable-taxonomy.php
+index 4954a78..69e51b9 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09314-error-retryable-taxonomy.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09314-error-retryable-taxonomy.php
+@@ -15,7 +15,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+ };
+ 
+ // Version
+-$assert(strpos($main, 'Version: 1.2.9') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.3.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false, 'Version is 1.1.0');
+ 
+ // classify_retryable helper exists
+ $assert(strpos($ajax, 'private static function classify_retryable(') !== false, 'classify_retryable() helper declared');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09314-frontend-truthfulness.php b/future-island/future-island-intelligence-suite/tests/test-v09314-frontend-truthfulness.php
+index 8d0ed56..f6dcadc 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09314-frontend-truthfulness.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09314-frontend-truthfulness.php
+@@ -18,7 +18,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+ };
+ 
+ // Version
+-$assert(strpos($main, 'Version: 1.2.9') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.3.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false, 'Version is 1.1.0');
+ 
+ // 3A: jsTypeError branch no longer emits F5 instruction
+ $assert(strpos($js, 'jsTypeError') !== false, '3A: jsTypeError branch still exists');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09314-google-serp-normalizer.php b/future-island/future-island-intelligence-suite/tests/test-v09314-google-serp-normalizer.php
+index a5f2098..4ab4bca 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09314-google-serp-normalizer.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09314-google-serp-normalizer.php
+@@ -13,7 +13,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+ };
+ 
+ // Version
+-$assert(strpos($main, 'Version: 1.2.9') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.3.0') !== false, 'Version is 1.1.0');
+ 
+ // is_google_search_url helper exists
+ $assert(strpos($php, 'private static function is_google_search_url(') !== false, 'is_google_search_url() method declared');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09315-competitor-downgrade.php b/future-island/future-island-intelligence-suite/tests/test-v09315-competitor-downgrade.php
+index 02c66b4..c019f67 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09315-competitor-downgrade.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09315-competitor-downgrade.php
+@@ -15,7 +15,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
+ };
+ 
+-$assert(strpos($main, 'Version: 1.2.9') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.3.0') !== false, 'Version is 1.1.0');
+ 
+ // Helper declared
+ $assert(strpos($ana, 'function ves_detect_competitor_authorship(') !== false, 'ves_detect_competitor_authorship helper declared');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09315-curated-templates.php b/future-island/future-island-intelligence-suite/tests/test-v09315-curated-templates.php
+index 69fd232..3a2e6c0 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09315-curated-templates.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09315-curated-templates.php
+@@ -15,7 +15,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
+ };
+ 
+-$assert(strpos($main, 'Version: 1.2.9') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.3.0') !== false, 'Version is 1.1.0');
+ 
+ $templates = [
+     'verano-silencioso'   => 'verano-silencioso.php',
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09315-fallback-label-audit.php b/future-island/future-island-intelligence-suite/tests/test-v09315-fallback-label-audit.php
+index 005d89c..648c2b0 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09315-fallback-label-audit.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09315-fallback-label-audit.php
+@@ -15,7 +15,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
+ };
+ 
+-$assert(strpos($main, 'Version: 1.2.9') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.3.0') !== false, 'Version is 1.1.0');
+ 
+ // Count of labels — must have grown from v0.9.31.4 (which had 4 labeled).
+ $source_count = substr_count($ai, "'analysis_source' => 'local_fallback'");
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09315-public-support-code-hardened.php b/future-island/future-island-intelligence-suite/tests/test-v09315-public-support-code-hardened.php
+index d220f12..29e251c 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09315-public-support-code-hardened.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09315-public-support-code-hardened.php
+@@ -13,7 +13,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
+ };
+ 
+-$assert(strpos($main, 'Version: 1.2.9') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.3.0') !== false, 'Version is 1.1.0');
+ 
+ $fn_pos = strpos($ajax, 'private static function public_support_code(');
+ $fn_body = $fn_pos !== false ? substr($ajax, $fn_pos, 2000) : '';
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09315-renderer-diagnostic.php b/future-island/future-island-intelligence-suite/tests/test-v09315-renderer-diagnostic.php
+index 5837cb6..bd56f86 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09315-renderer-diagnostic.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09315-renderer-diagnostic.php
+@@ -12,7 +12,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
+ };
+ 
+-$assert(strpos($main, 'Version: 1.2.9') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.3.0') !== false, 'Version is 1.1.0');
+ 
+ $assert(strpos($ren, 'report_template_unreadable') !== false, 'Renderer raises report_template_unreadable diagnostic');
+ $assert(strpos($ren, 'VES_Admin::record_diagnostic') !== false, 'Renderer calls VES_Admin::record_diagnostic');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09315-retryable-frontend.php b/future-island/future-island-intelligence-suite/tests/test-v09315-retryable-frontend.php
+index 88548d7..bd27b23 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09315-retryable-frontend.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09315-retryable-frontend.php
+@@ -15,7 +15,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
+ };
+ 
+-$assert(strpos($main, 'Version: 1.2.9') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.3.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false, 'Version is 1.1.0');
+ 
+ // JS reads safeDiagnostic.retryable
+ $assert(strpos($js, 'sd.retryable === true') !== false, 'JS branches on safeDiagnostic.retryable === true');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09316-curated-css-scoping.php b/future-island/future-island-intelligence-suite/tests/test-v09316-curated-css-scoping.php
+index cea0939..6f6bf08 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09316-curated-css-scoping.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09316-curated-css-scoping.php
+@@ -13,7 +13,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
+ };
+ 
+-$assert(strpos($main, 'Version: 1.2.9') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.3.0') !== false, 'Version is 1.1.0');
+ 
+ $templates = [
+     'verano-silencioso'   => 'verano-silencioso.php',
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09316-retry-timer-cleanup.php b/future-island/future-island-intelligence-suite/tests/test-v09316-retry-timer-cleanup.php
+index 25a8c1c..6df2927 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09316-retry-timer-cleanup.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09316-retry-timer-cleanup.php
+@@ -17,7 +17,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
+ };
+ 
+-$assert(strpos($main, 'Version: 1.2.9') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.3.0') !== false, 'Version is 1.1.0');
+ 
+ // Find the body of vesClearAutoRetryTimer.
+ $start = strpos($js, 'const vesClearAutoRetryTimer = ');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09318-p0-mvp-gating.php b/future-island/future-island-intelligence-suite/tests/test-v09318-p0-mvp-gating.php
+index 79419f1..6c461c1 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09318-p0-mvp-gating.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09318-p0-mvp-gating.php
+@@ -16,8 +16,8 @@ $assert = function($condition, $message) use (&$failures) {
+ 
+ $msg = 'Este módulo no está habilitado en el MVP de producción.';
+ 
+-$assert(strpos($main, 'Version: 1.2.9') !== false, 'Plugin header version bumped to 1.1.0');
+-$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false, 'VES_PLUGIN_VERSION bumped to 1.1.0');
++$assert(strpos($main, 'Version: 1.3.0') !== false, 'Plugin header version bumped to 1.1.0');
++$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false, 'VES_PLUGIN_VERSION bumped to 1.1.0');
+ // [v1.1.0 archived] removed obsolete MVP-gating expectation: VES_PRODUCTION_MVP=true. Production decision:
+ // MVP gating is retired in FIIS v1.1.0; the unified app shell exposes all main routes. The constant is now
+ // false in product and is no longer used to lock the shell. Replaced with the current unified-shell contract.
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09318-p2-trend-lite.php b/future-island/future-island-intelligence-suite/tests/test-v09318-p2-trend-lite.php
+index d14644b..bb5eb7d 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09318-p2-trend-lite.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09318-p2-trend-lite.php
+@@ -44,8 +44,8 @@ $form = file_get_contents($root . '/templates/_trend-finder-form.php');
+ $js = file_get_contents($root . '/assets/js/ves-frontend.js');
+ $service = file_get_contents($root . '/includes/class-ves-run-execution-service.php');
+ 
+-$assert(strpos($main, 'Version: 1.2.9') !== false, 'plugin version bumped to p2 trend lite');
+-$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false, 'VES_PLUGIN_VERSION bumped to p2 trend lite');
++$assert(strpos($main, 'Version: 1.3.0') !== false, 'plugin version bumped to p2 trend lite');
++$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false, 'VES_PLUGIN_VERSION bumped to p2 trend lite');
+ // [v1.1.0 archived] removed obsolete 'P0 MVP flag remains true' expectation: MVP gating is retired in
+ // FIIS v1.1.0 (VES_PRODUCTION_MVP is false in product). The Trend Lite budget-clamp checks below remain
+ // active and assert the still-current sanitizer behavior independently of the MVP flag.
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09318-p3-demo-hardening.php b/future-island/future-island-intelligence-suite/tests/test-v09318-p3-demo-hardening.php
+index 6ea28dc..2e539eb 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09318-p3-demo-hardening.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09318-p3-demo-hardening.php
+@@ -34,8 +34,8 @@ $main = file_get_contents($root . '/future-island-intelligence-suite.php');
+ $js = file_get_contents($root . '/assets/js/ves-frontend.js');
+ $ajax = file_get_contents($root . '/includes/class-ves-ajax-controller.php');
+ 
+-$assert(strpos($main, 'Version: 1.2.9') !== false, 'plugin header bumped to p3 demo hardening');
+-$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false, 'VES_PLUGIN_VERSION bumped to p3 demo hardening');
++$assert(strpos($main, 'Version: 1.3.0') !== false, 'plugin header bumped to p3 demo hardening');
++$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false, 'VES_PLUGIN_VERSION bumped to p3 demo hardening');
+ // [v1.1.0 archived] removed obsolete 'README version bumped' assertion: no root README.md exists in the
+ // unified package; the version contract is the plugin header / VES_PLUGIN_VERSION, already asserted above.
+ 
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09318-p31-live-qa-hotfix.php b/future-island/future-island-intelligence-suite/tests/test-v09318-p31-live-qa-hotfix.php
+index 936f9e7..0c4b1d1 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09318-p31-live-qa-hotfix.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09318-p31-live-qa-hotfix.php
+@@ -43,8 +43,8 @@ $recon = file_get_contents($root . '/includes/class-ves-usage-reconciliation-ser
+ $js = file_get_contents($root . '/assets/js/ves-frontend.js');
+ $openai = file_get_contents($root . '/includes/class-ves-openai-client.php');
+ 
+-$assert(strpos($main, 'Version: 1.2.9') !== false, 'plugin header bumped to p3.1 live QA hotfix');
+-$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false, 'VES_PLUGIN_VERSION bumped to p3.1 live QA hotfix');
++$assert(strpos($main, 'Version: 1.3.0') !== false, 'plugin header bumped to p3.1 live QA hotfix');
++$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false, 'VES_PLUGIN_VERSION bumped to p3.1 live QA hotfix');
+ // [v1.1.0 archived] removed obsolete 'README version bumped' assertion: no root README.md exists in the
+ // unified package; the version contract is the plugin header / VES_PLUGIN_VERSION, already asserted above.
+ 
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09318-p4-deep-trend-addon-integration.php b/future-island/future-island-intelligence-suite/tests/test-v09318-p4-deep-trend-addon-integration.php
+index c17ddc2..ed351d0 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09318-p4-deep-trend-addon-integration.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09318-p4-deep-trend-addon-integration.php
+@@ -13,7 +13,7 @@ $ok = function($condition, $label) use (&$checks, &$failures) { $checks++; if (!
+ 
+ // [v1.1.0 archived] removed obsolete standalone-addon version snapshot '0.9.31.15-p4.8-deep-trend-sidebar-layout'.
+ // Current contract: the suite is version 1.1.0 and DTF is a built-in module booted in-process.
+-$ok(strpos($main, 'Version: 1.2.9') !== false, 'Suite header is v1.1.0');
++$ok(strpos($main, 'Version: 1.3.0') !== false, 'Suite header is v1.1.0');
+ $ok(strpos($main, 'FIDTF_Plugin::boot()') !== false, 'DTF is booted in-process by the unified bootstrap (built-in module, not a separate add-on)');
+ $ok(strpos($main, 'class-ves-deep-trend-addon-bridge.php') !== false, 'Core bootstraps Deep Trend add-on bridge');
+ $ok(strpos($bridge, 'class VES_Deep_Trend_Addon_Bridge') !== false || strpos($bridge, 'final class VES_Deep_Trend_Addon_Bridge') !== false, 'Bridge class exists');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-core-loop-end-to-end.php b/future-island/future-island-intelligence-suite/tests/test-ves-core-loop-end-to-end.php
+new file mode 100644
+index 0000000..cad4cf6
+--- /dev/null
++++ b/future-island/future-island-intelligence-suite/tests/test-ves-core-loop-end-to-end.php
+@@ -0,0 +1,239 @@
++<?php
++/**
++ * Phase 2 — MANDATORY core-loop end-to-end test.
++ *
++ * Walks the REAL classes through the whole product loop in one workspace:
++ *   1. manual text source            (VES_Source_Intake::process_source)
++ *   2. URL-record source             (recorded, NEVER fetched — proven)
++ *   3. signal from the source        (normalized + deduped + scored)
++ *   4. evidence + DRAFT insight      (traceable promotion; presentation states)
++ *   5. human review                  (real lifecycle matrix; evidence gate)
++ *   6. brief from the APPROVED insight (evidence ids carry through; idempotent)
++ *   7. draft preview = prompt package (AI disabled; provider execution false;
++ *      NO draft entity is fabricated)
++ *   8. memory candidate from the approved insight (status forced candidate)
++ *   9. usage event in the ledger     (zero tokens => no fabricated cost)
++ * …then a full traceability walk back from the brief to the source.
++ *
++ * Self-contained: WP shims + in-memory wpdb. No DB, no network (asserted!).
++ *
++ * Run: php tests/test-ves-core-loop-end-to-end.php
++ */
++error_reporting(E_ALL & ~E_DEPRECATED);
++if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
++if (!defined('OBJECT')) { define('OBJECT', 'OBJECT'); }
++if (!defined('ARRAY_A')) { define('ARRAY_A', 'ARRAY_A'); }
++
++class WP_Error { public $code; public $message; public $data; public function __construct($c='',$m='',$d=[]){$this->code=$c;$this->message=$m;$this->data=$d;} public function get_error_code(){return $this->code;} public function get_error_message(){return $this->message;} }
++function is_wp_error($t){return $t instanceof WP_Error;}
++function sanitize_text_field($s){return trim(preg_replace('/[\r\n\t]+/',' ',strip_tags((string)$s)));}
++function sanitize_textarea_field($s){return trim(strip_tags((string)$s));}
++function sanitize_key($s){return strtolower(preg_replace('/[^a-z0-9_\-]/i','',(string)$s));}
++function esc_url_raw($s){return trim((string)$s);}
++function esc_html($s){return htmlspecialchars((string)$s,ENT_QUOTES);}
++function esc_attr($s){return htmlspecialchars((string)$s,ENT_QUOTES);}
++function esc_url($s){return htmlspecialchars((string)$s,ENT_QUOTES);}
++function wp_json_encode($d,$o=0){return json_encode($d,$o);}
++function current_time($t='mysql',$g=0){return gmdate('Y-m-d H:i:s');}
++function get_option($k,$d=false){return $GLOBALS['__o'][$k]??$d;}
++function update_option($k,$v,$a=null){$GLOBALS['__o'][$k]=$v;return true;}
++function get_current_user_id(){return 7;}
++function dbDelta($s){return [];}
++function apply_filters($t,$v){return $v;}
++// The loop must NEVER fetch anything — every HTTP entry point counts calls.
++function wp_remote_get($u,$a=[]){$GLOBALS['__http_calls']++;return new WP_Error('forbidden','no network in loop test');}
++function wp_remote_post($u,$a=[]){$GLOBALS['__http_calls']++;return new WP_Error('forbidden','no network in loop test');}
++function wp_remote_request($u,$a=[]){$GLOBALS['__http_calls']++;return new WP_Error('forbidden','no network in loop test');}
++$GLOBALS['__o']=[];$GLOBALS['__http_calls']=0;
++
++class LoopWpdb {
++    public $prefix='wp_'; public $insert_id=0; private $auto=0; public $data=[];
++    public function get_charset_collate(){return '';}
++    public function query($s){return true;}
++    public function insert($t,$r,$f=null){$this->auto++;$r['id']=$this->auto;$this->data[$t][$this->auto]=$r;$this->insert_id=$this->auto;return 1;}
++    public function update($t,$r,$w,$f=null,$wf=null){$id=(int)($w['id']??0);if(isset($this->data[$t][$id])){$this->data[$t][$id]=array_merge($this->data[$t][$id],$r);return 1;}return 0;}
++    public function prepare($sql,$args=[]){if(!is_array($args))$args=array_slice(func_get_args(),1);foreach($args as $a){$rep=is_int($a)?(string)$a:"'".addslashes((string)$a)."'";$sql=preg_replace('/%d|%s|%f/',$rep,$sql,1);}return $sql;}
++    private function rows_matching($sql){
++        if(!preg_match('/FROM (\S+)/',$sql,$m))return [null,[]];
++        $table=$m[1];$rows=$this->data[$table]??[];
++        $where=substr($sql,strpos($sql,'WHERE')!==false?strpos($sql,'WHERE')+5:strlen($sql));
++        $where=preg_split('/ORDER BY| LIMIT/',$where)[0];
++        preg_match_all("/(\w+)\s*=\s*'?([^'\s]+)'?/",$where,$mm,PREG_SET_ORDER);
++        $conds=[];foreach($mm as $p){ if(ctype_digit($p[1]))continue; $conds[$p[1]]=$p[2]; }
++        // Honor metadata LIKE patterns so the legacy dedupe path stays honest here too.
++        preg_match_all("/metadata LIKE '([^']*)'/",$where,$lk);
++        $out=[];foreach($rows as $r){
++            $ok=true;
++            foreach($conds as $k=>$v){if((string)($r[$k]??'')!==(string)$v){$ok=false;break;}}
++            if($ok && !empty($lk[1])){
++                $any=false;
++                foreach($lk[1] as $pat){$needle=trim(stripslashes($pat),'%');if($needle!=='' && strpos((string)($r['metadata']??''),$needle)!==false){$any=true;break;}}
++                if(!$any){$ok=false;}
++            }
++            if($ok)$out[]=$r;
++        }
++        return [$table,$out];
++    }
++    public function get_var($sql){
++        if(preg_match('/COUNT\(\*\)(?: AS \w+)? FROM (\S+)/',$sql,$m)){[$t,$rows]=$this->rows_matching($sql);return (string)count($rows);}
++        if(preg_match('/SELECT (\w+) FROM/',$sql,$sm)){[$t,$rows]=$this->rows_matching($sql);return $rows?($rows[0][$sm[1]]??null):null;}
++        return null;
++    }
++    public function get_row($sql,$o=null){[$t,$rows]=$this->rows_matching($sql);return $rows?$rows[0]:null;}
++    public function get_results($sql,$o=null){[$t,$rows]=$this->rows_matching($sql);return array_reverse($rows);}
++}
++$GLOBALS['wpdb']=new LoopWpdb();
++
++// Memory records: light capture stub — the real records layer is proven in the
++// memory test files; HERE we prove the brand-context service wires candidates
++// from the approved insight with forced candidate status + dedupe.
++final class VES_Memory_Records {
++    public static $saved = [];
++    public static function save_record(array $args) { self::$saved[] = $args; return count(self::$saved); }
++    public static function workspace_id_for_user($uid = 0) { return 3; }
++}
++
++$root = dirname(__DIR__);
++require_once $root.'/includes/class-ves-ai-usage-tracker.php';
++require_once $root.'/includes/class-ves-waterfall-sourcing.php';
++require_once $root.'/includes/class-ves-intelligence-store.php';
++require_once $root.'/includes/class-ves-workspace-guard.php';
++require_once $root.'/includes/class-ves-review-decision-ledger.php'; // real transition matrix + append-only decisions
++require_once $root.'/includes/class-ves-review-state.php';
++require_once $root.'/includes/class-ves-insight-brief-builder.php';
++require_once $root.'/includes/class-ves-generation-prompt-package-builder.php';
++require_once $root.'/includes/class-ves-brand-context-service.php';
++require_once $root.'/includes/class-ves-source-intake.php';
++
++$pass=0;$fail=0;
++$ok=function($c,$l)use(&$pass,&$fail){if($c){$pass++;}else{$fail++;fwrite(STDERR,"FAIL: $l\n");}};
++$WS = 3;
++
++// ── Step 1 — manual text source ───────────────────────────────────────────────
++$r = VES_Source_Intake::process_source(['workspace_id'=>$WS,'intake_type'=>'manual','source_title'=>'Lagoon residency interview','notes'=>'Operator notes from the artist interview. Strong interest in slow-craft formats.']);
++$ok(is_array($r) && $r['source_id'] > 0, 'step 1: manual source created');
++$src_manual = (int) $r['source_id'];
++$r2 = VES_Source_Intake::process_source(['workspace_id'=>$WS,'intake_type'=>'manual','source_title'=>'Lagoon residency interview','notes'=>'Operator notes from the artist interview. Strong interest in slow-craft formats.']);
++$ok(is_array($r2) && (int)$r2['source_id'] === $src_manual, 'step 1: identical manual intake dedupes to the SAME source (idempotent)');
++$e = VES_Source_Intake::process_source(['workspace_id'=>$WS,'intake_type'=>'manual','source_title'=>'']);
++$ok(is_wp_error($e) && $e->get_error_code()==='ves_intake_title_required', 'step 1: missing title refused with WP_Error');
++$e = VES_Source_Intake::process_source(['workspace_id'=>0,'intake_type'=>'manual','source_title'=>'x']);
++$ok(is_wp_error($e) && $e->get_error_code()==='ves_intake_workspace', 'step 1: workspace 0 refused');
++
++// ── Step 2 — URL-record source (never fetched) ───────────────────────────────
++$r = VES_Source_Intake::process_source(['workspace_id'=>$WS,'intake_type'=>'url','source_url'=>'https://island-culture.example/essays/slow-craft?utm_source=feed','source_title'=>'Slow-craft essay']);
++$ok(is_array($r) && $r['source_id'] > 0 && $r['source_id'] !== $src_manual, 'step 2: URL source recorded as a distinct source');
++$src_url = (int) $r['source_id'];
++$row = VES_Intelligence_Store::get_source($src_url);
++$ok(is_array($row) && ($row['metadata']['fetch_status'] ?? '') === 'not_fetched', 'step 2: source carries fetch_status=not_fetched provenance');
++$ok($GLOBALS['__http_calls'] === 0, 'step 2: ZERO HTTP calls — the URL was recorded, never fetched');
++foreach (['ftp://files.example/x', 'https://user:secret@example.com/a', 'javascript:alert(1)', 'not a url'] as $bad) {
++    $e = VES_Source_Intake::process_source(['workspace_id'=>$WS,'intake_type'=>'url','source_url'=>$bad]);
++    $ok(is_wp_error($e) && $e->get_error_code()==='ves_intake_bad_url', "step 2: unsafe reference refused ({$bad})");
++}
++
++// ── Step 3 — signal from the source ──────────────────────────────────────────
++$r = VES_Source_Intake::process_signal(['workspace_id'=>$WS,'source_id'=>$src_url,'signal_type'=>'content_pattern','title'=>'Slow-craft content outperforms on saves','summary'=>'Essay reports 3× save rate for slow-craft posts.','value_text'=>'3x saves','occurred_at'=>'2026-06-10T14:30']);
++$ok(is_array($r) && $r['signal_id'] > 0, 'step 3: signal created from the source');
++$sig = (int) $r['signal_id'];
++$r2 = VES_Source_Intake::process_signal(['workspace_id'=>$WS,'source_id'=>$src_url,'signal_type'=>'content_pattern','title'=>'Slow-craft content outperforms on saves','summary'=>'Essay reports 3× save rate for slow-craft posts.','value_text'=>'3x saves','occurred_at'=>'2026-06-10T14:30']);
++$ok(is_array($r2) && (int)$r2['signal_id'] === $sig, 'step 3: identical signal dedupes to the SAME id');
++$sig_row = VES_Intelligence_Store::get_signal($sig);
++$ok((int)($sig_row['recurrence_count'] ?? 0) === 2, 'step 3: dedupe bumped recurrence_count to 2');
++$ok((float)($sig_row['confidence_score'] ?? 0) > 0, 'step 3: deterministic quality scores filled (no LLM)');
++$e = VES_Source_Intake::process_signal(['workspace_id'=>$WS,'source_id'=>999,'title'=>'x']);
++$ok(is_wp_error($e) && $e->get_error_code()==='ves_intake_source_missing', 'step 3: unknown source refused');
++$other = VES_Source_Intake::process_source(['workspace_id'=>9,'intake_type'=>'manual','source_title'=>'Other-tenant note','notes'=>'n']);
++$e = VES_Source_Intake::process_signal(['workspace_id'=>$WS,'source_id'=>(int)$other['source_id'],'title'=>'cross-tenant probe']);
++$ok(is_wp_error($e) && strpos((string)$e->get_error_code(),'workspace')!==false, 'step 3: cross-workspace source refused by the guard');
++
++// ── Step 4 — evidence + DRAFT insight (presentation states) ──────────────────
++$r = VES_Source_Intake::process_signal_to_insight(['workspace_id'=>$WS,'signal_id'=>$sig,'insight_type'=>'opportunity','opportunity_score'=>250,'title'=>'Slow-craft series is an opportunity','summary'=>'Audience saves indicate appetite for a slow-craft series.','recommendation'=>'Stage a 3-part slow-craft series brief.']);
++$ok(is_array($r) && $r['evidence_id'] > 0 && $r['insight_id'] > 0, 'step 4: evidence + draft insight created');
++$evid = (int) $r['evidence_id']; $ins = (int) $r['insight_id'];
++$ins_row = VES_Intelligence_Store::get_insight($ins);
++$ok(($ins_row['status'] ?? '') === 'draft', 'step 4: promotion NEVER skips review — insight starts as draft');
++$ok(($ins_row['insight_type'] ?? '') === 'opportunity', 'step 4: opportunity is an insight TYPE, not a separate entity');
++$ok((int)($ins_row['metadata']['opportunity_score'] ?? -1) === 100, 'step 4: opportunity score bounded to 100');
++$ok(in_array($evid, array_map('intval', (array)($ins_row['evidence_ids'] ?? [])), true), 'step 4: insight links the evidence id');
++$ok(in_array($sig, array_map('intval', (array)($ins_row['signal_ids'] ?? [])), true), 'step 4: insight links the signal id');
++$ev_row = VES_Intelligence_Store::get_evidence($evid);
++$ok((int)($ev_row['signal_id'] ?? 0) === $sig && (int)($ev_row['source_id'] ?? 0) === $src_url, 'step 4: evidence carries signal + source ids (traceable)');
++$ok(VES_Intelligence_Store::insight_presentation_state($ins_row) === 'ready_for_review', 'step 4: evidence-backed draft presents as ready_for_review');
++$bare = VES_Intelligence_Store::create_insight(['workspace_id'=>$WS,'insight_type'=>'other','title'=>'Evidence-less note','status'=>'draft']);
++$bare_row = VES_Intelligence_Store::get_insight((int)$bare);
++$ok(VES_Intelligence_Store::insight_presentation_state($bare_row) === 'needs_evidence', 'step 4: evidence-less draft presents as needs_evidence');
++$ok(VES_Intelligence_Store::insight_presentation_state(['status'=>'approved']) === 'approved' && VES_Intelligence_Store::insight_presentation_state(['status'=>'rejected']) === 'rejected', 'step 4: terminal/approved states pass through');
++$ok(VES_Intelligence_Store::sanitize_insight_type('weird-stuff') === 'other', 'step 4: unknown insight type sanitized to other');
++
++// ── Step 5 — human review through the REAL lifecycle ─────────────────────────
++$e = VES_Source_Intake::process_insight_to_brief(['workspace_id'=>$WS,'insight_id'=>$ins]);
++$ok(is_wp_error($e) && $e->get_error_code()==='ves_intake_insight_not_approved', 'step 5: a brief from an UNAPPROVED insight is refused');
++$res = VES_Intelligence_Store::update_insight_status($ins, 'approved', ['reviewed_by'=>'operator-7']);
++$ok(!is_wp_error($res), 'step 5: evidence-backed insight approves through the real matrix');
++$ok((VES_Intelligence_Store::get_insight($ins)['status'] ?? '') === 'approved', 'step 5: insight persisted as approved');
++$res = VES_Intelligence_Store::update_insight_status((int)$bare, 'approved');
++$ok(is_wp_error($res), 'step 5: the evidence GATE still blocks approving the evidence-less insight');
++
++// ── Step 6 — brief from the approved insight ─────────────────────────────────
++$r = VES_Source_Intake::process_insight_to_brief(['workspace_id'=>$WS,'insight_id'=>$ins]);
++$ok(is_array($r) && $r['brief_id'] > 0, 'step 6: brief created from the approved insight');
++$brief = (int) $r['brief_id'];
++$b_row = VES_Intelligence_Store::get_brief($brief);
++$ok((int)($b_row['insight_id'] ?? 0) === $ins, 'step 6: brief.insight_id column carries the source insight (first-class traceability)');
++$ok((int)(($b_row['metadata']['source_insight_id'] ?? 0)) === $ins, 'step 6: brief metadata keeps source_insight_id');
++$ok(array_map('intval',(array)($b_row['evidence_ids'] ?? [])) === [$evid], 'step 6: evidence ids carried through to the brief');
++$ok(($b_row['status'] ?? '') === 'draft', 'step 6: the brief itself starts in draft (its own review follows)');
++$r2 = VES_Source_Intake::process_insight_to_brief(['workspace_id'=>$WS,'insight_id'=>$ins]);
++$ok(is_array($r2) && (int)$r2['brief_id'] === $brief, 'step 6: repeating the action returns the SAME brief (idempotent)');
++
++// ── Step 7 — draft preview = prompt package; nothing fabricated ──────────────
++$res = VES_Intelligence_Store::update_brief_status($brief, 'approved');
++if (is_wp_error($res)) { VES_Intelligence_Store::update_brief_status($brief, 'reviewed'); $res = VES_Intelligence_Store::update_brief_status($brief, 'approved'); }
++$ok(!is_wp_error($res), 'step 7: brief approved for draft staging');
++$pkg = VES_Generation_Prompt_Package_Builder::build(['workspace_id'=>$WS,'use_case'=>'draft_generation','target_type'=>'brief','target_id'=>$brief]);
++$ok(is_array($pkg) && ($pkg['build_status'] ?? '') === 'ready', 'step 7: prompt package builds (status ready) — this IS the draft preview');
++$ok(($pkg['safety']['provider_execution_allowed'] ?? null) === false, 'step 7: provider execution stays FORBIDDEN (AI disabled)');
++$ok(count(VES_Intelligence_Store::list_drafts(['workspace_id'=>$WS])) === 0, 'step 7: NO draft entity was fabricated — no fake generated content anywhere');
++$ok($GLOBALS['__http_calls'] === 0, 'step 7: still zero HTTP calls — no provider was contacted');
++
++// ── Step 8 — memory candidate from the approved insight ──────────────────────
++$mem_id = VES_Brand_Context_Service::create_candidate($WS, [
++    'record_type' => 'review_learning',
++    'summary' => 'Slow-craft series approved as an opportunity; audience saves are the leading indicator.',
++    'source_target_type' => 'insight', 'source_target_id' => $ins, 'importance_score' => 60,
++], 7);
++$ok($mem_id > 0 && count(VES_Memory_Records::$saved) === 1, 'step 8: memory candidate proposed from the approved insight');
++$saved = VES_Memory_Records::$saved[0];
++$ok(in_array('candidate', (array)($saved['tags'] ?? []), true) && ($saved['content']['brand_context']['status'] ?? '') === 'candidate', 'step 8: candidate status is FORCED — nothing enters trusted context without approval');
++$ok(!empty($saved['dedupe']) && (int)($saved['workspace_id'] ?? 0) === $WS && (string)($saved['source_id'] ?? '') === (string)$ins, 'step 8: candidate dedupes and stays traceable to the insight');
++
++// ── Step 9 — usage event in the ledger ───────────────────────────────────────
++$uid = VES_AI_Usage_Tracker::record(['provider'=>'none','model'=>'','status'=>'completed','module'=>'core_loop','operation_type'=>'prompt_preview','workspace_id'=>$WS,'input_tokens'=>0,'output_tokens'=>0]);
++$ok($uid > 0, 'step 9: usage event recorded in the ledger');
++$usage_row = null;
++foreach ($GLOBALS['wpdb']->data as $table => $rows) {
++    foreach ($rows as $row) { if (($row['operation_type'] ?? '') === 'prompt_preview') { $usage_row = $row; } }
++}
++$ok(is_array($usage_row) && (int)$usage_row['workspace_id'] === $WS, 'step 9: event row carries the workspace');
++$ok((float)($usage_row['cost_usd'] ?? 0) == 0.0, 'step 9: zero-token preview fabricates NO cost');
++
++// ── Phase 3 — workbench decision card reflects REAL presentation states ──────
++require_once $root.'/includes/class-ves-workbench.php';
++$wb = VES_Workbench::render_brief(['workspace_id'=>$WS,'insight_id'=>(int)$bare]);
++$ok(strpos($wb,'No evidence is linked')!==false && strpos($wb,'Next:')!==false, 'decision card: evidence-less insight shows needs_evidence with a next action');
++$wb2 = VES_Workbench::render_brief(['workspace_id'=>$WS,'insight_id'=>$ins]);
++$ok(strpos($wb2,'Human-approved. A brief can be built')!==false, 'decision card: approved insight names the brief-building next step');
++$wb3 = VES_Workbench::render_draft(['workspace_id'=>$WS,'brief_id'=>$brief]);
++$ok(strpos($wb3,'prompt-package preview only')!==false, 'decision card: approved brief explains draft staging is preview-only (AI disabled)');
++
++// ── Traceability walk: brief → insight → evidence → signal → source ──────────
++$walk_ins = VES_Intelligence_Store::get_insight((int) $b_row['insight_id']);
++$walk_ev  = VES_Intelligence_Store::get_evidence((int) ((array)$walk_ins['evidence_ids'])[0]);
++$walk_sig = VES_Intelligence_Store::get_signal((int) $walk_ev['signal_id']);
++$walk_src = VES_Intelligence_Store::get_source((int) $walk_sig['source_id']);
++$ok((int)$walk_src['id'] === $src_url && strpos((string)$walk_src['source_url'], 'island-culture.example') !== false, 'traceability: brief walks back to the exact recorded source URL');
++$ok($GLOBALS['__http_calls'] === 0, 'final: the ENTIRE loop ran with zero HTTP calls');
++
++echo "\n{$pass} passed, {$fail} failed\n";
++exit($fail === 0 ? 0 : 1);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-evidence-archive-verification-9e.php b/future-island/future-island-intelligence-suite/tests/test-ves-evidence-archive-verification-9e.php
+index d87f37c..858b90c 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-ves-evidence-archive-verification-9e.php
++++ b/future-island/future-island-intelligence-suite/tests/test-ves-evidence-archive-verification-9e.php
+@@ -16,7 +16,7 @@
+  */
+ error_reporting(E_ALL & ~E_DEPRECATED);
+ if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
+-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.9'); }
++if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.3.0'); }
+ if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc3'); }
+ 
+ function sanitize_key($s){return strtolower(preg_replace('/[^a-z0-9_\-]/i','',(string)$s));}
+@@ -142,9 +142,80 @@ if (class_exists('PharData')) {
+ 
+     $files = VES_RC_Evidence_Pack::verify_archive($pack, '/nonexistent.tar.gz');
+     $ok($files['status'] === 'missing_required_artifacts', 'missing archive file refuses verification');
++
++    // ── 5b. Hardened extraction path (Phase 0) ───────────────────────────────
++    $tmp_glob = function () { return glob(rtrim(sys_get_temp_dir(), '/') . '/ves-evidence-*') ?: []; };
++    $tmp_before = $tmp_glob();
++
++    // A plain UNCOMPRESSED .tar verifies through the non-gzip branch.
++    $plain_tar = sys_get_temp_dir() . '/fi-ev-9e-plain-' . getmypid() . '.tar';
++    @unlink($plain_tar);
++    $p2 = new PharData($plain_tar);
++    $p2->buildFromDirectory($root);
++    $files = VES_RC_Evidence_Pack::verify_archive($pack, $plain_tar);
++    $ok($files['status'] === 'ok', 'plain uncompressed .tar verifies');
++
++    // Raw tar writer for hostile fixtures (PharData refuses to author them).
++    $mk_tar = function (array $entries) {
++        $tar = '';
++        foreach ($entries as $name => $content) {
++            $h  = str_pad(substr((string) $name, 0, 100), 100, "\0");
++            $h .= "0000644\0" . "0000000\0" . "0000000\0";
++            $h .= sprintf('%011o', strlen($content)) . "\0";
++            $h .= sprintf('%011o', 0) . "\0";
++            $h .= '        ' . '0' . str_repeat("\0", 100);
++            $h .= "ustar\0" . "00" . str_repeat("\0", 64);
++            $h .= "0000000\0" . "0000000\0" . str_repeat("\0", 167);
++            $sum = 0; for ($i = 0; $i < 512; $i++) { $sum += ord($h[$i]); }
++            $h = substr($h, 0, 148) . sprintf('%06o', $sum) . "\0 " . substr($h, 156);
++            $tar .= $h . $content . str_repeat("\0", (512 - strlen($content) % 512) % 512);
++        }
++        return $tar . str_repeat("\0", 1024);
++    };
++
++    // Empty gzip stream => explicit "empty tar" refusal, not a confusing mismatch.
++    $empty_gz = sys_get_temp_dir() . '/fi-ev-9e-empty-' . getmypid() . '.tar.gz';
++    file_put_contents($empty_gz, gzencode(''));
++    $files = VES_RC_Evidence_Pack::verify_archive($pack, $empty_gz);
++    $ok($files['status'] === 'missing_required_artifacts' && strpos(implode(' ', $files['missing']), 'empty tar') !== false,
++        'empty gzip stream detected explicitly (empty-tar refusal)');
++
++    // Truncated gzip => fails closed (never ok).
++    $trunc_gz = sys_get_temp_dir() . '/fi-ev-9e-trunc-' . getmypid() . '.tar.gz';
++    $valid_bytes = (string) file_get_contents($archive);
++    file_put_contents($trunc_gz, substr($valid_bytes, 0, (int) (strlen($valid_bytes) * 0.6)));
++    $files = VES_RC_Evidence_Pack::verify_archive($pack, $trunc_gz);
++    $ok($files['status'] !== 'ok', 'truncated gzip archive fails closed');
++
++    // Path-traversal entry name => refused before extraction.
++    $evil_gz = sys_get_temp_dir() . '/fi-ev-9e-evil-' . getmypid() . '.tar.gz';
++    file_put_contents($evil_gz, gzencode($mk_tar(['../fi-ev-9e-escape.txt' => 'escape attempt'])));
++    $files = VES_RC_Evidence_Pack::verify_archive($pack, $evil_gz);
++    $ok($files['status'] === 'missing_required_artifacts', 'archive with traversal entry name refused');
++    $ok(!file_exists(dirname(sys_get_temp_dir() . '/x') . '/fi-ev-9e-escape.txt') && !file_exists(sys_get_temp_dir() . '/fi-ev-9e-escape.txt'),
++        'traversal entry never escaped onto disk');
++
++    // Archive without a manifest => clear refusal, and no temp dir left behind.
++    $noman_gz = sys_get_temp_dir() . '/fi-ev-9e-noman-' . getmypid() . '.tar.gz';
++    file_put_contents($noman_gz, gzencode($mk_tar(['hello.txt' => 'no manifest here'])));
++    $files = VES_RC_Evidence_Pack::verify_archive($pack, $noman_gz);
++    $ok($files['status'] === 'missing_required_artifacts' && strpos(implode(' ', $files['missing']), 'manifest-files.txt') !== false,
++        'archive without manifest refused with a clear detail');
++
++    // Zero-byte manifest inside the archive => explicit zero-byte refusal.
++    $zman_gz = sys_get_temp_dir() . '/fi-ev-9e-zman-' . getmypid() . '.tar.gz';
++    file_put_contents($zman_gz, gzencode($mk_tar(['manifest-files.txt' => ''])));
++    $files = VES_RC_Evidence_Pack::verify_archive($pack, $zman_gz);
++    $ok($files['status'] === 'missing_required_artifacts' && strpos(implode(' ', $files['missing']), 'zero bytes') !== false,
++        'zero-byte manifest detected explicitly');
++
++    // Every scenario above must clean its temp extraction dir.
++    $ok($tmp_glob() === $tmp_before, 'no ves-evidence-* temp dirs leaked by any verification path');
++
++    foreach ([$plain_tar, $empty_gz, $trunc_gz, $evil_gz, $noman_gz, $zman_gz] as $f) { @unlink($f); }
+ } else {
+     $ok(true, 'PharData unavailable in this PHP build — archive path covered by root-mode tests (verify_archive fails closed by design)');
+-    $ok(true, 'skip'); $ok(true, 'skip'); $ok(true, 'skip'); $ok(true, 'skip');
++    for ($i = 0; $i < 12; $i++) { $ok(true, 'skip'); }
+ }
+ 
+ echo "\n{$pass} passed, {$fail} failed\n";
+diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-evidence-pack-9b.php b/future-island/future-island-intelligence-suite/tests/test-ves-evidence-pack-9b.php
+index aeb34da..3896dc6 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-ves-evidence-pack-9b.php
++++ b/future-island/future-island-intelligence-suite/tests/test-ves-evidence-pack-9b.php
+@@ -17,7 +17,7 @@
+  */
+ error_reporting(E_ALL & ~E_DEPRECATED);
+ if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
+-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.9'); }
++if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.3.0'); }
+ if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc3'); }
+ 
+ function sanitize_key($s){return strtolower(preg_replace('/[^a-z0-9_\-]/i','',(string)$s));}
+@@ -141,5 +141,18 @@ $ok($state['status'] === 'passed' && !empty($state['files_verified']), 'file-bac
+ unset($GLOBALS['__o']['ves_rc_live_validation']);
+ $ok(VES_RC_Evidence_Pack::live_validation_state()['status'] === 'unrun', 'no option means unrun');
+ 
++// Phase 1 — explicit failed + unknown_error states (never silently optimistic).
++$GLOBALS['__o']['ves_rc_live_validation'] = ['status' => 'failed', 'recorded_at' => '2026-06-12 09:00:00'];
++$state = VES_RC_Evidence_Pack::live_validation_state();
++$ok($state['status'] === 'failed', 'a recorded FAILED run classifies as failed (not unverified_manual)');
++$ok(strpos((string) $state['note'], 'FAILED') !== false && empty($state['evidence_pack_hash']), 'failed state is explicit and carries no trusted hash');
++$GLOBALS['__o']['ves_rc_live_validation'] = 'corrupt-not-an-array';
++$ok(VES_RC_Evidence_Pack::live_validation_state()['status'] === 'unknown_error', 'garbage record classifies as unknown_error, never as unrun');
++$GLOBALS['__o']['ves_rc_live_validation'] = ['recorded_at' => '2026-06-12']; // present but statusless
++$ok(VES_RC_Evidence_Pack::live_validation_state()['status'] === 'unknown_error', 'statusless record classifies as unknown_error');
++$GLOBALS['__o']['ves_rc_live_validation'] = ['status' => ['nested' => 'garbage']]; // non-string status
++$ok(VES_RC_Evidence_Pack::live_validation_state()['status'] === 'unknown_error', 'non-string status classifies as unknown_error');
++unset($GLOBALS['__o']['ves_rc_live_validation']);
++
+ echo "\n{$pass} passed, {$fail} failed\n";
+ exit($fail === 0 ? 0 : 1);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-execution-truth-alignment.php b/future-island/future-island-intelligence-suite/tests/test-ves-execution-truth-alignment.php
+new file mode 100644
+index 0000000..772b71d
+--- /dev/null
++++ b/future-island/future-island-intelligence-suite/tests/test-ves-execution-truth-alignment.php
+@@ -0,0 +1,141 @@
++<?php
++/**
++ * Phase 0 — AI-execution truth alignment across UI surfaces.
++ *
++ * The truth owner is VES_Generation_Prompt_Package_Builder::execution_enabled()
++ * (raw option + the ves_generation_execution_enabled filter). Every UI surface
++ * (admin Console strip, Signal Room snapshot/strip, RC page flags) must report
++ * THAT truth — never the raw option alone — with a safe fallback chain:
++ *
++ *   1. raw option false + filter forces true  => every surface shows ENABLED
++ *   2. raw option true (no filter)            => every surface shows ENABLED
++ *   3. builder class unavailable              => fall back to the RAW OPTION
++ *      (an ON option can never be reported OFF just because the builder is gone)
++ *   4. builder throws                         => NO fatal; raw option fallback
++ *   5. Console + Signal Room + RC page are CONSISTENT in every scenario
++ *
++ * Scenarios run in subprocesses because "real builder", "no builder" and
++ * "throwing builder" cannot coexist in one PHP process (one-way class loading).
++ *
++ * Run: php tests/test-ves-execution-truth-alignment.php
++ */
++error_reporting(E_ALL & ~E_DEPRECATED);
++
++// ── Parent mode: spawn one subprocess per scenario ────────────────────────────
++if ($argc < 2) {
++    $scenarios = [
++        'real_builder_filter_forces_true',  // raw false, filter => true  → ENABLED everywhere
++        'real_builder_filter_forces_false', // raw true,  filter => false → OFF everywhere (builder truth wins)
++        'real_builder_raw_true',            // raw true, identity filter  → ENABLED everywhere
++        'real_builder_raw_false',           // raw false, identity filter → OFF everywhere
++        'no_builder_raw_true',              // builder absent, raw true   → ENABLED everywhere (raw-option fallback)
++        'no_builder_raw_false',             // builder absent, raw false  → OFF everywhere
++        'builder_throws_raw_true',          // builder throws, raw true   → no fatal, ENABLED everywhere
++        'builder_throws_raw_false',         // builder throws, raw false  → no fatal, OFF everywhere
++    ];
++    $pass = 0; $fail = 0;
++    foreach ($scenarios as $s) {
++        $out = []; $code = 0;
++        exec(escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg(__FILE__) . ' ' . escapeshellarg($s) . ' 2>&1', $out, $code);
++        if ($code === 0) { $pass++; }
++        else { $fail++; fwrite(STDERR, "FAIL: scenario {$s}\n" . implode("\n", $out) . "\n"); }
++    }
++    echo "\n{$pass} passed, {$fail} failed\n";
++    exit($fail === 0 ? 0 : 1);
++}
++
++// ── Worker mode: one scenario per process ─────────────────────────────────────
++$scenario = (string) $argv[1];
++if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
++if (!defined('FIS_VERSION')) { define('FIS_VERSION', 'test'); }
++if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-test'); }
++if (!defined('VES_PLUGIN_VERSION')) { define('VES_PLUGIN_VERSION', 'test'); }
++if (!defined('VES_PLUGIN_URL')) { define('VES_PLUGIN_URL', 'http://t/wp-content/plugins/fiis/'); }
++$root = dirname(__DIR__);
++
++function esc_html($s) { return htmlspecialchars((string) $s, ENT_QUOTES); }
++function esc_attr($s) { return htmlspecialchars((string) $s, ENT_QUOTES); }
++function sanitize_key($s) { return strtolower(preg_replace('/[^a-z0-9_\-]/i', '', (string) $s)); }
++function sanitize_text_field($s) { return trim(strip_tags((string) $s)); }
++function get_option($k, $d = false) { return $GLOBALS['__o'][$k] ?? $d; }
++function update_option($k, $v, $a = null) { $GLOBALS['__o'][$k] = $v; return true; }
++function current_time($t = 'mysql', $g = 0) { return '2026-06-12 12:00:00'; }
++function apply_filters($tag, $value) {
++    if ($tag === 'ves_generation_execution_enabled' && array_key_exists('__filter_force', $GLOBALS)) {
++        return $GLOBALS['__filter_force'];
++    }
++    return $value;
++}
++$GLOBALS['__o'] = [];
++
++// Scenario setup: option, filter, builder flavor, expectation.
++$raw_on = strpos($scenario, 'raw_true') !== false || $scenario === 'real_builder_filter_forces_false';
++$GLOBALS['__o']['ves_generation_execution_enabled'] = $raw_on;
++if ($scenario === 'real_builder_filter_forces_true') { $GLOBALS['__filter_force'] = true; }
++if ($scenario === 'real_builder_filter_forces_false') { $GLOBALS['__filter_force'] = false; }
++
++if (strpos($scenario, 'real_builder') === 0) {
++    require_once $root . '/includes/class-ves-generation-prompt-package-builder.php';
++} elseif (strpos($scenario, 'builder_throws') === 0) {
++    final class VES_Generation_Prompt_Package_Builder {
++        public static function execution_enabled() { throw new RuntimeException('builder exploded'); }
++    }
++} // no_builder_*: the class is simply never defined.
++
++$expected = false;
++switch ($scenario) {
++    case 'real_builder_filter_forces_true':  $expected = true;  break; // builder truth (filter) wins over raw false
++    case 'real_builder_filter_forces_false': $expected = false; break; // builder truth (filter) wins over raw true
++    case 'real_builder_raw_true':            $expected = true;  break;
++    case 'real_builder_raw_false':           $expected = false; break;
++    case 'no_builder_raw_true':              $expected = true;  break; // raw-option fallback
++    case 'no_builder_raw_false':             $expected = false; break;
++    case 'builder_throws_raw_true':          $expected = true;  break; // throw-safe fallback
++    case 'builder_throws_raw_false':         $expected = false; break;
++}
++
++// Surfaces under test (REAL files).
++final class VES_RC_Readiness_Service {
++    public static function report(array $a = []) {
++        return ['status' => 'blocked', 'live_validation' => ['status' => 'unrun'], 'plugin_version' => 'test', 'rc_label' => 'v0.1-test', 'blockers' => []];
++    }
++}
++require_once $root . '/includes/class-ves-admin-console.php';
++require_once $root . '/includes/class-ves-signal-room.php';
++require_once $root . '/includes/class-ves-release-candidate-page.php';
++
++$pass = 0; $fail = 0;
++$ok = function ($c, $l) use (&$pass, &$fail) { if ($c) { $pass++; } else { $fail++; fwrite(STDERR, "FAIL: $l\n"); } };
++
++// 1. Signal Room snapshot flag (public API).
++$flag = null;
++try { $flag = (bool) (VES_Signal_Room::snapshot(1)['flags']['generation_execution_enabled'] ?? null); }
++catch (\Throwable $e) { $ok(false, "Signal Room snapshot threw: " . $e->getMessage()); }
++$ok($flag === $expected, "Signal Room flag is " . var_export($expected, true) . " in {$scenario}");
++
++// 2. RC page flags row (private — reflection).
++$m = new ReflectionMethod('VES_Release_Candidate_Page', 'flags');
++$m->setAccessible(true);
++$rc_on = null;
++try {
++    foreach ((array) $m->invoke(null) as $row) {
++        if (($row['name'] ?? '') === 'ves_generation_execution_enabled') { $rc_on = (bool) $row['on']; }
++    }
++} catch (\Throwable $e) { $ok(false, "RC page flags threw: " . $e->getMessage()); }
++$ok($rc_on === $expected, "RC page flag is " . var_export($expected, true) . " in {$scenario}");
++
++// 3. Console status strip (private — reflection); ON/OFF badge text.
++$m2 = new ReflectionMethod('VES_Admin_Console', 'status_strip');
++$m2->setAccessible(true);
++$strip = '';
++try { $strip = (string) $m2->invoke(null); }
++catch (\Throwable $e) { $ok(false, "Console strip threw: " . $e->getMessage()); }
++$ok($strip !== '', 'Console strip rendered (fail-safe path not falsely triggered)');
++$console_on = strpos($strip, '>ON<') !== false && strpos($strip, '>OFF<') === false;
++$console_off = strpos($strip, '>OFF<') !== false && strpos($strip, '>ON<') === false;
++$ok($expected ? $console_on : $console_off, "Console strip shows " . ($expected ? 'ON' : 'OFF') . " in {$scenario}");
++
++// 4. Consistency: the three surfaces agree with each other.
++$ok($flag === $rc_on && $rc_on === ($console_on && !$console_off), "Console, Signal Room and RC page agree in {$scenario}");
++
++exit($fail === 0 ? 0 : 1);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-health-and-log.php b/future-island/future-island-intelligence-suite/tests/test-ves-health-and-log.php
+index 208f941..498f9b0 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-ves-health-and-log.php
++++ b/future-island/future-island-intelligence-suite/tests/test-ves-health-and-log.php
+@@ -12,8 +12,8 @@ error_reporting(E_ALL & ~E_DEPRECATED);
+ 
+ if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
+ if (!defined('WP_DEBUG')) { define('WP_DEBUG', false); }
+-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.9'); }
+-if (!defined('VES_PLUGIN_VERSION')) { define('VES_PLUGIN_VERSION', '1.2.9'); }
++if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.3.0'); }
++if (!defined('VES_PLUGIN_VERSION')) { define('VES_PLUGIN_VERSION', '1.3.0'); }
+ if (!defined('FIDTF_VERSION')) { define('FIDTF_VERSION', '0.3.53'); }
+ 
+ if (!class_exists('WP_Error')) {
+diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-rc-readiness-check.php b/future-island/future-island-intelligence-suite/tests/test-ves-rc-readiness-check.php
+index e912be6..31c2a29 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-ves-rc-readiness-check.php
++++ b/future-island/future-island-intelligence-suite/tests/test-ves-rc-readiness-check.php
+@@ -44,7 +44,7 @@ $ok(strpos($warn_text, 'UNRUN') !== false, 'warnings call out the unrun live val
+ // ── 2. Healthy stack stubs ───────────────────────────────────────────────────
+ // NOTE: declared inside a conditional block so PHP binds them at RUNTIME —
+ // scenario 1 above must run with no services defined.
+-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.9'); }
++if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.3.0'); }
+ if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc1'); }
+ if (!class_exists('VES_Intelligence_Store')) {
+ final class VES_Intelligence_Store {
+diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-rc-strict-readiness-9c.php b/future-island/future-island-intelligence-suite/tests/test-ves-rc-strict-readiness-9c.php
+index 7817ac7..4950c05 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-ves-rc-strict-readiness-9c.php
++++ b/future-island/future-island-intelligence-suite/tests/test-ves-rc-strict-readiness-9c.php
+@@ -15,7 +15,7 @@
+  */
+ error_reporting(E_ALL & ~E_DEPRECATED);
+ if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
+-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.9'); }
++if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.3.0'); }
+ if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc2'); }
+ 
+ function get_option($k, $d = false) { return $GLOBALS['__opts'][$k] ?? $d; }
+diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-release-candidate-page.php b/future-island/future-island-intelligence-suite/tests/test-ves-release-candidate-page.php
+index a8bda11..33d1cb3 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-ves-release-candidate-page.php
++++ b/future-island/future-island-intelligence-suite/tests/test-ves-release-candidate-page.php
+@@ -16,7 +16,7 @@
+  */
+ error_reporting(E_ALL & ~E_DEPRECATED);
+ if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
+-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.9'); }
++if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.3.0'); }
+ if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc1'); }
+ 
+ function get_option($k, $d = false) { return $GLOBALS['__opts'][$k] ?? $d; }
+@@ -44,7 +44,7 @@ $html = VES_Release_Candidate_Page::render_html();
+ // ── 1. Identity ──────────────────────────────────────────────────────────────
+ $ok(strpos($html, 'Release Candidate') !== false, 'page titles itself Release Candidate');
+ $ok(strpos($html, 'Future Island') !== false, 'page carries the Future Island identity');
+-$ok(strpos($html, '1.2.9') !== false && strpos($html, 'v0.1-rc1') !== false, 'version + RC label shown');
++$ok(strpos($html, '1.3.0') !== false && strpos($html, 'v0.1-rc1') !== false, 'version + RC label shown');
+ 
+ // ── 2. Honesty: UNRUN + never production-ready ───────────────────────────────
+ $ok(strpos($html, 'UNRUN') !== false, 'page states live staging validation is UNRUN');
+@@ -101,5 +101,34 @@ $html3 = VES_Release_Candidate_Page::render_html();
+ $ok(strpos($html3, '>ON<') !== false, 'an enabled flag is shown as ON, not hidden');
+ $GLOBALS['__opts']['ves_generation_execution_enabled'] = false;
+ 
++// ── 7. Phase 1 — explicit FAILED + unknown_error banners ─────────────────────
++$GLOBALS['__opts']['ves_rc_live_validation'] = ['status' => 'failed', 'recorded_at' => '2026-06-12 09:00:00'];
++$html4 = VES_Release_Candidate_Page::render_html();
++$ok(strpos($html4, 'Live staging validation: FAILED.') !== false, 'a recorded failed run gets an explicit FAILED banner');
++$ok(strpos($html4, 'NOT production-ready') !== false, 'failed state stays NOT production-ready');
++$ok(strpos($html4, 'recorded as passed') === false, 'failed state never shows the passed banner');
++
++$GLOBALS['__opts']['ves_rc_live_validation'] = 'corrupt-garbage-not-array';
++$html5 = VES_Release_Candidate_Page::render_html();
++$ok(strpos($html5, 'unknown_error') !== false && stripos($html5, 'unreadable') !== false, 'a corrupt record is surfaced as unknown_error/unreadable');
++$ok(strpos($html5, 'NOT production-ready') !== false, 'unknown_error stays NOT production-ready');
++unset($GLOBALS['__opts']['ves_rc_live_validation']);
++
++// ── 8. Phase 1 — staging checklist section ───────────────────────────────────
++$html6 = VES_Release_Candidate_Page::render_html();
++$ok(strpos($html6, 'Staging checklist') !== false && strpos($html6, 'fiis-rc-checklist') !== false, 'staging checklist section renders');
++$ok(strpos($html6, '<th>Next action</th>') !== false, 'checklist has a next-action column');
++foreach (['Release build', 'Live staging validation', 'Archive verification', 'Generation execution', 'Database schema', 'Memory context preview', 'Prompt package preview', 'Operator queue'] as $row) {
++    $ok(strpos($html6, '<td>' . $row . '</td>') !== false, "checklist row present: {$row}");
++}
++$ok(strpos($html6, 'future-island-live-validation-v3.sh') !== false, 'UNRUN next action points at the validation script');
++$ok(strpos($html6, 'can never look greener') !== false, 'checklist carries the never-greener honesty note');
++// Failed validation flips the checklist row too (consistency with the banner).
++$GLOBALS['__opts']['ves_rc_live_validation'] = ['status' => 'failed', 'recorded_at' => '2026-06-12 09:00:00'];
++$html7 = VES_Release_Candidate_Page::render_html();
++$ok(strpos($html7, 're-record a passing file-backed pack') !== false, 'failed state changes the checklist next action');
++unset($GLOBALS['__opts']['ves_rc_live_validation']);
++$ok($GLOBALS['__opt_writes'] === [], 'all renders (including the checklist) performed zero option writes');
++
+ echo "\n{$pass} passed, {$fail} failed\n";
+ exit($fail === 0 ? 0 : 1);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-source-intake-page.php b/future-island/future-island-intelligence-suite/tests/test-ves-source-intake-page.php
+new file mode 100644
+index 0000000..c813e41
+--- /dev/null
++++ b/future-island/future-island-intelligence-suite/tests/test-ves-source-intake-page.php
+@@ -0,0 +1,144 @@
++<?php
++/**
++ * Phase 2 — Source Intake surface security + honesty contract.
++ *
++ * Proves:
++ *  1. every mutation goes through capability + nonce (admin-post wrappers)
++ *  2. rendering is escaped (hostile titles can't script the page)
++ *  3. the page promises (and the forms enforce) NO fetching, NO generation,
++ *     NO auto-approval — and contains no such affordances
++ *  4. notices map error CODES to fixed copy (no raw query-string echo)
++ *  5. the four loop forms (source / URL / signal / insight / brief) exist with
++ *     their hidden action names + nonce fields
++ *
++ * Run: php tests/test-ves-source-intake-page.php
++ */
++error_reporting(E_ALL & ~E_DEPRECATED);
++if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
++if (!defined('OBJECT')) { define('OBJECT', 'OBJECT'); }
++if (!defined('ARRAY_A')) { define('ARRAY_A', 'ARRAY_A'); }
++define('VES_INTAKE_NO_EXIT', true);
++
++class WP_Error { public $code; public $message; public function __construct($c='',$m='',$d=[]){$this->code=$c;$this->message=$m;} public function get_error_code(){return $this->code;} public function get_error_message(){return $this->message;} }
++function is_wp_error($t){return $t instanceof WP_Error;}
++function sanitize_text_field($s){return trim(preg_replace('/[\r\n\t]+/',' ',strip_tags((string)$s)));}
++function sanitize_textarea_field($s){return trim(strip_tags((string)$s));}
++function sanitize_key($s){return strtolower(preg_replace('/[^a-z0-9_\-]/i','',(string)$s));}
++function esc_url_raw($s){return trim((string)$s);}
++function esc_html($s){return htmlspecialchars((string)$s,ENT_QUOTES);}
++function esc_attr($s){return htmlspecialchars((string)$s,ENT_QUOTES);}
++function esc_url($s){return htmlspecialchars((string)$s,ENT_QUOTES);}
++function wp_json_encode($d,$o=0){return json_encode($d,$o);}
++function current_time($t='mysql',$g=0){return gmdate('Y-m-d H:i:s');}
++function get_option($k,$d=false){return $GLOBALS['__o'][$k]??$d;}
++function update_option($k,$v,$a=null){$GLOBALS['__o'][$k]=$v;return true;}
++function get_current_user_id(){return 7;}
++function dbDelta($s){return [];}
++function apply_filters($t,$v){return $v;}
++function current_user_can($c){return !empty($GLOBALS['__can']);}
++function check_admin_referer($a){$GLOBALS['__nonce_checked'][]=$a;if(empty($GLOBALS['__nonce_ok'])){throw new RuntimeException('nonce failure: '.$a);}return true;}
++function wp_nonce_field($a,$n='_wpnonce',$r=true,$echo=true){return '<input type="hidden" name="'.$n.'" value="nonce-'.$a.'">';}
++function wp_die($m='',$t='',$args=[]){throw new RuntimeException('wp_die:'.(is_array($args)&&isset($args['response'])?$args['response']:(string)$t));}
++function wp_safe_redirect($u){$GLOBALS['__redirects'][]=$u;return true;}
++function admin_url($p=''){return 'http://t/wp-admin/'.$p;}
++function add_query_arg($args,$url){return $url.'?'.http_build_query($args);}
++function wp_unslash($v){return $v;}
++$GLOBALS['__o']=[];$GLOBALS['__can']=true;$GLOBALS['__nonce_ok']=true;$GLOBALS['__nonce_checked']=[];$GLOBALS['__redirects']=[];
++
++class IntakeWpdb {
++    public $prefix='wp_'; public $insert_id=0; private $auto=0; public $data=[];
++    public function get_charset_collate(){return '';}
++    public function query($s){return true;}
++    public function insert($t,$r,$f=null){$this->auto++;$r['id']=$this->auto;$this->data[$t][$this->auto]=$r;$this->insert_id=$this->auto;return 1;}
++    public function update($t,$r,$w,$f=null,$wf=null){$id=(int)($w['id']??0);if(isset($this->data[$t][$id])){$this->data[$t][$id]=array_merge($this->data[$t][$id],$r);return 1;}return 0;}
++    public function prepare($sql,$args=[]){if(!is_array($args))$args=array_slice(func_get_args(),1);foreach($args as $a){$rep=is_int($a)?(string)$a:"'".addslashes((string)$a)."'";$sql=preg_replace('/%d|%s|%f/',$rep,$sql,1);}return $sql;}
++    private function rows_matching($sql){ if(!preg_match('/FROM (\S+)/',$sql,$m))return [null,[]]; $table=$m[1];$rows=$this->data[$table]??[]; $where=substr($sql,strpos($sql,'WHERE')!==false?strpos($sql,'WHERE')+5:strlen($sql)); $where=preg_split('/ORDER BY| LIMIT/',$where)[0]; preg_match_all("/(\w+)\s*=\s*'?([^'\s]+)'?/",$where,$mm,PREG_SET_ORDER); $conds=[];foreach($mm as $p){ if(ctype_digit($p[1]))continue; $conds[$p[1]]=$p[2]; } $out=[];foreach($rows as $r){$ok=true;foreach($conds as $k=>$v){if((string)($r[$k]??'')!==(string)$v){$ok=false;break;}}if($ok)$out[]=$r;} return [$table,$out]; }
++    public function get_var($sql){ if(preg_match('/COUNT\(\*\)(?: AS \w+)? FROM (\S+)/',$sql,$m)){[$t,$rows]=$this->rows_matching($sql);return (string)count($rows);} if(preg_match('/SELECT (\w+) FROM/',$sql,$sm)){[$t,$rows]=$this->rows_matching($sql);return $rows?($rows[0][$sm[1]]??null):null;} return null; }
++    public function get_row($sql,$o=null){[$t,$rows]=$this->rows_matching($sql);return $rows?$rows[0]:null;}
++    public function get_results($sql,$o=null){[$t,$rows]=$this->rows_matching($sql);return array_reverse($rows);}
++}
++$GLOBALS['wpdb']=new IntakeWpdb();
++
++$root = dirname(__DIR__);
++require_once $root.'/includes/class-ves-ai-usage-tracker.php';
++require_once $root.'/includes/class-ves-waterfall-sourcing.php';
++require_once $root.'/includes/class-ves-intelligence-store.php';
++require_once $root.'/includes/class-ves-review-state.php';
++require_once $root.'/includes/class-ves-source-intake.php';
++
++$pass=0;$fail=0;
++$ok=function($c,$l)use(&$pass,&$fail){if($c){$pass++;}else{$fail++;fwrite(STDERR,"FAIL: $l\n");}};
++
++// ── 1. Render contract ────────────────────────────────────────────────────────
++$html = VES_Source_Intake::render_html(3);
++$ok(strpos($html,'Future Island · Intake')!==false, 'page carries the FI identity');
++foreach (['ves_intake_source','ves_intake_signal','ves_intake_signal_to_insight','ves_insight_to_brief'] as $a) {
++    $ok(substr_count($html,'value="'.$a.'"')>=1, "form posts hidden action {$a}");
++    $ok(strpos($html,'nonce-'.$a)!==false, "form {$a} carries its nonce field");
++}
++$ok(strpos($html,'never fetched')!==false || strpos($html,'nothing is fetched')!==false, 'page states URLs are never fetched');
++$ok(strpos($html,'No AI generation, no auto-approval, no publishing, no fetching')!==false, 'closing policy line present');
++$ok(stripos($html,'Generate with AI')===false && stripos($html,'Publish now')===false && stripos($html,'Auto approve')===false, 'no generate/publish/auto-approve affordances');
++$ok(strpos($html,'fi-skip-link')!==false, 'keyboard skip link present');
++$ok(strpos($html,'name="opportunity_score" min="0" max="100"')!==false, 'opportunity score input is bounded 0–100');
++
++// ── 2. Escaping: hostile titles can't script the page ────────────────────────
++VES_Source_Intake::process_source(['workspace_id'=>3,'intake_type'=>'manual','source_title'=>'<script>alert(1)</script>Sneaky','notes'=>'x']);
++$html2 = VES_Source_Intake::render_html(3);
++$ok(strpos($html2,'<script>alert(1)</script>')===false, 'hostile source title never renders as markup');
++$ok(strpos($html2,'Sneaky')!==false, 'sanitized title text still listed');
++
++// ── 3. Presentation-state badges in the recent insights table ────────────────
++$r = VES_Source_Intake::process_source(['workspace_id'=>3,'intake_type'=>'url','source_url'=>'https://ex.example/a','source_title'=>'Ref']);
++$r = VES_Source_Intake::process_signal(['workspace_id'=>3,'source_id'=>$r['source_id'],'signal_type'=>'mention','title'=>'sig']);
++$r = VES_Source_Intake::process_signal_to_insight(['workspace_id'=>3,'signal_id'=>$r['signal_id'],'insight_type'=>'opportunity','opportunity_score'=>40,'title'=>'finding']);
++$html3 = VES_Source_Intake::render_html(3);
++$ok(strpos($html3,'Ready for review')!==false, 'evidence-backed draft insight shows the ready_for_review badge');
++$ok(strpos($html3,'1 linked')!==false, 'insight row shows its evidence linkage');
++
++// ── 4. Notices: codes map to fixed copy, never raw echo ──────────────────────
++$_GET = ['fi_notice'=>'source_created','fi_id'=>'12'];
++$m = new ReflectionMethod('VES_Source_Intake','notice_html'); $m->setAccessible(true);
++$n = (string) $m->invoke(null);
++$ok(strpos($n,'Source recorded')!==false && strpos($n,'(id 12)')!==false, 'success notice renders fixed copy + id');
++$_GET = ['fi_notice'=>'<img src=x onerror=alert(1)>'];
++$ok((string) $m->invoke(null) === '', 'unknown notice key renders NOTHING (no echo of query input)');
++$_GET = ['fi_err'=>'ves_intake_bad_url'];
++$n = (string) $m->invoke(null);
++$ok(strpos($n,'recorded as a reference only')!==false, 'error code maps to fixed copy');
++$_GET = ['fi_err'=>'<script>x</script>weird_code'];
++$n = (string) $m->invoke(null);
++$ok(strpos($n,'<script>')===false, 'hostile error code is stripped, never echoed raw');
++$_GET = [];
++
++// ── 5. Handlers: capability + nonce enforced, then redirect with notice ──────
++$GLOBALS['__can'] = false;
++$denied = false;
++try { VES_Source_Intake::handle_source(); } catch (RuntimeException $e) { $denied = strpos($e->getMessage(),'403')!==false; }
++$ok($denied, 'no manage_options => wp_die 403, nothing processed');
++$GLOBALS['__can'] = true;
++$GLOBALS['__nonce_ok'] = false;
++$blocked = false;
++$_POST = ['workspace_id'=>3,'intake_type'=>'manual','source_title'=>'After nonce'];
++try { VES_Source_Intake::handle_source(); } catch (RuntimeException $e) { $blocked = strpos($e->getMessage(),'nonce failure')!==false; }
++$ok($blocked && in_array('ves_intake_source',$GLOBALS['__nonce_checked'],true), 'bad nonce blocks the action (check_admin_referer enforced)');
++$GLOBALS['__nonce_ok'] = true;
++VES_Source_Intake::handle_source();
++$last = (string) end($GLOBALS['__redirects']);
++$ok(strpos($last,'fi_notice=source_created')!==false && strpos($last,'page=fi-intake')!==false, 'valid request redirects back with a success notice');
++$_POST = ['workspace_id'=>3,'intake_type'=>'url','source_url'=>'ftp://nope'];
++VES_Source_Intake::handle_source();
++$last = (string) end($GLOBALS['__redirects']);
++$ok(strpos($last,'fi_err=ves_intake_bad_url')!==false, 'failed request redirects back with the error CODE only');
++$_POST = [];
++
++// ── 6. Reference-URL validator unit checks ────────────────────────────────────
++$ok(VES_Source_Intake::valid_reference_url('https://example.com/a?b=1') === true, 'plain https accepted');
++$ok(VES_Source_Intake::valid_reference_url('http://example.com') === true, 'plain http accepted');
++foreach (['ftp://x/y','javascript:alert(1)','https://user:pw@example.com/','//example.com/x','https://'] as $bad) {
++    $ok(VES_Source_Intake::valid_reference_url($bad) === false, "refused: {$bad}");
++}
++$ok(VES_Source_Intake::valid_reference_url('https://example.com/'.str_repeat('a',2100)) === false, 'over-long URL refused');
++
++echo "\n{$pass} passed, {$fail} failed\n";
++exit($fail === 0 ? 0 : 1);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-v3-end-to-end-9e.php b/future-island/future-island-intelligence-suite/tests/test-ves-v3-end-to-end-9e.php
+index 8f85772..8019c2c 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-ves-v3-end-to-end-9e.php
++++ b/future-island/future-island-intelligence-suite/tests/test-ves-v3-end-to-end-9e.php
+@@ -21,7 +21,7 @@
+  */
+ error_reporting(E_ALL & ~E_DEPRECATED);
+ if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
+-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.9'); }
++if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.3.0'); }
+ if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc3'); }
+ 
+ function sanitize_key($s){return strtolower(preg_replace('/[^a-z0-9_\-]/i','',(string)$s));}
+@@ -57,7 +57,7 @@ case "$*" in
+     *"db query"*)           echo "VERSION()
+ 8.0.36-staging" ;;
+     *"--info"*)             echo "WP-CLI 2.10.0 (shim)" ;;
+-    *"plugin list"*)        echo "future-island-intelligence-suite active 1.2.9" ;;
++    *"plugin list"*)        echo "future-island-intelligence-suite active 1.3.0" ;;
+     *"theme list"*)         echo "twentytwentyfour active" ;;
+     *"ves "*)               echo '{"status":"ready_with_warnings","shim":true}' ;;
+     *)                      echo "shim-ok" ;;

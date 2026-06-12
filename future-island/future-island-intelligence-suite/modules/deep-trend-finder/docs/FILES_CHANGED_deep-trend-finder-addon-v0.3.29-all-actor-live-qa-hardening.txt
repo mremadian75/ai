@@ -1,0 +1,16 @@
+future-island-deep-trend-finder-addon.php
+README.md
+includes/providers/class-fidtf-generic-apify-live-adapter.php
+includes/class-fidtf-normalizer.php
+tests/test-fidtf-v0320-apidojo-output-repair-refresh.php
+tests/test-fidtf-v0321-dataset-id-fallback-repair.php
+tests/test-fidtf-v0322-repair-force-and-public-counts.php
+tests/test-fidtf-v0323-real-apidojo-normalization-and-counts.php
+tests/test-fidtf-v0324-durable-diagnostics-and-counts.php
+tests/test-fidtf-v0325-multi-source-live-and-professional-report.php
+tests/test-fidtf-v0326-professional-intelligence-and-quality-gates.php
+tests/test-fidtf-v0327-report-intelligence-ui-and-source-adapter-qa.php
+tests/test-fidtf-v0328-all-actor-contracts-and-normalizers.php
+tests/test-fidtf-v0329-all-actor-live-qa-hardening.php
+docs/CHANGELOG_deep-trend-finder-addon-v0.3.29-all-actor-live-qa-hardening.md
+docs/FILES_CHANGED_deep-trend-finder-addon-v0.3.29-all-actor-live-qa-hardening.txt

@@ -1,0 +1,8 @@
+future-island-deep-trend-finder-addon.php
+includes/providers/class-fidtf-core-apify-client-adapter.php
+includes/providers/class-fidtf-tiktok-live-adapter.php
+includes/class-fidtf-source-job-service.php
+includes/class-fidtf-normalizer.php
+tests/test-fidtf-v0319-ready-status-polling-fix.php
+docs/CHANGELOG_deep-trend-finder-addon-v0.3.19-ready-status-polling-fix.md
+docs/FILES_CHANGED_deep-trend-finder-addon-v0.3.19-ready-status-polling-fix.txt

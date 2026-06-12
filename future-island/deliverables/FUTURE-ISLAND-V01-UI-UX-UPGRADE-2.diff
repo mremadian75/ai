@@ -1,0 +1,941 @@
+diff --git a/future-island/future-island-intelligence-suite/assets/css/fiis-ui-system.css b/future-island/future-island-intelligence-suite/assets/css/fiis-ui-system.css
+index 8f2a05a..f07c9d0 100644
+--- a/future-island/future-island-intelligence-suite/assets/css/fiis-ui-system.css
++++ b/future-island/future-island-intelligence-suite/assets/css/fiis-ui-system.css
+@@ -38,6 +38,84 @@
+   --fi-font-edit: Georgia, "Times New Roman", serif;
+ }
+ 
++/* Deep-review fix: color-scheme is declared ONLY where the surface is wholly
++ * governed by self-contained styles (Signal Room page, RC page). The member app
++ * (.ves-wrap with fiis-app's literal-color components) and the console (inside
++ * light wp-admin chrome) stay explicitly LIGHT so native controls always match
++ * their rendering — no half-dark patchwork. Member-app dark mode is a roadmap
++ * item pending a literal-color audit of fiis-app.css / ves-frontend.css. */
++.fiis-signal-room,
++.fiis-rc-page { color-scheme: light dark; }
++.ves-wrap,
++.fiis-console { color-scheme: light; }
++.ves-wrap .fiis-signal-room { color-scheme: light dark; } /* the room inside its admin wrap */
++
++/* ── 1b. Skip link — hidden until keyboard focus ──────────────────────────── */
++.ves-wrap .fi-skip-link,
++.fiis-signal-room .fi-skip-link {
++  position: absolute;
++  left: -9999px;
++  top: 0;
++  background: var(--fi-blue);
++  color: #fff;
++  font-family: var(--fi-font-mono);
++  font-size: 12px;
++  padding: 8px 14px;
++  border-radius: var(--fi-radius);
++  z-index: 100;
++}
++.ves-wrap .fi-skip-link:focus,
++.fiis-signal-room .fi-skip-link:focus {
++  left: var(--fi-space-3);
++  top: var(--fi-space-3);
++}
++
++/* ── 1c. Queue next-step hints (honest guidance, never fake data) ─────────── */
++.ves-wrap .fi-queue-hint {
++  display: block;
++  margin-top: 4px;
++  font-family: var(--fi-font-mono);
++  font-size: 11px;
++  color: var(--fi-muted);
++}
++
++/* ── 1d. Console suite-status strip ───────────────────────────────────────── */
++.fiis-console .fiis-console-status {
++  display: flex;
++  flex-wrap: wrap;
++  align-items: center;
++  gap: var(--fi-space-4);
++  background: var(--fi-surface);
++  border: 1px solid var(--fi-bdr);
++  border-left: 4px solid var(--fi-blue);
++  border-radius: var(--fi-radius);
++  padding: var(--fi-space-3) var(--fi-space-4);
++  margin: 0 0 var(--fi-space-4);
++}
++.fiis-console .fiis-console-status-item {
++  display: inline-flex;
++  align-items: center;
++  gap: var(--fi-space-2);
++}
++.fiis-console .fiis-chip-k,
++.ves-wrap .fiis-chip-k {
++  font-family: var(--fi-font-mono);
++  font-size: 10px;
++  text-transform: uppercase;
++  letter-spacing: 0.1em;
++  color: var(--fi-muted);
++}
++.fiis-console .fiis-console-build {
++  font-family: var(--fi-font-mono);
++  font-size: 12px;
++  color: var(--fi-ink);
++}
++.fiis-console .fiis-console-status-note {
++  flex-basis: 100%;
++  font-size: 11px;
++  color: var(--fi-muted);
++}
++
+ /* ── 2. Editorial typography ──────────────────────────────────────────────── */
+ .ves-wrap .fi-breadcrumb,
+ .ves-wrap .fiis-sr-eyebrow,
+@@ -194,6 +272,7 @@
+   border-left: 3px solid var(--fi-sand);
+   padding: var(--fi-space-2) var(--fi-space-3);
+   margin: 0 0 var(--fi-space-2);
++  background: rgba(231, 225, 212, 0.35); /* fallback when color-mix is unsupported */
+   background: color-mix(in srgb, var(--fi-sand) 35%, transparent);
+ }
+ .ves-wrap .fi-operator-queue li:hover { border-left-color: var(--fi-blue); }
+@@ -286,7 +365,6 @@
+ 
+ /* ── 10. Dark mode — same identity, inverted paper ────────────────────────── */
+ @media (prefers-color-scheme: dark) {
+-  .ves-wrap,
+   .fiis-signal-room,
+   .fiis-rc-page {
+     --fi-ink: #ece8dd;
+@@ -304,9 +382,16 @@
+     --fi-focus: #7d9ff0;
+     --fi-shadow: 0 1px 0 rgba(0, 0, 0, 0.4), 0 6px 18px -12px rgba(0, 0, 0, 0.8);
+   }
+-  .ves-wrap, .fiis-signal-room, .fiis-rc-page { background: var(--fi-paper); color: var(--fi-ink); }
+-  .ves-wrap .fi-meta-line code,
++  .fiis-signal-room, .fiis-rc-page { background: var(--fi-paper); color: var(--fi-ink); }
++  .fiis-signal-room .fi-meta-line code,
+   .fiis-rc-page .fiis-rc-mono code { background: var(--fi-sand); color: var(--fi-ink); }
++  /* Room-css literals (#fff badges/chips) made coherent in the dark room. */
++  .fiis-signal-room .fi-status-badge { background: var(--fi-surface); color: var(--fi-ink); border-color: var(--fi-bdr); }
++  .fiis-signal-room .fiis-sr-card,
++  .fiis-signal-room .fi-readiness-panel,
++  .fiis-signal-room .fi-operator-queue,
++  .fiis-signal-room .fiis-sr-step { background: var(--fi-surface); border-color: var(--fi-bdr); }
++  .fiis-signal-room .fi-skip-link:focus { color: var(--fi-paper); } /* dark text on the light dark-mode blue */
+   .fiis-rc-page .fiis-rc-section,
+   .fiis-rc-page .fiis-rc-banner,
+   .fiis-rc-page .fiis-rc-table td { background: var(--fi-surface); color: var(--fi-ink); border-color: var(--fi-bdr); }
+diff --git a/future-island/future-island-intelligence-suite/future-island-intelligence-suite.php b/future-island/future-island-intelligence-suite/future-island-intelligence-suite.php
+index de947b2..b5e71bd 100644
+--- a/future-island/future-island-intelligence-suite/future-island-intelligence-suite.php
++++ b/future-island/future-island-intelligence-suite/future-island-intelligence-suite.php
+@@ -2,7 +2,7 @@
+ /**
+  * Plugin Name: Future Island Intelligence Suite
+  * Description: Unified marketing intelligence platform. Includes the full Social Scraper Suite (VES Core) and the Deep Trend Finder module in a single WordPress plugin — no separate add-on required.
+- * Version: 1.2.8
++ * Version: 1.2.9
+  * Requires PHP: 7.4
+  * Author: Future Island / Vietnam Estudio
+  * Text Domain: future-island-intelligence-suite
+@@ -15,9 +15,9 @@ if (!defined('ABSPATH')) {
+ // -----------------------------------------------------------------------
+ // Suite-level constants
+ // -----------------------------------------------------------------------
+-define('FIS_VERSION',     '1.2.8');
++define('FIS_VERSION',     '1.2.9');
+ // Product-level release label: Future Island v0.1 Release Candidate.
+-define('FIS_RC_LABEL',    'v0.1-rc4');
++define('FIS_RC_LABEL',    'v0.1-rc5');
+ define('FIS_PLUGIN_FILE', __FILE__);
+ define('FIS_PLUGIN_DIR',  plugin_dir_path(__FILE__));
+ define('FIS_PLUGIN_URL',  plugin_dir_url(__FILE__));
+@@ -25,7 +25,7 @@ define('FIS_PLUGIN_URL',  plugin_dir_url(__FILE__));
+ // -----------------------------------------------------------------------
+ // VES Core constants (keep all existing VES code working unchanged)
+ // -----------------------------------------------------------------------
+-if (!defined('VES_PLUGIN_VERSION'))         { define('VES_PLUGIN_VERSION',         '1.2.8'); }
++if (!defined('VES_PLUGIN_VERSION'))         { define('VES_PLUGIN_VERSION',         '1.2.9'); }
+ if (!defined('VES_PLUGIN_FILE'))            { define('VES_PLUGIN_FILE',            FIS_PLUGIN_FILE); }
+ if (!defined('VES_PLUGIN_DIR'))             { define('VES_PLUGIN_DIR',             FIS_PLUGIN_DIR); }
+ if (!defined('VES_PLUGIN_URL'))             { define('VES_PLUGIN_URL',             FIS_PLUGIN_URL); }
+diff --git a/future-island/future-island-intelligence-suite/includes/class-ves-admin-console.php b/future-island/future-island-intelligence-suite/includes/class-ves-admin-console.php
+index 0fc0baf..64b2110 100644
+--- a/future-island/future-island-intelligence-suite/includes/class-ves-admin-console.php
++++ b/future-island/future-island-intelligence-suite/includes/class-ves-admin-console.php
+@@ -171,7 +171,41 @@ final class VES_Admin_Console {
+         }
+     }
+ 
++    /**
++     * UI/UX pass 2 — compact, READ-ONLY suite pulse for the hub Overview:
++     * overall RC status, the real live-validation classification, the AI
++     * execution flag and the build label. Guarded + fail-safe; renders nothing
++     * rather than something fake when the readiness service is unavailable.
++     */
++    private static function status_strip(): string {
++        try {
++            if (!class_exists('VES_RC_Readiness_Service')) { return ''; }
++            $r = VES_RC_Readiness_Service::report();
++            $live = is_array($r['live_validation'] ?? null) ? $r['live_validation'] : ['status' => 'unrun'];
++            $exec_on = function_exists('get_option') && (bool) get_option('ves_generation_execution_enabled', false);
++            $badge = function ($state, $label) {
++                return class_exists('VES_Review_State') ? VES_Review_State::badge($state, $label) : '<span class="fi-status-badge">' . self::e($label) . '</span>';
++            };
++            $status = (string) ($r['status'] ?? 'blocked');
++            $status_state = $status === 'blocked' ? 'blocked' : ($status === 'ready_for_staging' ? 'ready' : 'warning');
++            $lv = (string) ($live['status'] ?? 'unrun');
++            $lv_state = $lv === 'passed' ? 'recorded' : 'warning';
++            $lv_label = $lv === 'passed' ? 'passed (file-backed)' : ($lv === 'unrun' ? 'UNRUN' : str_replace('_', ' ', $lv));
++            $h  = '<div class="fiis-console-status" role="group" aria-label="' . self::ea('Suite status') . '">';
++            $h .= '<span class="fiis-console-status-item"><span class="fiis-chip-k">' . self::e('RC status') . '</span>' . $badge($status_state, str_replace('_', ' ', $status)) . '</span>';
++            $h .= '<span class="fiis-console-status-item"><span class="fiis-chip-k">' . self::e('Live validation') . '</span>' . $badge($lv_state, $lv_label) . '</span>';
++            $h .= '<span class="fiis-console-status-item"><span class="fiis-chip-k">' . self::e('AI execution') . '</span>' . $badge($exec_on ? 'warning' : 'disabled', $exec_on ? 'ON' : 'OFF') . '</span>';
++            $h .= '<span class="fiis-console-status-item"><span class="fiis-chip-k">' . self::e('Build') . '</span><span class="fiis-console-build">' . self::e((string) ($r['plugin_version'] ?? '') . ((string) ($r['rc_label'] ?? '') !== '' ? ' · ' . (string) $r['rc_label'] : '')) . '</span></span>';
++            $h .= '<span class="fiis-console-status-note">' . self::e('Details: Advanced → Release Candidate. Never production-ready without live evidence.') . '</span>';
++            return $h . '</div>';
++        } catch (\Throwable $e) {
++            self::log($e);
++            return '';
++        }
++    }
++
+     private static function render_overview() {
++        echo self::status_strip(); // UI/UX pass 2 — one-glance suite state (read-only, honest)
+         echo '<div class="fiis-console-cards">';
+         $modules = [
+             ['Deep Trend Finder', class_exists('FIDTF_Plugin') || class_exists('FIDTF_Admin')],
+diff --git a/future-island/future-island-intelligence-suite/includes/class-ves-release-candidate-page.php b/future-island/future-island-intelligence-suite/includes/class-ves-release-candidate-page.php
+index 443c4e6..e8c1702 100644
+--- a/future-island/future-island-intelligence-suite/includes/class-ves-release-candidate-page.php
++++ b/future-island/future-island-intelligence-suite/includes/class-ves-release-candidate-page.php
+@@ -139,8 +139,8 @@ final class VES_Release_Candidate_Page {
+         // Phase 9 — audit & rails diagnostics (read-only, escaped, no fake green).
+         $h .= self::rails_diagnostics_section();
+ 
+-        // Known limitations — honest by design.
+-        $h .= '<section class="fiis-rc-section"><details class="fiis-rc-details"><summary><h2>Known limitations</h2></summary><ul class="fiis-rc-list">';
++        // Known limitations — honest by design, and VISIBLE by default (open).
++        $h .= '<section class="fiis-rc-section"><details class="fiis-rc-details" open><summary><h2>Known limitations</h2></summary><ul class="fiis-rc-list">';
+         foreach ([
+             'Live staging validation has not been performed unless explicitly recorded above — static checks cannot replace it.',
+             'AI generation is a preview contract only (prompt packages); no provider execution path is enabled.',
+@@ -320,12 +320,12 @@ final class VES_Release_Candidate_Page {
+             . '.fiis-rc-details[open]>summary::after{content:" ▾"}'
+             . '.fiis-rc-page a:focus-visible,.fiis-rc-page button:focus-visible,.fiis-rc-page summary:focus-visible{outline:2px solid var(--fi-blue);outline-offset:2px}'
+             . '@media (prefers-color-scheme:dark){'
+-            . '.fiis-rc-page{--fi-ink:#ece8dd;--fi-paper:#16171b;--fi-sand:#262830;--fi-bdr:#383a44;--fi-muted:#a8a496;--fi-blue:#7d9ff0;--fi-blue-2:#aebfe8;--fi-red:#f0744e;--fi-lime:#a4cc33;background:var(--fi-paper);color:var(--fi-ink)}'
++            . '.fiis-rc-page{--fi-ink:#ece8dd;--fi-paper:#16171b;--fi-sand:#262830;--fi-bdr:#383a44;--fi-muted:#a8a496;--fi-blue:#7d9ff0;--fi-blue-2:#aebfe8;--fi-red:#f0744e;--fi-lime:#a4cc33;background:var(--fi-paper);color:var(--fi-ink);color-scheme:dark}'
+             . '.fiis-rc-page .fiis-rc-section,.fiis-rc-page .fiis-rc-banner{background:#1d1e24;color:var(--fi-ink)}'
+             . '.fiis-rc-page .fiis-rc-table td{color:var(--fi-ink)}'
+             . '.fiis-rc-page .fi-status-badge,.fiis-rc-page .fiis-rc-copy{background:#1d1e24;color:var(--fi-ink)}'
+             . '}'
+-            . '@media (max-width:782px){.fiis-rc-page{margin-left:-10px;padding:16px}.fiis-rc-head h1{font-size:26px}.fiis-rc-table td,.fiis-rc-table th{padding:6px}}'
++            . '@media (max-width:782px){.fiis-rc-page{margin-left:-10px;padding:16px}.fiis-rc-head h1{font-size:26px}.fiis-rc-table td,.fiis-rc-table th{padding:6px}.fiis-rc-section{overflow-x:auto}}'
+             . '</style>';
+     }
+ }
+diff --git a/future-island/future-island-intelligence-suite/includes/class-ves-signal-room.php b/future-island/future-island-intelligence-suite/includes/class-ves-signal-room.php
+index 206d8b4..7f3888b 100644
+--- a/future-island/future-island-intelligence-suite/includes/class-ves-signal-room.php
++++ b/future-island/future-island-intelligence-suite/includes/class-ves-signal-room.php
+@@ -20,9 +20,14 @@ final class VES_Signal_Room {
+             'counts' => (class_exists('VES_Intelligence_Store') && method_exists('VES_Intelligence_Store', 'counts')) ? (array) VES_Intelligence_Store::counts($ws) : [],
+             'usage' => (class_exists('VES_AI_Usage_Tracker') && method_exists('VES_AI_Usage_Tracker', 'summary')) ? (array) VES_AI_Usage_Tracker::summary(24) : [],
+             'flags' => [
+-                'memory_generation_enabled' => class_exists('VES_Generation_Context_Resolver') ? VES_Generation_Context_Resolver::is_enabled() : false,
+-                'generation_execution_enabled' => class_exists('VES_Generation_Prompt_Package_Builder') ? VES_Generation_Prompt_Package_Builder::execution_enabled() : false,
++                'memory_generation_enabled' => (class_exists('VES_Generation_Context_Resolver') && method_exists('VES_Generation_Context_Resolver', 'is_enabled')) ? VES_Generation_Context_Resolver::is_enabled() : false,
++                'generation_execution_enabled' => (class_exists('VES_Generation_Prompt_Package_Builder') && method_exists('VES_Generation_Prompt_Package_Builder', 'execution_enabled')) ? VES_Generation_Prompt_Package_Builder::execution_enabled() : false,
+             ],
++            // UI/UX pass 2 — the strip reads the REAL evidence-pack classification
++            // instead of a hardcoded 'pending'.
++            'live_validation' => (class_exists('VES_RC_Evidence_Pack') && method_exists('VES_RC_Evidence_Pack', 'live_validation_state'))
++                ? (array) VES_RC_Evidence_Pack::live_validation_state()
++                : ['status' => 'unrun'],
+         ];
+     }
+ 
+@@ -30,6 +35,7 @@ final class VES_Signal_Room {
+         $s = self::snapshot($workspace_id);
+         $c = $s['counts'];
+         $h = '<div class="fi-signal-room fiis-signal-room">';
++        $h .= '<a class="fi-skip-link" href="#fi-operator-queue">' . self::e('Skip to operator queue') . '</a>';
+         $h .= '<div class="fi-breadcrumb fiis-sr-eyebrow">' . self::e('Future Island · Signal Room') . '</div>';
+         $h .= '<h1 class="fiis-sr-title">' . self::e('Signal Room') . '</h1>';
+         $h .= '<p class="fiis-sr-sub">' . self::e('Operator console for the current workspace. Read-only. Evidence first, generation second.') . '</p>';
+@@ -61,7 +67,7 @@ final class VES_Signal_Room {
+         $h .= '</div>';
+ 
+         // ── Operator queue (7B) ────────────────────────────────────────────────
+-        $h .= '<h2 class="fiis-sr-h2">' . self::e('Operator queue') . '</h2>';
++        $h .= '<h2 id="fi-operator-queue" class="fiis-sr-h2">' . self::e('Operator queue') . '</h2>';
+         $h .= '<div class="fi-operator-queue">';
+         if (class_exists('VES_Operator_Queue_Service')) {
+             $q = VES_Operator_Queue_Service::build(['workspace_id' => (int) $workspace_id, 'limit' => 8]);
+@@ -94,7 +100,18 @@ final class VES_Signal_Room {
+                     }
+                     $h .= '</ul>';
+                 } elseif (!empty($qd['available'])) {
+-                    $h .= '<p class="fi-empty-state">' . self::e((int) ($qd['count'] ?? 0) > 0 ? ((string) (int) $qd['count'] . ' item(s) — open the ledger to review.') : 'No records yet.') . '</p>';
++                    $hints = [
++                        'insights_needing_review' => 'Approved trend runs propose insights here.',
++                        'low_evidence_insights' => 'Insights whose evidence weakened on reassessment surface here.',
++                        'briefs_needing_review' => 'Approve an insight to stage its brief for review.',
++                        'drafts_needing_review' => 'Approve a brief to stage its draft for review.',
++                        'candidate_memory' => 'Signal reports propose memory candidates here — nothing enters trusted context without approval.',
++                        'prompt_packages_blocked' => 'Blocked dry-run packages appear here with their blocking reason.',
++                        'missing_usage' => 'Runs that produced no usage event in the last 24h surface here.',
++                        'recent_activity' => 'Run log entries stream here as sources execute.',
++                    ];
++                    $hint = (int) ($qd['count'] ?? 0) > 0 ? '' : (isset($hints[$key]) ? ' <span class="fi-queue-hint">' . self::e($hints[$key]) . '</span>' : '');
++                    $h .= '<p class="fi-empty-state">' . self::e((int) ($qd['count'] ?? 0) > 0 ? ((string) (int) $qd['count'] . ' item(s) — open the ledger to review.') : 'No records yet.') . $hint . '</p>';
+                 } else {
+                     $h .= '<p class="fi-empty-state">' . self::e((string) ($qd['note'] ?? 'Not available.')) . '</p>';
+                 }
+@@ -109,12 +126,24 @@ final class VES_Signal_Room {
+         $h .= '<div class="fi-readiness-panel fiis-sr-strip">';
+         $h .= self::chip('Evidence Gate', 'active', 'ready');
+         $h .= self::chip('Memory generation flag', $s['flags']['memory_generation_enabled'] ? 'enabled' : 'disabled', $s['flags']['memory_generation_enabled'] ? 'warning' : 'disabled');
+-        $h .= self::chip('Generation execution', 'disabled', 'disabled');
+-        $h .= self::chip('Live staging validation', 'pending', 'warning');
++        $exec_on = !empty($s['flags']['generation_execution_enabled']);
++        $h .= self::chip('Generation execution', $exec_on ? 'ENABLED' : 'disabled', $exec_on ? 'warning' : 'disabled');
++        $lv = is_array($s['live_validation'] ?? null) ? $s['live_validation'] : ['status' => 'unrun'];
++        $lv_map = [
++            'passed' => ['passed (file-backed)', 'recorded'],
++            'json_only_unverified' => ['json-only — unverified', 'warning'],
++            'unverified_manual' => ['manual — unverified', 'warning'],
++            'unrun' => ['UNRUN', 'warning'],
++        ];
++        $lv_chip = $lv_map[(string) ($lv['status'] ?? 'unrun')] ?? $lv_map['unrun'];
++        $h .= self::chip('Live staging validation', $lv_chip[0], $lv_chip[1]);
+         $h .= self::chip('Usage ledger (24h)', isset($s['usage']['total']) ? ((int) $s['usage']['total'] . ' events') : 'not available', isset($s['usage']['total']) ? 'recorded' : 'disabled');
+         $h .= '</div>';
+ 
+-        $h .= '<p class="fi-memory-policy fiis-sr-note">' . self::e('Read-only console. No generation runs here. Memory is not evidence. Live staging validation pending — not production-ready.') . '</p>';
++        $lv_note = ((string) ($lv['status'] ?? 'unrun') === 'passed')
++            ? 'Live staging validation recorded (file-backed) — still not production-ready without operator approval and a monitored pilot.'
++            : 'Live staging validation ' . ((string) ($lv['status'] ?? 'unrun') === 'unrun' ? 'UNRUN' : 'unverified') . ' — not production-ready.';
++        $h .= '<p class="fi-memory-policy fiis-sr-note">' . self::e('Read-only console. No generation runs here. Memory is not evidence. ' . $lv_note) . '</p>';
+         $h .= '</div>';
+         return $h;
+     }
+diff --git a/future-island/future-island-intelligence-suite/tests/test-fiis-ui-ux-upgrade.php b/future-island/future-island-intelligence-suite/tests/test-fiis-ui-ux-upgrade.php
+index ae98490..c723944 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-fiis-ui-ux-upgrade.php
++++ b/future-island/future-island-intelligence-suite/tests/test-fiis-ui-ux-upgrade.php
+@@ -99,5 +99,77 @@ $ok(strpos($rc, '<form') === false && strpos($rc, 'type="submit"') === false, 's
+ $ok(strpos($rc, 'fiis-rc-details') !== false && strpos($rc, '<summary>') !== false, 'long sections are collapsible via native details/summary');
+ $ok(strpos($rc, 'prefers-color-scheme:dark') !== false, 'RC page styles include dark mode');
+ 
++// ── 6. PASS 2 — truth-wired Signal Room strip, skip link, queue hints ────────
++if (!function_exists('sanitize_key')) { function sanitize_key($s){ return strtolower(preg_replace('/[^a-z0-9_\-]/i','',(string)$s)); } }
++if (!function_exists('current_time')) { function current_time($t='mysql',$g=0){ return '2026-06-16 12:00:00'; } }
++if (!function_exists('get_option')) { function get_option($k,$d=false){ return $GLOBALS['__o'][$k] ?? $d; } }
++if (!function_exists('update_option')) { function update_option($k,$v,$a=null){ $GLOBALS['__o'][$k]=$v; return true; } }
++$GLOBALS['__o'] = [];
++final class VES_RC_Evidence_Pack {
++    public static $state = ['status' => 'unrun'];
++    public static function live_validation_state() { return self::$state; }
++}
++require_once $root . '/includes/class-ves-operator-queue-service.php';
++require_once $root . '/includes/class-ves-signal-room.php';
++
++$sr = VES_Signal_Room::render_html(0);
++$ok(strpos($sr, 'fi-skip-link') !== false && strpos($sr, 'href="#fi-operator-queue"') !== false && strpos($sr, 'id="fi-operator-queue"') !== false, 'Signal Room skip link targets the operator queue');
++$ok(strpos($sr, 'UNRUN') !== false, 'strip shows the REAL live-validation classification (UNRUN, no hardcoded pending)');
++$ok(strpos($sr, 'pending') === false, 'hardcoded pending is gone');
++
++VES_RC_Evidence_Pack::$state = ['status' => 'passed', 'files_verified' => true, 'evidence_pack_hash' => str_repeat('ab', 32)];
++$sr2 = VES_Signal_Room::render_html(0);
++$ok(strpos($sr2, 'passed (file-backed)') !== false, 'strip reflects a file-backed pass when recorded');
++$ok(strpos($sr2, 'not production-ready') !== false, 'even a recorded pass keeps the not-production-ready note');
++VES_RC_Evidence_Pack::$state = ['status' => 'json_only_unverified'];
++$sr3 = VES_Signal_Room::render_html(0);
++$ok(strpos($sr3, 'json-only — unverified') !== false, 'strip shows json-only packs as unverified');
++VES_RC_Evidence_Pack::$state = ['status' => 'unrun'];
++
++// Queue hints render only as muted guidance text (never fake rows, never buttons).
++$ok(strpos($sr, 'fi-queue-hint') !== false, 'empty queues carry next-step guidance');
++$ok(!preg_match('/<button[^>]*fi-queue/', $sr), 'queue hints are text, not controls');
++
++// ── 7. PASS 2 — console status strip honesty ─────────────────────────────────
++$console_src = (string) file_get_contents($root . '/includes/class-ves-admin-console.php');
++$ok(strpos($console_src, 'fiis-console-status') !== false && strpos($console_src, 'status_strip') !== false, 'console Overview gains the suite-status strip');
++$ok(strpos($console_src, "class_exists('VES_RC_Readiness_Service')") !== false, 'strip is guarded (renders nothing when readiness is unavailable)');
++$ok(strpos($console_src, 'Never production-ready without live evidence') !== false, 'strip carries the no-production-claim note');
++$ss_start = strpos($console_src, 'private static function status_strip');
++$ss_end = strpos($console_src, 'private static function', $ss_start + 10);
++$ss_body = substr($console_src, $ss_start, $ss_end - $ss_start);
++$ok(strpos($ss_body, '<form') === false && strpos($ss_body, '<button') === false && strpos($ss_body, 'update_option') === false, 'strip is read-only (no forms, buttons or writes in its body)');
++
++// ── 8. PASS 2 — system polish tokens ─────────────────────────────────────────
++$css2 = (string) file_get_contents($css_path);
++$ok(strpos($css2, 'color-scheme: light dark') !== false, 'native controls follow the theme (color-scheme)');
++$ok(strpos($css2, '.fi-skip-link') !== false && strpos($css2, ':focus') !== false, 'skip link styled and focus-revealed');
++$ok(strpos($css2, '.fiis-console-status') !== false, 'console strip styled by the UI system');
++$rc2 = (string) file_get_contents($root . '/includes/class-ves-release-candidate-page.php');
++$ok(strpos($rc2, 'color-scheme:dark') !== false, 'RC page dark block declares color-scheme');
++$ok(strpos($rc2, 'overflow-x:auto') !== false, 'RC page tables scroll on small screens');
++
++// ── 9. DEEP-REVIEW pass — dark-mode scoping is patchwork-safe ────────────────
++$css3 = (string) file_get_contents($css_path);
++// Dark token flips apply ONLY to wholly self-governed surfaces; the member app
++// (.ves-wrap / fiis-app literal colors) and the console stay explicitly light.
++$dark_start = strpos($css3, '@media (prefers-color-scheme: dark)');
++$dark_end = strpos($css3, '@media print');
++$dark_block = substr($css3, $dark_start, $dark_end !== false ? $dark_end - $dark_start : 4000);
++$ok(strpos($dark_block, '.ves-wrap') === false, 'dark flip EXCLUDES .ves-wrap (no half-dark member app over fiis-app literals)');
++$ok(strpos($dark_block, '.fiis-console') === false, 'dark flip EXCLUDES the console (light wp-admin chrome)');
++$ok(strpos($dark_block, '.fiis-signal-room') !== false && strpos($dark_block, '.fiis-rc-page') !== false, 'dark flip covers the self-governed Signal Room + RC pages');
++$ok(strpos($css3, ".ves-wrap,\n.fiis-console { color-scheme: light; }") !== false, 'member app + console declare explicit light color-scheme (native controls match)');
++$ok(strpos($dark_block, '.fiis-signal-room .fi-status-badge') !== false, 'room-css literal badges made coherent in the dark room');
++$ok(strpos($dark_block, '.fiis-signal-room .fi-skip-link:focus') !== false, 'skip link gets dark-mode contrast treatment');
++$ok(strpos($css3, 'rgba(231, 225, 212, 0.35); /* fallback when color-mix is unsupported */') !== false, 'color-mix() has a plain rgba fallback');
++
++// RC page: limitations are visible by default (honest-by-default), still collapsible.
++$rc3 = (string) file_get_contents($root . '/includes/class-ves-release-candidate-page.php');
++$ok(strpos($rc3, '<details class="fiis-rc-details" open><summary><h2>Known limitations</h2>') !== false, 'Known limitations default OPEN');
++// Console strip uses group semantics, not a live region.
++$console3 = (string) file_get_contents($root . '/includes/class-ves-admin-console.php');
++$ok(strpos($console3, 'role="group" aria-label=') !== false && strpos($console3, 'role="status"') === false, 'console strip is role=group (no spurious live region)');
++
+ echo "\n{$pass} passed, {$fail} failed\n";
+ exit($fail === 0 ? 0 : 1);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-full-plugin-hardening-audit.php b/future-island/future-island-intelligence-suite/tests/test-full-plugin-hardening-audit.php
+index 3fa270d..5f7c66c 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-full-plugin-hardening-audit.php
++++ b/future-island/future-island-intelligence-suite/tests/test-full-plugin-hardening-audit.php
+@@ -16,8 +16,8 @@ $assert = function($condition, $message) use (&$failures, &$passes) {
+ $read = function($rel) use ($root) { return file_get_contents($root . '/' . $rel); };
+ 
+ $main = $read('future-island-intelligence-suite.php');
+-$assert(strpos($main, 'Version: 1.2.8') !== false, 'Plugin header version is 1.1.0');
+-$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.8'") !== false, 'VES_PLUGIN_VERSION constant is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.9') !== false, 'Plugin header version is 1.1.0');
++$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false, 'VES_PLUGIN_VERSION constant is 1.1.0');
+ 
+ $publicTemplates = [
+     'templates/_scraper-form.php',
+diff --git a/future-island/future-island-intelligence-suite/tests/test-settings-dispatch-runtime-fix.php b/future-island/future-island-intelligence-suite/tests/test-settings-dispatch-runtime-fix.php
+index 193813e..507a011 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-settings-dispatch-runtime-fix.php
++++ b/future-island/future-island-intelligence-suite/tests/test-settings-dispatch-runtime-fix.php
+@@ -11,7 +11,7 @@ foreach ($files as $k => $f) { $src[$k] = file_get_contents($f); }
+ $checks = [];
+ $add = function($name, $ok) use (&$checks) { $checks[] = [$name, (bool) $ok]; };
+ 
+-$add('version bumped to 1.1.0', strpos($src['main'], 'Version: 1.2.8') !== false && strpos($src['main'], "VES_PLUGIN_VERSION',         '1.2.8'") !== false);
++$add('version bumped to 1.1.0', strpos($src['main'], 'Version: 1.2.9') !== false && strpos($src['main'], "VES_PLUGIN_VERSION',         '1.2.9'") !== false);
+ $add('settings page has top visible save actionbar', strpos($src['admin'], 'ves-settings-actionbar') !== false && strpos($src['admin'], "submit_button('Guardar cambios', 'primary', 'submit', false") !== false);
+ $add('settings page keeps bottom save button', substr_count($src['admin'], "submit_button('Guardar cambios'") >= 2);
+ $add('runtime lock reset admin action registered', strpos($src['admin'], "admin_post_ves_clear_runtime_locks") !== false && strpos($src['admin'], 'handle_clear_runtime_locks') !== false);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v093015-fatal-classification.php b/future-island/future-island-intelligence-suite/tests/test-v093015-fatal-classification.php
+index e9cbdbc..7912c98 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v093015-fatal-classification.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v093015-fatal-classification.php
+@@ -8,7 +8,7 @@ $main = file_get_contents($root . '/future-island-intelligence-suite.php');
+ $checks = [];
+ $add = function ($label, $ok) use (&$checks) { $checks[] = [$label, (bool) $ok]; };
+ 
+-$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.8') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.8'") !== false);
++$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.9') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false);
+ $add('caught Throwable after provider dispatch is not labeled ajax_fatal', strpos($controller, '$is_fatal_context = in_array($source') !== false && strpos($controller, "if (!empty(\$context['provider_call_attempted'])) { return 'post_dispatch_fatal'; }") !== false && strpos($controller, "return 'ajax_fatal';") !== false);
+ $add('caught Throwable after provider run receives post-provider category', strpos($controller, "if (!empty(\$context['provider_run_created'])) { return 'post_provider_run_fatal'; }") !== false);
+ $add('post-dispatch fatal has user-safe message', strpos($controller, "if (\$category === 'post_dispatch_fatal')") !== false && strpos($controller, 'The source request was attempted, but the response could not be processed') !== false);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v093015-pre-dispatch-degradation.php b/future-island/future-island-intelligence-suite/tests/test-v093015-pre-dispatch-degradation.php
+index 095627e..2e17c89 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v093015-pre-dispatch-degradation.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v093015-pre-dispatch-degradation.php
+@@ -6,7 +6,7 @@ $js = file_get_contents($root . '/assets/js/ves-frontend.js');
+ $checks = [];
+ $add = function($name, $ok) use (&$checks) { $checks[] = [$name, (bool) $ok]; };
+ 
+-$add('version bumped to 1.2.8 in main plugin', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.2.8') !== false);
++$add('version bumped to 1.2.9 in main plugin', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.2.9') !== false);
+ $add('platform input validation throwable is degraded instead of ajax fatal', strpos($ajax, 'platform_input_validation_throwable_degraded') !== false && strpos($ajax, '$platform_input_valid = is_array($input) && !empty($input);') !== false);
+ $add('duplicate guard throwable continues to provider dispatch', strpos($ajax, 'duplicate_guard_throwable_degraded') !== false && strpos($ajax, 'duplicate_guard_degraded_continue_dispatch') !== false);
+ $add('provider cost guard throwable is non-blocking for admins', strpos($ajax, 'provider_cost_guard_throwable_degraded') !== false && strpos($ajax, "if (!current_user_can('manage_options'))") !== false);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v093016-context-preservation.php b/future-island/future-island-intelligence-suite/tests/test-v093016-context-preservation.php
+index 0db159a..f28ea44 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v093016-context-preservation.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v093016-context-preservation.php
+@@ -18,7 +18,7 @@ if (preg_match('/private static function error\([\s\S]*?private static function
+     $error_fn = $m[0];
+ }
+ 
+-$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.8') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.8'") !== false);
++$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.9') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false);
+ $add('error() merges active run context before classification', strpos($error_fn, '$active_context = is_array(self::$active_run_context) ? self::$active_run_context : [];') !== false && strpos($error_fn, '$context = array_merge($active_context, $context);') !== false && strpos($error_fn, 'last_successful_stage') !== false);
+ $add('explicit error() context preserves post-dispatch state', strpos($error_fn, 'post-dispatch failures') !== false && strpos($error_fn, 'provider_call_attempted/provider_run_created') !== false);
+ $add('shutdown handler classifies with active context', strpos($shutdown, "self::classify_error_category('ajax_shutdown_fatal'") !== false && strpos($shutdown, '$fatal_context = array_merge($active_context') !== false);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v093017-error-category-ordering.php b/future-island/future-island-intelligence-suite/tests/test-v093017-error-category-ordering.php
+index 908d425..dce6f3b 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v093017-error-category-ordering.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v093017-error-category-ordering.php
+@@ -12,7 +12,7 @@ $add = function($name, $ok) use (&$checks) {
+     $checks[] = [$name, (bool) $ok];
+     echo ($ok ? '[PASS] ' : '[FAIL] ') . $name . PHP_EOL;
+ };
+-$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.8') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.8'") !== false);
++$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.9') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false);
+ $add('classification uses fatal-only context gate', strpos($controller, '$is_fatal_context = in_array($source') !== false && strpos($controller, "'ajax_start_fatal'") !== false && strpos($controller, "'ajax_shutdown_fatal'") !== false);
+ $add('provider flags are only checked inside fatal context', preg_match('/if \(\$is_fatal_context\) \{\s*if \(!empty\(\$context\[\'provider_run_created\'\]\)\)/s', $controller) === 1);
+ $add('actor_dispatch_error branch remains after fatal gate', strpos($controller, "$source === 'actor_dispatch_error'") !== false && strpos($controller, '$is_provider_runtime_error') !== false && strpos($controller, 'provider_run_id_missing') !== false);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v093018-provider-error-classification.php b/future-island/future-island-intelligence-suite/tests/test-v093018-provider-error-classification.php
+index e4a2bd2..e338059 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v093018-provider-error-classification.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v093018-provider-error-classification.php
+@@ -7,7 +7,7 @@ $ajax = file_get_contents($root . '/includes/class-ves-ajax-controller.php');
+ $main = file_get_contents($root . '/future-island-intelligence-suite.php');
+ $checks = [];
+ $add = function($label, $condition) use (&$checks) { $checks[$label] = (bool) $condition; };
+-$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.8') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.8'") !== false);
++$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.9') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false);
+ $add('token classification is not broad token substring', strpos($ajax, 'strpos($haystack, \'token\') !== false) { return \'missing_backend_token\'; }') === false);
+ $add('public run tokens classified as module access', strpos($ajax, "public_run_token") !== false && strpos($ajax, "return 'module_access_denied';") !== false);
+ $add('provider runtime includes poll errors', strpos($ajax, 'strpos($source, \'actor_poll\') !== false') !== false);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v093019-member-safe-diagnostic.php b/future-island/future-island-intelligence-suite/tests/test-v093019-member-safe-diagnostic.php
+index 3dab0ab..d5a4e8b 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v093019-member-safe-diagnostic.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v093019-member-safe-diagnostic.php
+@@ -35,7 +35,7 @@ $extractBlock = static function(string $src, string $needle, int $window = 5000)
+ };
+ 
+ // Version bump.
+-$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.8') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.8'") !== false);
++$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.9') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false);
+ 
+ // build_safe_diagnostic helper exists and is leak-free by construction.
+ $add('build_safe_diagnostic helper exists', strpos($ajax, 'private static function build_safe_diagnostic(') !== false);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v093020-post-usage-settlement-degraded.php b/future-island/future-island-intelligence-suite/tests/test-v093020-post-usage-settlement-degraded.php
+index 6aa54ea..f4bf684 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v093020-post-usage-settlement-degraded.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v093020-post-usage-settlement-degraded.php
+@@ -22,7 +22,7 @@ $checks = [];
+ $add = function ($label, $cond) use (&$checks) { $checks[$label] = (bool) $cond; };
+ 
+ // Version bump.
+-$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.8') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.8'") !== false);
++$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.9') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false);
+ 
+ // --- Fix 1: post_standard_usage_or_error() must not call self::error() on WP_Error ---
+ // Locate the function body.
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v093021-provider-rental-message.php b/future-island/future-island-intelligence-suite/tests/test-v093021-provider-rental-message.php
+index ae22ce5..43c55e9 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v093021-provider-rental-message.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v093021-provider-rental-message.php
+@@ -11,7 +11,7 @@ $checks = [];
+ $add = function($name, $ok) use (&$checks) { $checks[] = [$name, (bool) $ok]; };
+ 
+ // 1. Version matches
+-$add('version is 1.2.8', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.2.8') !== false);
++$add('version is 1.2.9', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.2.9') !== false);
+ 
+ // 2. provider_actor_rental_required gets its own branch before the generic config array
+ $rental_pos  = strpos($ajax, 'provider_actor_rental_required');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09310-fi-brand-tokens.php b/future-island/future-island-intelligence-suite/tests/test-v09310-fi-brand-tokens.php
+index 8f9f375..3092b26 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09310-fi-brand-tokens.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09310-fi-brand-tokens.php
+@@ -10,7 +10,7 @@ $checks = [];
+ $add = function($name, $ok) use (&$checks) { $checks[] = [$name, (bool) $ok]; };
+ 
+ // Version
+-$add('version is 1.2.8', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.2.8') !== false);
++$add('version is 1.2.9', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.2.9') !== false);
+ 
+ // FI Azul primary color in ves-frontend.css
+ $add('FI Azul #3A61E1 in ves-frontend.css', strpos($css, '#3A61E1') !== false);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09310-responsive-dataviz.php b/future-island/future-island-intelligence-suite/tests/test-v09310-responsive-dataviz.php
+index d47a1b4..95069a9 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09310-responsive-dataviz.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09310-responsive-dataviz.php
+@@ -10,7 +10,7 @@ $checks = [];
+ $add = function($name, $ok) use (&$checks) { $checks[] = [$name, (bool) $ok]; };
+ 
+ // Version
+-$add('version is 1.2.8', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.2.8') !== false);
++$add('version is 1.2.9', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.2.9') !== false);
+ 
+ // Responsive SEO table: stacked card view
+ $add('SEO table thead hidden on mobile in ves-frontend.css', strpos($css, '.ves-seo-table thead') !== false && strpos($css, 'display: none') !== false);
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09311-provider-classification-locks.php b/future-island/future-island-intelligence-suite/tests/test-v09311-provider-classification-locks.php
+index c5fc800..68152e1 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09311-provider-classification-locks.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09311-provider-classification-locks.php
+@@ -15,7 +15,7 @@ $checks = [];
+ $add = function($name, $ok) use (&$checks) { $checks[] = [$name, (bool) $ok]; };
+ 
+ // ── Version ───────────────────────────────────────────────────
+-$add('version is 1.1.0', strpos($main, 'Version: 1.2.8') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.8'") !== false);
++$add('version is 1.1.0', strpos($main, 'Version: 1.2.9') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false);
+ 
+ // ── Phase 4: SEO 403 rental classified before generic access-denied ──
+ $rental_chk = strpos($ajax, 'if ($rental_required) { return \'provider_actor_rental_required\'; }');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09313-error-categories-extended.php b/future-island/future-island-intelligence-suite/tests/test-v09313-error-categories-extended.php
+index 7886928..dde362f 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09313-error-categories-extended.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09313-error-categories-extended.php
+@@ -48,8 +48,8 @@ $assert(strpos($filter_all_block, "'info'") !== false || strpos($filter_all_bloc
+ 
+ // 6. Version check.
+ $main = file_get_contents($root . '/future-island-intelligence-suite.php');
+-$assert(strpos($main, 'Version: 1.2.8') !== false, 'Plugin header must declare Version: 1.2.8');
+-$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.8'") !== false, 'VES_PLUGIN_VERSION must be 1.1.0');
++$assert(strpos($main, 'Version: 1.2.9') !== false, 'Plugin header must declare Version: 1.2.9');
++$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false, 'VES_PLUGIN_VERSION must be 1.1.0');
+ 
+ if ($fail === 0) {
+     echo "OK v0.9.31.6 extended error categories — $pass assertions passed\n";
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09314-ai-fallback-label.php b/future-island/future-island-intelligence-suite/tests/test-v09314-ai-fallback-label.php
+index 7e0785f..ad38c31 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09314-ai-fallback-label.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09314-ai-fallback-label.php
+@@ -16,7 +16,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+ };
+ 
+ // Version
+-$assert(strpos($main, 'Version: 1.2.8') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.8'") !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.9') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false, 'Version is 1.1.0');
+ 
+ // PHP: all fallback returns include analysis_source=local_fallback
+ $assert(substr_count($ai, "'analysis_source' => 'local_fallback'") >= 3, 'PHP: at least 3 fallback return paths set analysis_source=local_fallback');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09314-error-retryable-taxonomy.php b/future-island/future-island-intelligence-suite/tests/test-v09314-error-retryable-taxonomy.php
+index c4ff9ee..4954a78 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09314-error-retryable-taxonomy.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09314-error-retryable-taxonomy.php
+@@ -15,7 +15,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+ };
+ 
+ // Version
+-$assert(strpos($main, 'Version: 1.2.8') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.8'") !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.9') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false, 'Version is 1.1.0');
+ 
+ // classify_retryable helper exists
+ $assert(strpos($ajax, 'private static function classify_retryable(') !== false, 'classify_retryable() helper declared');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09314-frontend-truthfulness.php b/future-island/future-island-intelligence-suite/tests/test-v09314-frontend-truthfulness.php
+index a70e8f9..8d0ed56 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09314-frontend-truthfulness.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09314-frontend-truthfulness.php
+@@ -18,7 +18,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+ };
+ 
+ // Version
+-$assert(strpos($main, 'Version: 1.2.8') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.8'") !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.9') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false, 'Version is 1.1.0');
+ 
+ // 3A: jsTypeError branch no longer emits F5 instruction
+ $assert(strpos($js, 'jsTypeError') !== false, '3A: jsTypeError branch still exists');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09314-google-serp-normalizer.php b/future-island/future-island-intelligence-suite/tests/test-v09314-google-serp-normalizer.php
+index c463956..a5f2098 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09314-google-serp-normalizer.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09314-google-serp-normalizer.php
+@@ -13,7 +13,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+ };
+ 
+ // Version
+-$assert(strpos($main, 'Version: 1.2.8') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.9') !== false, 'Version is 1.1.0');
+ 
+ // is_google_search_url helper exists
+ $assert(strpos($php, 'private static function is_google_search_url(') !== false, 'is_google_search_url() method declared');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09315-competitor-downgrade.php b/future-island/future-island-intelligence-suite/tests/test-v09315-competitor-downgrade.php
+index b2bd784..02c66b4 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09315-competitor-downgrade.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09315-competitor-downgrade.php
+@@ -15,7 +15,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
+ };
+ 
+-$assert(strpos($main, 'Version: 1.2.8') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.9') !== false, 'Version is 1.1.0');
+ 
+ // Helper declared
+ $assert(strpos($ana, 'function ves_detect_competitor_authorship(') !== false, 'ves_detect_competitor_authorship helper declared');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09315-curated-templates.php b/future-island/future-island-intelligence-suite/tests/test-v09315-curated-templates.php
+index 4a0bfa7..69fd232 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09315-curated-templates.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09315-curated-templates.php
+@@ -15,7 +15,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
+ };
+ 
+-$assert(strpos($main, 'Version: 1.2.8') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.9') !== false, 'Version is 1.1.0');
+ 
+ $templates = [
+     'verano-silencioso'   => 'verano-silencioso.php',
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09315-fallback-label-audit.php b/future-island/future-island-intelligence-suite/tests/test-v09315-fallback-label-audit.php
+index 000c54e..005d89c 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09315-fallback-label-audit.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09315-fallback-label-audit.php
+@@ -15,7 +15,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
+ };
+ 
+-$assert(strpos($main, 'Version: 1.2.8') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.9') !== false, 'Version is 1.1.0');
+ 
+ // Count of labels — must have grown from v0.9.31.4 (which had 4 labeled).
+ $source_count = substr_count($ai, "'analysis_source' => 'local_fallback'");
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09315-public-support-code-hardened.php b/future-island/future-island-intelligence-suite/tests/test-v09315-public-support-code-hardened.php
+index a5145ee..d220f12 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09315-public-support-code-hardened.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09315-public-support-code-hardened.php
+@@ -13,7 +13,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
+ };
+ 
+-$assert(strpos($main, 'Version: 1.2.8') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.9') !== false, 'Version is 1.1.0');
+ 
+ $fn_pos = strpos($ajax, 'private static function public_support_code(');
+ $fn_body = $fn_pos !== false ? substr($ajax, $fn_pos, 2000) : '';
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09315-renderer-diagnostic.php b/future-island/future-island-intelligence-suite/tests/test-v09315-renderer-diagnostic.php
+index b841d98..5837cb6 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09315-renderer-diagnostic.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09315-renderer-diagnostic.php
+@@ -12,7 +12,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
+ };
+ 
+-$assert(strpos($main, 'Version: 1.2.8') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.9') !== false, 'Version is 1.1.0');
+ 
+ $assert(strpos($ren, 'report_template_unreadable') !== false, 'Renderer raises report_template_unreadable diagnostic');
+ $assert(strpos($ren, 'VES_Admin::record_diagnostic') !== false, 'Renderer calls VES_Admin::record_diagnostic');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09315-retryable-frontend.php b/future-island/future-island-intelligence-suite/tests/test-v09315-retryable-frontend.php
+index da5ba73..88548d7 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09315-retryable-frontend.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09315-retryable-frontend.php
+@@ -15,7 +15,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
+ };
+ 
+-$assert(strpos($main, 'Version: 1.2.8') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.8'") !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.9') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false, 'Version is 1.1.0');
+ 
+ // JS reads safeDiagnostic.retryable
+ $assert(strpos($js, 'sd.retryable === true') !== false, 'JS branches on safeDiagnostic.retryable === true');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09316-curated-css-scoping.php b/future-island/future-island-intelligence-suite/tests/test-v09316-curated-css-scoping.php
+index bf2baa0..cea0939 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09316-curated-css-scoping.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09316-curated-css-scoping.php
+@@ -13,7 +13,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
+ };
+ 
+-$assert(strpos($main, 'Version: 1.2.8') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.9') !== false, 'Version is 1.1.0');
+ 
+ $templates = [
+     'verano-silencioso'   => 'verano-silencioso.php',
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09316-retry-timer-cleanup.php b/future-island/future-island-intelligence-suite/tests/test-v09316-retry-timer-cleanup.php
+index 4c96cee..25a8c1c 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09316-retry-timer-cleanup.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09316-retry-timer-cleanup.php
+@@ -17,7 +17,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
+     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
+ };
+ 
+-$assert(strpos($main, 'Version: 1.2.8') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.2.9') !== false, 'Version is 1.1.0');
+ 
+ // Find the body of vesClearAutoRetryTimer.
+ $start = strpos($js, 'const vesClearAutoRetryTimer = ');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09318-p0-mvp-gating.php b/future-island/future-island-intelligence-suite/tests/test-v09318-p0-mvp-gating.php
+index f0781a9..79419f1 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09318-p0-mvp-gating.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09318-p0-mvp-gating.php
+@@ -16,8 +16,8 @@ $assert = function($condition, $message) use (&$failures) {
+ 
+ $msg = 'Este módulo no está habilitado en el MVP de producción.';
+ 
+-$assert(strpos($main, 'Version: 1.2.8') !== false, 'Plugin header version bumped to 1.1.0');
+-$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.8'") !== false, 'VES_PLUGIN_VERSION bumped to 1.1.0');
++$assert(strpos($main, 'Version: 1.2.9') !== false, 'Plugin header version bumped to 1.1.0');
++$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false, 'VES_PLUGIN_VERSION bumped to 1.1.0');
+ // [v1.1.0 archived] removed obsolete MVP-gating expectation: VES_PRODUCTION_MVP=true. Production decision:
+ // MVP gating is retired in FIIS v1.1.0; the unified app shell exposes all main routes. The constant is now
+ // false in product and is no longer used to lock the shell. Replaced with the current unified-shell contract.
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09318-p2-trend-lite.php b/future-island/future-island-intelligence-suite/tests/test-v09318-p2-trend-lite.php
+index 2bd58ec..d14644b 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09318-p2-trend-lite.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09318-p2-trend-lite.php
+@@ -44,8 +44,8 @@ $form = file_get_contents($root . '/templates/_trend-finder-form.php');
+ $js = file_get_contents($root . '/assets/js/ves-frontend.js');
+ $service = file_get_contents($root . '/includes/class-ves-run-execution-service.php');
+ 
+-$assert(strpos($main, 'Version: 1.2.8') !== false, 'plugin version bumped to p2 trend lite');
+-$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.8'") !== false, 'VES_PLUGIN_VERSION bumped to p2 trend lite');
++$assert(strpos($main, 'Version: 1.2.9') !== false, 'plugin version bumped to p2 trend lite');
++$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false, 'VES_PLUGIN_VERSION bumped to p2 trend lite');
+ // [v1.1.0 archived] removed obsolete 'P0 MVP flag remains true' expectation: MVP gating is retired in
+ // FIIS v1.1.0 (VES_PRODUCTION_MVP is false in product). The Trend Lite budget-clamp checks below remain
+ // active and assert the still-current sanitizer behavior independently of the MVP flag.
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09318-p3-demo-hardening.php b/future-island/future-island-intelligence-suite/tests/test-v09318-p3-demo-hardening.php
+index ea3562e..6ea28dc 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09318-p3-demo-hardening.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09318-p3-demo-hardening.php
+@@ -34,8 +34,8 @@ $main = file_get_contents($root . '/future-island-intelligence-suite.php');
+ $js = file_get_contents($root . '/assets/js/ves-frontend.js');
+ $ajax = file_get_contents($root . '/includes/class-ves-ajax-controller.php');
+ 
+-$assert(strpos($main, 'Version: 1.2.8') !== false, 'plugin header bumped to p3 demo hardening');
+-$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.8'") !== false, 'VES_PLUGIN_VERSION bumped to p3 demo hardening');
++$assert(strpos($main, 'Version: 1.2.9') !== false, 'plugin header bumped to p3 demo hardening');
++$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false, 'VES_PLUGIN_VERSION bumped to p3 demo hardening');
+ // [v1.1.0 archived] removed obsolete 'README version bumped' assertion: no root README.md exists in the
+ // unified package; the version contract is the plugin header / VES_PLUGIN_VERSION, already asserted above.
+ 
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09318-p31-live-qa-hotfix.php b/future-island/future-island-intelligence-suite/tests/test-v09318-p31-live-qa-hotfix.php
+index 72f6d18..936f9e7 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09318-p31-live-qa-hotfix.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09318-p31-live-qa-hotfix.php
+@@ -43,8 +43,8 @@ $recon = file_get_contents($root . '/includes/class-ves-usage-reconciliation-ser
+ $js = file_get_contents($root . '/assets/js/ves-frontend.js');
+ $openai = file_get_contents($root . '/includes/class-ves-openai-client.php');
+ 
+-$assert(strpos($main, 'Version: 1.2.8') !== false, 'plugin header bumped to p3.1 live QA hotfix');
+-$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.8'") !== false, 'VES_PLUGIN_VERSION bumped to p3.1 live QA hotfix');
++$assert(strpos($main, 'Version: 1.2.9') !== false, 'plugin header bumped to p3.1 live QA hotfix');
++$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false, 'VES_PLUGIN_VERSION bumped to p3.1 live QA hotfix');
+ // [v1.1.0 archived] removed obsolete 'README version bumped' assertion: no root README.md exists in the
+ // unified package; the version contract is the plugin header / VES_PLUGIN_VERSION, already asserted above.
+ 
+diff --git a/future-island/future-island-intelligence-suite/tests/test-v09318-p4-deep-trend-addon-integration.php b/future-island/future-island-intelligence-suite/tests/test-v09318-p4-deep-trend-addon-integration.php
+index faf0aa9..c17ddc2 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-v09318-p4-deep-trend-addon-integration.php
++++ b/future-island/future-island-intelligence-suite/tests/test-v09318-p4-deep-trend-addon-integration.php
+@@ -13,7 +13,7 @@ $ok = function($condition, $label) use (&$checks, &$failures) { $checks++; if (!
+ 
+ // [v1.1.0 archived] removed obsolete standalone-addon version snapshot '0.9.31.15-p4.8-deep-trend-sidebar-layout'.
+ // Current contract: the suite is version 1.1.0 and DTF is a built-in module booted in-process.
+-$ok(strpos($main, 'Version: 1.2.8') !== false, 'Suite header is v1.1.0');
++$ok(strpos($main, 'Version: 1.2.9') !== false, 'Suite header is v1.1.0');
+ $ok(strpos($main, 'FIDTF_Plugin::boot()') !== false, 'DTF is booted in-process by the unified bootstrap (built-in module, not a separate add-on)');
+ $ok(strpos($main, 'class-ves-deep-trend-addon-bridge.php') !== false, 'Core bootstraps Deep Trend add-on bridge');
+ $ok(strpos($bridge, 'class VES_Deep_Trend_Addon_Bridge') !== false || strpos($bridge, 'final class VES_Deep_Trend_Addon_Bridge') !== false, 'Bridge class exists');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-evidence-archive-verification-9e.php b/future-island/future-island-intelligence-suite/tests/test-ves-evidence-archive-verification-9e.php
+index 1ab9e7c..d87f37c 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-ves-evidence-archive-verification-9e.php
++++ b/future-island/future-island-intelligence-suite/tests/test-ves-evidence-archive-verification-9e.php
+@@ -16,7 +16,7 @@
+  */
+ error_reporting(E_ALL & ~E_DEPRECATED);
+ if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
+-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.8'); }
++if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.9'); }
+ if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc3'); }
+ 
+ function sanitize_key($s){return strtolower(preg_replace('/[^a-z0-9_\-]/i','',(string)$s));}
+diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-evidence-pack-9b.php b/future-island/future-island-intelligence-suite/tests/test-ves-evidence-pack-9b.php
+index a140363..aeb34da 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-ves-evidence-pack-9b.php
++++ b/future-island/future-island-intelligence-suite/tests/test-ves-evidence-pack-9b.php
+@@ -17,7 +17,7 @@
+  */
+ error_reporting(E_ALL & ~E_DEPRECATED);
+ if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
+-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.8'); }
++if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.9'); }
+ if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc3'); }
+ 
+ function sanitize_key($s){return strtolower(preg_replace('/[^a-z0-9_\-]/i','',(string)$s));}
+diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-health-and-log.php b/future-island/future-island-intelligence-suite/tests/test-ves-health-and-log.php
+index d11e5d4..208f941 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-ves-health-and-log.php
++++ b/future-island/future-island-intelligence-suite/tests/test-ves-health-and-log.php
+@@ -12,8 +12,8 @@ error_reporting(E_ALL & ~E_DEPRECATED);
+ 
+ if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
+ if (!defined('WP_DEBUG')) { define('WP_DEBUG', false); }
+-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.8'); }
+-if (!defined('VES_PLUGIN_VERSION')) { define('VES_PLUGIN_VERSION', '1.2.8'); }
++if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.9'); }
++if (!defined('VES_PLUGIN_VERSION')) { define('VES_PLUGIN_VERSION', '1.2.9'); }
+ if (!defined('FIDTF_VERSION')) { define('FIDTF_VERSION', '0.3.53'); }
+ 
+ if (!class_exists('WP_Error')) {
+diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-operator-console-7b.php b/future-island/future-island-intelligence-suite/tests/test-ves-operator-console-7b.php
+index 69ae939..137b0ad 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-ves-operator-console-7b.php
++++ b/future-island/future-island-intelligence-suite/tests/test-ves-operator-console-7b.php
+@@ -51,7 +51,7 @@ $ok(strpos($html,'Future Island')!==false,'root product identity is Future Islan
+ foreach(['Source','Signal','Insight','Brief','Draft','Memory','Usage'] as $s){ $ok(strpos($html,'>'.$s.'<')!==false,'spine shows '.$s); }
+ $ok(strpos($html,'Operator queue')!==false,'Signal Room shows operator queue');
+ $ok(strpos($html,'Generation execution')!==false && strpos($html,'disabled')!==false,'generation execution displayed as disabled');
+-$ok(strpos($html,'Live staging validation')!==false && strpos($html,'pending')!==false,'live staging pending');
++$ok(strpos($html,'Live staging validation')!==false && strpos($html,'UNRUN')!==false,'live staging shows the REAL classification (UNRUN here — no recorded evidence pack), not a hardcoded pending');
+ $ok(stripos($html,'>Generate<')===false && stripos($html,'Generate with AI')===false,'no Generate button in Signal Room');
+ $ok(strpos($html,'Not available')!==false || strpos($html,'—')!==false,'honest empty/not-available states');
+ $ok(strpos($html,'<script>')===false,'no unescaped script in output');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-rc-readiness-check.php b/future-island/future-island-intelligence-suite/tests/test-ves-rc-readiness-check.php
+index 6cb2206..e912be6 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-ves-rc-readiness-check.php
++++ b/future-island/future-island-intelligence-suite/tests/test-ves-rc-readiness-check.php
+@@ -44,7 +44,7 @@ $ok(strpos($warn_text, 'UNRUN') !== false, 'warnings call out the unrun live val
+ // ── 2. Healthy stack stubs ───────────────────────────────────────────────────
+ // NOTE: declared inside a conditional block so PHP binds them at RUNTIME —
+ // scenario 1 above must run with no services defined.
+-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.8'); }
++if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.9'); }
+ if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc1'); }
+ if (!class_exists('VES_Intelligence_Store')) {
+ final class VES_Intelligence_Store {
+diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-rc-strict-readiness-9c.php b/future-island/future-island-intelligence-suite/tests/test-ves-rc-strict-readiness-9c.php
+index 4bf000e..7817ac7 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-ves-rc-strict-readiness-9c.php
++++ b/future-island/future-island-intelligence-suite/tests/test-ves-rc-strict-readiness-9c.php
+@@ -15,7 +15,7 @@
+  */
+ error_reporting(E_ALL & ~E_DEPRECATED);
+ if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
+-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.8'); }
++if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.9'); }
+ if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc2'); }
+ 
+ function get_option($k, $d = false) { return $GLOBALS['__opts'][$k] ?? $d; }
+diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-release-candidate-page.php b/future-island/future-island-intelligence-suite/tests/test-ves-release-candidate-page.php
+index 1e2c357..a8bda11 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-ves-release-candidate-page.php
++++ b/future-island/future-island-intelligence-suite/tests/test-ves-release-candidate-page.php
+@@ -16,7 +16,7 @@
+  */
+ error_reporting(E_ALL & ~E_DEPRECATED);
+ if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
+-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.8'); }
++if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.9'); }
+ if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc1'); }
+ 
+ function get_option($k, $d = false) { return $GLOBALS['__opts'][$k] ?? $d; }
+@@ -44,7 +44,7 @@ $html = VES_Release_Candidate_Page::render_html();
+ // ── 1. Identity ──────────────────────────────────────────────────────────────
+ $ok(strpos($html, 'Release Candidate') !== false, 'page titles itself Release Candidate');
+ $ok(strpos($html, 'Future Island') !== false, 'page carries the Future Island identity');
+-$ok(strpos($html, '1.2.8') !== false && strpos($html, 'v0.1-rc1') !== false, 'version + RC label shown');
++$ok(strpos($html, '1.2.9') !== false && strpos($html, 'v0.1-rc1') !== false, 'version + RC label shown');
+ 
+ // ── 2. Honesty: UNRUN + never production-ready ───────────────────────────────
+ $ok(strpos($html, 'UNRUN') !== false, 'page states live staging validation is UNRUN');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-v3-end-to-end-9e.php b/future-island/future-island-intelligence-suite/tests/test-ves-v3-end-to-end-9e.php
+index 38024c5..8f85772 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-ves-v3-end-to-end-9e.php
++++ b/future-island/future-island-intelligence-suite/tests/test-ves-v3-end-to-end-9e.php
+@@ -21,7 +21,7 @@
+  */
+ error_reporting(E_ALL & ~E_DEPRECATED);
+ if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
+-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.8'); }
++if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.2.9'); }
+ if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc3'); }
+ 
+ function sanitize_key($s){return strtolower(preg_replace('/[^a-z0-9_\-]/i','',(string)$s));}
+@@ -57,7 +57,7 @@ case "$*" in
+     *"db query"*)           echo "VERSION()
+ 8.0.36-staging" ;;
+     *"--info"*)             echo "WP-CLI 2.10.0 (shim)" ;;
+-    *"plugin list"*)        echo "future-island-intelligence-suite active 1.2.8" ;;
++    *"plugin list"*)        echo "future-island-intelligence-suite active 1.2.9" ;;
+     *"theme list"*)         echo "twentytwentyfour active" ;;
+     *"ves "*)               echo '{"status":"ready_with_warnings","shim":true}' ;;
+     *)                      echo "shim-ok" ;;

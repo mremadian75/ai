@@ -320,12 +320,12 @@ final class VES_Release_Candidate_Page {
             . '.fiis-rc-details[open]>summary::after{content:" ▾"}'
             . '.fiis-rc-page a:focus-visible,.fiis-rc-page button:focus-visible,.fiis-rc-page summary:focus-visible{outline:2px solid var(--fi-blue);outline-offset:2px}'
             . '@media (prefers-color-scheme:dark){'
-            . '.fiis-rc-page{--fi-ink:#ece8dd;--fi-paper:#16171b;--fi-sand:#262830;--fi-bdr:#383a44;--fi-muted:#a8a496;--fi-blue:#7d9ff0;--fi-blue-2:#aebfe8;--fi-red:#f0744e;--fi-lime:#a4cc33;background:var(--fi-paper);color:var(--fi-ink)}'
+            . '.fiis-rc-page{--fi-ink:#ece8dd;--fi-paper:#16171b;--fi-sand:#262830;--fi-bdr:#383a44;--fi-muted:#a8a496;--fi-blue:#7d9ff0;--fi-blue-2:#aebfe8;--fi-red:#f0744e;--fi-lime:#a4cc33;background:var(--fi-paper);color:var(--fi-ink);color-scheme:dark}'
             . '.fiis-rc-page .fiis-rc-section,.fiis-rc-page .fiis-rc-banner{background:#1d1e24;color:var(--fi-ink)}'
             . '.fiis-rc-page .fiis-rc-table td{color:var(--fi-ink)}'
             . '.fiis-rc-page .fi-status-badge,.fiis-rc-page .fiis-rc-copy{background:#1d1e24;color:var(--fi-ink)}'
             . '}'
-            . '@media (max-width:782px){.fiis-rc-page{margin-left:-10px;padding:16px}.fiis-rc-head h1{font-size:26px}.fiis-rc-table td,.fiis-rc-table th{padding:6px}}'
+            . '@media (max-width:782px){.fiis-rc-page{margin-left:-10px;padding:16px}.fiis-rc-head h1{font-size:26px}.fiis-rc-table td,.fiis-rc-table th{padding:6px}.fiis-rc-section{overflow-x:auto}}'
             . '</style>';
     }
 }

@@ -15,7 +15,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
 };
 
 // Version
-$assert(strpos($main, 'Version: 1.2.8') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.8'") !== false, 'Version is 1.1.0');
+$assert(strpos($main, 'Version: 1.2.9') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false, 'Version is 1.1.0');
 
 // classify_retryable helper exists
 $assert(strpos($ajax, 'private static function classify_retryable(') !== false, 'classify_retryable() helper declared');

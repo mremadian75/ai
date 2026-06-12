@@ -99,5 +99,55 @@ $ok(strpos($rc, '<form') === false && strpos($rc, 'type="submit"') === false, 's
 $ok(strpos($rc, 'fiis-rc-details') !== false && strpos($rc, '<summary>') !== false, 'long sections are collapsible via native details/summary');
 $ok(strpos($rc, 'prefers-color-scheme:dark') !== false, 'RC page styles include dark mode');
 
+// ── 6. PASS 2 — truth-wired Signal Room strip, skip link, queue hints ────────
+if (!function_exists('sanitize_key')) { function sanitize_key($s){ return strtolower(preg_replace('/[^a-z0-9_\-]/i','',(string)$s)); } }
+if (!function_exists('current_time')) { function current_time($t='mysql',$g=0){ return '2026-06-16 12:00:00'; } }
+if (!function_exists('get_option')) { function get_option($k,$d=false){ return $GLOBALS['__o'][$k] ?? $d; } }
+if (!function_exists('update_option')) { function update_option($k,$v,$a=null){ $GLOBALS['__o'][$k]=$v; return true; } }
+$GLOBALS['__o'] = [];
+final class VES_RC_Evidence_Pack {
+    public static $state = ['status' => 'unrun'];
+    public static function live_validation_state() { return self::$state; }
+}
+require_once $root . '/includes/class-ves-operator-queue-service.php';
+require_once $root . '/includes/class-ves-signal-room.php';
+
+$sr = VES_Signal_Room::render_html(0);
+$ok(strpos($sr, 'fi-skip-link') !== false && strpos($sr, 'href="#fi-operator-queue"') !== false && strpos($sr, 'id="fi-operator-queue"') !== false, 'Signal Room skip link targets the operator queue');
+$ok(strpos($sr, 'UNRUN') !== false, 'strip shows the REAL live-validation classification (UNRUN, no hardcoded pending)');
+$ok(strpos($sr, 'pending') === false, 'hardcoded pending is gone');
+
+VES_RC_Evidence_Pack::$state = ['status' => 'passed', 'files_verified' => true, 'evidence_pack_hash' => str_repeat('ab', 32)];
+$sr2 = VES_Signal_Room::render_html(0);
+$ok(strpos($sr2, 'passed (file-backed)') !== false, 'strip reflects a file-backed pass when recorded');
+$ok(strpos($sr2, 'not production-ready') !== false, 'even a recorded pass keeps the not-production-ready note');
+VES_RC_Evidence_Pack::$state = ['status' => 'json_only_unverified'];
+$sr3 = VES_Signal_Room::render_html(0);
+$ok(strpos($sr3, 'json-only — unverified') !== false, 'strip shows json-only packs as unverified');
+VES_RC_Evidence_Pack::$state = ['status' => 'unrun'];
+
+// Queue hints render only as muted guidance text (never fake rows, never buttons).
+$ok(strpos($sr, 'fi-queue-hint') !== false, 'empty queues carry next-step guidance');
+$ok(!preg_match('/<button[^>]*fi-queue/', $sr), 'queue hints are text, not controls');
+
+// ── 7. PASS 2 — console status strip honesty ─────────────────────────────────
+$console_src = (string) file_get_contents($root . '/includes/class-ves-admin-console.php');
+$ok(strpos($console_src, 'fiis-console-status') !== false && strpos($console_src, 'status_strip') !== false, 'console Overview gains the suite-status strip');
+$ok(strpos($console_src, "class_exists('VES_RC_Readiness_Service')") !== false, 'strip is guarded (renders nothing when readiness is unavailable)');
+$ok(strpos($console_src, 'Never production-ready without live evidence') !== false, 'strip carries the no-production-claim note');
+$ss_start = strpos($console_src, 'private static function status_strip');
+$ss_end = strpos($console_src, 'private static function', $ss_start + 10);
+$ss_body = substr($console_src, $ss_start, $ss_end - $ss_start);
+$ok(strpos($ss_body, '<form') === false && strpos($ss_body, '<button') === false && strpos($ss_body, 'update_option') === false, 'strip is read-only (no forms, buttons or writes in its body)');
+
+// ── 8. PASS 2 — system polish tokens ─────────────────────────────────────────
+$css2 = (string) file_get_contents($css_path);
+$ok(strpos($css2, 'color-scheme: light dark') !== false, 'native controls follow the theme (color-scheme)');
+$ok(strpos($css2, '.fi-skip-link') !== false && strpos($css2, ':focus') !== false, 'skip link styled and focus-revealed');
+$ok(strpos($css2, '.fiis-console-status') !== false, 'console strip styled by the UI system');
+$rc2 = (string) file_get_contents($root . '/includes/class-ves-release-candidate-page.php');
+$ok(strpos($rc2, 'color-scheme:dark') !== false, 'RC page dark block declares color-scheme');
+$ok(strpos($rc2, 'overflow-x:auto') !== false, 'RC page tables scroll on small screens');
+
 echo "\n{$pass} passed, {$fail} failed\n";
 exit($fail === 0 ? 0 : 1);

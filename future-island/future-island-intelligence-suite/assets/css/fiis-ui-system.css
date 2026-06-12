@@ -36,6 +36,73 @@
   --fi-space-4: 16px; --fi-space-5: 24px; --fi-space-6: 36px;
   --fi-font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
   --fi-font-edit: Georgia, "Times New Roman", serif;
+  color-scheme: light dark; /* native controls/scrollbars follow the theme */
+}
+
+/* ── 1b. Skip link — hidden until keyboard focus ──────────────────────────── */
+.ves-wrap .fi-skip-link,
+.fiis-signal-room .fi-skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--fi-blue);
+  color: #fff;
+  font-family: var(--fi-font-mono);
+  font-size: 12px;
+  padding: 8px 14px;
+  border-radius: var(--fi-radius);
+  z-index: 100;
+}
+.ves-wrap .fi-skip-link:focus,
+.fiis-signal-room .fi-skip-link:focus {
+  left: var(--fi-space-3);
+  top: var(--fi-space-3);
+}
+
+/* ── 1c. Queue next-step hints (honest guidance, never fake data) ─────────── */
+.ves-wrap .fi-queue-hint {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--fi-font-mono);
+  font-size: 11px;
+  color: var(--fi-muted);
+}
+
+/* ── 1d. Console suite-status strip ───────────────────────────────────────── */
+.fiis-console .fiis-console-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--fi-space-4);
+  background: var(--fi-surface);
+  border: 1px solid var(--fi-bdr);
+  border-left: 4px solid var(--fi-blue);
+  border-radius: var(--fi-radius);
+  padding: var(--fi-space-3) var(--fi-space-4);
+  margin: 0 0 var(--fi-space-4);
+}
+.fiis-console .fiis-console-status-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--fi-space-2);
+}
+.fiis-console .fiis-chip-k,
+.ves-wrap .fiis-chip-k {
+  font-family: var(--fi-font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--fi-muted);
+}
+.fiis-console .fiis-console-build {
+  font-family: var(--fi-font-mono);
+  font-size: 12px;
+  color: var(--fi-ink);
+}
+.fiis-console .fiis-console-status-note {
+  flex-basis: 100%;
+  font-size: 11px;
+  color: var(--fi-muted);
 }
 
 /* ── 2. Editorial typography ──────────────────────────────────────────────── */

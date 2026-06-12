@@ -51,7 +51,7 @@ $ok(strpos($html,'Future Island')!==false,'root product identity is Future Islan
 foreach(['Source','Signal','Insight','Brief','Draft','Memory','Usage'] as $s){ $ok(strpos($html,'>'.$s.'<')!==false,'spine shows '.$s); }
 $ok(strpos($html,'Operator queue')!==false,'Signal Room shows operator queue');
 $ok(strpos($html,'Generation execution')!==false && strpos($html,'disabled')!==false,'generation execution displayed as disabled');
-$ok(strpos($html,'Live staging validation')!==false && strpos($html,'pending')!==false,'live staging pending');
+$ok(strpos($html,'Live staging validation')!==false && strpos($html,'UNRUN')!==false,'live staging shows the REAL classification (UNRUN here — no recorded evidence pack), not a hardcoded pending');
 $ok(stripos($html,'>Generate<')===false && stripos($html,'Generate with AI')===false,'no Generate button in Signal Room');
 $ok(strpos($html,'Not available')!==false || strpos($html,'—')!==false,'honest empty/not-available states');
 $ok(strpos($html,'<script>')===false,'no unescaped script in output');

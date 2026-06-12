@@ -16,8 +16,8 @@ $assert = function($condition, $message) use (&$failures) {
 
 $msg = 'Este módulo no está habilitado en el MVP de producción.';
 
-$assert(strpos($main, 'Version: 1.2.8') !== false, 'Plugin header version bumped to 1.1.0');
-$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.8'") !== false, 'VES_PLUGIN_VERSION bumped to 1.1.0');
+$assert(strpos($main, 'Version: 1.2.9') !== false, 'Plugin header version bumped to 1.1.0');
+$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.9'") !== false, 'VES_PLUGIN_VERSION bumped to 1.1.0');
 // [v1.1.0 archived] removed obsolete MVP-gating expectation: VES_PRODUCTION_MVP=true. Production decision:
 // MVP gating is retired in FIIS v1.1.0; the unified app shell exposes all main routes. The constant is now
 // false in product and is no longer used to lock the shell. Replaced with the current unified-shell contract.

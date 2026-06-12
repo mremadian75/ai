@@ -15,7 +15,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
 };
 
-$assert(strpos($main, 'Version: 1.2.8') !== false, 'Version is 1.1.0');
+$assert(strpos($main, 'Version: 1.2.9') !== false, 'Version is 1.1.0');
 
 // Count of labels — must have grown from v0.9.31.4 (which had 4 labeled).
 $source_count = substr_count($ai, "'analysis_source' => 'local_fallback'");

@@ -171,7 +171,41 @@ final class VES_Admin_Console {
         }
     }
 
+    /**
+     * UI/UX pass 2 — compact, READ-ONLY suite pulse for the hub Overview:
+     * overall RC status, the real live-validation classification, the AI
+     * execution flag and the build label. Guarded + fail-safe; renders nothing
+     * rather than something fake when the readiness service is unavailable.
+     */
+    private static function status_strip(): string {
+        try {
+            if (!class_exists('VES_RC_Readiness_Service')) { return ''; }
+            $r = VES_RC_Readiness_Service::report();
+            $live = is_array($r['live_validation'] ?? null) ? $r['live_validation'] : ['status' => 'unrun'];
+            $exec_on = function_exists('get_option') && (bool) get_option('ves_generation_execution_enabled', false);
+            $badge = function ($state, $label) {
+                return class_exists('VES_Review_State') ? VES_Review_State::badge($state, $label) : '<span class="fi-status-badge">' . self::e($label) . '</span>';
+            };
+            $status = (string) ($r['status'] ?? 'blocked');
+            $status_state = $status === 'blocked' ? 'blocked' : ($status === 'ready_for_staging' ? 'ready' : 'warning');
+            $lv = (string) ($live['status'] ?? 'unrun');
+            $lv_state = $lv === 'passed' ? 'recorded' : 'warning';
+            $lv_label = $lv === 'passed' ? 'passed (file-backed)' : ($lv === 'unrun' ? 'UNRUN' : str_replace('_', ' ', $lv));
+            $h  = '<div class="fiis-console-status" role="status" aria-label="' . self::ea('Suite status') . '">';
+            $h .= '<span class="fiis-console-status-item"><span class="fiis-chip-k">' . self::e('RC status') . '</span>' . $badge($status_state, str_replace('_', ' ', $status)) . '</span>';
+            $h .= '<span class="fiis-console-status-item"><span class="fiis-chip-k">' . self::e('Live validation') . '</span>' . $badge($lv_state, $lv_label) . '</span>';
+            $h .= '<span class="fiis-console-status-item"><span class="fiis-chip-k">' . self::e('AI execution') . '</span>' . $badge($exec_on ? 'warning' : 'disabled', $exec_on ? 'ON' : 'OFF') . '</span>';
+            $h .= '<span class="fiis-console-status-item"><span class="fiis-chip-k">' . self::e('Build') . '</span><span class="fiis-console-build">' . self::e((string) ($r['plugin_version'] ?? '') . ((string) ($r['rc_label'] ?? '') !== '' ? ' · ' . (string) $r['rc_label'] : '')) . '</span></span>';
+            $h .= '<span class="fiis-console-status-note">' . self::e('Details: Advanced → Release Candidate. Never production-ready without live evidence.') . '</span>';
+            return $h . '</div>';
+        } catch (\Throwable $e) {
+            self::log($e);
+            return '';
+        }
+    }
+
     private static function render_overview() {
+        echo self::status_strip(); // UI/UX pass 2 — one-glance suite state (read-only, honest)
         echo '<div class="fiis-console-cards">';
         $modules = [
             ['Deep Trend Finder', class_exists('FIDTF_Plugin') || class_exists('FIDTF_Admin')],

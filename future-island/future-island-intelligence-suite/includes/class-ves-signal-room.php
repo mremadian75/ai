@@ -20,9 +20,14 @@ final class VES_Signal_Room {
             'counts' => (class_exists('VES_Intelligence_Store') && method_exists('VES_Intelligence_Store', 'counts')) ? (array) VES_Intelligence_Store::counts($ws) : [],
             'usage' => (class_exists('VES_AI_Usage_Tracker') && method_exists('VES_AI_Usage_Tracker', 'summary')) ? (array) VES_AI_Usage_Tracker::summary(24) : [],
             'flags' => [
-                'memory_generation_enabled' => class_exists('VES_Generation_Context_Resolver') ? VES_Generation_Context_Resolver::is_enabled() : false,
-                'generation_execution_enabled' => class_exists('VES_Generation_Prompt_Package_Builder') ? VES_Generation_Prompt_Package_Builder::execution_enabled() : false,
+                'memory_generation_enabled' => (class_exists('VES_Generation_Context_Resolver') && method_exists('VES_Generation_Context_Resolver', 'is_enabled')) ? VES_Generation_Context_Resolver::is_enabled() : false,
+                'generation_execution_enabled' => (class_exists('VES_Generation_Prompt_Package_Builder') && method_exists('VES_Generation_Prompt_Package_Builder', 'execution_enabled')) ? VES_Generation_Prompt_Package_Builder::execution_enabled() : false,
             ],
+            // UI/UX pass 2 — the strip reads the REAL evidence-pack classification
+            // instead of a hardcoded 'pending'.
+            'live_validation' => (class_exists('VES_RC_Evidence_Pack') && method_exists('VES_RC_Evidence_Pack', 'live_validation_state'))
+                ? (array) VES_RC_Evidence_Pack::live_validation_state()
+                : ['status' => 'unrun'],
         ];
     }
 
@@ -30,6 +35,7 @@ final class VES_Signal_Room {
         $s = self::snapshot($workspace_id);
         $c = $s['counts'];
         $h = '<div class="fi-signal-room fiis-signal-room">';
+        $h .= '<a class="fi-skip-link" href="#fi-operator-queue">' . self::e('Skip to operator queue') . '</a>';
         $h .= '<div class="fi-breadcrumb fiis-sr-eyebrow">' . self::e('Future Island · Signal Room') . '</div>';
         $h .= '<h1 class="fiis-sr-title">' . self::e('Signal Room') . '</h1>';
         $h .= '<p class="fiis-sr-sub">' . self::e('Operator console for the current workspace. Read-only. Evidence first, generation second.') . '</p>';
@@ -61,7 +67,7 @@ final class VES_Signal_Room {
         $h .= '</div>';
 
         // ── Operator queue (7B) ────────────────────────────────────────────────
-        $h .= '<h2 class="fiis-sr-h2">' . self::e('Operator queue') . '</h2>';
+        $h .= '<h2 id="fi-operator-queue" class="fiis-sr-h2">' . self::e('Operator queue') . '</h2>';
         $h .= '<div class="fi-operator-queue">';
         if (class_exists('VES_Operator_Queue_Service')) {
             $q = VES_Operator_Queue_Service::build(['workspace_id' => (int) $workspace_id, 'limit' => 8]);
@@ -94,7 +100,18 @@ final class VES_Signal_Room {
                     }
                     $h .= '</ul>';
                 } elseif (!empty($qd['available'])) {
-                    $h .= '<p class="fi-empty-state">' . self::e((int) ($qd['count'] ?? 0) > 0 ? ((string) (int) $qd['count'] . ' item(s) — open the ledger to review.') : 'No records yet.') . '</p>';
+                    $hints = [
+                        'insights_needing_review' => 'Approved trend runs propose insights here.',
+                        'low_evidence_insights' => 'Insights whose evidence weakened on reassessment surface here.',
+                        'briefs_needing_review' => 'Approve an insight to stage its brief for review.',
+                        'drafts_needing_review' => 'Approve a brief to stage its draft for review.',
+                        'candidate_memory' => 'Signal reports propose memory candidates here — nothing enters trusted context without approval.',
+                        'prompt_packages_blocked' => 'Blocked dry-run packages appear here with their blocking reason.',
+                        'missing_usage' => 'Runs that produced no usage event in the last 24h surface here.',
+                        'recent_activity' => 'Run log entries stream here as sources execute.',
+                    ];
+                    $hint = (int) ($qd['count'] ?? 0) > 0 ? '' : (isset($hints[$key]) ? ' <span class="fi-queue-hint">' . self::e($hints[$key]) . '</span>' : '');
+                    $h .= '<p class="fi-empty-state">' . self::e((int) ($qd['count'] ?? 0) > 0 ? ((string) (int) $qd['count'] . ' item(s) — open the ledger to review.') : 'No records yet.') . $hint . '</p>';
                 } else {
                     $h .= '<p class="fi-empty-state">' . self::e((string) ($qd['note'] ?? 'Not available.')) . '</p>';
                 }
@@ -109,12 +126,24 @@ final class VES_Signal_Room {
         $h .= '<div class="fi-readiness-panel fiis-sr-strip">';
         $h .= self::chip('Evidence Gate', 'active', 'ready');
         $h .= self::chip('Memory generation flag', $s['flags']['memory_generation_enabled'] ? 'enabled' : 'disabled', $s['flags']['memory_generation_enabled'] ? 'warning' : 'disabled');
-        $h .= self::chip('Generation execution', 'disabled', 'disabled');
-        $h .= self::chip('Live staging validation', 'pending', 'warning');
+        $exec_on = !empty($s['flags']['generation_execution_enabled']);
+        $h .= self::chip('Generation execution', $exec_on ? 'ENABLED' : 'disabled', $exec_on ? 'warning' : 'disabled');
+        $lv = is_array($s['live_validation'] ?? null) ? $s['live_validation'] : ['status' => 'unrun'];
+        $lv_map = [
+            'passed' => ['passed (file-backed)', 'recorded'],
+            'json_only_unverified' => ['json-only — unverified', 'warning'],
+            'unverified_manual' => ['manual — unverified', 'warning'],
+            'unrun' => ['UNRUN', 'warning'],
+        ];
+        $lv_chip = $lv_map[(string) ($lv['status'] ?? 'unrun')] ?? $lv_map['unrun'];
+        $h .= self::chip('Live staging validation', $lv_chip[0], $lv_chip[1]);
         $h .= self::chip('Usage ledger (24h)', isset($s['usage']['total']) ? ((int) $s['usage']['total'] . ' events') : 'not available', isset($s['usage']['total']) ? 'recorded' : 'disabled');
         $h .= '</div>';
 
-        $h .= '<p class="fi-memory-policy fiis-sr-note">' . self::e('Read-only console. No generation runs here. Memory is not evidence. Live staging validation pending — not production-ready.') . '</p>';
+        $lv_note = ((string) ($lv['status'] ?? 'unrun') === 'passed')
+            ? 'Live staging validation recorded (file-backed) — still not production-ready without operator approval and a monitored pilot.'
+            : 'Live staging validation ' . ((string) ($lv['status'] ?? 'unrun') === 'unrun' ? 'UNRUN' : 'unverified') . ' — not production-ready.';
+        $h .= '<p class="fi-memory-policy fiis-sr-note">' . self::e('Read-only console. No generation runs here. Memory is not evidence. ' . $lv_note) . '</p>';
         $h .= '</div>';
         return $h;
     }

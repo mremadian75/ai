@@ -7717,3 +7717,23 @@ html, body, .ves-light-suite { overflow-x: hidden !important; }
 .ves-wrap .ves-kpis {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
+
+/* v0.3.55 — required-input gate: the run button visibly blocks until the
+   form has the input it needs, and the hint names the exact missing field. */
+.ves-wrap .ves-start.ves-start-blocked {
+  opacity: 0.55;
+  cursor: not-allowed;
+  filter: saturate(0.6);
+}
+.ves-wrap .ves-required-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--warn, #92400e);
+  background: var(--warn-bg, #fef3c7);
+  border: 1px solid var(--warn-border, #fde68a);
+  border-radius: 8px;
+  padding: 6px 10px;
+  max-width: 520px;
+  overflow-wrap: anywhere;
+}

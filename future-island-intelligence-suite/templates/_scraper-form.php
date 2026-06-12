@@ -5,7 +5,7 @@
 // with safe defaults so older backend paths stay compatible.
 $form_default_platform = isset($form_default_platform) ? $form_default_platform : 'tiktok';
 ?>
-<form class="ves-form ves-scraper-form" data-module="social" data-ajax="<?php echo esc_url($ajax_url); ?>" onsubmit="return false;">
+<form class="ves-form ves-scraper-form" data-module="social" data-ajax="<?php echo esc_url($ajax_url); ?>" onsubmit="return false;" data-ves-required-any="queryTerms,hashtags,profileUrls,postUrls" data-ves-required-any-label="al menos una consulta, hashtag, perfil o URL de post">
     <input type="hidden" name="nonce" value="<?php echo esc_attr($nonce); ?>">
     <input type="hidden" name="outputLanguage" value="<?php echo esc_attr($output_language ?? 'es'); ?>">
     <input type="hidden" name="platform" value="<?php echo esc_attr($form_default_platform); ?>">

@@ -7,6 +7,7 @@ if (empty($enabled_sources)) { $enabled_sources = ['tiktok']; }
 $preflight = FIDTF_Settings::live_preflight_status($enabled_sources);
 $live_sources = array_values(array_unique(array_map('sanitize_key', (array) ($preflight['live_sources'] ?? []))));
 $planned_only_sources = array_values(array_unique(array_map('sanitize_key', (array) ($preflight['planned_only_sources'] ?? []))));
+$unavailable_sources = is_array($preflight['unavailable_sources'] ?? null) ? $preflight['unavailable_sources'] : [];
 $has_live_sources = !empty($live_sources);
 $tiktok_live = !empty($preflight['tiktok_live_ready']);
 $multi_live = count($live_sources) > 1 || (!empty($live_sources) && !in_array('tiktok', $live_sources, true));
@@ -95,13 +96,22 @@ $preflight_message = $has_live_sources
                 <legend><?php echo esc_html__('Channels', 'future-island-deep-trend-finder-addon'); ?></legend>
                 <?php foreach ($enabled_sources as $source):
                     $is_live = in_array($source, $live_sources, true);
-                    $checked = $is_live || $source === 'tiktok';
-                    $badge = $is_live ? __('Ready for live', 'future-island-deep-trend-finder-addon') : __('Planned only', 'future-island-deep-trend-finder-addon');
-                    $helper = $is_live
-                        ? __('Can start live provider collection.', 'future-island-deep-trend-finder-addon')
-                        : __('No provider call will be made unless its bridge and actor mapping are enabled.', 'future-island-deep-trend-finder-addon');
+                    // v0.3.55: a source whose actor failed preflight (not
+                    // configured / not allowlisted) is NOT runnable and must not
+                    // be offered — it can only fail at dispatch.
+                    $is_unavailable = isset($unavailable_sources[$source]);
+                    $checked = !$is_unavailable && ($is_live || $source === 'tiktok');
+                    if ($is_unavailable) {
+                        $badge = __('Unavailable', 'future-island-deep-trend-finder-addon');
+                        $helper = __('This source actor is not registered on the server. An admin must add it to the actor registry before it can run.', 'future-island-deep-trend-finder-addon');
+                    } else {
+                        $badge = $is_live ? __('Ready for live', 'future-island-deep-trend-finder-addon') : __('Planned only', 'future-island-deep-trend-finder-addon');
+                        $helper = $is_live
+                            ? __('Can start live provider collection.', 'future-island-deep-trend-finder-addon')
+                            : __('No provider call will be made unless its bridge and actor mapping are enabled.', 'future-island-deep-trend-finder-addon');
+                    }
                 ?>
-                    <label><input type="checkbox" name="channels[]" value="<?php echo esc_attr($source); ?>" <?php checked($checked); ?>><span class="fidtf-channel-copy"><strong><?php echo esc_html($source_labels[$source] ?? ucfirst(str_replace('_', ' ', $source))); ?></strong><em class="fidtf-chip <?php echo $is_live ? 'is-live' : ''; ?>"><?php echo esc_html($badge); ?></em><small><?php echo esc_html($helper); ?></small></span></label>
+                    <label class="<?php echo $is_unavailable ? 'fidtf-channel-unavailable' : ''; ?>"><input type="checkbox" name="channels[]" value="<?php echo esc_attr($source); ?>" <?php checked($checked); ?> <?php disabled($is_unavailable); ?>><span class="fidtf-channel-copy"><strong><?php echo esc_html($source_labels[$source] ?? ucfirst(str_replace('_', ' ', $source))); ?></strong><em class="fidtf-chip <?php echo $is_live ? 'is-live' : ($is_unavailable ? 'is-error' : ''); ?>"><?php echo esc_html($badge); ?></em><small><?php echo esc_html($helper); ?></small></span></label>
                 <?php endforeach; ?>
             </fieldset>
 

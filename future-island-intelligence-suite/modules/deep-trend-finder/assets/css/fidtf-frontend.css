@@ -1158,3 +1158,9 @@
     display: grid;
   }
 }
+
+/* v0.3.55 — unavailable source state: not runnable until an admin registers
+   the actor; the checkbox is disabled so the run can never include it. */
+.fidtf-chip.is-error { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+.fidtf-channel-unavailable { opacity: 0.62; }
+.fidtf-channel-unavailable input[type="checkbox"] { cursor: not-allowed; }

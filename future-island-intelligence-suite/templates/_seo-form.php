@@ -4,7 +4,7 @@ $show_seo_debug = current_user_can('manage_options')
     && isset($_GET['ves_debug'])
     && sanitize_text_field(wp_unslash($_GET['ves_debug'])) === '1';
 ?>
-<form class="ves-form ves-scraper-form ves-seo-form" data-module="seo" data-ajax="<?php echo esc_url($ajax_url); ?>" onsubmit="return false;">
+<form class="ves-form ves-scraper-form ves-seo-form" data-module="seo" data-ajax="<?php echo esc_url($ajax_url); ?>" onsubmit="return false;" data-ves-required-any="seedKeyword,semrushSeoKeyword,competitorDomains,queryTerms,targets" data-ves-required-any-label="una keyword semilla, keyword SEO o dominio">
     <input type="hidden" name="nonce" value="<?php echo esc_attr($nonce); ?>">
     <input type="hidden" name="outputLanguage" value="<?php echo esc_attr($output_language ?? 'es'); ?>">
     <input type="hidden" name="platform" value="semrush">

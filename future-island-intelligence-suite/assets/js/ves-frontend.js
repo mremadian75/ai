@@ -4653,6 +4653,67 @@
         updateGoogleModuleUI(form);
     };
 
+    // v0.3.55 — invalid input must be prevented BEFORE submission, not bounced
+    // by the server as FI-50xxxx invalid_input after a failed run attempt.
+    // Two declarative contracts, both template-driven:
+    //   [required] / [data-ves-required]   — per-field (google-intel schema forms)
+    //   form[data-ves-required-any="a,b"]  — at least one of the listed fields
+    const vesFieldLabel = (field) => {
+        const wrap = field.closest('.ves-field');
+        const label = wrap ? wrap.querySelector('.ves-label, label') : null;
+        const text = (label?.textContent || '').replace(/\s+/g, ' ').trim();
+        return text || field.getAttribute('placeholder') || field.name || 'campo requerido';
+    };
+    const vesMissingRequiredInputs = (form) => {
+        if (!form) return [];
+        const missing = [];
+        form.querySelectorAll('[required], [data-ves-required]').forEach((field) => {
+            if (field.disabled || field.type === 'hidden') return;
+            if (String(field.value || '').trim() === '') missing.push({ el: field, label: vesFieldLabel(field) });
+        });
+        const anyNames = String(form.dataset.vesRequiredAny || '').split(',').map(s => s.trim()).filter(Boolean);
+        if (anyNames.length) {
+            const satisfied = anyNames.some((name) => {
+                const field = form.querySelector(`[name="${name}"]`);
+                return field && String(field.value || '').trim() !== '';
+            });
+            if (!satisfied) {
+                const first = form.querySelector(`[name="${anyNames[0]}"]`);
+                missing.push({ el: first, label: form.dataset.vesRequiredAnyLabel || 'una consulta o URL' });
+            }
+        }
+        return missing;
+    };
+    const vesRequiredGateMessage = (missing) => 'Falta información para ejecutar: '
+        + missing.map(m => m.label).join(' · ')
+        + '. Completa el campo y vuelve a intentarlo. No se consumieron créditos.';
+    const vesSyncStartGate = (form) => {
+        if (!form) return;
+        const page = form.closest('.ves-page') || form.closest('.ves-wrap');
+        const startBtn = page ? page.querySelector('.ves-start') : null;
+        if (!startBtn) return;
+        const missing = vesMissingRequiredInputs(form);
+        startBtn.classList.toggle('ves-start-blocked', missing.length > 0);
+        startBtn.setAttribute('aria-disabled', missing.length > 0 ? 'true' : 'false');
+        let hint = page.querySelector('.ves-required-hint');
+        if (missing.length) {
+            if (!hint) {
+                hint = document.createElement('div');
+                hint.className = 'ves-required-hint';
+                startBtn.insertAdjacentElement('afterend', hint);
+            }
+            hint.textContent = 'Para ejecutar: ' + missing.map(m => m.label).join(' · ');
+        } else if (hint) {
+            hint.remove();
+        }
+    };
+    document.addEventListener('input', (e) => {
+        const form = e.target && e.target.closest ? e.target.closest('.ves-form') : null;
+        if (form && (form.hasAttribute('data-ves-required-any') || form.querySelector('[required], [data-ves-required]'))) {
+            vesSyncStartGate(form);
+        }
+    }, true);
+
     const vesHumanizeSlug = (value) => {
         const raw = String(value || '').trim();
         if (!raw) return '';
@@ -7511,6 +7572,18 @@ ${isDebugMode() ? `<details class="ves-evidence-debug"><summary>Debug: normalize
                 return;
             }
             const form = activePage.querySelector('.ves-form') || widget.querySelector('.ves-form');
+            // v0.3.55 required-input gate: an incomplete request never leaves the
+            // browser. The server still validates (defense in depth), but the
+            // operator sees exactly which field is missing instead of FI-50xxxx.
+            if (form) {
+                const missingInputs = vesMissingRequiredInputs(form);
+                if (missingInputs.length) {
+                    setStatus(widget, escapeHtml(vesRequiredGateMessage(missingInputs)), 'error');
+                    vesSyncStartGate(form);
+                    missingInputs[0]?.el?.focus?.();
+                    return;
+                }
+            }
             if (form && form.dataset.module === 'linkedin') {
                 const objective = form.querySelector('[name="linkedinObjective"]')?.value || '';
                 const supported = ['analyze_posts', 'thought_leadership_topic_scan'];

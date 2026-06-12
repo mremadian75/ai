@@ -2,7 +2,7 @@
 <?php
 $form_default_platform = isset($form_default_platform) ? $form_default_platform : 'facebook_ads';
 ?>
-<form class="ves-form ves-scraper-form ves-ads-form" data-module="ads" data-ajax="<?php echo esc_url($ajax_url); ?>" onsubmit="return false;">
+<form class="ves-form ves-scraper-form ves-ads-form" data-module="ads" data-ajax="<?php echo esc_url($ajax_url); ?>" onsubmit="return false;" data-ves-required-any="queryTerms,postUrls,competitorDomains" data-ves-required-any-label="al menos un anunciante/keyword, URL de transparencia o dominio competidor">
     <input type="hidden" name="nonce" value="<?php echo esc_attr($nonce); ?>">
     <input type="hidden" name="outputLanguage" value="<?php echo esc_attr($output_language ?? 'es'); ?>">
     <input type="hidden" name="platform" value="<?php echo esc_attr($form_default_platform); ?>">

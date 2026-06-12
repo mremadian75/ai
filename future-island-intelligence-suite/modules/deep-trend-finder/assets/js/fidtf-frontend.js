@@ -844,9 +844,25 @@
     var root = form.closest('[data-fidtf-root]');
     var output = root.querySelector('[data-fidtf-output]');
     var button = form.querySelector('button[type="submit"]');
+    var payload = collectForm(form);
+    // v0.3.55 required-input gate: a run without a brief/topic can only fail
+    // server-side validation. Block it here and name the missing field.
+    var briefText = String(payload.user_brief || '').trim();
+    var keywordList = Array.isArray(payload.keywords) ? payload.keywords : [];
+    if (briefText === '' && keywordList.length === 0) {
+      output.hidden = false;
+      output.innerHTML = '<div class="fidtf-warning-box"><strong>Falta información para ejecutar.</strong> Escribe el brief o al menos una keyword antes de iniciar la búsqueda. No se consumieron créditos.</div>';
+      var briefField = form.querySelector('[name="user_brief"]');
+      if (briefField && briefField.focus) { briefField.focus(); }
+      return;
+    }
+    if (Array.isArray(payload.channels) && payload.channels.length === 0) {
+      output.hidden = false;
+      output.innerHTML = '<div class="fidtf-warning-box"><strong>Selecciona al menos una fuente.</strong> El run necesita una fuente activa para poder ejecutarse.</div>';
+      return;
+    }
     button.disabled = true;
     output.hidden = false;
-    var payload = collectForm(form);
     updateLiveUx(root);
     updatePanel(root, '[data-fidtf-progressive-rows]', '<p class="fidtf-empty">Brief is being planned. Source rows will update after run creation.</p>');
     updatePanel(root, '[data-fidtf-evidence-grid]', '<p class="fidtf-empty">No evidence has been ingested yet.</p>');

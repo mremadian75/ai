@@ -12,6 +12,9 @@ if (!function_exists('is_wp_error')) { function is_wp_error($t){ return $t insta
 if (!class_exists('WP_Error')) { class WP_Error { public $code;public $message; public function __construct($c='',$m='',$d=[]){$this->code=$c;$this->message=$m;} public function get_error_code(){return $this->code;} } }
 if (!function_exists('get_option')) { function get_option($k,$d=false){ return false; } }
 if (!function_exists('current_time')) { function current_time($t='mysql',$g=0){ return '2026-06-08'; } }
+if (!function_exists('wp_nonce_field')) { function wp_nonce_field($a,$n='_wpnonce',$r=true,$e=true){ return '<input type="hidden" name="'.$n.'" value="nonce-'.$a.'">'; } }
+if (!function_exists('admin_url')) { function admin_url($p=''){ return 'http://t/wp-admin/'.$p; } }
+if (!function_exists('esc_url')) { function esc_url($s){ return htmlspecialchars((string)$s, ENT_QUOTES); } }
 require_once dirname(__DIR__).'/includes/class-ves-review-state.php';
 require_once dirname(__DIR__).'/includes/class-ves-evidence-binder.php';
 require_once dirname(__DIR__).'/includes/class-ves-workbench.php';
@@ -34,8 +37,10 @@ $ok(strpos(VES_Evidence_Binder::render_html(['evidence_ids'=>['<script>']]),'<sc
 $GLOBALS['__ins']=[
   10=>['id'=>10,'workspace_id'=>5,'status'=>'approved','title'=>'has ev','evidence_ids'=>[1,2]],
   11=>['id'=>11,'workspace_id'=>5,'status'=>'approved','title'=>'no ev','evidence_ids'=>[]],
+  12=>['id'=>12,'workspace_id'=>5,'status'=>'draft','title'=>'in review','evidence_ids'=>[1]],
+  13=>['id'=>13,'workspace_id'=>5,'status'=>'rejected','title'=>'terminal','evidence_ids'=>[1]],
 ];
-if (!class_exists('VES_Intelligence_Store')) { eval('class VES_Intelligence_Store { public static function get_insight($id){return $GLOBALS["__ins"][(int)$id]??null;} public static function get_brief($id){return $GLOBALS["__br"][(int)$id]??null;} public static function get_draft($id){return null;} }'); }
+if (!class_exists('VES_Intelligence_Store')) { eval('class VES_Intelligence_Store { public static function get_insight($id){return $GLOBALS["__ins"][(int)$id]??null;} public static function get_brief($id){return $GLOBALS["__br"][(int)$id]??null;} public static function get_draft($id){return null;} public static function update_insight_status($i,$s,$m=[],$o=[]){$GLOBALS["__transitions"][]=["insight",$i,$s];return $i;} public static function update_brief_status($i,$s,$m=[]){$GLOBALS["__transitions"][]=["brief",$i,$s];return $i;} }'); }
 $bwNoTarget=VES_Workbench::render_brief(['workspace_id'=>5,'insight_id'=>0]);
 $ok(strpos($bwNoTarget,'insight_id')!==false && strpos($bwNoTarget,'no records are written')!==false,'no target ⇒ safe prompt, no write');
 $bwBad=VES_Workbench::render_brief(['workspace_id'=>5,'insight_id'=>999]);
@@ -46,7 +51,15 @@ $bwOk=VES_Workbench::render_brief(['workspace_id'=>5,'insight_id'=>10]);
 $ok(strpos($bwOk,'Brief Workbench')!==false && strpos($bwOk,'Evidence Binder')!==false,'brief workbench renders with evidence binder');
 $ok(strpos($bwOk,'Future Island')!==false,'workbench product identity');
 $ok(stripos($bwOk,'Generate with AI')===false && stripos($bwOk,'>Generate<')===false && stripos($bwOk,'Publish now')===false,'no Generate/Publish in brief workbench');
-$ok(strpos($bwOk,'disabled')!==false && strpos($bwOk,'No reviewed-brief transition handler')!==false,'disabled review controls show reason');
+$ok(strpos($bwOk,'disabled')!==false && strpos($bwOk,'Already approved')!==false,'approved insight: rail disabled with the exact reason (only archive remains)');
+
+// Phase 4/5 — the review rail is a REAL, nonce-protected decision surface now.
+$bwReview=VES_Workbench::render_brief(['workspace_id'=>5,'insight_id'=>12]);
+$ok(strpos($bwReview,'name="action" value="ves_workbench_review"')!==false && strpos($bwReview,'nonce-ves_workbench_review')!==false,'reviewable insight: active approve/reject forms carry the action + nonce');
+$ok(strpos($bwReview,'value="approve"')!==false && strpos($bwReview,'value="reject"')!==false && strpos($bwReview,'name="object_type" value="insight"')!==false,'forms carry decision + object identity');
+$ok(strpos($bwReview,'evidence gate can still refuse')!==false,'rail states the evidence gate still rules');
+$bwTerminal=VES_Workbench::render_brief(['workspace_id'=>5,'insight_id'=>13]);
+$ok(strpos($bwTerminal,'terminal')!==false && strpos($bwTerminal,'ves_workbench_review')===false,'rejected insight: NO active forms, terminal reason shown');
 
 // ── Draft Workbench ──────────────────────────────────────────────────────────
 $GLOBALS['__br']=[

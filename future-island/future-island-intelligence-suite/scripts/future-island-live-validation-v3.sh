@@ -199,6 +199,9 @@ run_cmd() {
     "$@" >"$out.raw" 2>"$err.raw"
     code=$?
     redact < "$out.raw" > "$out"; redact < "$err.raw" > "$err"
+    # Strict-verification contract: a silent command records an EXPLICIT marker —
+    # zero-byte stdout/combined artifacts fail verification by design.
+    [ -s "$out" ] || printf 'NO_OUTPUT_RECORDED\n' > "$out"
     cat "$out" "$err" > "$comb"
     rm -f "$out.raw" "$err.raw"
     printf '%s|exit=%d|stdout=%s|stdout_sha=%s|stderr=%s|stderr_sha=%s|combined=%s|combined_sha=%s\n' \

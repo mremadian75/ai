@@ -15,13 +15,106 @@ final class VES_Workbench {
     /** Output guidance slots — placeholders only, never AI-generated claims. */
     const DRAFT_SLOTS = ['hook', 'body', 'cta', 'claims_to_avoid', 'terms_to_use', 'evidence_notes'];
 
+    const ACTION_REVIEW = 'ves_workbench_review';
+
+    /** Phase 4/5 — the review rail is now a real, audited transition surface. */
+    public static function register() {
+        if (!function_exists('add_action')) { return; }
+        add_action('admin_post_' . self::ACTION_REVIEW, [__CLASS__, 'handle_review']);
+    }
+
+    /**
+     * Human review decision: capability + nonce + workspace assertion, then the
+     * store's AUDITED transition (lifecycle matrix + evidence gate + decision
+     * ledger). Never an auto-approval — this runs only on an operator's click.
+     */
+    public static function handle_review() {
+        if (!function_exists('current_user_can') || !current_user_can('manage_options')) {
+            if (function_exists('wp_die')) { wp_die(self::e('Insufficient permissions.'), '', ['response' => 403]); }
+            return;
+        }
+        if (function_exists('check_admin_referer')) { check_admin_referer(self::ACTION_REVIEW); }
+        $in = isset($_POST) && is_array($_POST) ? $_POST : [];
+        $in = function_exists('wp_unslash') ? wp_unslash($in) : $in;
+
+        $type = (string) ($in['object_type'] ?? '');
+        $type = in_array($type, ['insight', 'brief'], true) ? $type : '';
+        $decision = (string) ($in['decision'] ?? '');
+        $decision = in_array($decision, ['approve', 'reject'], true) ? $decision : '';
+        $id = max(0, (int) ($in['object_id'] ?? 0));
+        $ws = max(0, (int) ($in['workspace_id'] ?? 0));
+
+        $err = '';
+        if ($type === '' || $decision === '' || $id <= 0 || $ws <= 0) {
+            $err = 'ves_workbench_bad_request';
+        } elseif (!class_exists('VES_Intelligence_Store')) {
+            $err = 'ves_workbench_store_missing';
+        } else {
+            $row = $type === 'insight' ? VES_Intelligence_Store::get_insight($id) : VES_Intelligence_Store::get_brief($id);
+            if (!is_array($row) || empty($row['id'])) {
+                $err = 'ves_workbench_not_found';
+            } elseif ((int) ($row['workspace_id'] ?? 0) !== $ws) {
+                $err = 'ves_workspace_mismatch';
+            } else {
+                $status = $decision === 'approve' ? 'approved' : 'rejected';
+                $meta = ['reviewed_via' => 'workbench', 'reviewer_user_id' => function_exists('get_current_user_id') ? (int) get_current_user_id() : 0];
+                $res = $type === 'insight'
+                    ? VES_Intelligence_Store::update_insight_status($id, $status, $meta)
+                    : VES_Intelligence_Store::update_brief_status($id, $status, $meta);
+                if (function_exists('is_wp_error') && is_wp_error($res)) {
+                    $err = preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) $res->get_error_code()));
+                    if (class_exists('VES_Log') && method_exists('VES_Log', 'warn')) {
+                        VES_Log::warn('workbench_review', 'Review transition refused', ['object_type' => $type, 'object_id' => $id, 'decision' => $decision, 'error_code' => $err]);
+                    }
+                }
+            }
+        }
+
+        // Return to the workbench the decision came from (whitelisted slugs only).
+        $args = ['workspace_id' => max(1, $ws)];
+        if ($type === 'brief') { $args['page'] = 'fi-draft-workbench'; $args['brief_id'] = $id; }
+        else { $args['page'] = 'fi-brief-workbench'; $args['insight_id'] = $id; }
+        if ($err !== '') { $args['fi_err'] = $err; } else { $args['fi_notice'] = 'review_' . $decision . 'd'; }
+        $url = function_exists('admin_url') ? admin_url('tools.php') : 'tools.php';
+        $url = function_exists('add_query_arg') ? add_query_arg($args, $url) : $url . '?' . http_build_query($args);
+        if (function_exists('wp_safe_redirect')) { wp_safe_redirect($url); }
+        if (!defined('VES_INTAKE_NO_EXIT')) { exit; }
+    }
+
+    /** Notice strip: fixed code → copy map; query strings are never echoed raw. */
+    private static function notice_html() {
+        $notice = isset($_GET['fi_notice']) ? preg_replace('/[^a-z0-9_]/', '', strtolower((string) $_GET['fi_notice'])) : '';
+        $err    = isset($_GET['fi_err']) ? preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) $_GET['fi_err'])) : '';
+        if ($notice !== '') {
+            $map = [
+                'review_approved'  => 'Decision recorded: APPROVED. The transition is in the review ledger.',
+                'review_rejected'  => 'Decision recorded: REJECTED (terminal — reopening requires the audited override).',
+                'preview_recorded' => 'Prompt-package preview built and ONE usage event ledgered (idempotent — repeat clicks reuse it). No provider was called.',
+            ];
+            return isset($map[$notice]) ? '<div class="notice notice-success inline"><p>' . self::e($map[$notice]) . '</p></div>' : '';
+        }
+        if ($err !== '') {
+            $map = [
+                'ves_intel_evidence_required'   => 'Approval refused by the evidence gate: link evidence before approving.',
+                'ves_intel_transition_blocked'  => 'The lifecycle matrix refused this transition (terminal states never silently reopen).',
+                'ves_workspace_mismatch'        => 'That object belongs to a different workspace.',
+                'ves_workbench_not_found'       => 'Object not found.',
+                'ves_workbench_bad_request'     => 'The review request was malformed; nothing was changed.',
+            ];
+            $msg = isset($map[$err]) ? $map[$err] : 'The decision could not be recorded (' . $err . '). Nothing was changed.';
+            return '<div class="notice notice-error inline"><p>' . self::e($msg) . '</p></div>';
+        }
+        return '';
+    }
+
     public static function render_brief($args = []) {
         $ws = max(0, (int) ($args['workspace_id'] ?? 0));
         $insight_id = (int) ($args['insight_id'] ?? 0);
         $h = '<div class="fi-workbench fi-brief-workbench ves-wrap">';
         $h .= '<div class="fi-breadcrumb">' . self::e('Future Island · Workbench · Brief') . '</div>';
         $h .= '<h1>' . self::e('Brief Workbench') . '</h1>';
-        $h .= '<p class="fiis-sr-sub">' . self::e('Inspect an approved Insight and review its Brief. Read-only. Evidence first; no AI generation here.') . '</p>';
+        $h .= '<p class="fiis-sr-sub">' . self::e('Inspect an Insight against its evidence and record the review decision. Evidence first; no AI generation here.') . '</p>';
+        $h .= self::notice_html();
         // The nav only lists sections that will actually render (no dangling anchors
         // on installs where the binder/builder is unavailable).
         $nav_items = ['fi-wb-target' => 'Target'];
@@ -63,10 +156,12 @@ final class VES_Workbench {
         $object .= '</section>';
 
         // Evidence rail (left) + decision rail (right: status card, package, review).
+        // The object under review on THIS page is the insight.
         $evidence = class_exists('VES_Evidence_Binder') ? '<div id="fi-wb-evidence">' . VES_Evidence_Binder::render_html($insight) . '</div>' : '';
         $decision = self::decision_card('insight', $insight)
             . self::package_preview_section($ws, 'brief_generation', 'insight', $insight_id)
-            . self::review_rail('brief');
+            . self::review_rail('insight', $insight, $ws)
+            . (class_exists('VES_Pilot_Feedback') && method_exists('VES_Pilot_Feedback', 'form_html') ? VES_Pilot_Feedback::form_html($ws, 'insight', $insight_id) : '');
 
         $h .= self::rails($evidence, $object, $decision);
         $h .= self::actions_note();
@@ -80,7 +175,8 @@ final class VES_Workbench {
         $h = '<div class="fi-workbench fi-draft-workbench ves-wrap">';
         $h .= '<div class="fi-breadcrumb">' . self::e('Future Island · Workbench · Draft') . '</div>';
         $h .= '<h1>' . self::e('Draft Workbench') . '</h1>';
-        $h .= '<p class="fiis-sr-sub">' . self::e('Inspect an approved/ready Brief and review its Draft. Read-only. No AI generation here.') . '</p>';
+        $h .= '<p class="fiis-sr-sub">' . self::e('Inspect a Brief, record its review decision, and preview the prompt package. No AI generation here.') . '</p>';
+        $h .= self::notice_html();
         $nav_items = ['fi-wb-target' => 'Brief', 'fi-wb-readiness' => 'Readiness'];
         if (class_exists('VES_Evidence_Binder')) { $nav_items['fi-wb-evidence'] = 'Evidence'; }
         $nav_items['fi-wb-slots'] = 'Output slots';
@@ -119,11 +215,14 @@ final class VES_Workbench {
         foreach (self::DRAFT_SLOTS as $slot) { $object .= '<li><code>' . self::e($slot) . '</code> <span class="fi-empty-state">' . self::e('—') . '</span></li>'; }
         $object .= '</ul></section>';
 
-        // Evidence rail (left) + decision rail (right).
+        // Evidence rail (left) + decision rail (right). The object under review
+        // on THIS page is the brief.
         $evidence = class_exists('VES_Evidence_Binder') ? '<div id="fi-wb-evidence">' . VES_Evidence_Binder::render_html($brief) . '</div>' : '';
         $decision = self::decision_card('brief', $brief)
             . self::package_preview_section($ws, 'draft_generation', 'brief', $brief_id)
-            . self::review_rail('draft');
+            . self::review_rail('brief', $brief, $ws)
+            . (class_exists('VES_Pilot_Feedback') && method_exists('VES_Pilot_Feedback', 'form_html') ? VES_Pilot_Feedback::form_html($ws, 'brief', $brief_id) : '')
+            . (class_exists('VES_Pilot_Feedback') && class_exists('VES_Generation_Prompt_Package_Builder') && method_exists('VES_Pilot_Feedback', 'form_html') ? VES_Pilot_Feedback::form_html($ws, 'prompt_preview', $brief_id) : '');
 
         $h .= self::rails($evidence, $object, $decision);
         $h .= self::actions_note();
@@ -198,15 +297,54 @@ final class VES_Workbench {
         return $h;
     }
 
-    /** Disabled review controls — honest reason; safe handlers do not exist yet. */
-    private static function review_rail($object) {
-        $reason = self::e('No reviewed-' . $object . ' transition handler is wired yet. Controls are disabled until a safe, nonce-protected handler exists.');
-        $btns = ['Approve ' . $object, 'Reject ' . $object, 'Mark needs revision'];
-        $h = '<section id="fi-wb-review" class="fi-review-rail"><h3>' . self::e('Review controls') . '</h3>';
-        foreach ($btns as $b) {
-            $h .= '<button type="button" class="button" disabled aria-disabled="true" title="' . $reason . '">' . self::e($b) . '</button> ';
+    /**
+     * Review rail — REAL human decisions through the audited lifecycle (Phase 4/5).
+     * Active approve/reject forms render only when the store exposes the audited
+     * transition AND the current status can move; terminal/approved states show
+     * disabled controls with the exact reason. Never an auto-approval.
+     */
+    private static function review_rail($object_type, array $row, $ws) {
+        $object_type = $object_type === 'insight' ? 'insight' : 'brief';
+        $status = strtolower((string) ($row['status'] ?? 'draft'));
+        $id = (int) ($row['id'] ?? 0);
+        $method = $object_type === 'insight' ? 'update_insight_status' : 'update_brief_status';
+        $store_ok = class_exists('VES_Intelligence_Store') && method_exists('VES_Intelligence_Store', $method);
+
+        $h = '<section id="fi-wb-review" class="fi-review-rail"><h3>' . self::e('Review — ' . $object_type) . '</h3>';
+        $disabled = function ($labels, $reason) {
+            $r = self::ea($reason);
+            $o = '';
+            foreach ($labels as $b) {
+                $o .= '<button type="button" class="button" disabled aria-disabled="true" title="' . $r . '">' . self::e($b) . '</button> ';
+            }
+            return $o . '<p class="fi-empty-state">' . self::e($reason) . '</p>';
+        };
+
+        if (!$store_ok || $id <= 0) {
+            $h .= $disabled(['Approve ' . $object_type, 'Reject ' . $object_type],
+                'Review actions unavailable: this install does not expose the audited status transitions.');
+        } elseif (in_array($status, ['rejected', 'archived'], true)) {
+            $h .= $disabled(['Approve ' . $object_type, 'Reject ' . $object_type],
+                ucfirst($status) . ' is terminal — reopening requires the audited reopen/restore override, never a button.');
+        } elseif ($status === 'approved') {
+            $h .= $disabled(['Approve ' . $object_type, 'Reject ' . $object_type],
+                'Already approved. The only remaining transition is archive (audited).');
+        } else {
+            $post_url = function_exists('admin_url') ? admin_url('admin-post.php') : 'admin-post.php';
+            $nonce = function_exists('wp_nonce_field') ? wp_nonce_field(self::ACTION_REVIEW, '_wpnonce', true, false) : '';
+            foreach (['approve' => 'Approve ' . $object_type, 'reject' => 'Reject ' . $object_type] as $decision => $label) {
+                $h .= '<form method="post" action="' . (function_exists('esc_url') ? esc_url($post_url) : self::ea($post_url)) . '" class="fi-review-form">' . $nonce
+                    . '<input type="hidden" name="action" value="' . self::ea(self::ACTION_REVIEW) . '">'
+                    . '<input type="hidden" name="object_type" value="' . self::ea($object_type) . '">'
+                    . '<input type="hidden" name="object_id" value="' . self::ea((string) $id) . '">'
+                    . '<input type="hidden" name="workspace_id" value="' . self::ea((string) max(0, (int) $ws)) . '">'
+                    . '<input type="hidden" name="decision" value="' . self::ea($decision) . '">'
+                    . '<button type="submit" class="button ' . ($decision === 'approve' ? 'button-primary' : 'button-secondary') . '">' . self::e($label) . '</button>'
+                    . '</form> ';
+            }
+            $h .= '<p class="fi-empty-state">' . self::e('Your decision is recorded in the review ledger. The evidence gate can still refuse an approval — that refusal is shown here, not silently swallowed.') . '</p>';
         }
-        $h .= '<p class="fi-empty-state">' . $reason . '</p></section>';
+        $h .= '</section>';
         return $h;
     }
 

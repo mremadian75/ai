@@ -59,11 +59,22 @@ class IntakeWpdb {
 }
 $GLOBALS['wpdb']=new IntakeWpdb();
 
+// Memory records capture stub (the real records layer is proven elsewhere).
+final class VES_Memory_Records {
+    public static $saved = [];
+    public static function save_record(array $args) { self::$saved[] = $args; return count(self::$saved); }
+    public static function workspace_id_for_user($uid = 0) { return 3; }
+}
+
 $root = dirname(__DIR__);
 require_once $root.'/includes/class-ves-ai-usage-tracker.php';
 require_once $root.'/includes/class-ves-waterfall-sourcing.php';
 require_once $root.'/includes/class-ves-intelligence-store.php';
+require_once $root.'/includes/class-ves-review-decision-ledger.php';
 require_once $root.'/includes/class-ves-review-state.php';
+require_once $root.'/includes/class-ves-insight-brief-builder.php';
+require_once $root.'/includes/class-ves-generation-prompt-package-builder.php';
+require_once $root.'/includes/class-ves-brand-context-service.php';
 require_once $root.'/includes/class-ves-source-intake.php';
 
 $pass=0;$fail=0;
@@ -130,6 +141,104 @@ $_POST = ['workspace_id'=>3,'intake_type'=>'url','source_url'=>'ftp://nope'];
 VES_Source_Intake::handle_source();
 $last = (string) end($GLOBALS['__redirects']);
 $ok(strpos($last,'fi_err=ves_intake_bad_url')!==false, 'failed request redirects back with the error CODE only');
+$_POST = [];
+
+// ── 5b. Phase 4/5 action-based transitions (no ID copying on the normal path) ─
+// Build a full chain to exercise the row actions + new processors.
+$r = VES_Source_Intake::process_source(['workspace_id'=>3,'intake_type'=>'manual','source_title'=>'Action chain note','notes'=>'n']);
+$chain_src = (int) $r['source_id'];
+$r = VES_Source_Intake::process_signal(['workspace_id'=>3,'source_id'=>$chain_src,'signal_type'=>'trend','title'=>'chain signal']);
+$chain_sig = (int) $r['signal_id'];
+$r = VES_Source_Intake::process_signal_to_insight(['workspace_id'=>3,'signal_id'=>$chain_sig,'insight_type'=>'opportunity','title'=>'chain finding']);
+$chain_ins = (int) $r['insight_id'];
+VES_Intelligence_Store::update_insight_status($chain_ins, 'approved');
+
+// Prefill: the "Record signal →" row action lands with the source pinned.
+$_GET = ['prefill_source' => (string) $chain_src];
+$hp = VES_Source_Intake::render_html(3);
+$ok(strpos($hp, 'From source #' . $chain_src) !== false && strpos($hp, 'name="source_id" value="' . $chain_src . '"') !== false,
+    'prefill_source pins the source into the signal form (no ID copying)');
+$_GET = ['prefill_signal' => (string) $chain_sig];
+$hp = VES_Source_Intake::render_html(3);
+$ok(strpos($hp, 'From signal #' . $chain_sig) !== false && strpos($hp, 'name="signal_id" value="' . $chain_sig . '"') !== false,
+    'prefill_signal pins the signal into the promotion form');
+$_GET = ['prefill_source' => '999999'];
+$hp = VES_Source_Intake::render_html(3);
+$ok(strpos($hp, 'From source #') === false, 'unknown prefill id is ignored (falls back to the plain form)');
+$_GET = [];
+
+// Archive row actions: prefill links + nonce'd one-click forms + workbench links.
+$ha = VES_Source_Intake::render_html(3);
+$ok(strpos($ha, 'prefill_source=' . $chain_src) !== false && strpos($ha, 'Record signal') !== false, 'source rows carry the Record-signal action link');
+$ok(strpos($ha, 'prefill_signal=' . $chain_sig) !== false, 'signal rows carry the Promote action link');
+$ok(strpos($ha, 'page=fi-brief-workbench') !== false && strpos($ha, 'insight_id=' . $chain_ins) !== false, 'insight rows deep-link into the workbench');
+$ok(strpos($ha, 'value="ves_intake_memory_candidate"') !== false && strpos($ha, 'nonce-ves_intake_memory_candidate') !== false, 'approved insight rows carry the nonce-protected memory-candidate action');
+$ok(strpos($ha, 'fi-workflow-spine') !== false && strpos($ha, 'fi-intake-next') !== false, 'route spine + next-action panel render');
+$ok(strpos($ha, 'value="ves_insight_to_brief"') !== false, 'approved insight rows carry the one-click Build-brief action');
+
+// Brief + preview chain: build brief, approve it, then preview records ONE usage event.
+$r = VES_Source_Intake::process_insight_to_brief(['workspace_id'=>3,'insight_id'=>$chain_ins]);
+$chain_brief = (int) $r['brief_id'];
+$blocked = VES_Source_Intake::process_prompt_preview(['workspace_id'=>3,'brief_id'=>$chain_brief]);
+$ok(is_wp_error($blocked) && $blocked->get_error_code() === 'ves_intake_preview_blocked', 'preview of an unapproved brief is refused (builder gate holds)');
+VES_Intelligence_Store::update_brief_status($chain_brief, 'approved');
+$p1 = VES_Source_Intake::process_prompt_preview(['workspace_id'=>3,'brief_id'=>$chain_brief]);
+$ok(is_array($p1) && $p1['usage_event_id'] > 0 && $p1['reused_event'] === false, 'approved brief: preview builds and ledgers a usage event');
+$p2 = VES_Source_Intake::process_prompt_preview(['workspace_id'=>3,'brief_id'=>$chain_brief]);
+$ok(is_array($p2) && (int)$p2['usage_event_id'] === (int)$p1['usage_event_id'] && $p2['reused_event'] === true, 'repeat preview REUSES the same usage event (idempotent ledger)');
+
+// Memory candidate action: approved-only, forced candidate status.
+$m_err = VES_Source_Intake::process_memory_candidate(['workspace_id'=>3,'insight_id'=>999999]);
+$ok(is_wp_error($m_err), 'memory candidate for unknown insight refused');
+$m = VES_Source_Intake::process_memory_candidate(['workspace_id'=>3,'insight_id'=>$chain_ins]);
+$ok(is_array($m) && $m['memory_id'] > 0, 'memory candidate proposed from the approved insight');
+$saved = end(VES_Memory_Records::$saved);
+$ok(in_array('candidate', (array)($saved['tags'] ?? []), true) && (string)($saved['source_id'] ?? '') === (string)$chain_ins,
+    'candidate status FORCED + traceable to the insight');
+
+// Preview handler redirects to the draft workbench (the preview itself).
+$_POST = ['workspace_id'=>3,'brief_id'=>$chain_brief];
+VES_Source_Intake::handle_prompt_preview();
+$last = (string) end($GLOBALS['__redirects']);
+$ok(strpos($last,'page=fi-draft-workbench')!==false && strpos($last,'fi_notice=preview_recorded')!==false, 'preview action lands the operator ON the preview');
+$GLOBALS['__can'] = false;
+$denied = false;
+try { VES_Source_Intake::handle_prompt_preview(); } catch (RuntimeException $e) { $denied = strpos($e->getMessage(),'403')!==false; }
+$ok($denied, 'preview action requires manage_options');
+$GLOBALS['__can'] = true;
+$_POST = [];
+
+// ── 5c. Workbench review handler (the audited decision surface) ──────────────
+require_once $root.'/includes/class-ves-workbench.php';
+$GLOBALS['__can'] = false; $denied = false;
+try { VES_Workbench::handle_review(); } catch (RuntimeException $e) { $denied = strpos($e->getMessage(),'403')!==false; }
+$ok($denied, 'review handler requires manage_options');
+$GLOBALS['__can'] = true; $GLOBALS['__nonce_ok'] = false; $blocked = false;
+$_POST = ['object_type'=>'insight','object_id'=>$chain_ins,'decision'=>'approve','workspace_id'=>3];
+try { VES_Workbench::handle_review(); } catch (RuntimeException $e) { $blocked = strpos($e->getMessage(),'nonce failure')!==false; }
+$ok($blocked && in_array('ves_workbench_review',$GLOBALS['__nonce_checked'],true), 'review handler enforces the nonce');
+$GLOBALS['__nonce_ok'] = true;
+
+// A real decision through the handler: a fresh draft insight WITH evidence approves.
+$r = VES_Source_Intake::process_signal_to_insight(['workspace_id'=>3,'signal_id'=>$chain_sig,'insight_type'=>'trend','title'=>'handler-review finding']);
+$rev_ins = (int) $r['insight_id'];
+$_POST = ['object_type'=>'insight','object_id'=>$rev_ins,'decision'=>'approve','workspace_id'=>3];
+VES_Workbench::handle_review();
+$ok(strpos((string)end($GLOBALS['__redirects']),'fi_notice=review_approved')!==false, 'handler approves through the audited lifecycle');
+$ok((VES_Intelligence_Store::get_insight($rev_ins)['status'] ?? '') === 'approved', 'decision persisted');
+// The evidence gate surfaces through the handler, never silently.
+$bare2 = VES_Intelligence_Store::create_insight(['workspace_id'=>3,'insight_type'=>'other','title'=>'no evidence here','status'=>'draft']);
+$_POST = ['object_type'=>'insight','object_id'=>(int)$bare2,'decision'=>'approve','workspace_id'=>3];
+VES_Workbench::handle_review();
+$ok(strpos((string)end($GLOBALS['__redirects']),'fi_err=ves_intel_evidence_required')!==false, 'evidence gate refusal carried back as the error code');
+// Cross-workspace decision refused.
+$_POST = ['object_type'=>'insight','object_id'=>$rev_ins,'decision'=>'reject','workspace_id'=>8];
+VES_Workbench::handle_review();
+$ok(strpos((string)end($GLOBALS['__redirects']),'fi_err=ves_workspace_mismatch')!==false, 'cross-workspace decision refused');
+// Hostile decision value rejected as malformed.
+$_POST = ['object_type'=>'insight','object_id'=>$rev_ins,'decision'=>'archive-everything','workspace_id'=>3];
+VES_Workbench::handle_review();
+$ok(strpos((string)end($GLOBALS['__redirects']),'fi_err=ves_workbench_bad_request')!==false, 'non-whitelisted decision is a bad request');
 $_POST = [];
 
 // ── 6. Reference-URL validator unit checks ────────────────────────────────────

@@ -351,6 +351,119 @@
   margin: var(--fi-space-2) 0 0;
 }
 
+/* ── 6c. Intake page (Phase 4/5) — editorial cards, route spine, archive ───── */
+.ves-wrap.fi-intake-page { max-width: 1100px; }
+.ves-wrap .fi-intake-sub { color: var(--fi-muted); max-width: 64ch; }
+.ves-wrap .fi-intake-grid {
+  display: grid;
+  gap: var(--fi-space-4);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+.ves-wrap .fi-intake-card {
+  background: var(--fi-surface);
+  border: 1px solid var(--fi-bdr);
+  border-radius: var(--fi-radius);
+  padding: var(--fi-space-4) var(--fi-space-5);
+  margin: 0 0 var(--fi-space-4);
+}
+.ves-wrap .fi-intake-no {
+  font-family: var(--fi-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fi-muted);
+  margin: 0 0 2px;
+}
+.ves-wrap .fi-intake-card h2 {
+  margin: 0 0 6px;
+  font-size: 17px;
+  color: var(--fi-blue-2);
+}
+.ves-wrap .fi-intake-hint {
+  color: var(--fi-muted);
+  font-size: 12px;
+  max-width: 62ch;
+  margin: 0 0 var(--fi-space-3);
+}
+.ves-wrap .fi-intake-prefill {
+  font-family: var(--fi-font-mono);
+  font-size: 12px;
+  background: var(--fi-sand);
+  border-left: 3px solid var(--fi-blue);
+  padding: 6px 10px;
+}
+.ves-wrap .fi-intake-next {
+  display: flex;
+  align-items: center;
+  gap: var(--fi-space-4);
+  background: var(--fi-surface);
+  border: 1px solid var(--fi-bdr);
+  border-left: 3px solid var(--fi-lime); /* the one tactical accent on this page */
+  border-radius: var(--fi-radius);
+  padding: var(--fi-space-3) var(--fi-space-4);
+  margin: 0 0 var(--fi-space-4);
+}
+.ves-wrap .fi-intake-next p { margin: 0; flex: 1; }
+.ves-wrap .fi-intake-next-k {
+  font-family: var(--fi-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fi-muted);
+}
+.ves-wrap .fi-intake-fallback { opacity: 0.92; }
+.ves-wrap .fi-intake-actions .fi-row-action { display: inline-block; margin: 0 4px 2px 0; }
+.ves-wrap .fi-intake-archive table { margin-bottom: var(--fi-space-4); }
+.ves-wrap .fi-intake-mono { font-family: var(--fi-font-mono); font-size: 12px; word-break: break-all; }
+.ves-wrap .fi-intake-archive { overflow-x: auto; }
+@media (max-width: 782px) {
+  .ves-wrap .fi-intake-grid { grid-template-columns: minmax(0, 1fr); }
+  .ves-wrap .fi-intake-next { flex-direction: column; align-items: flex-start; gap: var(--fi-space-2); }
+}
+
+/* ── 6d. Pilot feedback + trace (Phase 4/5) ───────────────────────────────── */
+.ves-wrap .fi-feedback-card {
+  background: var(--fi-surface);
+  border: 1px solid var(--fi-bdr);
+  border-radius: var(--fi-radius);
+  padding: var(--fi-space-3) var(--fi-space-4);
+  margin: 0 0 var(--fi-space-4);
+}
+.ves-wrap .fi-feedback-card h3 { margin-top: 0; }
+.ves-wrap .fi-pilot-blocked {
+  border-left-color: var(--fi-red); /* tactical accent: blocked verdict only */
+}
+.ves-wrap .fi-trace {
+  list-style: none;
+  margin: var(--fi-space-3) 0 0;
+  padding: 0;
+  border-left: 2px solid var(--fi-sand);
+}
+.ves-wrap .fi-trace li {
+  padding: 6px 0 6px var(--fi-space-4);
+  position: relative;
+}
+.ves-wrap .fi-trace li::before {
+  content: "";
+  position: absolute;
+  left: -5px;
+  top: 14px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--fi-blue);
+}
+.ves-wrap .fi-trace-k {
+  font-family: var(--fi-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fi-muted);
+  display: inline-block;
+  min-width: 84px;
+}
+
 /* ── 7. Workbench navigation ──────────────────────────────────────────────── */
 .ves-wrap .fi-workbench-nav {
   display: flex;

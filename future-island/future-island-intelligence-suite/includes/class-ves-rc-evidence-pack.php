@@ -194,26 +194,41 @@ final class VES_RC_Evidence_Pack {
 
     /**
      * Verify every referenced artifact against the evidence root on disk.
+     *
+     * Strict size rules (Phase 4/5 cleanup): a REQUIRED artifact that exists
+     * with a MATCHING hash but ZERO bytes still fails — a recorded hash of
+     * empty content can never stand in for evidence. The only stream allowed
+     * to be empty is a command's stderr (expected-empty on success). Silent
+     * commands must record the explicit NO_OUTPUT_RECORDED marker (the v3
+     * script writes it); console/network logs record NO_*_OBSERVED markers,
+     * so a zero-byte log always means lost evidence, never a clean run.
+     *
      * @return array{status:string,missing:array,mismatched:array}
      *   status: ok | missing_required_artifacts | file_hash_mismatch
      */
     public static function verify_files(array $pack, $evidence_root) {
         $root = rtrim((string) $evidence_root, '/');
         $missing = []; $mismatched = [];
-        $check = function ($rel, $expected_sha) use ($root, &$missing, &$mismatched) {
+        $check = function ($rel, $expected_sha, $may_be_empty = false) use ($root, &$missing, &$mismatched) {
             if (!self::valid_relpath((string) $rel)) { $missing[] = (string) $rel . ' (unsafe path)'; return; }
             $abs = $root . '/' . $rel;
             if (!is_file($abs) || !is_readable($abs)) { $missing[] = (string) $rel; return; }
             $actual = hash_file('sha256', $abs);
             if (!self::is_hash((string) $expected_sha) || !hash_equals(strtolower((string) $expected_sha), (string) $actual)) {
                 $mismatched[] = (string) $rel;
+                return;
+            }
+            if (!$may_be_empty && (int) @filesize($abs) === 0) {
+                $missing[] = (string) $rel . ' (zero-byte required artifact)';
             }
         };
         foreach ((array) ($pack['command_outputs'] ?? []) as $cmd => $entry) {
             if (!is_array($entry)) { $missing[] = 'command_outputs:' . $cmd; continue; }
-            foreach (['stdout', 'stderr', 'combined'] as $stream) {
-                $check((string) ($entry[$stream . '_file'] ?? ''), (string) ($entry[$stream . '_sha256'] ?? ''));
-            }
+            // stderr is the one expected-empty stream; stdout/combined must carry
+            // real output or the explicit NO_OUTPUT_RECORDED marker.
+            $check((string) ($entry['stdout_file'] ?? ''), (string) ($entry['stdout_sha256'] ?? ''));
+            $check((string) ($entry['stderr_file'] ?? ''), (string) ($entry['stderr_sha256'] ?? ''), true);
+            $check((string) ($entry['combined_file'] ?? ''), (string) ($entry['combined_sha256'] ?? ''));
         }
         foreach ((array) ($pack['screenshot_files'] ?? []) as $name => $sha) {
             $check('screenshots/' . basename((string) $name), (string) $sha);

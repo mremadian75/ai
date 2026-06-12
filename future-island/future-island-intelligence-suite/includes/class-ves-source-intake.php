@@ -26,6 +26,8 @@ final class VES_Source_Intake {
     const ACTION_SIGNAL   = 'ves_intake_signal';
     const ACTION_INSIGHT  = 'ves_intake_signal_to_insight';
     const ACTION_BRIEF    = 'ves_insight_to_brief';
+    const ACTION_PREVIEW  = 'ves_intake_prompt_preview';
+    const ACTION_MEMORY   = 'ves_intake_memory_candidate';
     const MAX_NOTES_CHARS = 4000;
 
     /** Signal types offered by the intake form — the store's canonical signal_type enum. */
@@ -38,6 +40,8 @@ final class VES_Source_Intake {
         add_action('admin_post_' . self::ACTION_SIGNAL, [__CLASS__, 'handle_signal']);
         add_action('admin_post_' . self::ACTION_INSIGHT, [__CLASS__, 'handle_signal_to_insight']);
         add_action('admin_post_' . self::ACTION_BRIEF, [__CLASS__, 'handle_insight_to_brief']);
+        add_action('admin_post_' . self::ACTION_PREVIEW, [__CLASS__, 'handle_prompt_preview']);
+        add_action('admin_post_' . self::ACTION_MEMORY, [__CLASS__, 'handle_memory_candidate']);
     }
 
     public static function register_menu() {
@@ -286,12 +290,118 @@ final class VES_Source_Intake {
         return ['brief_id' => (int) $brief_id];
     }
 
+    /**
+     * Draft preview as a real loop ACTION: build the prompt package for the
+     * brief (no provider call, ever) and ledger ONE usage event for it —
+     * idempotent via run_id, so a double-click can never double-charge the
+     * ledger. Returns the brief id + the usage event id.
+     * @return array{brief_id:int,usage_event_id:int,reused_event:bool}|WP_Error
+     */
+    public static function process_prompt_preview(array $in) {
+        if (!class_exists('VES_Intelligence_Store')) { return self::err('ves_intake_store_missing', 'Intelligence store unavailable.'); }
+        if (!class_exists('VES_Generation_Prompt_Package_Builder')) { return self::err('ves_intake_builder_missing', 'Prompt package builder unavailable.'); }
+        $ws = self::assert_workspace($in['workspace_id'] ?? 0);
+        if (self::is_err($ws)) { return $ws; }
+        $brief_id = (int) ($in['brief_id'] ?? 0);
+        $brief = $brief_id > 0 ? VES_Intelligence_Store::get_brief($brief_id) : null;
+        if (!is_array($brief) || empty($brief['id'])) { return self::err('ves_intake_brief_missing', 'Brief not found.'); }
+        $in_ws = self::assert_in_workspace('brief', $brief, $ws);
+        if (self::is_err($in_ws)) { return $in_ws; }
+
+        $pkg = VES_Generation_Prompt_Package_Builder::build([
+            'workspace_id' => $ws, 'use_case' => 'draft_generation', 'target_type' => 'brief', 'target_id' => $brief_id,
+        ]);
+        if (!is_array($pkg) || ($pkg['build_status'] ?? '') !== 'ready') {
+            return self::err('ves_intake_preview_blocked', 'The prompt package is blocked: ' . (string) ($pkg['blocking_reason'] ?? 'unknown') . '. Approve the brief first.');
+        }
+
+        // Idempotent ledger write: one preview event per brief per operator.
+        $run_id = 'preview-brief-' . $brief_id . '-u' . (function_exists('get_current_user_id') ? (int) get_current_user_id() : 0);
+        $event_id = 0; $reused = false;
+        if (class_exists('VES_AI_Usage_Tracker') && method_exists('VES_AI_Usage_Tracker', 'table_name')) {
+            global $wpdb;
+            if (isset($wpdb) && is_object($wpdb) && method_exists($wpdb, 'get_var')) {
+                $event_id = (int) $wpdb->get_var($wpdb->prepare(
+                    'SELECT id FROM ' . VES_AI_Usage_Tracker::table_name() . ' WHERE run_id = %s AND operation_type = %s ORDER BY id ASC LIMIT 1',
+                    $run_id, 'prompt_preview'
+                ));
+                $reused = $event_id > 0;
+            }
+        }
+        if ($event_id <= 0 && class_exists('VES_AI_Usage_Tracker') && method_exists('VES_AI_Usage_Tracker', 'record')) {
+            $event_id = (int) VES_AI_Usage_Tracker::record([
+                'provider' => 'none', 'model' => '', 'status' => 'completed',
+                'module' => 'core_loop', 'operation_type' => 'prompt_preview',
+                'workspace_id' => $ws, 'run_id' => $run_id,
+                'input_tokens' => 0, 'output_tokens' => 0,
+            ]);
+        }
+        return ['brief_id' => $brief_id, 'usage_event_id' => $event_id, 'reused_event' => $reused];
+    }
+
+    /**
+     * Memory candidate from an APPROVED insight — the human-review boundary
+     * holds: the service forces candidate status and dedupes; nothing enters
+     * trusted context without a separate approval.
+     * @return array{memory_id:int}|WP_Error
+     */
+    public static function process_memory_candidate(array $in) {
+        if (!class_exists('VES_Intelligence_Store')) { return self::err('ves_intake_store_missing', 'Intelligence store unavailable.'); }
+        if (!class_exists('VES_Brand_Context_Service') || !method_exists('VES_Brand_Context_Service', 'create_candidate')) {
+            return self::err('ves_intake_memory_unavailable', 'Memory candidate service unavailable.');
+        }
+        $ws = self::assert_workspace($in['workspace_id'] ?? 0);
+        if (self::is_err($ws)) { return $ws; }
+        $insight_id = (int) ($in['insight_id'] ?? 0);
+        $insight = $insight_id > 0 ? VES_Intelligence_Store::get_insight($insight_id) : null;
+        if (!is_array($insight) || empty($insight['id'])) { return self::err('ves_intake_insight_missing', 'Insight not found.'); }
+        $in_ws = self::assert_in_workspace('insight', $insight, $ws);
+        if (self::is_err($in_ws)) { return $in_ws; }
+        if ((string) ($insight['status'] ?? '') !== 'approved') {
+            return self::err('ves_intake_insight_not_approved', 'Only an APPROVED insight can propose a memory candidate.');
+        }
+        $summary = self::cut(trim((string) ($insight['title'] ?? '') . ' — ' . (string) ($insight['summary'] ?? '')), 500);
+        $memory_id = (int) VES_Brand_Context_Service::create_candidate($ws, [
+            'record_type' => 'review_learning',
+            'summary' => $summary,
+            'source_target_type' => 'insight',
+            'source_target_id' => $insight_id,
+            'importance_score' => 60,
+        ], function_exists('get_current_user_id') ? (int) get_current_user_id() : 0);
+        if ($memory_id <= 0) { return self::err('ves_intake_memory_failed', 'The memory candidate could not be saved.'); }
+        return ['memory_id' => $memory_id];
+    }
+
     // ── admin-post wrappers: capability + nonce + redirect ─────────────────────
 
     public static function handle_source()            { self::handle(self::ACTION_SOURCE,  'process_source',            'source_created',  'source_id'); }
     public static function handle_signal()            { self::handle(self::ACTION_SIGNAL,  'process_signal',            'signal_created',  'signal_id'); }
     public static function handle_signal_to_insight() { self::handle(self::ACTION_INSIGHT, 'process_signal_to_insight', 'insight_created', 'insight_id'); }
     public static function handle_insight_to_brief()  { self::handle(self::ACTION_BRIEF,   'process_insight_to_brief',  'brief_created',   'brief_id'); }
+    public static function handle_memory_candidate()  { self::handle(self::ACTION_MEMORY,  'process_memory_candidate',  'memory_candidate_created', 'memory_id'); }
+
+    /** Preview lands the operator ON the preview (draft workbench), not back on intake. */
+    public static function handle_prompt_preview() {
+        if (!function_exists('current_user_can') || !current_user_can('manage_options')) {
+            if (function_exists('wp_die')) { wp_die(self::e('Insufficient permissions.'), '', ['response' => 403]); }
+            return;
+        }
+        if (function_exists('check_admin_referer')) { check_admin_referer(self::ACTION_PREVIEW); }
+        $in = isset($_POST) && is_array($_POST) ? $_POST : [];
+        $in = function_exists('wp_unslash') ? wp_unslash($in) : $in;
+        $res = self::process_prompt_preview($in);
+        if (self::is_err($res)) {
+            $args = ['page' => self::PAGE_SLUG, 'workspace_id' => max(1, (int) ($in['workspace_id'] ?? 1)),
+                     'fi_err' => preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) $res->get_error_code()))];
+        } else {
+            $args = ['page' => 'fi-draft-workbench', 'workspace_id' => max(1, (int) ($in['workspace_id'] ?? 1)),
+                     'brief_id' => (int) $res['brief_id'], 'fi_notice' => 'preview_recorded', 'fi_id' => (int) $res['usage_event_id']];
+        }
+        $url = function_exists('admin_url') ? admin_url('tools.php') : 'tools.php';
+        $url = function_exists('add_query_arg') ? add_query_arg($args, $url) : $url . '?' . http_build_query($args);
+        if (function_exists('wp_safe_redirect')) { wp_safe_redirect($url); }
+        if (!defined('VES_INTAKE_NO_EXIT')) { exit; }
+    }
 
     private static function handle($action, $method, $success_key, $id_key) {
         if (!function_exists('current_user_can') || !current_user_can('manage_options')) {
@@ -305,6 +415,10 @@ final class VES_Source_Intake {
         $args = ['page' => self::PAGE_SLUG, 'workspace_id' => max(1, (int) ($in['workspace_id'] ?? 1))];
         if (self::is_err($res)) {
             $args['fi_err'] = preg_replace('/[^a-z0-9_\-]/', '', strtolower((string) $res->get_error_code()));
+            // Observability: WHY a loop action failed — error code only, never payloads.
+            if (class_exists('VES_Log') && method_exists('VES_Log', 'warn')) {
+                VES_Log::warn('intake', 'Intake action refused', ['action' => $action, 'error_code' => $args['fi_err'], 'workspace_id' => $args['workspace_id']]);
+            }
         } else {
             $args['fi_notice'] = $success_key;
             $args['fi_id'] = (int) ($res[$id_key] ?? 0);
@@ -341,6 +455,7 @@ final class VES_Source_Intake {
                 'signal_created'  => 'Signal recorded',
                 'insight_created' => 'Evidence + draft insight created',
                 'brief_created'   => 'Brief created from the approved insight',
+                'memory_candidate_created' => 'Memory candidate proposed — it stays CANDIDATE until approved on the memory page',
             ];
             if (isset($map[$notice])) {
                 return '<div class="notice notice-success"><p>' . self::e($map[$notice] . ($id > 0 ? ' (id ' . $id . ').' : '.')) . '</p></div>';
@@ -358,11 +473,56 @@ final class VES_Source_Intake {
                 'ves_intake_insight_not_approved' => 'Only an APPROVED insight can become a brief — approve it in review first.',
                 'ves_workspace_mismatch'          => 'That object belongs to a different workspace.',
                 'ves_brief_no_evidence'           => 'The insight has no linked evidence, so no brief can be built from it.',
+                'ves_intake_brief_missing'        => 'Brief not found.',
+                'ves_intake_preview_blocked'      => 'The prompt package is blocked — approve the brief first, then preview.',
+                'ves_intake_memory_unavailable'   => 'Memory candidate service unavailable on this install.',
+                'ves_intake_memory_failed'        => 'The memory candidate could not be saved.',
             ];
             $msg = isset($map[$err]) ? $map[$err] : 'The action could not be completed (' . $err . ').';
             return '<div class="notice notice-error"><p>' . self::e($msg) . '</p></div>';
         }
         return '';
+    }
+
+    /** Intake page URL for a workspace (prefill links build on it). */
+    private static function page_url($ws, array $extra = []) {
+        $args = array_merge(['page' => self::PAGE_SLUG, 'workspace_id' => max(1, (int) $ws)], $extra);
+        $url = function_exists('admin_url') ? admin_url('tools.php') : 'tools.php';
+        return function_exists('add_query_arg') ? add_query_arg($args, $url) : $url . '?' . http_build_query($args);
+    }
+
+    /** Load + workspace-check a prefill target from a GET id; null when invalid. */
+    private static function prefill_row($entity, $param, $ws) {
+        $id = isset($_GET[$param]) ? max(0, (int) $_GET[$param]) : 0;
+        if ($id <= 0 || !class_exists('VES_Intelligence_Store')) { return null; }
+        $row = $entity === 'signal' ? VES_Intelligence_Store::get_signal($id) : VES_Intelligence_Store::get_source($id);
+        if (!is_array($row) || empty($row['id']) || (int) ($row['workspace_id'] ?? 0) !== (int) $ws) { return null; }
+        return $row;
+    }
+
+    /**
+     * Next-action panel: the single most useful step, derived from real counts.
+     * Teaches the loop instead of decorating it.
+     */
+    private static function next_action_panel($ws) {
+        if (!class_exists('VES_Intelligence_Store') || !method_exists('VES_Intelligence_Store', 'counts')) { return ''; }
+        try {
+            $c = (array) VES_Intelligence_Store::counts($ws);
+            $by_status = method_exists('VES_Intelligence_Store', 'count_insights_by_status') ? (array) VES_Intelligence_Store::count_insights_by_status($ws) : [];
+        } catch (\Throwable $e) { return ''; }
+        $sources = (int) ($c['sources'] ?? 0); $signals = (int) ($c['signals'] ?? 0);
+        $insights = (int) ($c['insights'] ?? 0); $briefs = (int) ($c['briefs'] ?? 0);
+        $approved = (int) ($by_status['approved'] ?? 0);
+        if ($sources === 0)      { $next = ['Record your first source — a note or a URL reference.', '#fi-intake-source-form', 'Record a source']; }
+        elseif ($signals === 0)  { $next = ['You have ' . $sources . ' source(s). Record what one of them actually showed.', '#fi-intake-signal-form', 'Record a signal']; }
+        elseif ($insights === 0) { $next = ['Promote a signal to evidence + a draft insight when a finding emerges.', '#fi-intake-insight-form', 'Promote a signal']; }
+        elseif ($approved === 0) { $next = ['A draft insight is waiting for human review — open it in the workbench from the archive below.', '#fi-intake-recent', 'Open the archive']; }
+        elseif ($briefs === 0)   { $next = ['An approved insight can become a brief — use its row action in the archive below.', '#fi-intake-recent', 'Build a brief']; }
+        else                     { $next = ['The loop is flowing. Review briefs in the workbench and record prompt previews from the archive below.', '#fi-intake-recent', 'Open the archive']; }
+        return '<aside class="fi-intake-next" aria-label="' . self::ea('Next action') . '">'
+            . '<span class="fi-intake-next-k">' . self::e('Next') . '</span>'
+            . '<p>' . self::e($next[0]) . '</p>'
+            . '<a class="button button-secondary" href="' . self::ea($next[1]) . '">' . self::e($next[2]) . '</a></aside>';
     }
 
     public static function render_html($workspace_id) {
@@ -373,17 +533,34 @@ final class VES_Source_Intake {
             return '';
         };
         $ws_field = '<label>Workspace <input type="number" name="workspace_id" min="1" value="' . self::ea((string) $ws) . '" required></label>';
+        $pre_source = self::prefill_row('source', 'prefill_source', $ws);
+        $pre_signal = self::prefill_row('signal', 'prefill_signal', $ws);
 
         $h  = '<div class="wrap ves-wrap fi-intake-page">';
-        $h .= '<a class="fi-skip-link" href="#fi-intake-recent">' . self::e('Skip to recent objects') . '</a>';
+        $h .= '<a class="fi-skip-link" href="#fi-intake-recent">' . self::e('Skip to the archive') . '</a>';
         $h .= '<p class="fi-breadcrumb fiis-sr-eyebrow">' . self::e('Future Island · Intake') . '</p>';
         $h .= '<h1>' . self::e('Intake') . '</h1>';
         $h .= '<p class="fi-intake-sub">' . self::e('Evidence first. Everything below records what YOU observed — nothing is fetched, nothing is generated, nothing is approved automatically.') . '</p>';
         $h .= self::notice_html();
 
-        // 1. Manual source
-        $h .= '<section class="fi-intake-card"><h2>' . self::e('1 · Record a manual source') . '</h2>';
-        $h .= '<p class="fi-intake-hint">' . self::e('An interview note, a meeting takeaway, a field observation. Same title + notes in a workspace dedupes to one source.') . '</p>';
+        // Route spine — where intake sits in the loop, with live counts.
+        $counts = [];
+        if (class_exists('VES_Intelligence_Store') && method_exists('VES_Intelligence_Store', 'counts')) {
+            try { $counts = (array) VES_Intelligence_Store::counts($ws); } catch (\Throwable $e) { $counts = []; }
+        }
+        $h .= '<nav class="fi-workflow-spine fi-intake-spine" aria-label="' . self::ea('Intake route') . '"><ol>';
+        foreach (['Source' => 'sources', 'Signal' => 'signals', 'Insight' => 'insights', 'Brief' => 'briefs', 'Preview' => null] as $label => $ck) {
+            $val = $ck !== null && array_key_exists($ck, $counts) ? (string) (int) $counts[$ck] : '—';
+            $h .= '<li class="fiis-sr-step"><span class="fiis-sr-step-label">' . self::e($label) . '</span><span class="fiis-sr-step-count">' . self::e($val) . '</span></li>';
+        }
+        $h .= '</ol></nav>';
+
+        $h .= self::next_action_panel($ws);
+
+        // 01/02 — the two ways material enters (side by side on wide screens).
+        $h .= '<div class="fi-intake-grid" id="fi-intake-source-form">';
+        $h .= '<section class="fi-intake-card"><p class="fi-intake-no">' . self::e('01 · Source') . '</p><h2>' . self::e('Manual note') . '</h2>';
+        $h .= '<p class="fi-intake-hint">' . self::e('An interview note, a meeting takeaway, a field observation. Same title + notes dedupes to one source.') . '</p>';
         $h .= '<form method="post" action="' . self::eu($post_url) . '">' . $nonce(self::ACTION_SOURCE);
         $h .= '<input type="hidden" name="action" value="' . self::ea(self::ACTION_SOURCE) . '"><input type="hidden" name="intake_type" value="manual">';
         $h .= '<p>' . $ws_field . '</p>';
@@ -392,8 +569,7 @@ final class VES_Source_Intake {
         $h .= '<p><button type="submit" class="button button-primary">' . self::e('Record source') . '</button></p>';
         $h .= '</form></section>';
 
-        // 2. URL-record source
-        $h .= '<section class="fi-intake-card"><h2>' . self::e('2 · Record a URL reference') . '</h2>';
+        $h .= '<section class="fi-intake-card"><p class="fi-intake-no">' . self::e('02 · Source') . '</p><h2>' . self::e('URL reference') . '</h2>';
         $h .= '<p class="fi-intake-hint">' . self::e('The URL is recorded as a reference only — it is never fetched, crawled, or scraped from here.') . '</p>';
         $h .= '<form method="post" action="' . self::eu($post_url) . '">' . $nonce(self::ACTION_SOURCE);
         $h .= '<input type="hidden" name="action" value="' . self::ea(self::ACTION_SOURCE) . '"><input type="hidden" name="intake_type" value="url">';
@@ -403,14 +579,22 @@ final class VES_Source_Intake {
         $h .= '<p><label>Notes<br><textarea name="notes" rows="3" maxlength="' . self::ea((string) self::MAX_NOTES_CHARS) . '" class="large-text"></textarea></label></p>';
         $h .= '<p><button type="submit" class="button button-primary">' . self::e('Record URL reference') . '</button></p>';
         $h .= '</form></section>';
+        $h .= '</div>';
 
-        // 3. Signal from source
-        $h .= '<section class="fi-intake-card"><h2>' . self::e('3 · Record a signal from a source') . '</h2>';
-        $h .= '<p class="fi-intake-hint">' . self::e('What did the source actually show? The store normalizes, dedupes and scores it deterministically — no AI involved.') . '</p>';
+        // 03 — signal from a source (prefilled from a row action when present).
+        $h .= '<section class="fi-intake-card" id="fi-intake-signal-form"><p class="fi-intake-no">' . self::e('03 · Signal') . '</p><h2>' . self::e('What did the source show?') . '</h2>';
+        $h .= '<p class="fi-intake-hint">' . self::e('The store normalizes, dedupes and scores it deterministically — no AI involved.') . '</p>';
         $h .= '<form method="post" action="' . self::eu($post_url) . '">' . $nonce(self::ACTION_SIGNAL);
         $h .= '<input type="hidden" name="action" value="' . self::ea(self::ACTION_SIGNAL) . '">';
-        $h .= '<p>' . $ws_field . ' <label>Source id <input type="number" name="source_id" min="1" required></label> ';
-        $h .= '<label>Type <select name="signal_type">';
+        if (is_array($pre_source)) {
+            $h .= '<p class="fi-intake-prefill">' . self::e('From source #' . (int) $pre_source['id'] . ' — “' . self::cut((string) ($pre_source['source_title'] ?? ''), 80) . '”')
+                . ' <a href="' . self::eu(self::page_url($ws)) . '">' . self::e('change') . '</a></p>'
+                . '<input type="hidden" name="workspace_id" value="' . self::ea((string) $ws) . '">'
+                . '<input type="hidden" name="source_id" value="' . self::ea((string) (int) $pre_source['id']) . '">';
+        } else {
+            $h .= '<p>' . $ws_field . ' <label>Source id <input type="number" name="source_id" min="1" required></label></p>';
+        }
+        $h .= '<p><label>Type <select name="signal_type">';
         foreach (self::SIGNAL_TYPES as $t) { $h .= '<option value="' . self::ea($t) . '">' . self::e($t) . '</option>'; }
         $h .= '</select></label></p>';
         $h .= '<p><label>Title (what was observed)<br><input type="text" name="title" maxlength="255" required class="regular-text"></label></p>';
@@ -420,13 +604,20 @@ final class VES_Source_Intake {
         $h .= '<p><button type="submit" class="button button-primary">' . self::e('Record signal') . '</button></p>';
         $h .= '</form></section>';
 
-        // 4. Evidence + draft insight from signal
-        $h .= '<section class="fi-intake-card"><h2>' . self::e('4 · Promote a signal to evidence + draft insight') . '</h2>';
+        // 04 — evidence + draft insight from a signal (prefilled from a row action).
+        $h .= '<section class="fi-intake-card" id="fi-intake-insight-form"><p class="fi-intake-no">' . self::e('04 · Insight') . '</p><h2>' . self::e('Promote a signal to evidence + draft insight') . '</h2>';
         $h .= '<p class="fi-intake-hint">' . self::e('Creates a traceable evidence record from the signal and a DRAFT insight linked to it. Review states only advance through the audited lifecycle — never from here.') . '</p>';
         $h .= '<form method="post" action="' . self::eu($post_url) . '">' . $nonce(self::ACTION_INSIGHT);
         $h .= '<input type="hidden" name="action" value="' . self::ea(self::ACTION_INSIGHT) . '">';
-        $h .= '<p>' . $ws_field . ' <label>Signal id <input type="number" name="signal_id" min="1" required></label> ';
-        $h .= '<label>Insight type <select name="insight_type">';
+        if (is_array($pre_signal)) {
+            $h .= '<p class="fi-intake-prefill">' . self::e('From signal #' . (int) $pre_signal['id'] . ' — “' . self::cut((string) ($pre_signal['title'] ?? ''), 80) . '”')
+                . ' <a href="' . self::eu(self::page_url($ws)) . '">' . self::e('change') . '</a></p>'
+                . '<input type="hidden" name="workspace_id" value="' . self::ea((string) $ws) . '">'
+                . '<input type="hidden" name="signal_id" value="' . self::ea((string) (int) $pre_signal['id']) . '">';
+        } else {
+            $h .= '<p>' . $ws_field . ' <label>Signal id <input type="number" name="signal_id" min="1" required></label></p>';
+        }
+        $h .= '<p><label>Insight type <select name="insight_type">';
         foreach (VES_Intelligence_Store::INSIGHT_TYPES as $t) { $h .= '<option value="' . self::ea($t) . '"' . ($t === 'opportunity' ? ' selected' : '') . '>' . self::e($t) . '</option>'; }
         $h .= '</select></label> ';
         $h .= '<label>Opportunity score (0–100, used when type is opportunity) <input type="number" name="opportunity_score" min="0" max="100" value="0"></label></p>';
@@ -436,13 +627,13 @@ final class VES_Source_Intake {
         $h .= '<p><button type="submit" class="button button-primary">' . self::e('Create evidence + draft insight') . '</button></p>';
         $h .= '</form></section>';
 
-        // 5. Brief from APPROVED insight
-        $h .= '<section class="fi-intake-card"><h2>' . self::e('5 · Build a brief from an APPROVED insight') . '</h2>';
-        $h .= '<p class="fi-intake-hint">' . self::e('Human review always comes first: only an approved insight can become a brief. Its evidence links carry through to the brief.') . '</p>';
+        // 05 — ID fallback only: the archive's row actions are the normal path.
+        $h .= '<section class="fi-intake-card fi-intake-fallback" id="fi-intake-brief-form"><p class="fi-intake-no">' . self::e('05 · Brief — ID fallback') . '</p><h2>' . self::e('Build a brief by insight id') . '</h2>';
+        $h .= '<p class="fi-intake-hint">' . self::e('Normal path: use the “Build brief” row action in the archive below. This form is the debugging fallback. Only an APPROVED insight can become a brief; its evidence links carry through.') . '</p>';
         $h .= '<form method="post" action="' . self::eu($post_url) . '">' . $nonce(self::ACTION_BRIEF);
         $h .= '<input type="hidden" name="action" value="' . self::ea(self::ACTION_BRIEF) . '">';
         $h .= '<p>' . $ws_field . ' <label>Insight id <input type="number" name="insight_id" min="1" required></label> ';
-        $h .= '<button type="submit" class="button button-primary">' . self::e('Build brief') . '</button></p>';
+        $h .= '<button type="submit" class="button button-secondary">' . self::e('Build brief') . '</button></p>';
         $h .= '</form></section>';
 
         $h .= self::recent_objects($ws);
@@ -451,10 +642,34 @@ final class VES_Source_Intake {
         return $h;
     }
 
-    /** Read-only recent-objects tables with traceability columns. */
+    /** A small nonce'd one-button POST form for a row action. */
+    private static function row_action_form($action, array $hidden, $label, $primary = false) {
+        $post_url = function_exists('admin_url') ? admin_url('admin-post.php') : 'admin-post.php';
+        $nonce = function_exists('wp_nonce_field') ? wp_nonce_field($action, '_wpnonce', true, false) : '';
+        $h = '<form method="post" action="' . self::eu($post_url) . '" class="fi-row-action">' . $nonce
+           . '<input type="hidden" name="action" value="' . self::ea($action) . '">';
+        foreach ($hidden as $k => $v) {
+            $h .= '<input type="hidden" name="' . self::ea((string) $k) . '" value="' . self::ea((string) $v) . '">';
+        }
+        return $h . '<button type="submit" class="button button-small' . ($primary ? ' button-primary' : '') . '">' . self::e($label) . '</button></form>';
+    }
+
+    /** Workbench deep link (whitelisted slugs only). */
+    private static function workbench_link($page, $param, $id, $ws, $label) {
+        $page = in_array($page, ['fi-brief-workbench', 'fi-draft-workbench'], true) ? $page : 'fi-brief-workbench';
+        $url = function_exists('admin_url') ? admin_url('tools.php') : 'tools.php';
+        $url = function_exists('add_query_arg') ? add_query_arg(['page' => $page, 'workspace_id' => max(1, (int) $ws), $param => (int) $id], $url)
+            : $url . '?' . http_build_query(['page' => $page, 'workspace_id' => max(1, (int) $ws), $param => (int) $id]);
+        return '<a class="button button-small" href="' . self::eu($url) . '">' . self::e($label) . '</a>';
+    }
+
+    /**
+     * The archive — recent objects with traceability columns AND the row
+     * actions that drive the loop (no ID copying on the normal path).
+     */
     private static function recent_objects($ws) {
         if (!class_exists('VES_Intelligence_Store')) { return ''; }
-        $h = '<section class="fi-intake-card" id="fi-intake-recent"><h2>' . self::e('Recent objects (workspace ' . (int) $ws . ')') . '</h2>';
+        $h = '<section class="fi-intake-card fi-intake-archive" id="fi-intake-recent"><p class="fi-intake-no">' . self::e('Archive') . '</p><h2>' . self::e('Recent objects — workspace ' . (int) $ws) . '</h2>';
         try {
             $sources = (array) VES_Intelligence_Store::list_sources(['workspace_id' => $ws, 'limit' => 8]);
             $signals = (array) VES_Intelligence_Store::list_signals(['workspace_id' => $ws, 'limit' => 8]);
@@ -470,10 +685,12 @@ final class VES_Source_Intake {
         $h .= '<h3>' . self::e('Sources') . '</h3>';
         if (count($sources) === 0) { $h .= '<p class="fi-queue-hint">' . self::e('No sources yet — record one above.') . '</p>'; }
         else {
-            $h .= '<table class="widefat striped"><thead><tr><th>id</th><th>type</th><th>title</th><th>reference</th></tr></thead><tbody>';
+            $h .= '<table class="widefat striped"><thead><tr><th>id</th><th>type</th><th>title</th><th>reference</th><th>' . self::e('action') . '</th></tr></thead><tbody>';
             foreach ($sources as $s) {
+                $sid = (int) ($s['id'] ?? 0);
                 $url = (string) ($s['source_url'] ?? '');
-                $h .= '<tr><td>' . self::e((string) (int) ($s['id'] ?? 0)) . '</td><td>' . self::e((string) ($s['source_type'] ?? '')) . '</td><td>' . self::e((string) ($s['source_title'] ?? '')) . '</td><td>' . ($url !== '' ? '<span class="fi-intake-mono">' . self::e(self::cut($url, 80)) . '</span>' : self::e('—')) . '</td></tr>';
+                $act = '<a class="button button-small" href="' . self::eu(self::page_url($ws, ['prefill_source' => $sid]) . '#fi-intake-signal-form') . '">' . self::e('Record signal →') . '</a>';
+                $h .= '<tr><td>' . self::e((string) $sid) . '</td><td>' . self::e((string) ($s['source_type'] ?? '')) . '</td><td>' . self::e((string) ($s['source_title'] ?? '')) . '</td><td>' . ($url !== '' ? '<span class="fi-intake-mono">' . self::e(self::cut($url, 80)) . '</span>' : self::e('—')) . '</td><td>' . $act . '</td></tr>';
             }
             $h .= '</tbody></table>';
         }
@@ -481,9 +698,11 @@ final class VES_Source_Intake {
         $h .= '<h3>' . self::e('Signals') . '</h3>';
         if (count($signals) === 0) { $h .= '<p class="fi-queue-hint">' . self::e('No signals yet — a signal records what a source showed.') . '</p>'; }
         else {
-            $h .= '<table class="widefat striped"><thead><tr><th>id</th><th>source</th><th>type</th><th>title</th><th>seen</th></tr></thead><tbody>';
+            $h .= '<table class="widefat striped"><thead><tr><th>id</th><th>source</th><th>type</th><th>title</th><th>seen</th><th>' . self::e('action') . '</th></tr></thead><tbody>';
             foreach ($signals as $s) {
-                $h .= '<tr><td>' . self::e((string) (int) ($s['id'] ?? 0)) . '</td><td>' . self::e('#' . (int) ($s['source_id'] ?? 0)) . '</td><td>' . self::e((string) ($s['signal_type'] ?? '')) . '</td><td>' . self::e((string) ($s['title'] ?? '')) . '</td><td>' . self::e((string) (int) ($s['recurrence_count'] ?? 1) . '×') . '</td></tr>';
+                $gid = (int) ($s['id'] ?? 0);
+                $act = '<a class="button button-small" href="' . self::eu(self::page_url($ws, ['prefill_signal' => $gid]) . '#fi-intake-insight-form') . '">' . self::e('Promote →') . '</a>';
+                $h .= '<tr><td>' . self::e((string) $gid) . '</td><td>' . self::e('#' . (int) ($s['source_id'] ?? 0)) . '</td><td>' . self::e((string) ($s['signal_type'] ?? '')) . '</td><td>' . self::e((string) ($s['title'] ?? '')) . '</td><td>' . self::e((string) (int) ($s['recurrence_count'] ?? 1) . '×') . '</td><td>' . $act . '</td></tr>';
             }
             $h .= '</tbody></table>';
         }
@@ -491,21 +710,31 @@ final class VES_Source_Intake {
         $h .= '<h3>' . self::e('Insights') . '</h3>';
         if (count($insights) === 0) { $h .= '<p class="fi-queue-hint">' . self::e('No insights yet — promote a signal when a finding emerges.') . '</p>'; }
         else {
-            $h .= '<table class="widefat striped"><thead><tr><th>id</th><th>type</th><th>title</th><th>state</th><th>evidence</th></tr></thead><tbody>';
+            $h .= '<table class="widefat striped"><thead><tr><th>id</th><th>type</th><th>title</th><th>state</th><th>evidence</th><th>' . self::e('actions') . '</th></tr></thead><tbody>';
             foreach ($insights as $i) {
-                $pstate = method_exists('VES_Intelligence_Store', 'insight_presentation_state') ? VES_Intelligence_Store::insight_presentation_state($i) : (string) ($i['status'] ?? 'draft');
+                $iid = (int) ($i['id'] ?? 0);
+                $status = (string) ($i['status'] ?? 'draft');
+                $pstate = method_exists('VES_Intelligence_Store', 'insight_presentation_state') ? VES_Intelligence_Store::insight_presentation_state($i) : $status;
                 $evi = is_array($i['evidence_ids'] ?? null) ? count($i['evidence_ids']) : 0;
-                $h .= '<tr><td>' . self::e((string) (int) ($i['id'] ?? 0)) . '</td><td>' . self::e((string) ($i['insight_type'] ?? '')) . '</td><td>' . self::e((string) ($i['title'] ?? '')) . '</td><td>' . $badge($pstate) . '</td><td>' . self::e($evi . ' linked') . '</td></tr>';
+                $acts = self::workbench_link('fi-brief-workbench', 'insight_id', $iid, $ws, 'Workbench');
+                if ($status === 'approved') {
+                    $acts .= ' ' . self::row_action_form(self::ACTION_BRIEF, ['workspace_id' => $ws, 'insight_id' => $iid], 'Build brief', true);
+                    $acts .= ' ' . self::row_action_form(self::ACTION_MEMORY, ['workspace_id' => $ws, 'insight_id' => $iid], 'Memory candidate');
+                }
+                $h .= '<tr><td>' . self::e((string) $iid) . '</td><td>' . self::e((string) ($i['insight_type'] ?? '')) . '</td><td>' . self::e((string) ($i['title'] ?? '')) . '</td><td>' . $badge($pstate) . '</td><td>' . self::e($evi . ' linked') . '</td><td class="fi-intake-actions">' . $acts . '</td></tr>';
             }
             $h .= '</tbody></table>';
         }
 
         $h .= '<h3>' . self::e('Briefs') . '</h3>';
-        if (count($briefs) === 0) { $h .= '<p class="fi-queue-hint">' . self::e('No briefs yet — approve an insight, then build its brief above.') . '</p>'; }
+        if (count($briefs) === 0) { $h .= '<p class="fi-queue-hint">' . self::e('No briefs yet — approve an insight, then use its “Build brief” row action.') . '</p>'; }
         else {
-            $h .= '<table class="widefat striped"><thead><tr><th>id</th><th>insight</th><th>title</th><th>state</th></tr></thead><tbody>';
+            $h .= '<table class="widefat striped"><thead><tr><th>id</th><th>insight</th><th>title</th><th>state</th><th>' . self::e('actions') . '</th></tr></thead><tbody>';
             foreach ($briefs as $b) {
-                $h .= '<tr><td>' . self::e((string) (int) ($b['id'] ?? 0)) . '</td><td>' . self::e('#' . (int) ($b['insight_id'] ?? 0)) . '</td><td>' . self::e((string) ($b['title'] ?? '')) . '</td><td>' . $badge((string) ($b['status'] ?? 'draft')) . '</td></tr>';
+                $bid = (int) ($b['id'] ?? 0);
+                $acts = self::workbench_link('fi-draft-workbench', 'brief_id', $bid, $ws, 'Workbench');
+                $acts .= ' ' . self::row_action_form(self::ACTION_PREVIEW, ['workspace_id' => $ws, 'brief_id' => $bid], 'Preview + usage');
+                $h .= '<tr><td>' . self::e((string) $bid) . '</td><td>' . self::e('#' . (int) ($b['insight_id'] ?? 0)) . '</td><td>' . self::e((string) ($b['title'] ?? '')) . '</td><td>' . $badge((string) ($b['status'] ?? 'draft')) . '</td><td class="fi-intake-actions">' . $acts . '</td></tr>';
             }
             $h .= '</tbody></table>';
         }

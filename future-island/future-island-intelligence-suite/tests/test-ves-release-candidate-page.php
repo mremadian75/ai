@@ -16,7 +16,7 @@
  */
 error_reporting(E_ALL & ~E_DEPRECATED);
 if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.3.0'); }
+if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.4.0'); }
 if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc1'); }
 
 function get_option($k, $d = false) { return $GLOBALS['__opts'][$k] ?? $d; }
@@ -44,7 +44,7 @@ $html = VES_Release_Candidate_Page::render_html();
 // ── 1. Identity ──────────────────────────────────────────────────────────────
 $ok(strpos($html, 'Release Candidate') !== false, 'page titles itself Release Candidate');
 $ok(strpos($html, 'Future Island') !== false, 'page carries the Future Island identity');
-$ok(strpos($html, '1.3.0') !== false && strpos($html, 'v0.1-rc1') !== false, 'version + RC label shown');
+$ok(strpos($html, '1.4.0') !== false && strpos($html, 'v0.1-rc1') !== false, 'version + RC label shown');
 
 // ── 2. Honesty: UNRUN + never production-ready ───────────────────────────────
 $ok(strpos($html, 'UNRUN') !== false, 'page states live staging validation is UNRUN');

@@ -87,3 +87,35 @@ classifications: `json_only_unverified` (no root/archive given),
 Stored state on success carries `files_verified: true`; the classifier reports
 `passed` only for such states. `wp ves rc-readiness-check --strict` trusts only
 `passed`. Nothing in this pipeline can produce a production-ready claim.
+
+## Strict artifact rules (Phase 4/5 hardening)
+
+A matching hash is necessary but NOT sufficient — recorded-empty evidence is
+refused:
+
+- **Zero-byte required artifacts fail verification** even when the recorded
+  SHA-256 is the (valid) hash of empty content. Applies to: every screenshot,
+  every command's `stdout`/`combined` stream, the browser console log, the
+  network-errors log, and the PHP error-log tail.
+- The ONE allowed-empty stream is a command's `stderr` (expected-empty on success).
+- Silent commands must record the explicit marker `NO_OUTPUT_RECORDED` (the v3
+  script writes it automatically before hashing).
+- Clean browser logs must contain `NO_CONSOLE_ERRORS_OBSERVED` /
+  `NO_NETWORK_ERRORS_OBSERVED` — a zero-byte log always means lost evidence,
+  never a clean run.
+- `manifest-files.txt` must be non-empty; a zero-byte manifest fails with an
+  explicit detail.
+
+## Archive extraction hardening
+
+`verify_archive()` treats archives as hostile input:
+
+1. gzip detected by magic bytes (not filename) and decompressed to a plain
+   `.tar` in a private temp dir first (streamed, 1 GiB cap) — avoiding the
+   PharData direct-`.tar.gz` zero-byte edge cases;
+2. every entry name pre-scanned: absolute paths and `..` segments refuse the
+   whole archive before extraction;
+3. extraction audit: every entry must exist at its full archived size —
+   zero-byte/truncated extraction is reported explicitly;
+4. the temp dir is removed on EVERY return path;
+5. failures are fail-closed with clear details; nothing can record a pass.

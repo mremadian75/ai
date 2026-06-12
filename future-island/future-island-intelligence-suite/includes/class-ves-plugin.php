@@ -61,6 +61,21 @@ final class VES_Plugin {
                 if (defined('WP_DEBUG') && WP_DEBUG) { error_log('[VES_Source_Intake] register failed: ' . $e->getMessage()); }
             }
         }
+        if (is_admin() && class_exists('VES_Workbench') && method_exists('VES_Workbench', 'register')) {
+            try { VES_Workbench::register(); } catch (\Throwable $e) {
+                if (defined('WP_DEBUG') && WP_DEBUG) { error_log('[VES_Workbench] register failed: ' . $e->getMessage()); }
+            }
+        }
+        if (is_admin() && class_exists('VES_Pilot_Feedback')) {
+            try { VES_Pilot_Feedback::register(); } catch (\Throwable $e) {
+                if (defined('WP_DEBUG') && WP_DEBUG) { error_log('[VES_Pilot_Feedback] register failed: ' . $e->getMessage()); }
+            }
+        }
+        if (is_admin() && class_exists('VES_Pilot_Readiness')) {
+            try { VES_Pilot_Readiness::register(); } catch (\Throwable $e) {
+                if (defined('WP_DEBUG') && WP_DEBUG) { error_log('[VES_Pilot_Readiness] register failed: ' . $e->getMessage()); }
+            }
+        }
         if (is_admin() && class_exists('VES_Billing_Admin')) {
             VES_Billing_Admin::register();
         }

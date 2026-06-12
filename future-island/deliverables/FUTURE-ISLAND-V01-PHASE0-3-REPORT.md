@@ -25,7 +25,7 @@ The conditions are explicit: live staging validation is **UNRUN** (this environm
 
 ## 3. Phase 0 — release integrity cleanup
 
-- **Artifact alignment**: `sha256sum -c` verifies the prior ZIP. The prior report's header carried the pre-rebuild SHA (`e18b9fe2…`) and an impossible future date (2026-06-16) while its addendum carried the rebuilt SHA — the header now carries the true on-disk SHA `ee3d534e…` and date, with an explicit correction note. No artifact was rebuilt or back-dated.
+- **Artifact alignment**: `sha256sum -c` verifies the prior release's ZIP. That earlier report's header had carried a pre-rebuild hash and an impossible future date (2026-06-16) while its addendum carried the rebuilt hash; the prior report was corrected in place with an explicit note. The historical hashes live only in that prior report — **the one and only SHA-256 for THIS release is the ZIP hash in the header above.** No artifact was rebuilt or back-dated.
 - **`VES_RC_Evidence_Pack::verify_archive()` hardened** (the directive's flagged area):
   - gzip archives are now **decompressed to a plain `.tar` in the temp dir first** (streamed, magic-byte detected, 1 GiB safety cap) — PharData's direct `.tar.gz` extraction can silently emit zero-byte files on some PHP/zlib builds;
   - **entry-name pre-scan** refuses absolute paths and `..` segments before extraction;

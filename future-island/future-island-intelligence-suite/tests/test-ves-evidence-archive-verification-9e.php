@@ -16,7 +16,7 @@
  */
 error_reporting(E_ALL & ~E_DEPRECATED);
 if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.3.0'); }
+if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.4.0'); }
 if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc3'); }
 
 function sanitize_key($s){return strtolower(preg_replace('/[^a-z0-9_\-]/i','',(string)$s));}
@@ -117,6 +117,38 @@ $ok($files['status'] === 'missing_required_artifacts', 'deleted screenshot detec
 $res = VES_RC_Evidence_Pack::record_live_validation($pack, ['evidence_root' => $root]);
 $ok(is_wp_error($res) && $res->get_error_code() === 'ves_evidence_missing_required_artifacts', 'missing artifact refuses recording');
 file_put_contents("{$root}/screenshots/07-generation-context-preview.png", "\x89PNG fake bytes 07-generation-context-preview.png"); // restore
+
+// ── 4b. Zero-byte required artifacts fail EVEN WITH a matching hash ──────────
+// The forgery scenario: record the sha256 of empty content, ship a zero-byte
+// file — hashes match, but evidence is absent. Strict rules refuse it.
+$empty_hash = hash('sha256', '');
+$zpack = $pack;
+file_put_contents("{$root}/screenshots/01-signal-room.png", '');
+$zpack['screenshot_files']['01-signal-room.png'] = $empty_hash;
+$files = VES_RC_Evidence_Pack::verify_files($zpack, $root);
+$ok($files['status'] === 'missing_required_artifacts' && strpos(implode(' ', $files['missing']), 'zero-byte required artifact') !== false,
+    'zero-byte screenshot with MATCHING empty-hash still fails (hash match cannot replace evidence)');
+file_put_contents("{$root}/screenshots/01-signal-room.png", "\x89PNG fake bytes 01-signal-room.png"); // restore
+
+$zpack = $pack;
+file_put_contents("{$root}/commands/cmd0.out", '');
+$zpack['command_outputs'][VES_RC_Evidence_Pack::REQUIRED_COMMANDS[0]]['stdout_sha256'] = $empty_hash;
+$files = VES_RC_Evidence_Pack::verify_files($zpack, $root);
+$ok($files['status'] === 'missing_required_artifacts' && strpos(implode(' ', $files['missing']), 'zero-byte') !== false,
+    'zero-byte command stdout fails — silent commands must record NO_OUTPUT_RECORDED');
+file_put_contents("{$root}/commands/cmd0.out", "stdout for " . VES_RC_Evidence_Pack::REQUIRED_COMMANDS[0] . "\n"); // restore
+
+$zpack = $pack;
+file_put_contents("{$root}/logs/browser-console.log", '');
+$zpack['browser_console_log_sha256'] = $empty_hash;
+$files = VES_RC_Evidence_Pack::verify_files($zpack, $root);
+$ok($files['status'] === 'missing_required_artifacts', 'zero-byte browser console log fails — a clean run records NO_CONSOLE_ERRORS_OBSERVED, never nothing');
+file_put_contents("{$root}/logs/browser-console.log", "NO_CONSOLE_ERRORS_OBSERVED\n"); // restore
+
+// stderr is the ONE expected-empty stream: the base fixture's empty .err files
+// pass (re-proven right now), so success-silence on stderr never blocks a pack.
+$files = VES_RC_Evidence_Pack::verify_files($pack, $root);
+$ok($files['status'] === 'ok', 'empty stderr streams still verify (the only allowed-empty artifact class)');
 
 // ── 5. Archive verification (PharData) ───────────────────────────────────────
 if (class_exists('PharData')) {

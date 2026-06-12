@@ -39,6 +39,8 @@ $ves_tables = [
     'ves_intel_insights', 'ves_intel_briefs', 'ves_intel_drafts',
     'ves_intel_memory', 'ves_trend_observations', 'ves_trend_records',
     'ves_review_decisions', 'ves_ai_usage_events', 'ves_topup_requests',
+    // Phase 4 — pilot learning
+    'ves_pilot_feedback',
 ];
 
 // Deep Trend Finder tables
@@ -69,7 +71,15 @@ $ves_options = [
     'ves_usage_settlement_required', 'ves_apify_actor_allowlist_extra',
     'ves_apify_actor_registry_overrides', 'ves_apify_active_slots',
     'ves_generation_execution_enabled',
+    // Phase 4 — pilot learning
+    'ves_pilot_feedback_db_version',
 ];
+
+// Phase 4 — per-workspace pilot seed registries (dynamic names).
+$wpdb->query($wpdb->prepare(
+    "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+    'ves_pilot_seed_registry_%'
+));
 
 // Deep Trend Finder options
 $fidtf_options = [

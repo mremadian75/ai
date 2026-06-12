@@ -44,7 +44,7 @@ $ok(strpos($warn_text, 'UNRUN') !== false, 'warnings call out the unrun live val
 // ── 2. Healthy stack stubs ───────────────────────────────────────────────────
 // NOTE: declared inside a conditional block so PHP binds them at RUNTIME —
 // scenario 1 above must run with no services defined.
-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.4.0'); }
+if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.4.1'); }
 if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc1'); }
 if (!class_exists('VES_Intelligence_Store')) {
 final class VES_Intelligence_Store {

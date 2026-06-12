@@ -13,7 +13,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
     if ($cond) { $pass++; } else { $fail++; echo "FAIL: $label\n"; }
 };
 
-$assert(strpos($main, 'Version: 1.4.0') !== false, 'Version is 1.1.0');
+$assert(strpos($main, 'Version: 1.4.1') !== false, 'Version is 1.1.0');
 
 $fn_pos = strpos($ajax, 'private static function public_support_code(');
 $fn_body = $fn_pos !== false ? substr($ajax, $fn_pos, 2000) : '';

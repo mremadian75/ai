@@ -13,7 +13,7 @@ $ok = function($condition, $label) use (&$checks, &$failures) { $checks++; if (!
 
 // [v1.1.0 archived] removed obsolete standalone-addon version snapshot '0.9.31.15-p4.8-deep-trend-sidebar-layout'.
 // Current contract: the suite is version 1.1.0 and DTF is a built-in module booted in-process.
-$ok(strpos($main, 'Version: 1.4.0') !== false, 'Suite header is v1.1.0');
+$ok(strpos($main, 'Version: 1.4.1') !== false, 'Suite header is v1.1.0');
 $ok(strpos($main, 'FIDTF_Plugin::boot()') !== false, 'DTF is booted in-process by the unified bootstrap (built-in module, not a separate add-on)');
 $ok(strpos($main, 'class-ves-deep-trend-addon-bridge.php') !== false, 'Core bootstraps Deep Trend add-on bridge');
 $ok(strpos($bridge, 'class VES_Deep_Trend_Addon_Bridge') !== false || strpos($bridge, 'final class VES_Deep_Trend_Addon_Bridge') !== false, 'Bridge class exists');

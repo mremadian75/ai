@@ -16,7 +16,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
 };
 
 // Version
-$assert(strpos($main, 'Version: 1.4.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.4.0'") !== false, 'Version is 1.1.0');
+$assert(strpos($main, 'Version: 1.4.1') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.4.1'") !== false, 'Version is 1.1.0');
 
 // PHP: all fallback returns include analysis_source=local_fallback
 $assert(substr_count($ai, "'analysis_source' => 'local_fallback'") >= 3, 'PHP: at least 3 fallback return paths set analysis_source=local_fallback');

@@ -1,6 +1,6 @@
 # Future Island — Production Rails Runbook
 
-Plugin **1.4.0** · label **v0.1-rc7**. Companion to
+Plugin **1.4.1** · label **v0.1-rc8**. Companion to
 `RELEASE-CANDIDATE-RUNBOOK.md`; this document covers the hard rails added by
 the Production Rails Hardening bundle (Phase 9A/9B/9C), the Phase 4/5
 operational rails, and how operators work with them.

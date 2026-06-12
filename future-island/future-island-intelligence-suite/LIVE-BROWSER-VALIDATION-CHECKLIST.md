@@ -57,6 +57,31 @@ the Brief Workbench, Draft Workbench, Intake page and Release Candidate page:
 - [ ] Focus outlines visible on every interactive control (focus-visible)
 - [ ] prefers-reduced-motion honored (no animation observed when enabled)
 
+## Pilot surfaces QA (Phase 4/5 — observe in the browser)
+
+These do NOT change the 12 required screenshots above; capture extra evidence
+under `screenshots/extra-` names if anything fails.
+
+- [ ] Intake row actions: "Record signal →" / "Promote →" prefill the form with
+      the object context (no ID copying); "change" returns to the plain form
+- [ ] Insight row: "Build brief" + "Memory candidate" appear ONLY on approved
+      insights; both are nonce'd POST buttons, not links
+- [ ] Brief row "Preview + usage": lands on the Draft Workbench with the
+      preview notice; clicking twice ledgers ONE usage event (verify in Loop Trace)
+- [ ] Workbench review rail: approve and reject work; an evidence-less insight
+      shows the evidence-gate refusal notice; rejected objects show the
+      terminal reason with disabled controls
+- [ ] Feedback card (workbench right rail): submits, then appears under
+      Pilot Readiness → Recent pilot feedback
+- [ ] Pilot Readiness verdict: reads honestly from real state (blocked while
+      validation is UNRUN; flips only after a file-backed pass is recorded)
+- [ ] Seed/reset: seeding twice is refused; reset without the confirmation
+      checkbox is refused server-side; after reset the [DEMO] rows are gone
+      and non-demo rows remain
+- [ ] Loop Trace: a seeded scenario-A insight resolves source → signal →
+      evidence → insight → brief → usage → memory → feedback; cross-workspace
+      ids are refused
+
 ## Flow
 
 1. `bash scripts/future-island-browser-smoke.sh --base-url=…` (reachability only).

@@ -11,17 +11,290 @@ index dd0e496..59fb4e3 100644
  - **`VES_RC_Evidence_Pack::verify_archive()` hardened** (the directive's flagged area):
    - gzip archives are now **decompressed to a plain `.tar` in the temp dir first** (streamed, magic-byte detected, 1 GiB safety cap) — PharData's direct `.tar.gz` extraction can silently emit zero-byte files on some PHP/zlib builds;
    - **entry-name pre-scan** refuses absolute paths and `..` segments before extraction;
+diff --git a/future-island/deliverables/FUTURE-ISLAND-V01-PHASE4-5-REPORT.md b/future-island/deliverables/FUTURE-ISLAND-V01-PHASE4-5-REPORT.md
+new file mode 100644
+index 0000000..4f51687
+--- /dev/null
++++ b/future-island/deliverables/FUTURE-ISLAND-V01-PHASE4-5-REPORT.md
+@@ -0,0 +1,115 @@
++# FUTURE ISLAND V0.1 — PHASES 4–5 — FINAL RELEASE REPORT
++
++Plugin **1.4.1** · label **v0.1-rc8** · baseline: Phase 0–3 build (1.3.0 / v0.1-rc6, 200 tests, ZIP `3a4decf8…2904eed` re-verified by checksum AND by a fresh clean-extraction suite run before any work began)
++Date: 2026-06-12 · ZIP: `future-island-intelligence-suite-v01-phase4-5.zip`
++**The one and only SHA-256 for THIS release:** `afb4f58c329b5af2c0daeab9f1183c82244cdb000c88ec10964dcb57ebc6e83b`
++*(This artifact supersedes and replaces the interim 1.4.0/rc7 build after a verification pass closed two gaps: the uninstall-coverage test did not yet pin the new pilot table/options, and the browser checklist lacked the Phase 4/5 surface QA items. No production code changed between the two builds — one test file and one doc; the version was bumped so exactly one artifact carries one SHA.)*
++
++---
++
++## A. Executive verdict
++
++**Classification: `conditional_ready_for_staging_review`**
++
++Not `ready_for_controlled_pilot` — and here is exactly why: that verdict now belongs to the in-product **Pilot Readiness gate**, which computes it from real state, and its hard gate is a **file-backed PASSED live staging validation**. This environment has no WordPress runtime, WP-CLI, MySQL, or browser, so live validation remains **UNRUN** — and a build whose staging behavior has never been observed cannot honestly claim a pilot may start. What this build delivers is everything *between* here and that verdict: when an operator runs the staging checklist and records the evidence pack, the Pilot Readiness page itself flips to "A controlled pilot can run now" — and the suite proves that transition (`tests/test-ves-pilot-readiness.php` simulates the recorded file-backed pass and asserts `ready_for_controlled_pilot` appears, with production language still refused).
++
++**202/202 tests from the tree AND from a clean extraction of the shipped ZIP** (573 files). All four cleanup items fixed, Phase 4 complete, Phase 5 rails complete. Backup/restore and rollback drills are documented but **not performed** — they require a real host.
++
++## B. Changed files
++
++| File | Change | Why |
++| --- | --- | --- |
++| `deliverables/FUTURE-ISLAND-V01-PHASE0-3-REPORT.md` | removed stale literal hashes from §3 | 2.1 — one true release SHA per report |
++| `includes/class-ves-rc-evidence-pack.php` | strict size rules in `verify_files` | 2.2 — zero-byte required artifact fails even with a matching empty-hash |
++| `scripts/future-island-live-validation-v3.sh` | `NO_OUTPUT_RECORDED` marker for silent commands | 2.2 — capture side of the strict contract |
++| `tests/test-ves-no-duplicate-array-keys.php` (new) | token-scan regression guard | 2.3 — zero duplicates found (the flagged `source_title` repeats live in separate branches/forms); the bug class can no longer land |
++| `includes/class-ves-source-intake.php` | prefill transitions, row actions, preview+usage action, memory-candidate action, route spine, next-action panel, archive layout, failure logging | 2.4 + 2.5 + 4.4 |
++| `includes/class-ves-workbench.php` | `register()` + nonce-protected review handler; ACTIVE approve/reject rail; notices; feedback cards | 2.4 — the review step no longer requires CLI |
++| `includes/class-ves-pilot-feedback.php` (new) | additive `ves_pilot_feedback` table + save/recent/form/handler | 3.4 |
++| `includes/class-ves-pilot-seed.php` (new) | 3 scenario chains, [DEMO]-marked, registry-scoped reset | 3.1 + 3.2 |
++| `includes/class-ves-pilot-readiness.php` (new) | gates report + page + seed/reset handlers + Loop Trace | 3.3 + 3.5 + 4.7 |
++| `includes/class-ves-plugin.php` / bootstrap / `class-ves-migrations.php` / `class-ves-admin.php` | wiring + schema version bump + enqueue allowlist | new modules |
++| `uninstall.php` | feedback table, db-version option, seed registries (LIKE-deleted) | retention contract |
++| `assets/css/fiis-ui-system.css` | intake cards/spine/next panel, feedback card, trace timeline | 2.5 + §6 design rules |
++| `PILOT-READINESS-ACCEPTANCE-CRITERIA.md` | full Phase 4 rewrite (kept every existing safety criterion) | 3.6 |
++| `PRODUCTION-RAILS-RUNBOOK.md` | §10–20: environment, constants, permissions, cron, retention, backup/restore, staging→production, rollback, observability, security, non-production areas | 4.1 |
++| `LIVE-STAGING-VALIDATION-CHECKLIST.md` | **fixed a real doc bug**: sign-off still instructed the manual `wp option update` write that the rails classify `unverified_manual`; added Phase 4/5 walkthrough (D2) | honesty |
++| `RELEASE-EVIDENCE-PACK-V2-SPEC.md` | strict artifact rules + extraction hardening sections | 2.2 |
++| `tests/test-ves-evidence-archive-verification-9e.php` | +4 zero-byte forgery scenarios | 2.2 |
++| `tests/test-ves-source-intake-page.php` | +24 assertions (actions, prefill, idempotent usage, review handler security) | 2.4 |
++| `tests/test-ves-workbench-8a.php` | active-rail contract (was pinning "not wired yet") | 2.4 |
++| `tests/test-ves-pilot-readiness.php` (new) | 46 assertions: feedback, seed, reset precision, gates, trace | Phase 4 |
++| `tests/test-ves-uninstall-coverage-9de.php` | +5 pins: `ves_pilot_feedback` table/option, seed-registry LIKE delete present, gated, and prepared | verification pass — the retention contract for Phase 4 data is now regression-locked |
++| `LIVE-BROWSER-VALIDATION-CHECKLIST.md` | Phase 4/5 pilot-surface QA block (row actions, review rail, feedback, verdict honesty, seed/reset, trace) — the 12 required screenshots unchanged | §8 deliverable completed in the browser doc itself, not only via the staging checklist |
++
++## C. Tests run
++
++| Command | Result | Notes |
++| --- | --- | --- |
++| `sha256sum -c …phase0-3.zip.sha256` | OK | baseline verified before work |
++| `bash bin/test-all.sh -q` (prior ZIP, clean extraction) | 200/200 | prior claims re-verified, not trusted |
++| `bash bin/test-all.sh -q` (tree, after) | **202/202** | +2 test files |
++| `bash bin/test-all.sh -q` (NEW ZIP, clean extraction) | **202/202** | 573 files |
++| `php -l` (16 changed files) | 16/16 clean | |
++| `bash -n` v3 script | OK | |
++| PHP 7.4 syntax audit / CSS brace+scope checks | clean | no composer/npm tooling exists in this repo — `bin/` is the toolchain |
++| Focused: evidence-archive 27 · dup-keys 3 · intake 58 · workbench 27 · pilot 46 · core-loop 54 · UI 102 · v3-e2e 17 · uninstall 30 | all green | |
++
++## D. Phase completion
++
++| Phase | Status | Evidence | Remaining risk |
++| --- | --- | --- | --- |
++| Cleanup 2.1 (SHA consistency) | done | one literal SHA per report; checksum verified | none |
++| Cleanup 2.2 (strict artifacts) | done | 4 forgery fixtures fail closed; capture marker added | the buggy-zlib host behavior itself still needs one staging observation |
++| Cleanup 2.3 (duplicate keys) | done — **zero found** | token-scan test (self-checking detector) | none |
++| Cleanup 2.4 (ID friction) | done | prefill links, row actions, one-click brief/memory/preview, ACTIVE review rail — normal path has zero ID copying; ID forms remain as labeled fallbacks | new mutation surfaces (all cap+nonce tested) |
++| Cleanup 2.5 (Intake UI) | done | spine + next panel + editorial cards + archive; responsive ≤782px; pinned by tests | visual QA at real breakpoints is a staging step |
++| Phase 4 pilot readiness | done | scenarios A/B/C seeded at staggered stages; registry-scoped reset proven exact; feedback table + forms; gates page computes the verdict; criteria doc | the verdict is gated on UNRUN staging validation — by design |
++| Phase 5 rails | done | runbook §10–20; trace handoff; idempotent usage; permission tests on every new handler; failure-reason logging (codes only); memory governance re-proven | backup/restore + rollback drills documented, NOT performed |
++
++## E. Product loop proof
++
++`Source → Signal → Insight → Brief → Draft/Prompt Preview → Memory Record → Usage Event`, by named surface/action:
++
++1. **Source** — Intake 01/02 (`VES_Source_Intake::process_source`; URL recorded, never fetched — zero HTTP calls asserted across the whole loop test).
++2. **Signal** — source row "Record signal →" (prefill) → Intake 03 (`process_signal`, deterministic scoring/dedupe).
++3. **Insight** — signal row "Promote →" → Intake 04 (`process_signal_to_insight`: evidence record + DRAFT insight; presentation states `needs_evidence`/`ready_for_review`).
++4. **Review** — Brief Workbench right rail → `VES_Workbench::handle_review` → `update_insight_status` (matrix + evidence gate + append-only ledger; refusals surfaced as notices, proven).
++5. **Brief** — insight row "Build brief" → `process_insight_to_brief` → `VES_Insight_Brief_Builder` (evidence ids + `insight_id` column carry through; idempotent).
++6. **Draft preview** — brief row "Preview + usage" → `process_prompt_preview` → real prompt package (`provider_execution_allowed === false`), lands the operator on the Draft Workbench. No draft entity is ever fabricated.
++7. **Memory** — insight row "Memory candidate" → `process_memory_candidate` → `VES_Brand_Context_Service::create_candidate` (status FORCED candidate, deduped, traceable).
++8. **Usage** — the preview action ledgers exactly ONE event per brief per operator (`run_id`-idempotent; double-click reuses it — proven).
++9. **Trace** — Pilot Readiness → Loop Trace walks any insight back to the exact source URL and forward to usage/memory/feedback.
++
++## F. Pilot readiness proof
++
++- **Scenario A** (competitor → brief): seeded through brief + memory candidate; trace test resolves it end-to-end.
++- **Scenario B** (cultural → opportunity): seeded through APPROVED insight; operator builds the brief via the row action.
++- **Scenario C** (AI-visibility gap → corrective brief): seeded as a DRAFT, evidence-backed insight presenting `ready_for_review` — the pilot performs the review itself. Manual observation only; **no AEO/GEO module was built**.
++- **Sample workspace**: seed refuses double-seeding; status reports counts + stage per scenario.
++- **Reset**: confirmation enforced server-side; deletes exactly the registry rows (a non-demo source created before seeding survives — proven); demo preview usage events and feedback follow; append-only ledger rows remain by design, documented.
++- **Feedback**: whitelisted types/decisions, clamped rating, sanitized text, reviewable on the page, cap+nonce on the handler.
++- **Metrics**: evidence coverage, review acceptance, loop completion, feedback counts — computed on the gates table; no analytics dashboard built.
++
++## G. Security notes
++
++- **Permissions/nonces**: every new mutation (4 intake actions + preview + memory candidate + review + feedback + seed + reset) requires `manage_options` + a per-action nonce; unauthorized → `wp_die` 403 and bad nonce → rejected, both proven per handler.
++- **Archive safety**: hostile-input treatment (magic-byte gzip detection, decompress-to-tar, entry pre-scan, size audit, temp cleanup on every path) + the new zero-byte rules; verification was strengthened, never weakened — every pre-existing scenario still passes.
++- **Safe URLs**: recorded only, never fetched; http/https only; credentialed URLs refused; zero `wp_remote_*` calls across the loop (instrumented).
++- **Escaping/sanitization**: validate → sanitize → escape late everywhere; hostile titles proven inert on intake and trace surfaces; notices map fixed codes to fixed copy — query strings are never echoed.
++- **Logs/secrets**: failure logging records error codes + object ids only; no payloads, no secrets; security event log remains scrubbed and bounded.
++- **Destructive actions**: only pilot reset (registry-scoped, demo-only, checkbox-confirmed server-side) and explicit uninstall-with-delete.
++
++## H. Remaining limitations (honest)
++
++1. **Live staging validation: UNRUN.** Browser validation: NOT run. No WordPress/MySQL/browser exists here; every runtime claim is from the self-contained suite.
++2. **Backup/restore: NOT tested. Rollback: NOT tested.** Both are documented manual drills (runbook §15/§17) with explicit do-not-claim warnings.
++3. The pilot verdict on the readiness page will honestly read "Not ready" until the staging gate passes — that is correct behavior, not a defect.
++4. Feedback has no export UI (the table is the source of truth at pilot exit).
++5. Credits/plans remain out of scope; the ledger rail is the v0.1 capability.
++6. Intentionally deferred: predictive trends, full AEO/GEO, multi-LLM orchestration, real-time dashboards, Brand Brain, publishing, fine-tuning — nothing in the core loop depends on them.
++7. Member-app dark mode remains roadmap; demo review-ledger rows persist after reset (append-only, documented).
++
++## I. Final recommended next step
++
++**Run the staging validation once, end to end** — install this ZIP on a staging copy, walk `LIVE-STAGING-VALIDATION-CHECKLIST.md` (including the new D2 surfaces), record the file-backed evidence pack, and let the Pilot Readiness page deliver its own verdict. That single manual step is the only thing between this build and `ready_for_controlled_pilot` — no new features are needed, and none should be built before pilot evidence asks for them.
 diff --git a/future-island/deliverables/future-island-intelligence-suite-v01-phase4-5.zip b/future-island/deliverables/future-island-intelligence-suite-v01-phase4-5.zip
 new file mode 100644
-index 0000000..3ca8f32
+index 0000000..c25a67a
 Binary files /dev/null and b/future-island/deliverables/future-island-intelligence-suite-v01-phase4-5.zip differ
 diff --git a/future-island/deliverables/future-island-intelligence-suite-v01-phase4-5.zip.sha256 b/future-island/deliverables/future-island-intelligence-suite-v01-phase4-5.zip.sha256
 new file mode 100644
-index 0000000..f629cc4
+index 0000000..a0dd698
 --- /dev/null
 +++ b/future-island/deliverables/future-island-intelligence-suite-v01-phase4-5.zip.sha256
 @@ -0,0 +1 @@
-+a7a397b06a85c00726057352d5aff91bb818749bc63a5b0a7767b1986bcc1ca5  deliverables/future-island-intelligence-suite-v01-phase4-5.zip
++afb4f58c329b5af2c0daeab9f1183c82244cdb000c88ec10964dcb57ebc6e83b  deliverables/future-island-intelligence-suite-v01-phase4-5.zip
+diff --git a/future-island/deliverables/future-island-v01-phase4-5.diff b/future-island/deliverables/future-island-v01-phase4-5.diff
+new file mode 100644
+index 0000000..30b0d70
+--- /dev/null
++++ b/future-island/deliverables/future-island-v01-phase4-5.diff
+@@ -0,0 +1,109 @@
++diff --git a/future-island/deliverables/FUTURE-ISLAND-V01-PHASE0-3-REPORT.md b/future-island/deliverables/FUTURE-ISLAND-V01-PHASE0-3-REPORT.md
++index dd0e496..59fb4e3 100644
++--- a/future-island/deliverables/FUTURE-ISLAND-V01-PHASE0-3-REPORT.md
+++++ b/future-island/deliverables/FUTURE-ISLAND-V01-PHASE0-3-REPORT.md
++@@ -25,7 +25,7 @@ The conditions are explicit: live staging validation is **UNRUN** (this environm
++ 
++ ## 3. Phase 0 — release integrity cleanup
++ 
++-- **Artifact alignment**: `sha256sum -c` verifies the prior ZIP. The prior report's header carried the pre-rebuild SHA (`e18b9fe2…`) and an impossible future date (2026-06-16) while its addendum carried the rebuilt SHA — the header now carries the true on-disk SHA `ee3d534e…` and date, with an explicit correction note. No artifact was rebuilt or back-dated.
+++- **Artifact alignment**: `sha256sum -c` verifies the prior release's ZIP. That earlier report's header had carried a pre-rebuild hash and an impossible future date (2026-06-16) while its addendum carried the rebuilt hash; the prior report was corrected in place with an explicit note. The historical hashes live only in that prior report — **the one and only SHA-256 for THIS release is the ZIP hash in the header above.** No artifact was rebuilt or back-dated.
++ - **`VES_RC_Evidence_Pack::verify_archive()` hardened** (the directive's flagged area):
++   - gzip archives are now **decompressed to a plain `.tar` in the temp dir first** (streamed, magic-byte detected, 1 GiB safety cap) — PharData's direct `.tar.gz` extraction can silently emit zero-byte files on some PHP/zlib builds;
++   - **entry-name pre-scan** refuses absolute paths and `..` segments before extraction;
++diff --git a/future-island/deliverables/FUTURE-ISLAND-V01-PHASE4-5-REPORT.md b/future-island/deliverables/FUTURE-ISLAND-V01-PHASE4-5-REPORT.md
++new file mode 100644
++index 0000000..4f51687
++--- /dev/null
+++++ b/future-island/deliverables/FUTURE-ISLAND-V01-PHASE4-5-REPORT.md
++@@ -0,0 +1,115 @@
+++# FUTURE ISLAND V0.1 — PHASES 4–5 — FINAL RELEASE REPORT
+++
+++Plugin **1.4.1** · label **v0.1-rc8** · baseline: Phase 0–3 build (1.3.0 / v0.1-rc6, 200 tests, ZIP `3a4decf8…2904eed` re-verified by checksum AND by a fresh clean-extraction suite run before any work began)
+++Date: 2026-06-12 · ZIP: `future-island-intelligence-suite-v01-phase4-5.zip`
+++**The one and only SHA-256 for THIS release:** `afb4f58c329b5af2c0daeab9f1183c82244cdb000c88ec10964dcb57ebc6e83b`
+++*(This artifact supersedes and replaces the interim 1.4.0/rc7 build after a verification pass closed two gaps: the uninstall-coverage test did not yet pin the new pilot table/options, and the browser checklist lacked the Phase 4/5 surface QA items. No production code changed between the two builds — one test file and one doc; the version was bumped so exactly one artifact carries one SHA.)*
+++
+++---
+++
+++## A. Executive verdict
+++
+++**Classification: `conditional_ready_for_staging_review`**
+++
+++Not `ready_for_controlled_pilot` — and here is exactly why: that verdict now belongs to the in-product **Pilot Readiness gate**, which computes it from real state, and its hard gate is a **file-backed PASSED live staging validation**. This environment has no WordPress runtime, WP-CLI, MySQL, or browser, so live validation remains **UNRUN** — and a build whose staging behavior has never been observed cannot honestly claim a pilot may start. What this build delivers is everything *between* here and that verdict: when an operator runs the staging checklist and records the evidence pack, the Pilot Readiness page itself flips to "A controlled pilot can run now" — and the suite proves that transition (`tests/test-ves-pilot-readiness.php` simulates the recorded file-backed pass and asserts `ready_for_controlled_pilot` appears, with production language still refused).
+++
+++**202/202 tests from the tree AND from a clean extraction of the shipped ZIP** (573 files). All four cleanup items fixed, Phase 4 complete, Phase 5 rails complete. Backup/restore and rollback drills are documented but **not performed** — they require a real host.
+++
+++## B. Changed files
+++
+++| File | Change | Why |
+++| --- | --- | --- |
+++| `deliverables/FUTURE-ISLAND-V01-PHASE0-3-REPORT.md` | removed stale literal hashes from §3 | 2.1 — one true release SHA per report |
+++| `includes/class-ves-rc-evidence-pack.php` | strict size rules in `verify_files` | 2.2 — zero-byte required artifact fails even with a matching empty-hash |
+++| `scripts/future-island-live-validation-v3.sh` | `NO_OUTPUT_RECORDED` marker for silent commands | 2.2 — capture side of the strict contract |
+++| `tests/test-ves-no-duplicate-array-keys.php` (new) | token-scan regression guard | 2.3 — zero duplicates found (the flagged `source_title` repeats live in separate branches/forms); the bug class can no longer land |
+++| `includes/class-ves-source-intake.php` | prefill transitions, row actions, preview+usage action, memory-candidate action, route spine, next-action panel, archive layout, failure logging | 2.4 + 2.5 + 4.4 |
+++| `includes/class-ves-workbench.php` | `register()` + nonce-protected review handler; ACTIVE approve/reject rail; notices; feedback cards | 2.4 — the review step no longer requires CLI |
+++| `includes/class-ves-pilot-feedback.php` (new) | additive `ves_pilot_feedback` table + save/recent/form/handler | 3.4 |
+++| `includes/class-ves-pilot-seed.php` (new) | 3 scenario chains, [DEMO]-marked, registry-scoped reset | 3.1 + 3.2 |
+++| `includes/class-ves-pilot-readiness.php` (new) | gates report + page + seed/reset handlers + Loop Trace | 3.3 + 3.5 + 4.7 |
+++| `includes/class-ves-plugin.php` / bootstrap / `class-ves-migrations.php` / `class-ves-admin.php` | wiring + schema version bump + enqueue allowlist | new modules |
+++| `uninstall.php` | feedback table, db-version option, seed registries (LIKE-deleted) | retention contract |
+++| `assets/css/fiis-ui-system.css` | intake cards/spine/next panel, feedback card, trace timeline | 2.5 + §6 design rules |
+++| `PILOT-READINESS-ACCEPTANCE-CRITERIA.md` | full Phase 4 rewrite (kept every existing safety criterion) | 3.6 |
+++| `PRODUCTION-RAILS-RUNBOOK.md` | §10–20: environment, constants, permissions, cron, retention, backup/restore, staging→production, rollback, observability, security, non-production areas | 4.1 |
+++| `LIVE-STAGING-VALIDATION-CHECKLIST.md` | **fixed a real doc bug**: sign-off still instructed the manual `wp option update` write that the rails classify `unverified_manual`; added Phase 4/5 walkthrough (D2) | honesty |
+++| `RELEASE-EVIDENCE-PACK-V2-SPEC.md` | strict artifact rules + extraction hardening sections | 2.2 |
+++| `tests/test-ves-evidence-archive-verification-9e.php` | +4 zero-byte forgery scenarios | 2.2 |
+++| `tests/test-ves-source-intake-page.php` | +24 assertions (actions, prefill, idempotent usage, review handler security) | 2.4 |
+++| `tests/test-ves-workbench-8a.php` | active-rail contract (was pinning "not wired yet") | 2.4 |
+++| `tests/test-ves-pilot-readiness.php` (new) | 46 assertions: feedback, seed, reset precision, gates, trace | Phase 4 |
+++| `tests/test-ves-uninstall-coverage-9de.php` | +5 pins: `ves_pilot_feedback` table/option, seed-registry LIKE delete present, gated, and prepared | verification pass — the retention contract for Phase 4 data is now regression-locked |
+++| `LIVE-BROWSER-VALIDATION-CHECKLIST.md` | Phase 4/5 pilot-surface QA block (row actions, review rail, feedback, verdict honesty, seed/reset, trace) — the 12 required screenshots unchanged | §8 deliverable completed in the browser doc itself, not only via the staging checklist |
+++
+++## C. Tests run
+++
+++| Command | Result | Notes |
+++| --- | --- | --- |
+++| `sha256sum -c …phase0-3.zip.sha256` | OK | baseline verified before work |
+++| `bash bin/test-all.sh -q` (prior ZIP, clean extraction) | 200/200 | prior claims re-verified, not trusted |
+++| `bash bin/test-all.sh -q` (tree, after) | **202/202** | +2 test files |
+++| `bash bin/test-all.sh -q` (NEW ZIP, clean extraction) | **202/202** | 573 files |
+++| `php -l` (16 changed files) | 16/16 clean | |
+++| `bash -n` v3 script | OK | |
+++| PHP 7.4 syntax audit / CSS brace+scope checks | clean | no composer/npm tooling exists in this repo — `bin/` is the toolchain |
+++| Focused: evidence-archive 27 · dup-keys 3 · intake 58 · workbench 27 · pilot 46 · core-loop 54 · UI 102 · v3-e2e 17 · uninstall 30 | all green | |
+++
+++## D. Phase completion
+++
+++| Phase | Status | Evidence | Remaining risk |
+++| --- | --- | --- | --- |
+++| Cleanup 2.1 (SHA consistency) | done | one literal SHA per report; checksum verified | none |
+++| Cleanup 2.2 (strict artifacts) | done | 4 forgery fixtures fail closed; capture marker added | the buggy-zlib host behavior itself still needs one staging observation |
+++| Cleanup 2.3 (duplicate keys) | done — **zero found** | token-scan test (self-checking detector) | none |
+++| Cleanup 2.4 (ID friction) | done | prefill links, row actions, one-click brief/memory/preview, ACTIVE review rail — normal path has zero ID copying; ID forms remain as labeled fallbacks | new mutation surfaces (all cap+nonce tested) |
+++| Cleanup 2.5 (Intake UI) | done | spine + next panel + editorial cards + archive; responsive ≤782px; pinned by tests | visual QA at real breakpoints is a staging step |
+++| Phase 4 pilot readiness | done | scenarios A/B/C seeded at staggered stages; registry-scoped reset proven exact; feedback table + forms; gates page computes the verdict; criteria doc | the verdict is gated on UNRUN staging validation — by design |
+++| Phase 5 rails | done | runbook §10–20; trace handoff; idempotent usage; permission tests on every new handler; failure-reason logging (codes only); memory governance re-proven | backup/restore + rollback drills documented, NOT performed |
+++
+++## E. Product loop proof
+++
+++`Source → Signal → Insight → Brief → Draft/Prompt Preview → Memory Record → Usage Event`, by named surface/action:
+++
+++1. **Source** — Intake 01/02 (`VES_Source_Intake::process_source`; URL recorded, never fetched — zero HTTP calls asserted across the whole loop test).
+++2. **Signal** — source row "Record signal →" (prefill) → Intake 03 (`process_signal`, deterministic scoring/dedupe).
+++3. **Insight** — signal row "Promote →" → Intake 04 (`process_signal_to_insight`: evidence record + DRAFT insight; presentation states `needs_evidence`/`ready_for_review`).
+++4. **Review** — Brief Workbench right rail → `VES_Workbench::handle_review` → `update_insight_status` (matrix + evidence gate + append-only ledger; refusals surfaced as notices, proven).
+++5. **Brief** — insight row "Build brief" → `process_insight_to_brief` → `VES_Insight_Brief_Builder` (evidence ids + `insight_id` column carry through; idempotent).
+++6. **Draft preview** — brief row "Preview + usage" → `process_prompt_preview` → real prompt package (`provider_execution_allowed === false`), lands the operator on the Draft Workbench. No draft entity is ever fabricated.
+++7. **Memory** — insight row "Memory candidate" → `process_memory_candidate` → `VES_Brand_Context_Service::create_candidate` (status FORCED candidate, deduped, traceable).
+++8. **Usage** — the preview action ledgers exactly ONE event per brief per operator (`run_id`-idempotent; double-click reuses it — proven).
+++9. **Trace** — Pilot Readiness → Loop Trace walks any insight back to the exact source URL and forward to usage/memory/feedback.
+++
+++## F. Pilot readiness proof
+++
+++- **Scenario A** (competitor → brief): seeded through brief + memory candidate; trace test resolves it end-to-end.
+++- **Scenario B** (cultural → opportunity): seeded through APPROVED insight; operator builds the brief via the row action.
+++- **Scenario C** (AI-visibility gap → corrective brief): seeded as a DRAFT, evidence-backed insight presenting `ready_for_review` — the pilot performs the review itself. Manual observation only; **no AEO/GEO module was built**.
+++- **Sample workspace**: seed refuses double-seeding; status reports counts + stage per scenario.
+++- **Reset**: confirmation enforced server-side; deletes exactly the registry rows (a non-demo source created before seeding survives — proven); demo preview usage events and feedback follow;
+\ No newline at end of file
+diff --git a/future-island/future-island-intelligence-suite/LIVE-BROWSER-VALIDATION-CHECKLIST.md b/future-island/future-island-intelligence-suite/LIVE-BROWSER-VALIDATION-CHECKLIST.md
+index 8ed856f..c09c9b8 100644
+--- a/future-island/future-island-intelligence-suite/LIVE-BROWSER-VALIDATION-CHECKLIST.md
++++ b/future-island/future-island-intelligence-suite/LIVE-BROWSER-VALIDATION-CHECKLIST.md
+@@ -57,6 +57,31 @@ the Brief Workbench, Draft Workbench, Intake page and Release Candidate page:
+ - [ ] Focus outlines visible on every interactive control (focus-visible)
+ - [ ] prefers-reduced-motion honored (no animation observed when enabled)
+ 
++## Pilot surfaces QA (Phase 4/5 — observe in the browser)
++
++These do NOT change the 12 required screenshots above; capture extra evidence
++under `screenshots/extra-` names if anything fails.
++
++- [ ] Intake row actions: "Record signal →" / "Promote →" prefill the form with
++      the object context (no ID copying); "change" returns to the plain form
++- [ ] Insight row: "Build brief" + "Memory candidate" appear ONLY on approved
++      insights; both are nonce'd POST buttons, not links
++- [ ] Brief row "Preview + usage": lands on the Draft Workbench with the
++      preview notice; clicking twice ledgers ONE usage event (verify in Loop Trace)
++- [ ] Workbench review rail: approve and reject work; an evidence-less insight
++      shows the evidence-gate refusal notice; rejected objects show the
++      terminal reason with disabled controls
++- [ ] Feedback card (workbench right rail): submits, then appears under
++      Pilot Readiness → Recent pilot feedback
++- [ ] Pilot Readiness verdict: reads honestly from real state (blocked while
++      validation is UNRUN; flips only after a file-backed pass is recorded)
++- [ ] Seed/reset: seeding twice is refused; reset without the confirmation
++      checkbox is refused server-side; after reset the [DEMO] rows are gone
++      and non-demo rows remain
++- [ ] Loop Trace: a seeded scenario-A insight resolves source → signal →
++      evidence → insight → brief → usage → memory → feedback; cross-workspace
++      ids are refused
++
+ ## Flow
+ 
+ 1. `bash scripts/future-island-browser-smoke.sh --base-url=…` (reachability only).
 diff --git a/future-island/future-island-intelligence-suite/LIVE-STAGING-VALIDATION-CHECKLIST.md b/future-island/future-island-intelligence-suite/LIVE-STAGING-VALIDATION-CHECKLIST.md
 index 7ad4cc9..3bcca3e 100644
 --- a/future-island/future-island-intelligence-suite/LIVE-STAGING-VALIDATION-CHECKLIST.md
@@ -250,7 +523,7 @@ index f9a36ab..6381ba1 100644
  - [ ] No surface or document claims production-readiness, a mature SaaS, or
        autonomous AI. The approved claim for a passed staging validation is:
 diff --git a/future-island/future-island-intelligence-suite/PRODUCTION-RAILS-RUNBOOK.md b/future-island/future-island-intelligence-suite/PRODUCTION-RAILS-RUNBOOK.md
-index 3cb48f0..8fb4776 100644
+index 3cb48f0..01be9d8 100644
 --- a/future-island/future-island-intelligence-suite/PRODUCTION-RAILS-RUNBOOK.md
 +++ b/future-island/future-island-intelligence-suite/PRODUCTION-RAILS-RUNBOOK.md
 @@ -1,8 +1,9 @@
@@ -258,7 +531,7 @@ index 3cb48f0..8fb4776 100644
 +# Future Island — Production Rails Runbook
  
 -Plugin **1.2.6** · label **v0.1-rc2**. Companion to
-+Plugin **1.4.0** · label **v0.1-rc7**. Companion to
++Plugin **1.4.1** · label **v0.1-rc8**. Companion to
  `RELEASE-CANDIDATE-RUNBOOK.md`; this document covers the hard rails added by
 -the Production Rails Hardening bundle and how operators work with them.
 +the Production Rails Hardening bundle (Phase 9A/9B/9C), the Phase 4/5
@@ -593,7 +866,7 @@ index cd4e3c8..af06f97 100644
  .ves-wrap .fi-workbench-nav {
    display: flex;
 diff --git a/future-island/future-island-intelligence-suite/future-island-intelligence-suite.php b/future-island/future-island-intelligence-suite/future-island-intelligence-suite.php
-index c590c6f..c680423 100644
+index c590c6f..433310c 100644
 --- a/future-island/future-island-intelligence-suite/future-island-intelligence-suite.php
 +++ b/future-island/future-island-intelligence-suite/future-island-intelligence-suite.php
 @@ -2,7 +2,7 @@
@@ -601,7 +874,7 @@ index c590c6f..c680423 100644
   * Plugin Name: Future Island Intelligence Suite
   * Description: Unified marketing intelligence platform. Includes the full Social Scraper Suite (VES Core) and the Deep Trend Finder module in a single WordPress plugin — no separate add-on required.
 - * Version: 1.3.0
-+ * Version: 1.4.0
++ * Version: 1.4.1
   * Requires PHP: 7.4
   * Author: Future Island / Vietnam Estudio
   * Text Domain: future-island-intelligence-suite
@@ -610,10 +883,10 @@ index c590c6f..c680423 100644
  // Suite-level constants
  // -----------------------------------------------------------------------
 -define('FIS_VERSION',     '1.3.0');
-+define('FIS_VERSION',     '1.4.0');
++define('FIS_VERSION',     '1.4.1');
  // Product-level release label: Future Island v0.1 Release Candidate.
 -define('FIS_RC_LABEL',    'v0.1-rc6');
-+define('FIS_RC_LABEL',    'v0.1-rc7');
++define('FIS_RC_LABEL',    'v0.1-rc8');
  define('FIS_PLUGIN_FILE', __FILE__);
  define('FIS_PLUGIN_DIR',  plugin_dir_path(__FILE__));
  define('FIS_PLUGIN_URL',  plugin_dir_url(__FILE__));
@@ -622,7 +895,7 @@ index c590c6f..c680423 100644
  // VES Core constants (keep all existing VES code working unchanged)
  // -----------------------------------------------------------------------
 -if (!defined('VES_PLUGIN_VERSION'))         { define('VES_PLUGIN_VERSION',         '1.3.0'); }
-+if (!defined('VES_PLUGIN_VERSION'))         { define('VES_PLUGIN_VERSION',         '1.4.0'); }
++if (!defined('VES_PLUGIN_VERSION'))         { define('VES_PLUGIN_VERSION',         '1.4.1'); }
  if (!defined('VES_PLUGIN_FILE'))            { define('VES_PLUGIN_FILE',            FIS_PLUGIN_FILE); }
  if (!defined('VES_PLUGIN_DIR'))             { define('VES_PLUGIN_DIR',             FIS_PLUGIN_DIR); }
  if (!defined('VES_PLUGIN_URL'))             { define('VES_PLUGIN_URL',             FIS_PLUGIN_URL); }
@@ -2206,7 +2479,7 @@ index 5e04fb3..758be49 100644
      rm -f "$out.raw" "$err.raw"
      printf '%s|exit=%d|stdout=%s|stdout_sha=%s|stderr=%s|stderr_sha=%s|combined=%s|combined_sha=%s\n' \
 diff --git a/future-island/future-island-intelligence-suite/tests/test-full-plugin-hardening-audit.php b/future-island/future-island-intelligence-suite/tests/test-full-plugin-hardening-audit.php
-index 1726256..6513469 100644
+index 1726256..beb9fb6 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-full-plugin-hardening-audit.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-full-plugin-hardening-audit.php
 @@ -16,8 +16,8 @@ $assert = function($condition, $message) use (&$failures, &$passes) {
@@ -2215,13 +2488,13 @@ index 1726256..6513469 100644
  $main = $read('future-island-intelligence-suite.php');
 -$assert(strpos($main, 'Version: 1.3.0') !== false, 'Plugin header version is 1.1.0');
 -$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false, 'VES_PLUGIN_VERSION constant is 1.1.0');
-+$assert(strpos($main, 'Version: 1.4.0') !== false, 'Plugin header version is 1.1.0');
-+$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.4.0'") !== false, 'VES_PLUGIN_VERSION constant is 1.1.0');
++$assert(strpos($main, 'Version: 1.4.1') !== false, 'Plugin header version is 1.1.0');
++$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.4.1'") !== false, 'VES_PLUGIN_VERSION constant is 1.1.0');
  
  $publicTemplates = [
      'templates/_scraper-form.php',
 diff --git a/future-island/future-island-intelligence-suite/tests/test-settings-dispatch-runtime-fix.php b/future-island/future-island-intelligence-suite/tests/test-settings-dispatch-runtime-fix.php
-index 0b869f0..f1f4a5f 100644
+index 0b869f0..585a6d8 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-settings-dispatch-runtime-fix.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-settings-dispatch-runtime-fix.php
 @@ -11,7 +11,7 @@ foreach ($files as $k => $f) { $src[$k] = file_get_contents($f); }
@@ -2229,12 +2502,12 @@ index 0b869f0..f1f4a5f 100644
  $add = function($name, $ok) use (&$checks) { $checks[] = [$name, (bool) $ok]; };
  
 -$add('version bumped to 1.1.0', strpos($src['main'], 'Version: 1.3.0') !== false && strpos($src['main'], "VES_PLUGIN_VERSION',         '1.3.0'") !== false);
-+$add('version bumped to 1.1.0', strpos($src['main'], 'Version: 1.4.0') !== false && strpos($src['main'], "VES_PLUGIN_VERSION',         '1.4.0'") !== false);
++$add('version bumped to 1.1.0', strpos($src['main'], 'Version: 1.4.1') !== false && strpos($src['main'], "VES_PLUGIN_VERSION',         '1.4.1'") !== false);
  $add('settings page has top visible save actionbar', strpos($src['admin'], 'ves-settings-actionbar') !== false && strpos($src['admin'], "submit_button('Guardar cambios', 'primary', 'submit', false") !== false);
  $add('settings page keeps bottom save button', substr_count($src['admin'], "submit_button('Guardar cambios'") >= 2);
  $add('runtime lock reset admin action registered', strpos($src['admin'], "admin_post_ves_clear_runtime_locks") !== false && strpos($src['admin'], 'handle_clear_runtime_locks') !== false);
 diff --git a/future-island/future-island-intelligence-suite/tests/test-v093015-fatal-classification.php b/future-island/future-island-intelligence-suite/tests/test-v093015-fatal-classification.php
-index c9cedc6..e767f69 100644
+index c9cedc6..d9c5f33 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-v093015-fatal-classification.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-v093015-fatal-classification.php
 @@ -8,7 +8,7 @@ $main = file_get_contents($root . '/future-island-intelligence-suite.php');
@@ -2242,12 +2515,12 @@ index c9cedc6..e767f69 100644
  $add = function ($label, $ok) use (&$checks) { $checks[] = [$label, (bool) $ok]; };
  
 -$add('version bumped to 1.1.0', strpos($main, 'Version: 1.3.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false);
-+$add('version bumped to 1.1.0', strpos($main, 'Version: 1.4.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.4.0'") !== false);
++$add('version bumped to 1.1.0', strpos($main, 'Version: 1.4.1') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.4.1'") !== false);
  $add('caught Throwable after provider dispatch is not labeled ajax_fatal', strpos($controller, '$is_fatal_context = in_array($source') !== false && strpos($controller, "if (!empty(\$context['provider_call_attempted'])) { return 'post_dispatch_fatal'; }") !== false && strpos($controller, "return 'ajax_fatal';") !== false);
  $add('caught Throwable after provider run receives post-provider category', strpos($controller, "if (!empty(\$context['provider_run_created'])) { return 'post_provider_run_fatal'; }") !== false);
  $add('post-dispatch fatal has user-safe message', strpos($controller, "if (\$category === 'post_dispatch_fatal')") !== false && strpos($controller, 'The source request was attempted, but the response could not be processed') !== false);
 diff --git a/future-island/future-island-intelligence-suite/tests/test-v093015-pre-dispatch-degradation.php b/future-island/future-island-intelligence-suite/tests/test-v093015-pre-dispatch-degradation.php
-index 701c63a..460d67a 100644
+index 701c63a..61e32df 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-v093015-pre-dispatch-degradation.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-v093015-pre-dispatch-degradation.php
 @@ -6,7 +6,7 @@ $js = file_get_contents($root . '/assets/js/ves-frontend.js');
@@ -2255,12 +2528,12 @@ index 701c63a..460d67a 100644
  $add = function($name, $ok) use (&$checks) { $checks[] = [$name, (bool) $ok]; };
  
 -$add('version bumped to 1.3.0 in main plugin', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.3.0') !== false);
-+$add('version bumped to 1.4.0 in main plugin', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.4.0') !== false);
++$add('version bumped to 1.4.1 in main plugin', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.4.1') !== false);
  $add('platform input validation throwable is degraded instead of ajax fatal', strpos($ajax, 'platform_input_validation_throwable_degraded') !== false && strpos($ajax, '$platform_input_valid = is_array($input) && !empty($input);') !== false);
  $add('duplicate guard throwable continues to provider dispatch', strpos($ajax, 'duplicate_guard_throwable_degraded') !== false && strpos($ajax, 'duplicate_guard_degraded_continue_dispatch') !== false);
  $add('provider cost guard throwable is non-blocking for admins', strpos($ajax, 'provider_cost_guard_throwable_degraded') !== false && strpos($ajax, "if (!current_user_can('manage_options'))") !== false);
 diff --git a/future-island/future-island-intelligence-suite/tests/test-v093016-context-preservation.php b/future-island/future-island-intelligence-suite/tests/test-v093016-context-preservation.php
-index 53198e5..b92d02e 100644
+index 53198e5..53a8a6f 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-v093016-context-preservation.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-v093016-context-preservation.php
 @@ -18,7 +18,7 @@ if (preg_match('/private static function error\([\s\S]*?private static function
@@ -2268,12 +2541,12 @@ index 53198e5..b92d02e 100644
  }
  
 -$add('version bumped to 1.1.0', strpos($main, 'Version: 1.3.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false);
-+$add('version bumped to 1.1.0', strpos($main, 'Version: 1.4.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.4.0'") !== false);
++$add('version bumped to 1.1.0', strpos($main, 'Version: 1.4.1') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.4.1'") !== false);
  $add('error() merges active run context before classification', strpos($error_fn, '$active_context = is_array(self::$active_run_context) ? self::$active_run_context : [];') !== false && strpos($error_fn, '$context = array_merge($active_context, $context);') !== false && strpos($error_fn, 'last_successful_stage') !== false);
  $add('explicit error() context preserves post-dispatch state', strpos($error_fn, 'post-dispatch failures') !== false && strpos($error_fn, 'provider_call_attempted/provider_run_created') !== false);
  $add('shutdown handler classifies with active context', strpos($shutdown, "self::classify_error_category('ajax_shutdown_fatal'") !== false && strpos($shutdown, '$fatal_context = array_merge($active_context') !== false);
 diff --git a/future-island/future-island-intelligence-suite/tests/test-v093017-error-category-ordering.php b/future-island/future-island-intelligence-suite/tests/test-v093017-error-category-ordering.php
-index 04b581f..e803a55 100644
+index 04b581f..76621cc 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-v093017-error-category-ordering.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-v093017-error-category-ordering.php
 @@ -12,7 +12,7 @@ $add = function($name, $ok) use (&$checks) {
@@ -2281,12 +2554,12 @@ index 04b581f..e803a55 100644
      echo ($ok ? '[PASS] ' : '[FAIL] ') . $name . PHP_EOL;
  };
 -$add('version bumped to 1.1.0', strpos($main, 'Version: 1.3.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false);
-+$add('version bumped to 1.1.0', strpos($main, 'Version: 1.4.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.4.0'") !== false);
++$add('version bumped to 1.1.0', strpos($main, 'Version: 1.4.1') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.4.1'") !== false);
  $add('classification uses fatal-only context gate', strpos($controller, '$is_fatal_context = in_array($source') !== false && strpos($controller, "'ajax_start_fatal'") !== false && strpos($controller, "'ajax_shutdown_fatal'") !== false);
  $add('provider flags are only checked inside fatal context', preg_match('/if \(\$is_fatal_context\) \{\s*if \(!empty\(\$context\[\'provider_run_created\'\]\)\)/s', $controller) === 1);
  $add('actor_dispatch_error branch remains after fatal gate', strpos($controller, "$source === 'actor_dispatch_error'") !== false && strpos($controller, '$is_provider_runtime_error') !== false && strpos($controller, 'provider_run_id_missing') !== false);
 diff --git a/future-island/future-island-intelligence-suite/tests/test-v093018-provider-error-classification.php b/future-island/future-island-intelligence-suite/tests/test-v093018-provider-error-classification.php
-index cd79b4e..9f30feb 100644
+index cd79b4e..4902e5e 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-v093018-provider-error-classification.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-v093018-provider-error-classification.php
 @@ -7,7 +7,7 @@ $ajax = file_get_contents($root . '/includes/class-ves-ajax-controller.php');
@@ -2294,12 +2567,12 @@ index cd79b4e..9f30feb 100644
  $checks = [];
  $add = function($label, $condition) use (&$checks) { $checks[$label] = (bool) $condition; };
 -$add('version bumped to 1.1.0', strpos($main, 'Version: 1.3.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false);
-+$add('version bumped to 1.1.0', strpos($main, 'Version: 1.4.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.4.0'") !== false);
++$add('version bumped to 1.1.0', strpos($main, 'Version: 1.4.1') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.4.1'") !== false);
  $add('token classification is not broad token substring', strpos($ajax, 'strpos($haystack, \'token\') !== false) { return \'missing_backend_token\'; }') === false);
  $add('public run tokens classified as module access', strpos($ajax, "public_run_token") !== false && strpos($ajax, "return 'module_access_denied';") !== false);
  $add('provider runtime includes poll errors', strpos($ajax, 'strpos($source, \'actor_poll\') !== false') !== false);
 diff --git a/future-island/future-island-intelligence-suite/tests/test-v093019-member-safe-diagnostic.php b/future-island/future-island-intelligence-suite/tests/test-v093019-member-safe-diagnostic.php
-index 556db44..0a7ed35 100644
+index 556db44..5248cf5 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-v093019-member-safe-diagnostic.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-v093019-member-safe-diagnostic.php
 @@ -35,7 +35,7 @@ $extractBlock = static function(string $src, string $needle, int $window = 5000)
@@ -2307,12 +2580,12 @@ index 556db44..0a7ed35 100644
  
  // Version bump.
 -$add('version bumped to 1.1.0', strpos($main, 'Version: 1.3.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false);
-+$add('version bumped to 1.1.0', strpos($main, 'Version: 1.4.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.4.0'") !== false);
++$add('version bumped to 1.1.0', strpos($main, 'Version: 1.4.1') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.4.1'") !== false);
  
  // build_safe_diagnostic helper exists and is leak-free by construction.
  $add('build_safe_diagnostic helper exists', strpos($ajax, 'private static function build_safe_diagnostic(') !== false);
 diff --git a/future-island/future-island-intelligence-suite/tests/test-v093020-post-usage-settlement-degraded.php b/future-island/future-island-intelligence-suite/tests/test-v093020-post-usage-settlement-degraded.php
-index 77d5725..bbdfb70 100644
+index 77d5725..b443024 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-v093020-post-usage-settlement-degraded.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-v093020-post-usage-settlement-degraded.php
 @@ -22,7 +22,7 @@ $checks = [];
@@ -2320,12 +2593,12 @@ index 77d5725..bbdfb70 100644
  
  // Version bump.
 -$add('version bumped to 1.1.0', strpos($main, 'Version: 1.3.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false);
-+$add('version bumped to 1.1.0', strpos($main, 'Version: 1.4.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.4.0'") !== false);
++$add('version bumped to 1.1.0', strpos($main, 'Version: 1.4.1') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.4.1'") !== false);
  
  // --- Fix 1: post_standard_usage_or_error() must not call self::error() on WP_Error ---
  // Locate the function body.
 diff --git a/future-island/future-island-intelligence-suite/tests/test-v093021-provider-rental-message.php b/future-island/future-island-intelligence-suite/tests/test-v093021-provider-rental-message.php
-index 62eca17..c7a69b3 100644
+index 62eca17..07f33cc 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-v093021-provider-rental-message.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-v093021-provider-rental-message.php
 @@ -11,7 +11,7 @@ $checks = [];
@@ -2333,12 +2606,12 @@ index 62eca17..c7a69b3 100644
  
  // 1. Version matches
 -$add('version is 1.3.0', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.3.0') !== false);
-+$add('version is 1.4.0', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.4.0') !== false);
++$add('version is 1.4.1', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.4.1') !== false);
  
  // 2. provider_actor_rental_required gets its own branch before the generic config array
  $rental_pos  = strpos($ajax, 'provider_actor_rental_required');
 diff --git a/future-island/future-island-intelligence-suite/tests/test-v09310-fi-brand-tokens.php b/future-island/future-island-intelligence-suite/tests/test-v09310-fi-brand-tokens.php
-index ec244fd..00c5392 100644
+index ec244fd..5ceb4e0 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-v09310-fi-brand-tokens.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-v09310-fi-brand-tokens.php
 @@ -10,7 +10,7 @@ $checks = [];
@@ -2346,12 +2619,12 @@ index ec244fd..00c5392 100644
  
  // Version
 -$add('version is 1.3.0', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.3.0') !== false);
-+$add('version is 1.4.0', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.4.0') !== false);
++$add('version is 1.4.1', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.4.1') !== false);
  
  // FI Azul primary color in ves-frontend.css
  $add('FI Azul #3A61E1 in ves-frontend.css', strpos($css, '#3A61E1') !== false);
 diff --git a/future-island/future-island-intelligence-suite/tests/test-v09310-responsive-dataviz.php b/future-island/future-island-intelligence-suite/tests/test-v09310-responsive-dataviz.php
-index 2810dc4..1149bdc 100644
+index 2810dc4..4bb5cac 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-v09310-responsive-dataviz.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-v09310-responsive-dataviz.php
 @@ -10,7 +10,7 @@ $checks = [];
@@ -2359,12 +2632,12 @@ index 2810dc4..1149bdc 100644
  
  // Version
 -$add('version is 1.3.0', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.3.0') !== false);
-+$add('version is 1.4.0', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.4.0') !== false);
++$add('version is 1.4.1', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.4.1') !== false);
  
  // Responsive SEO table: stacked card view
  $add('SEO table thead hidden on mobile in ves-frontend.css', strpos($css, '.ves-seo-table thead') !== false && strpos($css, 'display: none') !== false);
 diff --git a/future-island/future-island-intelligence-suite/tests/test-v09311-provider-classification-locks.php b/future-island/future-island-intelligence-suite/tests/test-v09311-provider-classification-locks.php
-index ac31bb3..c6da74e 100644
+index ac31bb3..6c5ed6a 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-v09311-provider-classification-locks.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-v09311-provider-classification-locks.php
 @@ -15,7 +15,7 @@ $checks = [];
@@ -2372,12 +2645,12 @@ index ac31bb3..c6da74e 100644
  
  // ── Version ───────────────────────────────────────────────────
 -$add('version is 1.1.0', strpos($main, 'Version: 1.3.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false);
-+$add('version is 1.1.0', strpos($main, 'Version: 1.4.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.4.0'") !== false);
++$add('version is 1.1.0', strpos($main, 'Version: 1.4.1') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.4.1'") !== false);
  
  // ── Phase 4: SEO 403 rental classified before generic access-denied ──
  $rental_chk = strpos($ajax, 'if ($rental_required) { return \'provider_actor_rental_required\'; }');
 diff --git a/future-island/future-island-intelligence-suite/tests/test-v09313-error-categories-extended.php b/future-island/future-island-intelligence-suite/tests/test-v09313-error-categories-extended.php
-index 2c5defc..a8035da 100644
+index 2c5defc..ce44b61 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-v09313-error-categories-extended.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-v09313-error-categories-extended.php
 @@ -48,8 +48,8 @@ $assert(strpos($filter_all_block, "'info'") !== false || strpos($filter_all_bloc
@@ -2386,13 +2659,13 @@ index 2c5defc..a8035da 100644
  $main = file_get_contents($root . '/future-island-intelligence-suite.php');
 -$assert(strpos($main, 'Version: 1.3.0') !== false, 'Plugin header must declare Version: 1.3.0');
 -$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false, 'VES_PLUGIN_VERSION must be 1.1.0');
-+$assert(strpos($main, 'Version: 1.4.0') !== false, 'Plugin header must declare Version: 1.4.0');
-+$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.4.0'") !== false, 'VES_PLUGIN_VERSION must be 1.1.0');
++$assert(strpos($main, 'Version: 1.4.1') !== false, 'Plugin header must declare Version: 1.4.1');
++$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.4.1'") !== false, 'VES_PLUGIN_VERSION must be 1.1.0');
  
  if ($fail === 0) {
      echo "OK v0.9.31.6 extended error categories — $pass assertions passed\n";
 diff --git a/future-island/future-island-intelligence-suite/tests/test-v09314-ai-fallback-label.php b/future-island/future-island-intelligence-suite/tests/test-v09314-ai-fallback-label.php
-index 2c6cc7a..518255d 100644
+index 2c6cc7a..d241549 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-v09314-ai-fallback-label.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-v09314-ai-fallback-label.php
 @@ -16,7 +16,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
@@ -2400,12 +2673,12 @@ index 2c6cc7a..518255d 100644
  
  // Version
 -$assert(strpos($main, 'Version: 1.3.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false, 'Version is 1.1.0');
-+$assert(strpos($main, 'Version: 1.4.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.4.0'") !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.4.1') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.4.1'") !== false, 'Version is 1.1.0');
  
  // PHP: all fallback returns include analysis_source=local_fallback
  $assert(substr_count($ai, "'analysis_source' => 'local_fallback'") >= 3, 'PHP: at least 3 fallback return paths set analysis_source=local_fallback');
 diff --git a/future-island/future-island-intelligence-suite/tests/test-v09314-error-retryable-taxonomy.php b/future-island/future-island-intelligence-suite/tests/test-v09314-error-retryable-taxonomy.php
-index 69e51b9..b55ec7f 100644
+index 69e51b9..d41109b 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-v09314-error-retryable-taxonomy.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-v09314-error-retryable-taxonomy.php
 @@ -15,7 +15,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
@@ -2413,12 +2686,12 @@ index 69e51b9..b55ec7f 100644
  
  // Version
 -$assert(strpos($main, 'Version: 1.3.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false, 'Version is 1.1.0');
-+$assert(strpos($main, 'Version: 1.4.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.4.0'") !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.4.1') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.4.1'") !== false, 'Version is 1.1.0');
  
  // classify_retryable helper exists
  $assert(strpos($ajax, 'private static function classify_retryable(') !== false, 'classify_retryable() helper declared');
 diff --git a/future-island/future-island-intelligence-suite/tests/test-v09314-frontend-truthfulness.php b/future-island/future-island-intelligence-suite/tests/test-v09314-frontend-truthfulness.php
-index f6dcadc..92f6b61 100644
+index f6dcadc..5c55004 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-v09314-frontend-truthfulness.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-v09314-frontend-truthfulness.php
 @@ -18,7 +18,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
@@ -2426,12 +2699,12 @@ index f6dcadc..92f6b61 100644
  
  // Version
 -$assert(strpos($main, 'Version: 1.3.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false, 'Version is 1.1.0');
-+$assert(strpos($main, 'Version: 1.4.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.4.0'") !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.4.1') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.4.1'") !== false, 'Version is 1.1.0');
  
  // 3A: jsTypeError branch no longer emits F5 instruction
  $assert(strpos($js, 'jsTypeError') !== false, '3A: jsTypeError branch still exists');
 diff --git a/future-island/future-island-intelligence-suite/tests/test-v09314-google-serp-normalizer.php b/future-island/future-island-intelligence-suite/tests/test-v09314-google-serp-normalizer.php
-index 4ab4bca..a7080b7 100644
+index 4ab4bca..c4cc823 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-v09314-google-serp-normalizer.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-v09314-google-serp-normalizer.php
 @@ -13,7 +13,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
@@ -2439,12 +2712,12 @@ index 4ab4bca..a7080b7 100644
  
  // Version
 -$assert(strpos($main, 'Version: 1.3.0') !== false, 'Version is 1.1.0');
-+$assert(strpos($main, 'Version: 1.4.0') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.4.1') !== false, 'Version is 1.1.0');
  
  // is_google_search_url helper exists
  $assert(strpos($php, 'private static function is_google_search_url(') !== false, 'is_google_search_url() method declared');
 diff --git a/future-island/future-island-intelligence-suite/tests/test-v09315-competitor-downgrade.php b/future-island/future-island-intelligence-suite/tests/test-v09315-competitor-downgrade.php
-index c019f67..40731cd 100644
+index c019f67..b8f667c 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-v09315-competitor-downgrade.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-v09315-competitor-downgrade.php
 @@ -15,7 +15,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
@@ -2452,12 +2725,12 @@ index c019f67..40731cd 100644
  };
  
 -$assert(strpos($main, 'Version: 1.3.0') !== false, 'Version is 1.1.0');
-+$assert(strpos($main, 'Version: 1.4.0') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.4.1') !== false, 'Version is 1.1.0');
  
  // Helper declared
  $assert(strpos($ana, 'function ves_detect_competitor_authorship(') !== false, 'ves_detect_competitor_authorship helper declared');
 diff --git a/future-island/future-island-intelligence-suite/tests/test-v09315-curated-templates.php b/future-island/future-island-intelligence-suite/tests/test-v09315-curated-templates.php
-index 3a2e6c0..b9d8261 100644
+index 3a2e6c0..8110847 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-v09315-curated-templates.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-v09315-curated-templates.php
 @@ -15,7 +15,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
@@ -2465,12 +2738,12 @@ index 3a2e6c0..b9d8261 100644
  };
  
 -$assert(strpos($main, 'Version: 1.3.0') !== false, 'Version is 1.1.0');
-+$assert(strpos($main, 'Version: 1.4.0') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.4.1') !== false, 'Version is 1.1.0');
  
  $templates = [
      'verano-silencioso'   => 'verano-silencioso.php',
 diff --git a/future-island/future-island-intelligence-suite/tests/test-v09315-fallback-label-audit.php b/future-island/future-island-intelligence-suite/tests/test-v09315-fallback-label-audit.php
-index 648c2b0..2c41871 100644
+index 648c2b0..bd2c2bd 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-v09315-fallback-label-audit.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-v09315-fallback-label-audit.php
 @@ -15,7 +15,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
@@ -2478,12 +2751,12 @@ index 648c2b0..2c41871 100644
  };
  
 -$assert(strpos($main, 'Version: 1.3.0') !== false, 'Version is 1.1.0');
-+$assert(strpos($main, 'Version: 1.4.0') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.4.1') !== false, 'Version is 1.1.0');
  
  // Count of labels — must have grown from v0.9.31.4 (which had 4 labeled).
  $source_count = substr_count($ai, "'analysis_source' => 'local_fallback'");
 diff --git a/future-island/future-island-intelligence-suite/tests/test-v09315-public-support-code-hardened.php b/future-island/future-island-intelligence-suite/tests/test-v09315-public-support-code-hardened.php
-index 29e251c..67bb8de 100644
+index 29e251c..f8cfa4b 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-v09315-public-support-code-hardened.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-v09315-public-support-code-hardened.php
 @@ -13,7 +13,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
@@ -2491,12 +2764,12 @@ index 29e251c..67bb8de 100644
  };
  
 -$assert(strpos($main, 'Version: 1.3.0') !== false, 'Version is 1.1.0');
-+$assert(strpos($main, 'Version: 1.4.0') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.4.1') !== false, 'Version is 1.1.0');
  
  $fn_pos = strpos($ajax, 'private static function public_support_code(');
  $fn_body = $fn_pos !== false ? substr($ajax, $fn_pos, 2000) : '';
 diff --git a/future-island/future-island-intelligence-suite/tests/test-v09315-renderer-diagnostic.php b/future-island/future-island-intelligence-suite/tests/test-v09315-renderer-diagnostic.php
-index bd56f86..47f1165 100644
+index bd56f86..5f406f4 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-v09315-renderer-diagnostic.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-v09315-renderer-diagnostic.php
 @@ -12,7 +12,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
@@ -2504,12 +2777,12 @@ index bd56f86..47f1165 100644
  };
  
 -$assert(strpos($main, 'Version: 1.3.0') !== false, 'Version is 1.1.0');
-+$assert(strpos($main, 'Version: 1.4.0') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.4.1') !== false, 'Version is 1.1.0');
  
  $assert(strpos($ren, 'report_template_unreadable') !== false, 'Renderer raises report_template_unreadable diagnostic');
  $assert(strpos($ren, 'VES_Admin::record_diagnostic') !== false, 'Renderer calls VES_Admin::record_diagnostic');
 diff --git a/future-island/future-island-intelligence-suite/tests/test-v09315-retryable-frontend.php b/future-island/future-island-intelligence-suite/tests/test-v09315-retryable-frontend.php
-index bd27b23..e9a5d70 100644
+index bd27b23..e8942bf 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-v09315-retryable-frontend.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-v09315-retryable-frontend.php
 @@ -15,7 +15,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
@@ -2517,12 +2790,12 @@ index bd27b23..e9a5d70 100644
  };
  
 -$assert(strpos($main, 'Version: 1.3.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false, 'Version is 1.1.0');
-+$assert(strpos($main, 'Version: 1.4.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.4.0'") !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.4.1') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.4.1'") !== false, 'Version is 1.1.0');
  
  // JS reads safeDiagnostic.retryable
  $assert(strpos($js, 'sd.retryable === true') !== false, 'JS branches on safeDiagnostic.retryable === true');
 diff --git a/future-island/future-island-intelligence-suite/tests/test-v09316-curated-css-scoping.php b/future-island/future-island-intelligence-suite/tests/test-v09316-curated-css-scoping.php
-index 6f6bf08..23e5eac 100644
+index 6f6bf08..37ced20 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-v09316-curated-css-scoping.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-v09316-curated-css-scoping.php
 @@ -13,7 +13,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
@@ -2530,12 +2803,12 @@ index 6f6bf08..23e5eac 100644
  };
  
 -$assert(strpos($main, 'Version: 1.3.0') !== false, 'Version is 1.1.0');
-+$assert(strpos($main, 'Version: 1.4.0') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.4.1') !== false, 'Version is 1.1.0');
  
  $templates = [
      'verano-silencioso'   => 'verano-silencioso.php',
 diff --git a/future-island/future-island-intelligence-suite/tests/test-v09316-retry-timer-cleanup.php b/future-island/future-island-intelligence-suite/tests/test-v09316-retry-timer-cleanup.php
-index 6df2927..215d5c1 100644
+index 6df2927..9ce2ce6 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-v09316-retry-timer-cleanup.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-v09316-retry-timer-cleanup.php
 @@ -17,7 +17,7 @@ $assert = function($cond, $label) use (&$pass, &$fail) {
@@ -2543,12 +2816,12 @@ index 6df2927..215d5c1 100644
  };
  
 -$assert(strpos($main, 'Version: 1.3.0') !== false, 'Version is 1.1.0');
-+$assert(strpos($main, 'Version: 1.4.0') !== false, 'Version is 1.1.0');
++$assert(strpos($main, 'Version: 1.4.1') !== false, 'Version is 1.1.0');
  
  // Find the body of vesClearAutoRetryTimer.
  $start = strpos($js, 'const vesClearAutoRetryTimer = ');
 diff --git a/future-island/future-island-intelligence-suite/tests/test-v09318-p0-mvp-gating.php b/future-island/future-island-intelligence-suite/tests/test-v09318-p0-mvp-gating.php
-index 6c461c1..146bb9b 100644
+index 6c461c1..709a135 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-v09318-p0-mvp-gating.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-v09318-p0-mvp-gating.php
 @@ -16,8 +16,8 @@ $assert = function($condition, $message) use (&$failures) {
@@ -2557,13 +2830,13 @@ index 6c461c1..146bb9b 100644
  
 -$assert(strpos($main, 'Version: 1.3.0') !== false, 'Plugin header version bumped to 1.1.0');
 -$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false, 'VES_PLUGIN_VERSION bumped to 1.1.0');
-+$assert(strpos($main, 'Version: 1.4.0') !== false, 'Plugin header version bumped to 1.1.0');
-+$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.4.0'") !== false, 'VES_PLUGIN_VERSION bumped to 1.1.0');
++$assert(strpos($main, 'Version: 1.4.1') !== false, 'Plugin header version bumped to 1.1.0');
++$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.4.1'") !== false, 'VES_PLUGIN_VERSION bumped to 1.1.0');
  // [v1.1.0 archived] removed obsolete MVP-gating expectation: VES_PRODUCTION_MVP=true. Production decision:
  // MVP gating is retired in FIIS v1.1.0; the unified app shell exposes all main routes. The constant is now
  // false in product and is no longer used to lock the shell. Replaced with the current unified-shell contract.
 diff --git a/future-island/future-island-intelligence-suite/tests/test-v09318-p2-trend-lite.php b/future-island/future-island-intelligence-suite/tests/test-v09318-p2-trend-lite.php
-index bb5eb7d..1115641 100644
+index bb5eb7d..b50a7f2 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-v09318-p2-trend-lite.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-v09318-p2-trend-lite.php
 @@ -44,8 +44,8 @@ $form = file_get_contents($root . '/templates/_trend-finder-form.php');
@@ -2572,13 +2845,13 @@ index bb5eb7d..1115641 100644
  
 -$assert(strpos($main, 'Version: 1.3.0') !== false, 'plugin version bumped to p2 trend lite');
 -$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false, 'VES_PLUGIN_VERSION bumped to p2 trend lite');
-+$assert(strpos($main, 'Version: 1.4.0') !== false, 'plugin version bumped to p2 trend lite');
-+$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.4.0'") !== false, 'VES_PLUGIN_VERSION bumped to p2 trend lite');
++$assert(strpos($main, 'Version: 1.4.1') !== false, 'plugin version bumped to p2 trend lite');
++$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.4.1'") !== false, 'VES_PLUGIN_VERSION bumped to p2 trend lite');
  // [v1.1.0 archived] removed obsolete 'P0 MVP flag remains true' expectation: MVP gating is retired in
  // FIIS v1.1.0 (VES_PRODUCTION_MVP is false in product). The Trend Lite budget-clamp checks below remain
  // active and assert the still-current sanitizer behavior independently of the MVP flag.
 diff --git a/future-island/future-island-intelligence-suite/tests/test-v09318-p3-demo-hardening.php b/future-island/future-island-intelligence-suite/tests/test-v09318-p3-demo-hardening.php
-index 2e539eb..62f42f7 100644
+index 2e539eb..c94e00d 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-v09318-p3-demo-hardening.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-v09318-p3-demo-hardening.php
 @@ -34,8 +34,8 @@ $main = file_get_contents($root . '/future-island-intelligence-suite.php');
@@ -2587,13 +2860,13 @@ index 2e539eb..62f42f7 100644
  
 -$assert(strpos($main, 'Version: 1.3.0') !== false, 'plugin header bumped to p3 demo hardening');
 -$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false, 'VES_PLUGIN_VERSION bumped to p3 demo hardening');
-+$assert(strpos($main, 'Version: 1.4.0') !== false, 'plugin header bumped to p3 demo hardening');
-+$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.4.0'") !== false, 'VES_PLUGIN_VERSION bumped to p3 demo hardening');
++$assert(strpos($main, 'Version: 1.4.1') !== false, 'plugin header bumped to p3 demo hardening');
++$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.4.1'") !== false, 'VES_PLUGIN_VERSION bumped to p3 demo hardening');
  // [v1.1.0 archived] removed obsolete 'README version bumped' assertion: no root README.md exists in the
  // unified package; the version contract is the plugin header / VES_PLUGIN_VERSION, already asserted above.
  
 diff --git a/future-island/future-island-intelligence-suite/tests/test-v09318-p31-live-qa-hotfix.php b/future-island/future-island-intelligence-suite/tests/test-v09318-p31-live-qa-hotfix.php
-index 0c4b1d1..a7b9543 100644
+index 0c4b1d1..e34589a 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-v09318-p31-live-qa-hotfix.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-v09318-p31-live-qa-hotfix.php
 @@ -43,8 +43,8 @@ $recon = file_get_contents($root . '/includes/class-ves-usage-reconciliation-ser
@@ -2602,13 +2875,13 @@ index 0c4b1d1..a7b9543 100644
  
 -$assert(strpos($main, 'Version: 1.3.0') !== false, 'plugin header bumped to p3.1 live QA hotfix');
 -$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false, 'VES_PLUGIN_VERSION bumped to p3.1 live QA hotfix');
-+$assert(strpos($main, 'Version: 1.4.0') !== false, 'plugin header bumped to p3.1 live QA hotfix');
-+$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.4.0'") !== false, 'VES_PLUGIN_VERSION bumped to p3.1 live QA hotfix');
++$assert(strpos($main, 'Version: 1.4.1') !== false, 'plugin header bumped to p3.1 live QA hotfix');
++$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.4.1'") !== false, 'VES_PLUGIN_VERSION bumped to p3.1 live QA hotfix');
  // [v1.1.0 archived] removed obsolete 'README version bumped' assertion: no root README.md exists in the
  // unified package; the version contract is the plugin header / VES_PLUGIN_VERSION, already asserted above.
  
 diff --git a/future-island/future-island-intelligence-suite/tests/test-v09318-p4-deep-trend-addon-integration.php b/future-island/future-island-intelligence-suite/tests/test-v09318-p4-deep-trend-addon-integration.php
-index ed351d0..c0d9455 100644
+index ed351d0..a641504 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-v09318-p4-deep-trend-addon-integration.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-v09318-p4-deep-trend-addon-integration.php
 @@ -13,7 +13,7 @@ $ok = function($condition, $label) use (&$checks, &$failures) { $checks++; if (!
@@ -2616,12 +2889,12 @@ index ed351d0..c0d9455 100644
  // [v1.1.0 archived] removed obsolete standalone-addon version snapshot '0.9.31.15-p4.8-deep-trend-sidebar-layout'.
  // Current contract: the suite is version 1.1.0 and DTF is a built-in module booted in-process.
 -$ok(strpos($main, 'Version: 1.3.0') !== false, 'Suite header is v1.1.0');
-+$ok(strpos($main, 'Version: 1.4.0') !== false, 'Suite header is v1.1.0');
++$ok(strpos($main, 'Version: 1.4.1') !== false, 'Suite header is v1.1.0');
  $ok(strpos($main, 'FIDTF_Plugin::boot()') !== false, 'DTF is booted in-process by the unified bootstrap (built-in module, not a separate add-on)');
  $ok(strpos($main, 'class-ves-deep-trend-addon-bridge.php') !== false, 'Core bootstraps Deep Trend add-on bridge');
  $ok(strpos($bridge, 'class VES_Deep_Trend_Addon_Bridge') !== false || strpos($bridge, 'final class VES_Deep_Trend_Addon_Bridge') !== false, 'Bridge class exists');
 diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-evidence-archive-verification-9e.php b/future-island/future-island-intelligence-suite/tests/test-ves-evidence-archive-verification-9e.php
-index 858b90c..0651286 100644
+index 858b90c..f400cd9 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-ves-evidence-archive-verification-9e.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-ves-evidence-archive-verification-9e.php
 @@ -16,7 +16,7 @@
@@ -2629,7 +2902,7 @@ index 858b90c..0651286 100644
  error_reporting(E_ALL & ~E_DEPRECATED);
  if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
 -if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.3.0'); }
-+if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.4.0'); }
++if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.4.1'); }
  if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc3'); }
  
  function sanitize_key($s){return strtolower(preg_replace('/[^a-z0-9_\-]/i','',(string)$s));}
@@ -2673,7 +2946,7 @@ index 858b90c..0651286 100644
  if (class_exists('PharData')) {
      $tarbase = sys_get_temp_dir() . '/fi-ev-9e-archive-' . getmypid();
 diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-evidence-pack-9b.php b/future-island/future-island-intelligence-suite/tests/test-ves-evidence-pack-9b.php
-index 3896dc6..19666f2 100644
+index 3896dc6..695945e 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-ves-evidence-pack-9b.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-ves-evidence-pack-9b.php
 @@ -17,7 +17,7 @@
@@ -2681,12 +2954,12 @@ index 3896dc6..19666f2 100644
  error_reporting(E_ALL & ~E_DEPRECATED);
  if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
 -if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.3.0'); }
-+if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.4.0'); }
++if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.4.1'); }
  if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc3'); }
  
  function sanitize_key($s){return strtolower(preg_replace('/[^a-z0-9_\-]/i','',(string)$s));}
 diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-health-and-log.php b/future-island/future-island-intelligence-suite/tests/test-ves-health-and-log.php
-index 498f9b0..521a742 100644
+index 498f9b0..b875248 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-ves-health-and-log.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-ves-health-and-log.php
 @@ -12,8 +12,8 @@ error_reporting(E_ALL & ~E_DEPRECATED);
@@ -2695,8 +2968,8 @@ index 498f9b0..521a742 100644
  if (!defined('WP_DEBUG')) { define('WP_DEBUG', false); }
 -if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.3.0'); }
 -if (!defined('VES_PLUGIN_VERSION')) { define('VES_PLUGIN_VERSION', '1.3.0'); }
-+if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.4.0'); }
-+if (!defined('VES_PLUGIN_VERSION')) { define('VES_PLUGIN_VERSION', '1.4.0'); }
++if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.4.1'); }
++if (!defined('VES_PLUGIN_VERSION')) { define('VES_PLUGIN_VERSION', '1.4.1'); }
  if (!defined('FIDTF_VERSION')) { define('FIDTF_VERSION', '0.3.53'); }
  
  if (!class_exists('WP_Error')) {
@@ -3037,7 +3310,7 @@ index 0000000..7b08331
 +echo "\n{$pass} passed, {$fail} failed\n";
 +exit($fail === 0 ? 0 : 1);
 diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-rc-readiness-check.php b/future-island/future-island-intelligence-suite/tests/test-ves-rc-readiness-check.php
-index 31c2a29..c7d1fb1 100644
+index 31c2a29..58d3eba 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-ves-rc-readiness-check.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-ves-rc-readiness-check.php
 @@ -44,7 +44,7 @@ $ok(strpos($warn_text, 'UNRUN') !== false, 'warnings call out the unrun live val
@@ -3045,12 +3318,12 @@ index 31c2a29..c7d1fb1 100644
  // NOTE: declared inside a conditional block so PHP binds them at RUNTIME —
  // scenario 1 above must run with no services defined.
 -if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.3.0'); }
-+if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.4.0'); }
++if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.4.1'); }
  if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc1'); }
  if (!class_exists('VES_Intelligence_Store')) {
  final class VES_Intelligence_Store {
 diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-rc-strict-readiness-9c.php b/future-island/future-island-intelligence-suite/tests/test-ves-rc-strict-readiness-9c.php
-index 4950c05..ca9962e 100644
+index 4950c05..087fc83 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-ves-rc-strict-readiness-9c.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-ves-rc-strict-readiness-9c.php
 @@ -15,7 +15,7 @@
@@ -3058,12 +3331,12 @@ index 4950c05..ca9962e 100644
  error_reporting(E_ALL & ~E_DEPRECATED);
  if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
 -if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.3.0'); }
-+if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.4.0'); }
++if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.4.1'); }
  if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc2'); }
  
  function get_option($k, $d = false) { return $GLOBALS['__opts'][$k] ?? $d; }
 diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-release-candidate-page.php b/future-island/future-island-intelligence-suite/tests/test-ves-release-candidate-page.php
-index 33d1cb3..1fa835c 100644
+index 33d1cb3..19d0d93 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-ves-release-candidate-page.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-ves-release-candidate-page.php
 @@ -16,7 +16,7 @@
@@ -3071,7 +3344,7 @@ index 33d1cb3..1fa835c 100644
  error_reporting(E_ALL & ~E_DEPRECATED);
  if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
 -if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.3.0'); }
-+if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.4.0'); }
++if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.4.1'); }
  if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc1'); }
  
  function get_option($k, $d = false) { return $GLOBALS['__opts'][$k] ?? $d; }
@@ -3080,7 +3353,7 @@ index 33d1cb3..1fa835c 100644
  $ok(strpos($html, 'Release Candidate') !== false, 'page titles itself Release Candidate');
  $ok(strpos($html, 'Future Island') !== false, 'page carries the Future Island identity');
 -$ok(strpos($html, '1.3.0') !== false && strpos($html, 'v0.1-rc1') !== false, 'version + RC label shown');
-+$ok(strpos($html, '1.4.0') !== false && strpos($html, 'v0.1-rc1') !== false, 'version + RC label shown');
++$ok(strpos($html, '1.4.1') !== false && strpos($html, 'v0.1-rc1') !== false, 'version + RC label shown');
  
  // ── 2. Honesty: UNRUN + never production-ready ───────────────────────────────
  $ok(strpos($html, 'UNRUN') !== false, 'page states live staging validation is UNRUN');
@@ -3216,8 +3489,29 @@ index c813e41..717762f 100644
  // ── 6. Reference-URL validator unit checks ────────────────────────────────────
  $ok(VES_Source_Intake::valid_reference_url('https://example.com/a?b=1') === true, 'plain https accepted');
  $ok(VES_Source_Intake::valid_reference_url('http://example.com') === true, 'plain http accepted');
+diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-uninstall-coverage-9de.php b/future-island/future-island-intelligence-suite/tests/test-ves-uninstall-coverage-9de.php
+index b72127e..4360563 100644
+--- a/future-island/future-island-intelligence-suite/tests/test-ves-uninstall-coverage-9de.php
++++ b/future-island/future-island-intelligence-suite/tests/test-ves-uninstall-coverage-9de.php
+@@ -55,5 +55,16 @@ foreach ([
+ // "passed" record on a reinstalled site would be a forged trust signal).
+ $ok(strpos($src, 'ves_rc_live_validation') > $gate_pos, 'live-validation state is wiped ONLY under the explicit delete flag (and is wiped then)');
+ 
++// ── 4. Phase 4 pilot data covered by explicit deletion ───────────────────────
++$ok(strpos($src, "'ves_pilot_feedback'") !== false, 'explicit-delete covers table: ves_pilot_feedback');
++$ok(strpos($src, "'ves_pilot_feedback_db_version'") !== false, 'explicit-delete covers option: ves_pilot_feedback_db_version');
++// Per-workspace seed registries are dynamic option names — deleted via a
++// prepared LIKE, and ONLY inside the gated destructive block.
++$registry_pos = strpos($src, 'ves_pilot_seed_registry_');
++$ok($registry_pos !== false, 'explicit-delete covers the per-workspace pilot seed registries');
++$ok($registry_pos > $gate_pos, 'seed-registry deletion sits INSIDE the gated destructive block');
++$ok(preg_match('/\$wpdb->prepare\(\s*"DELETE FROM \{\$wpdb->options\} WHERE option_name LIKE %s",\s*\'ves_pilot_seed_registry_%\'/s', $src) === 1,
++    'registry deletion is a prepared LIKE scoped to the registry prefix');
++
+ echo "\n{$pass} passed, {$fail} failed\n";
+ exit($fail === 0 ? 0 : 1);
 diff --git a/future-island/future-island-intelligence-suite/tests/test-ves-v3-end-to-end-9e.php b/future-island/future-island-intelligence-suite/tests/test-ves-v3-end-to-end-9e.php
-index 8019c2c..b35b924 100644
+index 8019c2c..08a5679 100644
 --- a/future-island/future-island-intelligence-suite/tests/test-ves-v3-end-to-end-9e.php
 +++ b/future-island/future-island-intelligence-suite/tests/test-ves-v3-end-to-end-9e.php
 @@ -21,7 +21,7 @@
@@ -3225,7 +3519,7 @@ index 8019c2c..b35b924 100644
  error_reporting(E_ALL & ~E_DEPRECATED);
  if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
 -if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.3.0'); }
-+if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.4.0'); }
++if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.4.1'); }
  if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc3'); }
  
  function sanitize_key($s){return strtolower(preg_replace('/[^a-z0-9_\-]/i','',(string)$s));}
@@ -3234,7 +3528,7 @@ index 8019c2c..b35b924 100644
  8.0.36-staging" ;;
      *"--info"*)             echo "WP-CLI 2.10.0 (shim)" ;;
 -    *"plugin list"*)        echo "future-island-intelligence-suite active 1.3.0" ;;
-+    *"plugin list"*)        echo "future-island-intelligence-suite active 1.4.0" ;;
++    *"plugin list"*)        echo "future-island-intelligence-suite active 1.4.1" ;;
      *"theme list"*)         echo "twentytwentyfour active" ;;
      *"ves "*)               echo '{"status":"ready_with_warnings","shim":true}' ;;
      *)                      echo "shim-ok" ;;

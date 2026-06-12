@@ -7,7 +7,7 @@ $ajax = file_get_contents($root . '/includes/class-ves-ajax-controller.php');
 $main = file_get_contents($root . '/future-island-intelligence-suite.php');
 $checks = [];
 $add = function($label, $condition) use (&$checks) { $checks[$label] = (bool) $condition; };
-$add('version bumped to 1.1.0', strpos($main, 'Version: 1.4.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.4.0'") !== false);
+$add('version bumped to 1.1.0', strpos($main, 'Version: 1.4.1') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.4.1'") !== false);
 $add('token classification is not broad token substring', strpos($ajax, 'strpos($haystack, \'token\') !== false) { return \'missing_backend_token\'; }') === false);
 $add('public run tokens classified as module access', strpos($ajax, "public_run_token") !== false && strpos($ajax, "return 'module_access_denied';") !== false);
 $add('provider runtime includes poll errors', strpos($ajax, 'strpos($source, \'actor_poll\') !== false') !== false);

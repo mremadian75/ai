@@ -10,7 +10,7 @@ $checks = [];
 $add = function($name, $ok) use (&$checks) { $checks[] = [$name, (bool) $ok]; };
 
 // Version
-$add('version is 1.4.0', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.4.0') !== false);
+$add('version is 1.4.1', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.4.1') !== false);
 
 // Responsive SEO table: stacked card view
 $add('SEO table thead hidden on mobile in ves-frontend.css', strpos($css, '.ves-seo-table thead') !== false && strpos($css, 'display: none') !== false);

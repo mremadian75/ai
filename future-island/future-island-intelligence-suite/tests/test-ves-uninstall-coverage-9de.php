@@ -55,5 +55,16 @@ foreach ([
 // "passed" record on a reinstalled site would be a forged trust signal).
 $ok(strpos($src, 'ves_rc_live_validation') > $gate_pos, 'live-validation state is wiped ONLY under the explicit delete flag (and is wiped then)');
 
+// ── 4. Phase 4 pilot data covered by explicit deletion ───────────────────────
+$ok(strpos($src, "'ves_pilot_feedback'") !== false, 'explicit-delete covers table: ves_pilot_feedback');
+$ok(strpos($src, "'ves_pilot_feedback_db_version'") !== false, 'explicit-delete covers option: ves_pilot_feedback_db_version');
+// Per-workspace seed registries are dynamic option names — deleted via a
+// prepared LIKE, and ONLY inside the gated destructive block.
+$registry_pos = strpos($src, 'ves_pilot_seed_registry_');
+$ok($registry_pos !== false, 'explicit-delete covers the per-workspace pilot seed registries');
+$ok($registry_pos > $gate_pos, 'seed-registry deletion sits INSIDE the gated destructive block');
+$ok(preg_match('/\$wpdb->prepare\(\s*"DELETE FROM \{\$wpdb->options\} WHERE option_name LIKE %s",\s*\'ves_pilot_seed_registry_%\'/s', $src) === 1,
+    'registry deletion is a prepared LIKE scoped to the registry prefix');
+
 echo "\n{$pass} passed, {$fail} failed\n";
 exit($fail === 0 ? 0 : 1);

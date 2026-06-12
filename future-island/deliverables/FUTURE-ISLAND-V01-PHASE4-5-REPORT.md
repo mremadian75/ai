@@ -1,8 +1,9 @@
 # FUTURE ISLAND V0.1 — PHASES 4–5 — FINAL RELEASE REPORT
 
-Plugin **1.4.0** · label **v0.1-rc7** · baseline: Phase 0–3 build (1.3.0 / v0.1-rc6, 200 tests, ZIP `3a4decf8…2904eed` re-verified by checksum AND by a fresh clean-extraction suite run before any work began)
+Plugin **1.4.1** · label **v0.1-rc8** · baseline: Phase 0–3 build (1.3.0 / v0.1-rc6, 200 tests, ZIP `3a4decf8…2904eed` re-verified by checksum AND by a fresh clean-extraction suite run before any work began)
 Date: 2026-06-12 · ZIP: `future-island-intelligence-suite-v01-phase4-5.zip`
-**The one and only SHA-256 for THIS release:** `a7a397b06a85c00726057352d5aff91bb818749bc63a5b0a7767b1986bcc1ca5`
+**The one and only SHA-256 for THIS release:** `afb4f58c329b5af2c0daeab9f1183c82244cdb000c88ec10964dcb57ebc6e83b`
+*(This artifact supersedes and replaces the interim 1.4.0/rc7 build after a verification pass closed two gaps: the uninstall-coverage test did not yet pin the new pilot table/options, and the browser checklist lacked the Phase 4/5 surface QA items. No production code changed between the two builds — one test file and one doc; the version was bumped so exactly one artifact carries one SHA.)*
 
 ---
 
@@ -38,6 +39,8 @@ Not `ready_for_controlled_pilot` — and here is exactly why: that verdict now b
 | `tests/test-ves-source-intake-page.php` | +24 assertions (actions, prefill, idempotent usage, review handler security) | 2.4 |
 | `tests/test-ves-workbench-8a.php` | active-rail contract (was pinning "not wired yet") | 2.4 |
 | `tests/test-ves-pilot-readiness.php` (new) | 46 assertions: feedback, seed, reset precision, gates, trace | Phase 4 |
+| `tests/test-ves-uninstall-coverage-9de.php` | +5 pins: `ves_pilot_feedback` table/option, seed-registry LIKE delete present, gated, and prepared | verification pass — the retention contract for Phase 4 data is now regression-locked |
+| `LIVE-BROWSER-VALIDATION-CHECKLIST.md` | Phase 4/5 pilot-surface QA block (row actions, review rail, feedback, verdict honesty, seed/reset, trace) — the 12 required screenshots unchanged | §8 deliverable completed in the browser doc itself, not only via the staging checklist |
 
 ## C. Tests run
 

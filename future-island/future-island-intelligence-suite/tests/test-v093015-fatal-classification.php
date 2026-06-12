@@ -8,7 +8,7 @@ $main = file_get_contents($root . '/future-island-intelligence-suite.php');
 $checks = [];
 $add = function ($label, $ok) use (&$checks) { $checks[] = [$label, (bool) $ok]; };
 
-$add('version bumped to 1.1.0', strpos($main, 'Version: 1.4.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.4.0'") !== false);
+$add('version bumped to 1.1.0', strpos($main, 'Version: 1.4.1') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.4.1'") !== false);
 $add('caught Throwable after provider dispatch is not labeled ajax_fatal', strpos($controller, '$is_fatal_context = in_array($source') !== false && strpos($controller, "if (!empty(\$context['provider_call_attempted'])) { return 'post_dispatch_fatal'; }") !== false && strpos($controller, "return 'ajax_fatal';") !== false);
 $add('caught Throwable after provider run receives post-provider category', strpos($controller, "if (!empty(\$context['provider_run_created'])) { return 'post_provider_run_fatal'; }") !== false);
 $add('post-dispatch fatal has user-safe message', strpos($controller, "if (\$category === 'post_dispatch_fatal')") !== false && strpos($controller, 'The source request was attempted, but the response could not be processed') !== false);

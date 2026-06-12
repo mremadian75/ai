@@ -21,7 +21,7 @@
  */
 error_reporting(E_ALL & ~E_DEPRECATED);
 if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.4.0'); }
+if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.4.1'); }
 if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc3'); }
 
 function sanitize_key($s){return strtolower(preg_replace('/[^a-z0-9_\-]/i','',(string)$s));}
@@ -57,7 +57,7 @@ case "$*" in
     *"db query"*)           echo "VERSION()
 8.0.36-staging" ;;
     *"--info"*)             echo "WP-CLI 2.10.0 (shim)" ;;
-    *"plugin list"*)        echo "future-island-intelligence-suite active 1.4.0" ;;
+    *"plugin list"*)        echo "future-island-intelligence-suite active 1.4.1" ;;
     *"theme list"*)         echo "twentytwentyfour active" ;;
     *"ves "*)               echo '{"status":"ready_with_warnings","shim":true}' ;;
     *)                      echo "shim-ok" ;;

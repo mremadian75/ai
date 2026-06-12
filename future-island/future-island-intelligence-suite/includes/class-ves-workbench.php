@@ -22,6 +22,14 @@ final class VES_Workbench {
         $h .= '<div class="fi-breadcrumb">' . self::e('Future Island · Workbench · Brief') . '</div>';
         $h .= '<h1>' . self::e('Brief Workbench') . '</h1>';
         $h .= '<p class="fiis-sr-sub">' . self::e('Inspect an approved Insight and review its Brief. Read-only. Evidence first; no AI generation here.') . '</p>';
+        // The nav only lists sections that will actually render (no dangling anchors
+        // on installs where the binder/builder is unavailable).
+        $nav_items = ['fi-wb-target' => 'Target'];
+        if (class_exists('VES_Evidence_Binder')) { $nav_items['fi-wb-evidence'] = 'Evidence'; }
+        $nav_items['fi-wb-brief'] = 'Brief preview';
+        if (class_exists('VES_Generation_Prompt_Package_Builder')) { $nav_items['fi-wb-package'] = 'Prompt package'; }
+        $nav_items['fi-wb-review'] = 'Review';
+        $h .= self::jump_nav($nav_items);
 
         if ($insight_id <= 0) { return $h . self::target_prompt('insight_id') . '</div>'; }
         if (!class_exists('VES_Intelligence_Store') || !method_exists('VES_Intelligence_Store', 'get_insight')) {
@@ -34,16 +42,16 @@ final class VES_Workbench {
 
         // 1. Target summary
         $status = (string) ($insight['status'] ?? 'unknown');
-        $h .= '<section class="fi-readiness-panel"><h3>' . self::e('Target') . '</h3>';
+        $h .= '<section id="fi-wb-target" class="fi-readiness-panel"><h3>' . self::e('Target') . '</h3>';
         $h .= '<p class="fi-meta-line">' . self::e('insight') . ' <code>#' . self::e((string) (int) $insight['id']) . '</code> · '
             . self::e('status') . ' ' . (class_exists('VES_Review_State') ? VES_Review_State::badge($status) : self::e($status)) . '</p>';
         $h .= '<p>' . self::e(self::clip((string) ($insight['title'] ?? ($insight['summary'] ?? '')), 240)) . '</p></section>';
 
         // 2. Evidence Binder
-        if (class_exists('VES_Evidence_Binder')) { $h .= VES_Evidence_Binder::render_html($insight); }
+        if (class_exists('VES_Evidence_Binder')) { $h .= '<div id="fi-wb-evidence">' . VES_Evidence_Binder::render_html($insight) . '</div>'; }
 
         // 3. Brief preview (deterministic builder, no AI)
-        $h .= '<section class="fi-readiness-panel"><h3>' . self::e('Brief preview') . '</h3>';
+        $h .= '<section id="fi-wb-brief" class="fi-readiness-panel"><h3>' . self::e('Brief preview') . '</h3>';
         if (class_exists('VES_Insight_Brief_Builder') && method_exists('VES_Insight_Brief_Builder', 'build_brief_from_insight')) {
             $payload = VES_Insight_Brief_Builder::build_brief_from_insight($insight_id);
             if (function_exists('is_wp_error') && is_wp_error($payload)) {
@@ -75,6 +83,12 @@ final class VES_Workbench {
         $h .= '<div class="fi-breadcrumb">' . self::e('Future Island · Workbench · Draft') . '</div>';
         $h .= '<h1>' . self::e('Draft Workbench') . '</h1>';
         $h .= '<p class="fiis-sr-sub">' . self::e('Inspect an approved/ready Brief and review its Draft. Read-only. No AI generation here.') . '</p>';
+        $nav_items = ['fi-wb-target' => 'Brief', 'fi-wb-readiness' => 'Readiness'];
+        if (class_exists('VES_Evidence_Binder')) { $nav_items['fi-wb-evidence'] = 'Evidence'; }
+        $nav_items['fi-wb-slots'] = 'Output slots';
+        if (class_exists('VES_Generation_Prompt_Package_Builder')) { $nav_items['fi-wb-package'] = 'Prompt package'; }
+        $nav_items['fi-wb-review'] = 'Review';
+        $h .= self::jump_nav($nav_items);
 
         if ($brief_id <= 0) { return $h . self::target_prompt('brief_id') . '</div>'; }
         if (!class_exists('VES_Intelligence_Store') || !method_exists('VES_Intelligence_Store', 'get_brief')) {
@@ -89,13 +103,13 @@ final class VES_Workbench {
         $ready = in_array($status, ['approved', 'ready', 'reviewed'], true);
 
         // 1. Brief summary
-        $h .= '<section class="fi-readiness-panel"><h3>' . self::e('Brief') . '</h3>';
+        $h .= '<section id="fi-wb-target" class="fi-readiness-panel"><h3>' . self::e('Brief') . '</h3>';
         $h .= '<p class="fi-meta-line">' . self::e('brief') . ' <code>#' . self::e((string) (int) $brief['id']) . '</code> · '
             . self::e('status') . ' ' . (class_exists('VES_Review_State') ? VES_Review_State::badge($status) : self::e($status)) . '</p>';
         $h .= '<p>' . self::e(self::clip((string) ($brief['objective'] ?? ($brief['summary'] ?? '')), 240)) . '</p></section>';
 
         // 2. Draft readiness — non-approved brief BLOCKS draft
-        $h .= '<section class="fi-readiness-panel"><h3>' . self::e('Draft readiness') . '</h3>';
+        $h .= '<section id="fi-wb-readiness" class="fi-readiness-panel"><h3>' . self::e('Draft readiness') . '</h3>';
         if (!$ready) {
             $h .= '<p>' . (class_exists('VES_Review_State') ? VES_Review_State::badge('blocked') : '') . ' '
                 . self::e('Blocked: a draft requires an approved/ready brief. Approve the brief first.') . '</p>';
@@ -105,10 +119,10 @@ final class VES_Workbench {
         $h .= '</section>';
 
         // 3. Evidence Binder (from the brief)
-        if (class_exists('VES_Evidence_Binder')) { $h .= VES_Evidence_Binder::render_html($brief); }
+        if (class_exists('VES_Evidence_Binder')) { $h .= '<div id="fi-wb-evidence">' . VES_Evidence_Binder::render_html($brief) . '</div>'; }
 
         // 4. Output format guidance — placeholder slots only
-        $h .= '<section class="fi-readiness-panel"><h3>' . self::e('Output slots (guidance — not generated)') . '</h3><ul class="fi-output-slots">';
+        $h .= '<section id="fi-wb-slots" class="fi-readiness-panel"><h3>' . self::e('Output slots (guidance — not generated)') . '</h3><ul class="fi-output-slots">';
         foreach (self::DRAFT_SLOTS as $slot) { $h .= '<li><code>' . self::e($slot) . '</code> <span class="fi-empty-state">' . self::e('—') . '</span></li>'; }
         $h .= '</ul></section>';
 
@@ -125,7 +139,7 @@ final class VES_Workbench {
     private static function package_preview_section($ws, $use_case, $target_type, $target_id) {
         if (!class_exists('VES_Generation_Prompt_Package_Builder')) { return ''; }
         $pkg = VES_Generation_Prompt_Package_Builder::build(['workspace_id' => (int) $ws, 'use_case' => $use_case, 'target_type' => $target_type, 'target_id' => (int) $target_id]);
-        $h = '<section class="fi-package-preview"><h3>' . self::e('Prompt Package Preview (dry-run)') . '</h3>';
+        $h = '<section id="fi-wb-package" class="fi-package-preview"><h3>' . self::e('Prompt Package Preview (dry-run)') . '</h3>';
         $h .= '<p class="fi-meta-line">' . self::e('build status') . ' ' . (class_exists('VES_Review_State') ? VES_Review_State::badge($pkg['build_status']) : self::e($pkg['build_status']))
             . ' · ' . self::e('blocking reason') . ': <code>' . self::e((string) $pkg['blocking_reason']) . '</code>'
             . ' · ' . self::e('contract') . ': <code>' . self::e((string) ($pkg['output_contract']['schema_key'] ?? '')) . '</code></p>';
@@ -140,7 +154,7 @@ final class VES_Workbench {
     private static function review_rail($object) {
         $reason = self::e('No reviewed-' . $object . ' transition handler is wired yet. Controls are disabled until a safe, nonce-protected handler exists.');
         $btns = ['Approve ' . $object, 'Reject ' . $object, 'Mark needs revision'];
-        $h = '<section class="fi-review-rail"><h3>' . self::e('Review controls') . '</h3>';
+        $h = '<section id="fi-wb-review" class="fi-review-rail"><h3>' . self::e('Review controls') . '</h3>';
         foreach ($btns as $b) {
             $h .= '<button type="button" class="button" disabled aria-disabled="true" title="' . $reason . '">' . self::e($b) . '</button> ';
         }
@@ -156,6 +170,20 @@ final class VES_Workbench {
     private static function target_prompt($param) {
         return '<p class="fi-empty-state">' . self::e('Provide a ' . $param . ' query parameter to load a target. Invalid or missing targets show a safe message — no records are written.') . '</p>';
     }
+    /**
+     * UI/UX upgrade — in-page jump navigation for long workbench pages. Pure
+     * anchors (no routing assumptions), keyboard-reachable, escaped.
+     */
+    private static function jump_nav(array $items) {
+        $h = '<nav class="fi-workbench-nav" aria-label="' . self::ea('On this page') . '">';
+        foreach ($items as $anchor => $label) {
+            $h .= '<a href="#' . self::ea($anchor) . '">' . self::e($label) . '</a>';
+        }
+        return $h . '</nav>';
+    }
+
+    private static function ea($s) { return function_exists('esc_attr') ? esc_attr((string) $s) : htmlspecialchars((string) $s, ENT_QUOTES); }
+
     private static function error($msg) { return '<div class="notice notice-error inline"><p>' . self::e($msg) . '</p></div>'; }
     private static function clip($s, $max) { $s = (string) $s; return (strlen($s) > $max) ? (substr($s, 0, $max - 1) . '…') : $s; }
 }

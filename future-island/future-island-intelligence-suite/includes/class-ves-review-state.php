@@ -46,6 +46,7 @@ final class VES_Review_State {
     public static function badge($state, $override_label = null) {
         $m = self::meta($state);
         $label = $override_label !== null ? (string) $override_label : $m['label'];
-        return '<span class="' . self::ea($m['class']) . '" title="' . self::ea($m['description']) . '">' . self::e($label) . '</span>';
+        // UI/UX upgrade: the meaning is announced to assistive tech, not just on hover.
+        return '<span class="' . self::ea($m['class']) . '" title="' . self::ea($m['description']) . '" aria-label="' . self::ea($label . ': ' . $m['description']) . '">' . self::e($label) . '</span>';
     }
 }

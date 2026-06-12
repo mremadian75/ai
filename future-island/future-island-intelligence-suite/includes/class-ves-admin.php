@@ -79,7 +79,10 @@ final class VES_Admin {
         if (!in_array($page, ['fi-signal-room', 'fi-brief-workbench', 'fi-draft-workbench', 'ves-memory-knowledge'], true)) { return; }
         $base = defined('VES_PLUGIN_URL') ? VES_PLUGIN_URL : '';
         $ver = defined('VES_PLUGIN_VERSION') ? VES_PLUGIN_VERSION : '1.0.0';
-        if (function_exists('wp_enqueue_style')) { wp_enqueue_style('fiis-signal-room', $base . 'assets/css/fiis-signal-room.css', [], $ver); }
+        if (function_exists('wp_enqueue_style')) {
+            wp_enqueue_style('fiis-signal-room', $base . 'assets/css/fiis-signal-room.css', [], $ver);
+            wp_enqueue_style('fiis-ui-system', $base . 'assets/css/fiis-ui-system.css', ['fiis-signal-room'], $ver);
+        }
         if (function_exists('wp_enqueue_script')) { wp_enqueue_script('fiis-signal-room', $base . 'assets/js/fiis-signal-room.js', [], $ver, true); }
     }
 

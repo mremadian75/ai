@@ -65,6 +65,16 @@ final class VES_Assets {
             VES_PLUGIN_VERSION
         );
 
+        // UI/UX upgrade — unified Future Island UI system: one token source,
+        // editorial components, dark mode, print output and a11y affordances.
+        // Loaded LAST so it refines fiis-app/fiis-mobile; strictly additive.
+        wp_register_style(
+            'fiis-ui-system',
+            VES_PLUGIN_URL . 'assets/css/fiis-ui-system.css',
+            ['fiis-mobile'],
+            VES_PLUGIN_VERSION
+        );
+
         wp_register_script(
             'ves-report-actions',
             VES_PLUGIN_URL . 'assets/js/ves-report-actions.js',
@@ -84,6 +94,7 @@ final class VES_Assets {
         wp_enqueue_style('ves-report-templates');
         wp_enqueue_style('fiis-app');
         wp_enqueue_style('fiis-mobile');
+        wp_enqueue_style('fiis-ui-system');
         wp_enqueue_script('ves-frontend');
         wp_enqueue_script('ves-report-actions');
         wp_add_inline_script('ves-frontend', 'window.VES_DEBUG = ' . (self::$debug ? 'true' : 'false') . '; window.VES_IS_ADMIN = ' . ((function_exists('current_user_can') && current_user_can('manage_options')) ? 'true' : 'false') . ';', 'before');

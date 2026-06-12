@@ -22,7 +22,7 @@ $checks = [];
 $add = function ($label, $cond) use (&$checks) { $checks[$label] = (bool) $cond; };
 
 // Version bump.
-$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.7') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.7'") !== false);
+$add('version bumped to 1.1.0', strpos($main, 'Version: 1.2.8') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.2.8'") !== false);
 
 // --- Fix 1: post_standard_usage_or_error() must not call self::error() on WP_Error ---
 // Locate the function body.

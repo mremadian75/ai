@@ -76,6 +76,7 @@ final class VES_Admin_Console {
             $base = defined('VES_PLUGIN_URL') ? VES_PLUGIN_URL : (function_exists('plugin_dir_url') ? plugin_dir_url(dirname(__DIR__) . '/x.php') : '');
             if (function_exists('wp_enqueue_style')) {
                 wp_enqueue_style('fiis-admin-console', $base . 'assets/css/fiis-admin-console.css', [], $ver);
+                wp_enqueue_style('fiis-ui-system', $base . 'assets/css/fiis-ui-system.css', ['fiis-admin-console'], $ver);
             }
         } catch (\Throwable $e) {
             self::log($e);

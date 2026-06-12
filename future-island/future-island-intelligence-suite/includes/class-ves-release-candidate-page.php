@@ -123,22 +123,24 @@ final class VES_Release_Candidate_Page {
         // Required live commands.
         $h .= '<section class="fiis-rc-section"><h2>Live validation commands (staging only)</h2><p>Run on a staging copy with a fresh DB backup. Never run <span class="fiis-rc-mono">--apply</span> during validation.</p><ol class="fiis-rc-cmds">';
         foreach ((array) ($report['required_cli'] ?? []) as $cmd) {
-            $h .= '<li class="fiis-rc-mono">wp ' . self::e((string) $cmd) . '</li>';
+            $full = 'wp ' . (string) $cmd;
+            $h .= '<li><span class="fiis-rc-mono">' . self::e($full) . '</span> '
+                . '<button type="button" class="fiis-rc-copy" data-fiis-copy="' . self::ea($full) . '" aria-label="' . self::ea('Copy command: ' . $full) . '">Copy</button></li>';
         }
         $h .= '</ol><p class="fiis-rc-note">Full procedure: <span class="fiis-rc-mono">RELEASE-CANDIDATE-RUNBOOK.md</span> and <span class="fiis-rc-mono">LIVE-STAGING-VALIDATION-CHECKLIST.md</span> in the plugin folder.</p></section>';
 
         // Required screenshots.
-        $h .= '<section class="fiis-rc-section"><h2>Required browser evidence</h2><ul class="fiis-rc-list">';
+        $h .= '<section class="fiis-rc-section"><details class="fiis-rc-details"><summary><h2>Required browser evidence</h2></summary><ul class="fiis-rc-list">';
         foreach (['Signal Room', 'Social Media / Signal Report', 'Evidence Gate (blocked state)', 'Operator Queue', 'Memory / Brand Context', 'Generation Context Preview', 'Prompt Package Preview', 'Brief Workbench', 'Draft Workbench', 'Release Candidate page (this page)', 'Any error state encountered'] as $shot) {
             $h .= '<li>' . self::e($shot) . '</li>';
         }
-        $h .= '</ul></section>';
+        $h .= '</ul></details></section>';
 
         // Phase 9 — audit & rails diagnostics (read-only, escaped, no fake green).
         $h .= self::rails_diagnostics_section();
 
         // Known limitations — honest by design.
-        $h .= '<section class="fiis-rc-section"><h2>Known limitations</h2><ul class="fiis-rc-list">';
+        $h .= '<section class="fiis-rc-section"><details class="fiis-rc-details"><summary><h2>Known limitations</h2></summary><ul class="fiis-rc-list">';
         foreach ([
             'Live staging validation has not been performed unless explicitly recorded above — static checks cannot replace it.',
             'AI generation is a preview contract only (prompt packages); no provider execution path is enabled.',
@@ -148,7 +150,7 @@ final class VES_Release_Candidate_Page {
         ] as $lim) {
             $h .= '<li>' . self::e($lim) . '</li>';
         }
-        $h .= '</ul></section>';
+        $h .= '</ul></details></section>';
 
         // Next operator action.
         $next = $status === 'blocked'
@@ -159,7 +161,26 @@ final class VES_Release_Candidate_Page {
         $h .= '<section class="fiis-rc-section fiis-rc-next"><h2>Next operator action</h2><p>' . self::e($next) . '</p></section>';
 
         $h .= '</div></div>';
+        $h .= self::copy_script();
         return $h;
+    }
+
+    /**
+     * UI/UX upgrade — dependency-free copy-to-clipboard for the staging command
+     * list. Inline, no external src, no form, no mutation; falls back to a text
+     * selection prompt when the async Clipboard API is unavailable.
+     */
+    private static function copy_script() {
+        return '<script>(function(){'
+            . 'document.addEventListener("click",function(e){'
+            . 'var b=e.target&&e.target.closest?e.target.closest(".fiis-rc-copy"):null;'
+            . 'if(!b)return;var t=b.getAttribute("data-fiis-copy")||"";'
+            . 'var done=function(){var o=b.textContent;b.textContent="Copied";b.classList.add("is-copied");'
+            . 'setTimeout(function(){b.textContent=o;b.classList.remove("is-copied");},1400);};'
+            . 'if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done,function(){window.prompt("Copy the command:",t);});}'
+            . 'else{window.prompt("Copy the command:",t);}'
+            . '});'
+            . '})();</script>';
     }
 
     /**
@@ -289,6 +310,21 @@ final class VES_Release_Candidate_Page {
             . '.fiis-rc-page .fiis-badge-ready,.fiis-rc-page .fiis-badge-approved{background:rgba(31,122,77,.12);border-color:#1f7a4d;color:#1f7a4d}'
             . '.fiis-rc-page .fiis-badge-warning,.fiis-rc-page .fiis-badge-needs_review{background:rgba(176,106,0,.12);border-color:#b06a00;color:#b06a00}'
             . '.fiis-rc-page .fiis-badge-blocked,.fiis-rc-page .fiis-badge-missing{background:rgba(232,85,43,.12);border-color:var(--fi-red);color:var(--fi-red)}'
+            . '.fiis-rc-copy{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10px;text-transform:uppercase;letter-spacing:.06em;margin-left:8px;padding:2px 8px;border:1px solid var(--fi-bdr);border-radius:999px;background:#fff;color:var(--fi-blue);cursor:pointer}'
+            . '.fiis-rc-copy:hover{border-color:var(--fi-blue)}'
+            . '.fiis-rc-copy.is-copied{border-color:var(--fi-lime);color:#5c7d00}'
+            . '.fiis-rc-details>summary{cursor:pointer;list-style:none}'
+            . '.fiis-rc-details>summary::-webkit-details-marker{display:none}'
+            . '.fiis-rc-details>summary h2{display:inline-block;margin:0 0 10px}'
+            . '.fiis-rc-details>summary::after{content:" ▸";color:var(--fi-muted);font-size:12px}'
+            . '.fiis-rc-details[open]>summary::after{content:" ▾"}'
+            . '.fiis-rc-page a:focus-visible,.fiis-rc-page button:focus-visible,.fiis-rc-page summary:focus-visible{outline:2px solid var(--fi-blue);outline-offset:2px}'
+            . '@media (prefers-color-scheme:dark){'
+            . '.fiis-rc-page{--fi-ink:#ece8dd;--fi-paper:#16171b;--fi-sand:#262830;--fi-bdr:#383a44;--fi-muted:#a8a496;--fi-blue:#7d9ff0;--fi-blue-2:#aebfe8;--fi-red:#f0744e;--fi-lime:#a4cc33;background:var(--fi-paper);color:var(--fi-ink)}'
+            . '.fiis-rc-page .fiis-rc-section,.fiis-rc-page .fiis-rc-banner{background:#1d1e24;color:var(--fi-ink)}'
+            . '.fiis-rc-page .fiis-rc-table td{color:var(--fi-ink)}'
+            . '.fiis-rc-page .fi-status-badge,.fiis-rc-page .fiis-rc-copy{background:#1d1e24;color:var(--fi-ink)}'
+            . '}'
             . '@media (max-width:782px){.fiis-rc-page{margin-left:-10px;padding:16px}.fiis-rc-head h1{font-size:26px}.fiis-rc-table td,.fiis-rc-table th{padding:6px}}'
             . '</style>';
     }

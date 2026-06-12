@@ -16,8 +16,8 @@ $assert = function($condition, $message) use (&$failures, &$passes) {
 $read = function($rel) use ($root) { return file_get_contents($root . '/' . $rel); };
 
 $main = $read('future-island-intelligence-suite.php');
-$assert(strpos($main, 'Version: 1.2.7') !== false, 'Plugin header version is 1.1.0');
-$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.7'") !== false, 'VES_PLUGIN_VERSION constant is 1.1.0');
+$assert(strpos($main, 'Version: 1.2.8') !== false, 'Plugin header version is 1.1.0');
+$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.2.8'") !== false, 'VES_PLUGIN_VERSION constant is 1.1.0');
 
 $publicTemplates = [
     'templates/_scraper-form.php',

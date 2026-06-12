@@ -6,7 +6,7 @@ $js = file_get_contents($root . '/assets/js/ves-frontend.js');
 $checks = [];
 $add = function($name, $ok) use (&$checks) { $checks[] = [$name, (bool) $ok]; };
 
-$add('version bumped to 1.2.7 in main plugin', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.2.7') !== false);
+$add('version bumped to 1.2.8 in main plugin', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.2.8') !== false);
 $add('platform input validation throwable is degraded instead of ajax fatal', strpos($ajax, 'platform_input_validation_throwable_degraded') !== false && strpos($ajax, '$platform_input_valid = is_array($input) && !empty($input);') !== false);
 $add('duplicate guard throwable continues to provider dispatch', strpos($ajax, 'duplicate_guard_throwable_degraded') !== false && strpos($ajax, 'duplicate_guard_degraded_continue_dispatch') !== false);
 $add('provider cost guard throwable is non-blocking for admins', strpos($ajax, 'provider_cost_guard_throwable_degraded') !== false && strpos($ajax, "if (!current_user_can('manage_options'))") !== false);

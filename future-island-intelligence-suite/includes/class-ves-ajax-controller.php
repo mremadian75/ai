@@ -1344,6 +1344,12 @@ final class VES_Ajax_Controller {
             if (!empty($context['provider_call_attempted'])) { return 'post_dispatch_fatal'; }
             return 'ajax_fatal';
         }
+        // v0.3.55: an actor blocked by the server allowlist is a CONFIGURATION
+        // problem, never a transient transport error. Before this check it fell
+        // through to provider_transport_error and the UI answered a registry
+        // problem with "temporarily busy — retry or run a reduced search",
+        // neither of which can ever succeed (live FI-25xxxx/FI-54xxxx loop).
+        if (strpos($haystack, 'allowlist') !== false || strpos($haystack, 'not_allowlisted') !== false) { return 'provider_actor_not_allowlisted'; }
         if (strpos($haystack, 'provider access') !== false || strpos($haystack, 'source access') !== false) { return 'provider_access_denied'; }
         $backend_token_missing = $stage === 'missing_backend_token'
             || strpos($haystack, 'missing_backend_token') !== false
@@ -1443,6 +1449,9 @@ final class VES_Ajax_Controller {
         if ($category === 'provider_actor_rental_required') {
             return 'Esta fuente no está disponible con la configuración actual. Pide a un administrador activar el actor o elegir otra fuente.';
         }
+        if ($category === 'provider_actor_not_allowlisted') {
+            return 'Esta fuente no está habilitada en este servidor. Un administrador debe registrar el actor de datos en el registro de actores antes de ejecutarla. Reintentar no ayudará hasta entonces.';
+        }
         $config = ['missing_backend_token','module_access_denied','provider_access_denied','provider_auth_error','provider_permission_required'];
         if (in_array($category, $config, true)) {
             return 'This source is not fully configured. Ask an admin to review Diagnostics or try another configured source.';
@@ -1511,7 +1520,7 @@ final class VES_Ajax_Controller {
      */
     private static function classify_retryable($cat) {
         static $yes = ['provider_rate_limit','dispatch_slot_limit','run_dispatch_busy','duplicate_dispatch_blocked','provider_transport_error','provider_empty','provider_busy','provider_timeout','usage_reservation_failed'];
-        static $no  = ['provider_auth_error','provider_access_denied','provider_payload_rejected','provider_invalid_input','invalid_input','invalid_platform','module_access_denied'];
+        static $no  = ['provider_auth_error','provider_access_denied','provider_payload_rejected','provider_invalid_input','invalid_input','invalid_platform','module_access_denied','provider_actor_not_allowlisted'];
         if (in_array($cat, $yes, true)) { return true; }
         if (in_array($cat, $no, true))  { return false; }
         return null;
@@ -3648,6 +3657,25 @@ final class VES_Ajax_Controller {
         ]);
         if ($actor_slug === '') {
             self::error('Plataforma no configurada.', 500, $request_id, 'ajax_config', ['platform' => $platform, 'stage' => 'missing_actor_slug', 'error_category' => 'invalid_platform', 'provider_call_attempted' => false, 'provider_run_created' => false]);
+        }
+
+        // v0.3.55 preflight: refuse a not-allowlisted actor BEFORE reserving
+        // credits or acquiring dispatch slots. Previously this surfaced only at
+        // dispatch time and was misclassified as a transient transport error.
+        if (class_exists('VES_Apify_Actor_Registry') && method_exists('VES_Apify_Actor_Registry', 'preflight_actor_slug')) {
+            $actor_preflight = VES_Apify_Actor_Registry::preflight_actor_slug($actor_slug);
+            if (empty($actor_preflight['ok'])) {
+                self::error('This data source actor is not allowlisted on the server. Ask an admin to register it in the actor registry before running it.', 409, $request_id, 'actor_dispatch_error', [
+                    'platform' => $platform,
+                    'actor_slug' => $actor_slug,
+                    'stage' => 'actor_allowlist_preflight',
+                    'error_category' => 'provider_actor_not_allowlisted',
+                    'error_code' => 'ves_actor_not_allowlisted',
+                    'provider_call_attempted' => false,
+                    'provider_run_created' => false,
+                    'credits_reserved' => false,
+                ]);
+            }
         }
 
         if (class_exists('VES_Query_Planner')) {

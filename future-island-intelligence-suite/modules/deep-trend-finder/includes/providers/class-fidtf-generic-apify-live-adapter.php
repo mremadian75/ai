@@ -30,6 +30,13 @@ final class FIDTF_Generic_Apify_Live_Adapter {
         if ($actor_id === '') {
             return new WP_Error('source_actor_missing', ucfirst(str_replace('_', ' ', $source_key)) . ' actor is not configured.', ['status' => 503, 'retryable' => false, 'request_attempted' => false]);
         }
+        // v0.3.55 preflight: a not-allowlisted actor must fail HERE with the real
+        // reason — before any dispatch attempt — not mid-run as a misleading
+        // transport error, and not as a generic "bridge disabled".
+        $preflight = method_exists('FIDTF_Settings', 'actor_preflight') ? FIDTF_Settings::actor_preflight($source_key) : ['ok' => true];
+        if (empty($preflight['ok'])) {
+            return new WP_Error('source_actor_not_allowlisted', ucfirst(str_replace('_', ' ', $source_key)) . ' source is unavailable: ' . (string) ($preflight['detail'] ?? 'actor not allowlisted') . ' Ask an admin to register the actor in the actor registry.', ['status' => 409, 'retryable' => false, 'request_attempted' => false, 'preflight_reason' => sanitize_key((string) ($preflight['reason'] ?? 'actor_not_allowlisted'))]);
+        }
         if (!FIDTF_Settings::source_live_ready($source_key)) {
             return new WP_Error('source_live_bridge_disabled', ucfirst(str_replace('_', ' ', $source_key)) . ' live bridge is disabled or provider is not ready.', ['status' => 202, 'retryable' => false, 'request_attempted' => false]);
         }

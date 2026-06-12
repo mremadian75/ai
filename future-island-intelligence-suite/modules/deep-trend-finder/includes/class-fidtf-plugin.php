@@ -14,6 +14,11 @@ final class FIDTF_Plugin {
         add_action('init', [__CLASS__, 'maybe_create_frontend_page'], 20);
         add_action('wp_enqueue_scripts', [__CLASS__, 'register_assets']);
         add_action('rest_api_init', ['FIDTF_REST_Controller', 'register_routes']);
+        // v0.3.55: actors an admin configured for this module are first-party
+        // configuration — the same trust level as the legacy per-platform slug
+        // settings the core allowlist already honors. Register them so the gate
+        // blocks unknown actors, not the module's own configured sources.
+        add_filter('ves_apify_actor_allowlist', [__CLASS__, 'register_module_actors']);
         FIDTF_AI_Bridge::register();
         FIDTF_DB::maybe_upgrade();
         FIDTF_Settings::maybe_migrate();
@@ -21,6 +26,20 @@ final class FIDTF_Plugin {
         if (is_admin()) {
             FIDTF_Admin::register();
         }
+    }
+
+    /** Merge this module's configured actor slugs into the core dispatch allowlist. */
+    public static function register_module_actors($slugs) {
+        $slugs = is_array($slugs) ? $slugs : [];
+        $settings = FIDTF_Settings::get();
+        $candidates = array_values((array) ($settings['actor_map'] ?? []));
+        $candidates[] = (string) ($settings['tiktok_discovery_actor_id'] ?? '');
+        $candidates[] = (string) ($settings['tiktok_enrichment_actor_id'] ?? '');
+        foreach ($candidates as $candidate) {
+            $candidate = trim((string) $candidate);
+            if ($candidate !== '') { $slugs[] = $candidate; }
+        }
+        return array_values(array_unique($slugs));
     }
 
     public static function activate(): void {

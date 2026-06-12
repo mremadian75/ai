@@ -57,6 +57,48 @@ final class FIDTF_Source_Job_Service {
             $dispatch_request = array_merge($request, [
                 'planner_mode' => sanitize_key((string) ($plan['planner_mode'] ?? 'local_fallback')),
             ]);
+
+            // v0.3.55 preflight: never dispatch a source whose actor cannot pass
+            // the core allowlist gate. The job is finalized as skipped with the
+            // real reason instead of failing mid-run as a transport error.
+            $preflight = method_exists('FIDTF_Settings', 'actor_preflight') ? FIDTF_Settings::actor_preflight($source_key) : ['ok' => true];
+            if (empty($preflight['ok'])) {
+                $reason = sanitize_key((string) ($preflight['reason'] ?? 'actor_not_allowlisted'));
+                $message = ucfirst(str_replace('_', ' ', $source_key)) . ' was skipped before dispatch: ' . sanitize_text_field((string) ($preflight['detail'] ?? 'actor unavailable')) . ' Ask an admin to register the actor in the actor registry.';
+                self::update_job($job_id, [
+                    'status' => self::sanitize_status('skipped'),
+                    'error_code' => 'source_' . $reason,
+                    'retryable' => 0,
+                    'completed_at' => current_time('mysql'),
+                    'updated_at' => current_time('mysql'),
+                ]);
+                $skip = [
+                    'ok' => false,
+                    'status' => 'skipped',
+                    'job_status' => 'skipped',
+                    'job_id' => $job_id,
+                    'source_key' => $source_key,
+                    'provider_run_id' => '',
+                    'items' => [],
+                    'raw_count' => 0,
+                    'provider_dataset_rows' => 0,
+                    'provider_dataset_total_rows' => 0,
+                    'flattened_raw_items' => 0,
+                    'normalized_count' => 0,
+                    'relevant_count' => 0,
+                    'normalized_items' => 0,
+                    'relevant_items' => 0,
+                    'error_code' => 'source_' . $reason,
+                    'retryable' => false,
+                    'request_attempted' => false,
+                    'dispatch_attempted' => false,
+                    'message' => $message,
+                ];
+                self::persist_dispatch_diagnostics($job_id, $skip);
+                $results[] = $skip;
+                continue;
+            }
+
             $dispatch = self::normalize_dispatch_result(FIDTF_Source_Dispatcher::dispatch_source($source_key, $source_plan, $dispatch_request));
 
             if (!empty($dispatch['items'])) {
@@ -172,9 +214,18 @@ final class FIDTF_Source_Job_Service {
             $zero_repair_candidate = self::is_tiktok_zero_count_repair_candidate($job);
             $force_refresh = !empty($request['_fidtf_force_provider_refresh']);
             $refreshable_source = ($source_key === 'tiktok') || FIDTF_Settings::source_live_ready($source_key);
-            if (!$refreshable_source || (!in_array($status, ['queued', 'running', 'retryable_failed'], true) && !$zero_repair_candidate && !$force_refresh)) { continue; }
             $provider_run_id = sanitize_text_field((string) ($job['provider_run_id'] ?? ''));
-            if ($provider_run_id === '' && $status !== 'retryable_failed') { continue; }
+            $refresh_path_open = $refreshable_source
+                && (in_array($status, ['queued', 'running', 'retryable_failed'], true) || $zero_repair_candidate || $force_refresh)
+                && ($provider_run_id !== '' || $status === 'retryable_failed');
+            if (!$refresh_path_open) {
+                // v0.3.55 watchdog: a queued/running job that no refresh path can
+                // ever progress (no provider run id to poll, or the source became
+                // non-refreshable mid-run) must not spin forever in the UI.
+                $stale = self::finalize_stale_job($job);
+                if (!empty($stale)) { $results[] = $stale; }
+                continue;
+            }
             if (!$zero_repair_candidate && !$force_refresh && self::refresh_is_backing_off($job_id)) { continue; }
             if (!self::acquire_refresh_lock($job_id, $zero_repair_candidate || $force_refresh)) { continue; }
 
@@ -288,6 +339,68 @@ final class FIDTF_Source_Job_Service {
     private static function mark_tiktok_zero_count_repair_checked(int $job_id, array $dispatch): void {
         // v0.3.21: intentionally no-op. Refresh backoff is enough protection and
         // repeated safe repair is required for old falsely-finalized TikTok jobs.
+    }
+
+    /** Seconds without a row update after which a queued/running job is stuck. */
+    public static function job_stale_seconds(): int {
+        $seconds = 900;
+        if (function_exists('apply_filters')) {
+            $seconds = (int) apply_filters('fidtf_source_job_stale_seconds', $seconds);
+        }
+        return max(120, $seconds);
+    }
+
+    /**
+     * v0.3.55 — true when a queued/running job has not been touched within the
+     * stale window. updated_at moves on every real refresh, so a stale row means
+     * nothing is progressing this job (the live screenshot case: Reddit pinned
+     * at "running" with zero rows forever).
+     */
+    public static function job_is_stale(array $job, ?int $now = null): bool {
+        $status = self::sanitize_status((string) ($job['status'] ?? ''), 'planned');
+        if (!in_array($status, ['queued', 'running'], true)) { return false; }
+        $reference = sanitize_text_field((string) ($job['updated_at'] ?? ($job['created_at'] ?? '')));
+        if ($reference === '') { return false; }
+        $ts = strtotime($reference);
+        if ($ts === false) { return false; }
+        if ($now === null) {
+            $now = function_exists('current_time') ? (int) current_time('timestamp') : time();
+        }
+        return ($now - $ts) >= self::job_stale_seconds();
+    }
+
+    /** Finalize a stuck job as a retryable timeout. Returns the result row or []. */
+    private static function finalize_stale_job(array $job): array {
+        if (!self::job_is_stale($job)) { return []; }
+        $job_id = (int) ($job['id'] ?? 0);
+        $source_key = sanitize_key((string) ($job['source_key'] ?? ''));
+        $message = ucfirst(str_replace('_', ' ', $source_key)) . ' run timed out waiting for the provider and was closed by the run watchdog. You can retry this source.';
+        self::update_job($job_id, [
+            'status' => self::sanitize_status('failed'),
+            'error_code' => 'provider_timeout_stale',
+            'retryable' => 1,
+            'completed_at' => current_time('mysql'),
+            'updated_at' => current_time('mysql'),
+        ]);
+        $result = [
+            'ok' => false,
+            'status' => 'failed',
+            'job_status' => 'failed',
+            'job_id' => $job_id,
+            'source_key' => $source_key,
+            'provider_run_id' => sanitize_text_field((string) ($job['provider_run_id'] ?? '')),
+            'items' => [],
+            'raw_count' => (int) ($job['raw_count'] ?? 0),
+            'normalized_count' => (int) ($job['normalized_count'] ?? 0),
+            'relevant_count' => (int) ($job['relevant_count'] ?? 0),
+            'normalized_items' => (int) ($job['normalized_count'] ?? 0),
+            'relevant_items' => (int) ($job['relevant_count'] ?? 0),
+            'error_code' => 'provider_timeout_stale',
+            'retryable' => true,
+            'message' => $message,
+        ];
+        self::persist_dispatch_diagnostics($job_id, $result);
+        return $result;
     }
 
     private static function refresh_is_backing_off(int $job_id): bool {

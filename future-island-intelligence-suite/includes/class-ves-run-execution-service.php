@@ -61,6 +61,8 @@ final class VES_Run_Execution_Service {
         $data = is_array($error->get_error_data()) ? $error->get_error_data() : [];
         $provider_state = strtolower((string) ($data['provider_state'] ?? ''));
         $blob = $code . ' ' . $msg . ' ' . $provider_state;
+        // v0.3.55: allowlist refusal is a configuration failure, never busy/transient.
+        if (strpos($blob, 'allowlist') !== false) { return 'failed_not_allowlisted'; }
         if (strpos($blob, 'memory') !== false) { return 'running'; }
         if (preg_match('/(source is temporarily busy|actor is temporarily busy|provider busy|try again in a few minutes|too many concurrent runs|rate limited by provider|capacity|temporarily unavailable|temporarily busy|rental busy|apify capacity)/i', $blob)) {
             return 'provider_busy';
@@ -599,6 +601,47 @@ final class VES_Run_Execution_Service {
                 'provider_cost_usd' => 0,
                 'adapter_key' => sanitize_key((string) ($source['adapter_key'] ?? '')),
             ];
+        }
+        // v0.3.55 preflight: exclude a not-allowlisted actor from the run BEFORE
+        // any slot/credit/dispatch attempt. It is finalized as a non-retryable
+        // configuration skip — not a misleading busy/transport failure — and the
+        // reduced-search source set automatically excludes it.
+        if (class_exists('VES_Apify_Actor_Registry') && method_exists('VES_Apify_Actor_Registry', 'preflight_actor_slug')) {
+            $actor_preflight = VES_Apify_Actor_Registry::preflight_actor_slug($actor_slug);
+            if (empty($actor_preflight['ok'])) {
+                if (class_exists('VES_Admin')) {
+                    VES_Admin::record_diagnostic('actor_allowlist_preflight_blocked', 'Source excluded before dispatch: actor not allowlisted.', [
+                        'source_key' => $source_key,
+                        'actor_slug' => $actor_slug,
+                        'reason' => sanitize_key((string) ($actor_preflight['reason'] ?? '')),
+                    ]);
+                }
+                return [
+                    'label' => $source['label'] ?? $source_key,
+                    'actor_slug' => $actor_slug,
+                    'source_family' => sanitize_key((string) ($source['source_family'] ?? 'market_context')),
+                    'source_role' => sanitize_key((string) ($source['source_role'] ?? 'source')),
+                    'platform' => sanitize_key((string) ($source['platform'] ?? '')),
+                    'fallback_to' => sanitize_key((string) ($source['fallback_to'] ?? '')),
+                    'status' => 'failed_not_allowlisted',
+                    'dispatch_status' => 'skipped_not_allowlisted',
+                    'scrape_status' => 'failed_not_allowlisted',
+                    'parse_status' => 'not_started',
+                    'analytical_usability_status' => 'failed',
+                    'notes' => 'Esta fuente no está habilitada en este servidor. Un administrador debe registrar el actor en el registro de actores.',
+                    'error_code' => 'failed_not_allowlisted',
+                    'retryable' => false,
+                    'run_id' => '',
+                    'input' => $source['input'] ?? [],
+                    'attempts' => $dispatch_attempt_count,
+                    'dispatch_attempt_count' => $dispatch_attempt_count,
+                    'source_execution_key' => $source_execution_key,
+                    'source_execution_reused' => false,
+                    'provider_cost_usd' => 0,
+                    'useful_evidence_count' => 0,
+                    'adapter_key' => sanitize_key((string) ($source['adapter_key'] ?? '')),
+                ];
+            }
         }
         if (class_exists('VES_Source_Adapter_Registry')) {
             $valid = VES_Source_Adapter_Registry::validate_input($source_key, $actor_slug, $source['input'] ?? []);

@@ -304,11 +304,45 @@ final class FIDTF_Settings {
 
     public static function source_live_ready(string $source): bool {
         $source = sanitize_key($source);
-        if ($source === 'tiktok') { return self::tiktok_dispatch_allowed(); }
+        if ($source === 'tiktok') { return self::tiktok_dispatch_allowed() && self::actor_preflight('tiktok')['ok']; }
         if ($source === 'ai_research') { return self::ai_research_bridge_enabled(); }
         if (!self::source_enabled($source) || !self::live_dispatch_enabled() || !self::multi_source_live_bridge_enabled()) { return false; }
-        if (self::actor_for($source) === '') { return false; }
+        if (!self::actor_preflight($source)['ok']) { return false; }
         return self::generic_apify_provider_ready();
+    }
+
+    /**
+     * v0.3.55 — per-source actor preflight. A source whose actor is missing or
+     * not allowlisted by the core dispatch gate must never be presented as
+     * runnable: it would only fail at dispatch time with a misleading
+     * provider/transport error. Returns ['ok','reason','detail','actor_id'].
+     */
+    public static function actor_preflight(string $source): array {
+        $source = sanitize_key($source);
+        if ($source === 'ai_research') {
+            return ['ok' => true, 'reason' => 'ok', 'detail' => '', 'actor_id' => ''];
+        }
+        $actor_id = self::actor_for($source);
+        if ($actor_id === '') {
+            return ['ok' => false, 'reason' => 'actor_not_configured', 'detail' => 'No provider actor is configured for this source.', 'actor_id' => ''];
+        }
+        // Only enforce the allowlist when the guarded core client is the path
+        // that will dispatch; direct QA mode has no core gate to preflight.
+        $core_gate_active = class_exists('VES_Apify_Actor_Registry')
+            && class_exists('FIDTF_Core_Apify_Client_Adapter')
+            && FIDTF_Core_Apify_Client_Adapter::available();
+        if ($core_gate_active) {
+            $check = VES_Apify_Actor_Registry::preflight_actor_slug($actor_id);
+            if (empty($check['ok'])) {
+                return [
+                    'ok' => false,
+                    'reason' => sanitize_key((string) $check['reason']),
+                    'detail' => sanitize_text_field((string) $check['detail']),
+                    'actor_id' => $actor_id,
+                ];
+            }
+        }
+        return ['ok' => true, 'reason' => 'ok', 'detail' => '', 'actor_id' => $actor_id];
     }
 
     public static function tiktok_live_bridge_enabled(): bool {
@@ -585,10 +619,23 @@ final class FIDTF_Settings {
         $tiktok_ready = $global && $bridge && $provider_ready;
         $live_sources = [];
         $planned_sources = [];
+        $unavailable_sources = [];
         foreach ($requested as $source) {
+            $preflight = self::actor_preflight($source);
+            if (!$preflight['ok']) {
+                // v0.3.55: an unconfigured / not-allowlisted actor must never be
+                // offered as live — dispatching it can only fail.
+                $planned_sources[] = $source;
+                $unavailable_sources[$source] = [
+                    'reason' => $preflight['reason'],
+                    'detail' => $preflight['detail'],
+                ];
+                $blocking[] = $source . ':' . $preflight['reason'];
+                continue;
+            }
             if ($source === 'tiktok' && $tiktok_ready) {
                 $live_sources[] = 'tiktok';
-            } elseif ($source !== 'ai_research' && $source !== 'tiktok' && $global && $multi_bridge && $generic_ready && self::actor_for($source) !== '') {
+            } elseif ($source !== 'ai_research' && $source !== 'tiktok' && $global && $multi_bridge && $generic_ready) {
                 $live_sources[] = $source;
             } elseif ($source === 'ai_research' && self::ai_research_bridge_enabled()) {
                 $live_sources[] = $source;
@@ -619,6 +666,7 @@ final class FIDTF_Settings {
             'tiktok_live_ready' => $tiktok_ready,
             'planned_only_sources' => array_values(array_unique($planned_sources)),
             'live_sources' => array_values(array_unique($live_sources)),
+            'unavailable_sources' => $unavailable_sources,
             'blocking_reasons' => array_values(array_unique($blocking)),
             'warnings' => (array) ($status['warnings'] ?? []),
             'openai_runtime' => $ai_runtime,

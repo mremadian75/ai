@@ -140,6 +140,45 @@ final class VES_Config {
         return $slug !== '' ? $slug : ($defaults[$platform] ?? '');
     }
 
+    /**
+     * Every platform key get_actor_slug() can resolve. The dispatch allowlist
+     * must enumerate ALL of these — a hand-maintained subset silently blocks
+     * the plugin's own shipped defaults at dispatch time (live FI-54xxxx
+     * "actor not allowlisted" failures for trend slots such as
+     * tiktok_trending_videos or reddit_trends).
+     */
+    public static function all_actor_platform_keys() {
+        return [
+            'tiktok', 'tiktok_enrichment', 'tiktok_comments', 'tiktok_fallback', 'tiktok_backup',
+            'youtube', 'facebook', 'instagram', 'facebook_ads', 'google_ads', 'twitter', 'linkedin',
+            'reddit', 'pinterest', 'semrush', 'semrush_keywords', 'semrush_keyword_magic', 'semrush_domain',
+            'moz', 'ahrefs', 'google_trends', 'youtube_trending', 'tiktok_trends', 'twitter_trends',
+            'google_trends_interest', 'google_trends_trending_now', 'google_search_freshness', 'google_news_freshness',
+            'semrush_keyword_context', 'x_topic_posts', 'x_trend_list',
+            'tiktok_topic_videos', 'tiktok_hashtag_trends', 'tiktok_trending_videos', 'tiktok_trending_creators', 'tiktok_trending_sounds',
+            'youtube_topic_videos', 'youtube_trending_categories', 'reddit_topic_posts', 'reddit_trends',
+            'ad_creative_scraper', 'competitor_creative_scraper',
+        ];
+    }
+
+    /**
+     * All actor slugs this install is configured to use, across every platform
+     * key and semrush mode, plus the shipped defaults (a site override must not
+     * un-allowlist the default that other code paths still fall back to).
+     */
+    public static function all_actor_slugs() {
+        $slugs = [];
+        foreach (self::all_actor_platform_keys() as $platform) {
+            $slug = trim((string) self::get_actor_slug($platform));
+            if ($slug !== '') { $slugs[$slug] = true; }
+        }
+        foreach (['agency', 'keyword_simple', 'keyword_magic', 'domain_seo'] as $mode) {
+            $slug = trim((string) self::get_actor_slug('semrush', ['mode' => $mode]));
+            if ($slug !== '') { $slugs[$slug] = true; }
+        }
+        return array_keys($slugs);
+    }
+
 
     public static function get_trend_source_slots() {
         return [

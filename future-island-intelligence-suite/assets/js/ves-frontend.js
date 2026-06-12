@@ -4664,6 +4664,9 @@
             actor_dispatch_failed: 'Source actor failed to start',
             invalid_input: 'Invalid input',
             source_actor_not_allowlisted: 'Source actor not allowlisted',
+            provider_actor_not_allowlisted: 'Source actor not allowlisted on this server',
+            failed_not_allowlisted: 'Source actor not allowlisted on this server',
+            provider_timeout_stale: 'Source run timed out (watchdog)',
             provider_results_zero_usable_evidence: 'Provider returned rows, 0 usable evidence rows',
             provider_result_parsing_failed: 'Provider result exists, parsing failed',
             zero_provider_results: '0 provider results',
@@ -5041,21 +5044,25 @@
         let displayLabel = label || 'Ejecución no iniciada';
         if (!label || label === 'Error inesperado') {
             if (code === 'provider_busy') displayLabel = 'Fuente temporalmente ocupada';
+            else if (code === 'provider_actor_not_allowlisted') displayLabel = 'Fuente no habilitada en este servidor';
             else if (['dispatch_slot_limit','run_dispatch_busy','duplicate_dispatch_blocked'].includes(code)) displayLabel = 'Sistema ocupado';
             else if (['usage_reservation_failed','credit_reservation_failed'].includes(code)) displayLabel = 'Ejecución no iniciada';
             else displayLabel = 'Ejecución no iniciada';
         }
         const rawMsg = code === 'provider_busy'
             ? 'Una fuente está temporalmente ocupada. Puedes reintentar o ejecutar una búsqueda reducida.'
-            : (code === 'dispatch_slot_limit' || code === 'run_dispatch_busy'
-                ? 'El sistema no pudo iniciar la ejecución en este momento. No se consumieron créditos finales. Reintenta en unos segundos.'
-                : (code === 'duplicate_dispatch_blocked'
-                    ? 'Ya hay una ejecución en curso. Espera unos segundos o vuelve a intentarlo.'
-                    : (err && err.message ? err.message : (err && err.user_message ? err.user_message : 'No se pudo iniciar la ejecución.'))));
+            : (code === 'provider_actor_not_allowlisted'
+                ? 'Esta fuente no está habilitada en este servidor. Un administrador debe registrar el actor de datos en el registro de actores. Reintentar no ayudará hasta entonces.'
+                : (code === 'dispatch_slot_limit' || code === 'run_dispatch_busy'
+                    ? 'El sistema no pudo iniciar la ejecución en este momento. No se consumieron créditos finales. Reintenta en unos segundos.'
+                    : (code === 'duplicate_dispatch_blocked'
+                        ? 'Ya hay una ejecución en curso. Espera unos segundos o vuelve a intentarlo.'
+                        : (err && err.message ? err.message : (err && err.user_message ? err.user_message : 'No se pudo iniciar la ejecución.')))));
         const msg = safeUserMessage(rawMsg, widget);
         const adminInfo = (isDebugMode(widget) || window.VES_IS_ADMIN) ? renderAdminDetail(err) : '';
         const actionMap = {
             actor_dispatch_failed: 'Ask an admin to allowlist this actor or run a reduced search with available sources.',
+            provider_actor_not_allowlisted: 'Ask an admin to register this data source actor in the actor registry. Retrying will not help until it is registered.',
             provider_transport_error: 'Retry once if the provider is transient; otherwise run a reduced search or ask an admin to inspect the provider bridge.',
             invalid_input: 'Clarify the query or URL before running this source again.',
             provider_busy: 'Retry later or run a reduced search if available.',

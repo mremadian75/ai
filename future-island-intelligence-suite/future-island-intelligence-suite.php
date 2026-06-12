@@ -35,7 +35,7 @@ if (!defined('VES_ENABLE_DEEP_VIDEO_ANALYSIS')) { define('VES_ENABLE_DEEP_VIDEO_
 // -----------------------------------------------------------------------
 // Deep Trend Finder module constants (module lives under modules/deep-trend-finder/)
 // -----------------------------------------------------------------------
-if (!defined('FIDTF_VERSION'))      { define('FIDTF_VERSION',     '0.3.54'); }
+if (!defined('FIDTF_VERSION'))      { define('FIDTF_VERSION',     '0.3.55'); }
 if (!defined('FIDTF_PLUGIN_FILE'))  { define('FIDTF_PLUGIN_FILE', FIS_PLUGIN_FILE); }
 if (!defined('FIDTF_PLUGIN_DIR'))   { define('FIDTF_PLUGIN_DIR',  FIS_PLUGIN_DIR  . 'modules/deep-trend-finder/'); }
 if (!defined('FIDTF_PLUGIN_URL'))   { define('FIDTF_PLUGIN_URL',  FIS_PLUGIN_URL  . 'modules/deep-trend-finder/'); }

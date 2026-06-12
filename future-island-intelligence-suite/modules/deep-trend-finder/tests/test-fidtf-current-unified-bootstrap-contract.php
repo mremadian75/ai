@@ -36,9 +36,9 @@ $src = is_file($unified_bootstrap) ? (string) file_get_contents($unified_bootstr
 // 3. FIDTF_VERSION is declared in the unified bootstrap.
 $ok(strpos($src, 'FIDTF_VERSION') !== false, 'FIDTF_VERSION is declared in the unified bootstrap');
 
-// 4. FIDTF_VERSION equals the current module version 0.3.54 (whitespace-tolerant).
-$ok((bool) preg_match("/define\\(\\s*'FIDTF_VERSION'\\s*,\\s*'0\\.3\\.54'\\s*\\)/", $src),
-    'FIDTF_VERSION equals 0.3.54 in the unified bootstrap');
+// 4. FIDTF_VERSION equals the current module version 0.3.55 (whitespace-tolerant).
+$ok((bool) preg_match("/define\\(\\s*'FIDTF_VERSION'\\s*,\\s*'0\\.3\\.55'\\s*\\)/", $src),
+    'FIDTF_VERSION equals 0.3.55 in the unified bootstrap');
 
 // 5. There is no standalone DTF plugin header: the suite header is the SUITE
 //    version, so DTF tests must not depend on a `Version: 0.3.xx` header.

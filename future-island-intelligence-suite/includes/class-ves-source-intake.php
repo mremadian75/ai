@@ -693,7 +693,7 @@ final class VES_Source_Intake {
 
         // Context strip: what am I looking at, in which workspace, what loop.
         $h .= '<header class="fi-room-context">';
-        $h .= '<p class="fi-breadcrumb fiis-sr-eyebrow">' . self::e('Future Island · Signal room') . '</p>';
+        $h .= '<p class="fi-breadcrumb fiis-sr-eyebrow">' . self::e('Future Island · Intake — signal room') . '</p>';
         $h .= '<h1>' . self::e('Intake & pipeline') . '</h1>';
         $h .= '<p class="fi-intake-sub">' . self::e('Source → Signal → Insight → Brief → Output → Memory → Usage. Everything records what YOU observed — nothing is fetched, generated, or approved automatically.') . '</p>';
         $h .= '<p class="fi-room-workspace">' . self::e('Workspace ' . $ws) . '</p>';

@@ -930,4 +930,39 @@
       if (button.textContent !== 'No more evidence') { button.disabled = false; }
     }
   });
+
+  // v0.3.55 — copy buttons on valid platform-asset fields. Clipboard API with a
+  // safe textarea fallback; never copies fields flagged over-limit/meta-copy
+  // (those render without a button server-side).
+  document.addEventListener('click', function (event) {
+    var copyBtn = event.target.closest('[data-fidtf-copy]');
+    if (!copyBtn) { return; }
+    var text = copyBtn.getAttribute('data-fidtf-copy') || '';
+    if (text === '') { return; }
+    var markCopied = function () {
+      copyBtn.classList.add('is-copied');
+      var original = copyBtn.textContent;
+      copyBtn.textContent = 'Copied';
+      window.setTimeout(function () {
+        copyBtn.classList.remove('is-copied');
+        copyBtn.textContent = original;
+      }, 1600);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(markCopied, function () { fallbackCopy(text, markCopied); });
+    } else {
+      fallbackCopy(text, markCopied);
+    }
+    function fallbackCopy(value, done) {
+      var area = document.createElement('textarea');
+      area.value = value;
+      area.setAttribute('readonly', 'readonly');
+      area.style.position = 'fixed';
+      area.style.opacity = '0';
+      document.body.appendChild(area);
+      area.select();
+      try { document.execCommand('copy'); done(); } catch (e) { /* clipboard unavailable */ }
+      document.body.removeChild(area);
+    }
+  });
 }());

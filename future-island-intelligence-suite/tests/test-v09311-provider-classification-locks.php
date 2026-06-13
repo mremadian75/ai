@@ -15,7 +15,7 @@ $checks = [];
 $add = function($name, $ok) use (&$checks) { $checks[] = [$name, (bool) $ok]; };
 
 // ── Version ───────────────────────────────────────────────────
-$add('version is 1.1.0', strpos($main, 'Version: 1.3.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false);
+$add('version is 1.1.0', strpos($main, 'Version: 1.4.0') !== false && strpos($main, "VES_PLUGIN_VERSION',         '1.4.0'") !== false);
 
 // ── Phase 4: SEO 403 rental classified before generic access-denied ──
 $rental_chk = strpos($ajax, 'if ($rental_required) { return \'provider_actor_rental_required\'; }');

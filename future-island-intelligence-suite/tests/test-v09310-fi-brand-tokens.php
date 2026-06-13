@@ -10,7 +10,7 @@ $checks = [];
 $add = function($name, $ok) use (&$checks) { $checks[] = [$name, (bool) $ok]; };
 
 // Version
-$add('version is 1.3.0', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.3.0') !== false);
+$add('version is 1.3.0', strpos(file_get_contents($root . '/future-island-intelligence-suite.php'), '1.4.0') !== false);
 
 // FI Azul primary color in ves-frontend.css
 $add('FI Azul #3A61E1 in ves-frontend.css', strpos($css, '#3A61E1') !== false);

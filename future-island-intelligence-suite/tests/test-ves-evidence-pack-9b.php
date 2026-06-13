@@ -17,7 +17,7 @@
  */
 error_reporting(E_ALL & ~E_DEPRECATED);
 if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.3.0'); }
+if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.4.0'); }
 if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc3'); }
 
 function sanitize_key($s){return strtolower(preg_replace('/[^a-z0-9_\-]/i','',(string)$s));}

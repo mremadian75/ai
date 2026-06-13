@@ -21,8 +21,10 @@ final class VES_App_Router {
         'linkedin'      => ['group' => 'social',    'label' => 'LinkedIn'],
         'seo'           => ['group' => 'search',    'label' => 'SEO / SEM / AEO'],
         'google'        => ['group' => 'search',    'label' => 'Google Intelligence'],
-        'trend'         => ['group' => 'search',    'label' => 'Trend Finder'],
-        'deep-trend'    => ['group' => 'search',    'label' => 'Deep Trend Finder'],
+        // v0.4.0: ONE canonical Trend Finder. The legacy 'trend' route (the old
+        // core implementation, later a duplicate launcher) is an alias below —
+        // old links land here, no duplicate page or nav entry remains.
+        'deep-trend'    => ['group' => 'search',    'label' => 'Trend Finder'],
         'brand-audit'   => ['group' => 'brand',     'label' => 'Brand Audit'],
         'ads'           => ['group' => 'brand',     'label' => 'Ads Intelligence'],
         'creative'      => ['group' => 'brand',     'label' => 'Creative Intelligence'],
@@ -37,6 +39,9 @@ final class VES_App_Router {
         'brand_audit'  => 'brand-audit',
         'deeptrend'    => 'deep-trend',
         'deep_trend'   => 'deep-trend',
+        'trend'        => 'deep-trend',
+        'trend_finder' => 'deep-trend',
+        'trend-finder' => 'deep-trend',
         'google_intel' => 'google',
         'briefs'       => 'brief-library',
         'brief'        => 'brief-library',

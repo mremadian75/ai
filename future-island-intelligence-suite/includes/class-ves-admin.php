@@ -76,7 +76,12 @@ final class VES_Admin {
     /** Phase 7A — load the Future Island design layer on our pages. */
     public static function enqueue_fi_assets($hook) {
         $page = isset($_GET['page']) ? sanitize_key((string) $_GET['page']) : '';
-        if (!in_array($page, ['fi-signal-room', 'fi-brief-workbench', 'fi-draft-workbench', 'fi-intake', 'ves-memory-knowledge'], true)) { return; }
+        // v0.4.0: the module-registry pages share the same design layer.
+        $fi_pages = [
+            'fi-signal-room', 'fi-brief-workbench', 'fi-draft-workbench', 'fi-intake', 'ves-memory-knowledge',
+            'future-island', 'fi-trend-finder', 'fi-source-intelligence', 'fi-asset-studio', 'fi-memory', 'fi-usage-ledger',
+        ];
+        if (!in_array($page, $fi_pages, true)) { return; }
         $base = defined('VES_PLUGIN_URL') ? VES_PLUGIN_URL : '';
         $ver = defined('VES_PLUGIN_VERSION') ? VES_PLUGIN_VERSION : '1.0.0';
         if (function_exists('wp_enqueue_style')) {

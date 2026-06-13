@@ -104,7 +104,9 @@ $ves_debug_mode = (current_user_can('manage_options') && isset($_GET['ves_debug'
     // Render a nav entry. If $page is allowed in the current mode → tab; else → cross-link ($url) or omitted.
     // Unified app: every route is a sibling page inside ONE shell, so every
     // sidebar entry is an internal route tab — no cross-links, no shell modes.
-    $ves_mode_pages    = ['dashboard','projects','memory','knowledge','usage','social','linkedin','seo','google','trend','deep-trend','brand-audit','ads','creative','reports','brief-library','evidence'];
+    // v0.4.0: legacy 'trend' page removed — VES_App_Router aliases it to the
+    // canonical 'deep-trend' Trend Finder, so old links still land correctly.
+    $ves_mode_pages    = ['dashboard','projects','memory','knowledge','usage','social','linkedin','seo','google','deep-trend','brand-audit','ads','creative','reports','brief-library','evidence'];
     $ves_other_url     = '';
     $ves_nav = function ($icoKey, $label, $page = '', $linkUrl = '', $soon = false) use ($ves_ico, $ves_mode_pages, $default_page, $ves_other_url) {
         $is_tab = $page !== '' && in_array($page, $ves_mode_pages, true);
@@ -169,8 +171,9 @@ $ves_debug_mode = (current_user_can('manage_options') && isset($_GET['ves_debug'
                 <?php
                     $ves_nav('seo',       'SEO / SEM / AEO', 'seo');
                     $ves_nav('google',    'Google Intelligence', 'google');
-                    $ves_nav('trend',     'Trend Finder', 'trend');
-                    $ves_nav('deeptrend', 'Deep Trend Finder', 'deep-trend');
+                    // v0.4.0: ONE Trend Finder entry — the canonical deep-trend
+                    // workspace. The legacy 'trend' route aliases to it.
+                    $ves_nav('deeptrend', 'Trend Finder', 'deep-trend');
                 ?>
             </div>
 
@@ -449,59 +452,9 @@ $ves_debug_mode = (current_user_can('manage_options') && isset($_GET['ves_debug'
                     </div>
                 </section>
 
-                <!-- ============ DEEP TREND FINDER ============ -->
-                <section class="ves-page" data-page="trend" data-default-platform="deep_trend_finder" role="tabpanel" aria-label="Deep Trend Finder" hidden>
-                    <div class="ves-page-inner">
-                        <div class="ves-page-head">
-                            <div>
-                                <h2 class="ves-page-title" data-eyebrow="Search &amp; Discovery">Deep Trend Finder</h2>
-                                <p class="ves-page-sub">Análisis de tendencias con evidencia real: cruza TikTok, Reddit, YouTube, Google Trends y más en un solo workspace.</p>
-                            </div>
-                            <?php if ($ves_deep_trend_addon_active && $ves_deep_trend_addon_url !== '') : ?>
-                            <div class="ves-page-head-actions">
-                                <a class="ves-btn ves-btn-primary" href="<?php echo esc_url($ves_deep_trend_addon_url); ?>">
-                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
-                                    <?php esc_html_e('Abrir Deep Trend Finder', 'ves'); ?>
-                                </a>
-                            </div>
-                            <?php endif; ?>
-                        </div>
-
-                        <div class="ves-card ves-command-center-card">
-                            <?php if ($ves_deep_trend_addon_active && $ves_deep_trend_addon_url !== '') : ?>
-                            <div style="display:flex;flex-direction:column;gap:20px;padding:8px 0;">
-                                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;">
-                                    <div style="background:var(--ves-surface-2,#f5f5f7);border-radius:10px;padding:16px 18px;">
-                                        <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Fuentes activas</div>
-                                        <div style="font-size:12px;color:var(--ves-muted,#666);">TikTok · Reddit · YouTube · Google Trends · Google News · Instagram</div>
-                                    </div>
-                                    <div style="background:var(--ves-surface-2,#f5f5f7);border-radius:10px;padding:16px 18px;">
-                                        <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Análisis AI</div>
-                                        <div style="font-size:12px;color:var(--ves-muted,#666);">Síntesis estratégica, relevancia, señales de calidad y brief accionable</div>
-                                    </div>
-                                    <div style="background:var(--ves-surface-2,#f5f5f7);border-radius:10px;padding:16px 18px;">
-                                        <div style="font-size:13px;font-weight:600;margin-bottom:4px;">Workspace propio</div>
-                                        <div style="font-size:12px;color:var(--ves-muted,#666);">Runs, historial, reportes y evidencia guardada en una página dedicada</div>
-                                    </div>
-                                </div>
-                                <div style="text-align:center;padding:6px 0 2px;">
-                                    <a class="ves-btn ves-btn-primary" href="<?php echo esc_url($ves_deep_trend_addon_url); ?>" style="font-size:14px;padding:10px 28px;">
-                                        <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" aria-hidden="true" style="margin-right:6px"><path d="M8 5v14l11-7z"/></svg>
-                                        <?php esc_html_e('Ir al workspace de Deep Trend Finder', 'ves'); ?>
-                                    </a>
-                                </div>
-                            </div>
-                            <?php else : ?>
-                            <div style="padding:24px;text-align:center;">
-                                <p style="margin:0 0 12px;font-size:14px;color:var(--ves-muted,#666);"><?php esc_html_e('Crea la página del workspace para acceder al Deep Trend Finder.', 'ves'); ?></p>
-                                <?php if (current_user_can('manage_options')) : ?>
-                                    <p style="font-size:12px;color:var(--ves-muted,#888);"><?php esc_html_e('Ve a Ajustes → Future Island DTF para crear la página del workspace.', 'ves'); ?></p>
-                                <?php endif; ?>
-                            </div>
-                            <?php endif; ?>
-                        </div>
-                    </div>
-                </section>
+                <!-- v0.4.0: the legacy 'trend' page section was removed. ONE canonical
+                     Trend Finder remains (the deep-trend section below); the router
+                     aliases the old 'trend' route to it so bookmarks still work. -->
                 <!-- ============ BRAND DEEP AUDIT ============ -->
                 <section class="ves-page" data-page="brand-audit" data-default-platform="brand_audit" role="tabpanel" aria-label="Brand Deep Audit" hidden>
                     <div class="ves-page-inner">
@@ -677,7 +630,7 @@ $ves_debug_mode = (current_user_can('manage_options') && isset($_GET['ves_debug'
                         ['social',      'social',      'Social Media',  'Señales sociales y posts públicos'],
                         ['seo',         'seo',         'SEO / SEM / AEO','Keywords, dominios y autoridad'],
                         ['google',      'google',      'Google Intelligence', 'Search, news y trends'],
-                        ['trend',       'trend',       'Trend Finder',  'Tendencias con evidencia real'],
+                        ['trend',       'deep-trend',  'Trend Finder',  'Tendencias con evidencia real'],
                         ['brand',       'brand-audit', 'Brand Audit',   'Auditoría estratégica de marca'],
                         ['ads',         'ads',         'Ads Intelligence', 'Inteligencia competitiva de ads'],
                     ];
@@ -884,12 +837,12 @@ $ves_debug_mode = (current_user_can('manage_options') && isset($_GET['ves_debug'
                     </div>
                 </section>
 
-                <!-- ============ DEEP TREND FINDER (first-class route) ============ -->
-                <section class="ves-page" data-page="deep-trend" role="tabpanel" aria-label="Deep Trend Finder" hidden>
+                <!-- ============ TREND FINDER (canonical route, deep-trend engine) ============ -->
+                <section class="ves-page" data-page="deep-trend" role="tabpanel" aria-label="Trend Finder" hidden>
                     <div class="ves-page-inner">
                         <div class="ves-page-head">
                             <div>
-                                <h2 class="ves-page-title" data-eyebrow="Search &amp; Discovery">Deep Trend Finder</h2>
+                                <h2 class="ves-page-title" data-eyebrow="Search &amp; Discovery">Trend Finder</h2>
                                 <p class="ves-page-sub">Investigación de tendencias con evidencia real cruzando múltiples fuentes en un solo workspace.</p>
                             </div>
                             <?php if ($ves_deep_trend_addon_active && $ves_deep_trend_addon_url !== '') : ?>

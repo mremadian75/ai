@@ -12,8 +12,8 @@ error_reporting(E_ALL & ~E_DEPRECATED);
 
 if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
 if (!defined('WP_DEBUG')) { define('WP_DEBUG', false); }
-if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.3.0'); }
-if (!defined('VES_PLUGIN_VERSION')) { define('VES_PLUGIN_VERSION', '1.3.0'); }
+if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.4.0'); }
+if (!defined('VES_PLUGIN_VERSION')) { define('VES_PLUGIN_VERSION', '1.4.0'); }
 if (!defined('FIDTF_VERSION')) { define('FIDTF_VERSION', '0.3.53'); }
 
 if (!class_exists('WP_Error')) {

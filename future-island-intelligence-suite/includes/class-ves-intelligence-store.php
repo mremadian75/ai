@@ -842,6 +842,58 @@ final class VES_Intelligence_Store {
         return $out;
     }
 
+    /**
+     * v0.4.0 — record a review decision on a memory candidate.
+     *
+     * The memory status enum has no pending/approved state, so the review
+     * decision travels in the record's JSON payload (metadata on the canonical
+     * table, content_json on the legacy memory_records table) as
+     * approval_status: pending_review | approved | rejected. Consumers must
+     * treat anything other than 'approved' as continuity context only —
+     * never as approved evidence. Additive and non-destructive: rejected
+     * records are kept (flagged), never deleted here.
+     */
+    public static function update_memory_review(int $id, string $decision, string $reason = '') {
+        global $wpdb;
+        $decision = self::sanitize_key($decision, 24);
+        if (!in_array($decision, ['approved', 'rejected', 'pending_review'], true)) {
+            return new WP_Error('ves_intel_invalid_enum', "Invalid memory approval decision '{$decision}'.");
+        }
+        if ($id <= 0 || !isset($wpdb) || !is_object($wpdb) || !method_exists($wpdb, 'get_row')) {
+            return new WP_Error('ves_intel_not_found', 'Memory record not found.');
+        }
+        $from_existing = class_exists('VES_Memory_Records') && method_exists('VES_Memory_Records', 'table_name');
+        $table = $from_existing ? VES_Memory_Records::table_name() : self::memory_fallback_table();
+        $row = $wpdb->get_row($wpdb->prepare('SELECT * FROM ' . $table . ' WHERE id = %d', $id), ARRAY_A);
+        if (!is_array($row)) {
+            return new WP_Error('ves_intel_not_found', 'Memory record not found.');
+        }
+        $column = $from_existing ? 'content_json' : 'metadata';
+        $payload = json_decode((string) ($row[$column] ?? ''), true);
+        $payload = is_array($payload) ? $payload : [];
+        $payload['approval_status'] = $decision;
+        $payload['requires_review'] = ($decision === 'pending_review');
+        $payload['reviewed_at'] = function_exists('current_time') ? current_time('mysql', true) : gmdate('Y-m-d H:i:s');
+        $payload['reviewed_by'] = function_exists('get_current_user_id') ? (int) get_current_user_id() : 0;
+        if ($reason !== '') {
+            $payload['review_reason'] = self::sanitize_text($reason, 300);
+        }
+        $update = [$column => wp_json_encode($payload)];
+        if (array_key_exists('updated_at', $row)) {
+            $update['updated_at'] = function_exists('current_time') ? current_time('mysql', true) : gmdate('Y-m-d H:i:s');
+        }
+        $ok = $wpdb->update($table, $update, ['id' => $id]);
+        if ($ok === false) {
+            return new WP_Error('ves_intel_memory_failed', 'Memory review decision could not be saved.');
+        }
+        if (class_exists('VES_Security_Event_Log')) {
+            VES_Security_Event_Log::record('memory_review_decision', 'Memory candidate review decision recorded.', [
+                'memory_id' => $id, 'decision' => $decision,
+            ]);
+        }
+        return ['memory_id' => $id, 'approval_status' => $decision];
+    }
+
     /** Map a raw memory row (either backing store) to the canonical memory shape. */
     private static function normalize_memory_row(array $row, bool $from_existing): array {
         if ($from_existing) {
@@ -859,6 +911,9 @@ final class VES_Intelligence_Store {
                 'status'             => $status,
                 'created_at'         => (string) ($row['created_at'] ?? ''),
                 'updated_at'         => (string) ($row['updated_at'] ?? ''),
+                // v0.4.0: expose the content payload as metadata so review
+                // state (approval_status) reads the same on both backings.
+                'metadata'           => $content,
                 'backing'            => 'memory_records',
             ];
         }

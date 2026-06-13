@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Future Island Intelligence Suite
  * Description: Unified marketing intelligence platform. Includes the full Social Scraper Suite (VES Core) and the Deep Trend Finder module in a single WordPress plugin — no separate add-on required.
- * Version: 1.3.0
+ * Version: 1.4.0
  * Requires PHP: 7.4
  * Author: Future Island / Vietnam Estudio
  * Text Domain: future-island-intelligence-suite
@@ -15,9 +15,11 @@ if (!defined('ABSPATH')) {
 // -----------------------------------------------------------------------
 // Suite-level constants
 // -----------------------------------------------------------------------
-define('FIS_VERSION',     '1.3.0');
+define('FIS_VERSION',     '1.4.0');
 // Product-level release label: Future Island v0.1 Release Candidate.
 define('FIS_RC_LABEL',    'v0.1-rc6');
+// v0.4.0 — modular SaaS package label (module registry + unified navigation).
+define('FIS_PACKAGE_LABEL', 'v0.4.0-modular-saas');
 define('FIS_PLUGIN_FILE', __FILE__);
 define('FIS_PLUGIN_DIR',  plugin_dir_path(__FILE__));
 define('FIS_PLUGIN_URL',  plugin_dir_url(__FILE__));
@@ -25,7 +27,7 @@ define('FIS_PLUGIN_URL',  plugin_dir_url(__FILE__));
 // -----------------------------------------------------------------------
 // VES Core constants (keep all existing VES code working unchanged)
 // -----------------------------------------------------------------------
-if (!defined('VES_PLUGIN_VERSION'))         { define('VES_PLUGIN_VERSION',         '1.3.0'); }
+if (!defined('VES_PLUGIN_VERSION'))         { define('VES_PLUGIN_VERSION',         '1.4.0'); }
 if (!defined('VES_PLUGIN_FILE'))            { define('VES_PLUGIN_FILE',            FIS_PLUGIN_FILE); }
 if (!defined('VES_PLUGIN_DIR'))             { define('VES_PLUGIN_DIR',             FIS_PLUGIN_DIR); }
 if (!defined('VES_PLUGIN_URL'))             { define('VES_PLUGIN_URL',             FIS_PLUGIN_URL); }
@@ -241,6 +243,70 @@ foreach ($fis_fidtf_files as $fis_file) {
 }
 
 // -----------------------------------------------------------------------
+// v0.4.0 — Future Island module layer
+// Each major SaaS feature is a semi-independent module inside this plugin
+// (the Deep Trend Finder pattern, standardized): module class + service +
+// renderer, one registry, one unified navigation. Loaded after both
+// subsystems so modules can wrap existing services safely.
+// -----------------------------------------------------------------------
+$fis_module_files = [
+    FIS_PLUGIN_DIR . 'includes/modules/class-fi-abstract-module.php',
+    FIS_PLUGIN_DIR . 'includes/modules/class-fi-module-registry.php',
+    FIS_PLUGIN_DIR . 'includes/modules/signal-room/class-fi-signal-room-module.php',
+    FIS_PLUGIN_DIR . 'includes/modules/trend-finder/class-fi-trend-finder-service.php',
+    FIS_PLUGIN_DIR . 'includes/modules/trend-finder/class-fi-trend-finder-renderer.php',
+    FIS_PLUGIN_DIR . 'includes/modules/trend-finder/class-fi-trend-finder-module.php',
+    FIS_PLUGIN_DIR . 'includes/modules/source-intelligence/class-fi-source-intelligence-service.php',
+    FIS_PLUGIN_DIR . 'includes/modules/source-intelligence/class-fi-source-intelligence-renderer.php',
+    FIS_PLUGIN_DIR . 'includes/modules/source-intelligence/class-fi-source-intelligence-module.php',
+    FIS_PLUGIN_DIR . 'includes/modules/signal-workbench/class-fi-signal-workbench-module.php',
+    FIS_PLUGIN_DIR . 'includes/modules/brief-builder/class-fi-brief-builder-module.php',
+    FIS_PLUGIN_DIR . 'includes/modules/asset-studio/class-fi-asset-studio-service.php',
+    FIS_PLUGIN_DIR . 'includes/modules/asset-studio/class-fi-asset-studio-renderer.php',
+    FIS_PLUGIN_DIR . 'includes/modules/asset-studio/class-fi-asset-studio-module.php',
+    FIS_PLUGIN_DIR . 'includes/modules/memory/class-fi-memory-service.php',
+    FIS_PLUGIN_DIR . 'includes/modules/memory/class-fi-memory-renderer.php',
+    FIS_PLUGIN_DIR . 'includes/modules/memory/class-fi-memory-module.php',
+    FIS_PLUGIN_DIR . 'includes/modules/usage-ledger/class-fi-usage-ledger-service.php',
+    FIS_PLUGIN_DIR . 'includes/modules/usage-ledger/class-fi-usage-ledger-renderer.php',
+    FIS_PLUGIN_DIR . 'includes/modules/usage-ledger/class-fi-usage-ledger-module.php',
+    FIS_PLUGIN_DIR . 'includes/modules/readiness/class-fi-readiness-module.php',
+    FIS_PLUGIN_DIR . 'includes/modules/settings/class-fi-settings-module.php',
+];
+
+foreach ($fis_module_files as $fis_file) {
+    if (file_exists($fis_file)) {
+        require_once $fis_file;
+    }
+}
+
+/**
+ * Register the SaaS modules in navigation order. Exactly ONE Trend Finder
+ * module is registered — the canonical Deep Trend Finder engine (see
+ * FUTUREISLAND_MIGRATION_NOTES.md for the legacy 'trend' route mapping).
+ */
+function fis_register_modules(): void {
+    if (!class_exists('FI_Module_Registry')) { return; }
+    $modules = [
+        'FI_Signal_Room_Module',
+        'FI_Trend_Finder_Module',
+        'FI_Source_Intelligence_Module',
+        'FI_Signal_Workbench_Module',
+        'FI_Brief_Builder_Module',
+        'FI_Asset_Studio_Module',
+        'FI_Memory_Module',
+        'FI_Usage_Ledger_Module',
+        'FI_Readiness_Module',
+        'FI_Settings_Module',
+    ];
+    foreach ($modules as $class) {
+        if (class_exists($class)) {
+            FI_Module_Registry::register(new $class());
+        }
+    }
+}
+
+// -----------------------------------------------------------------------
 // Text domain registration
 // All three legacy domains are forwarded to the languages/ directory so
 // existing translation files still work without modification.
@@ -256,6 +322,12 @@ add_action('init', function () {
 // -----------------------------------------------------------------------
 VES_Plugin::boot();
 FIDTF_Plugin::boot();
+
+// v0.4.0 — module layer boots last so every wrapped service exists.
+fis_register_modules();
+if (class_exists('FI_Module_Registry')) {
+    FI_Module_Registry::boot();
+}
 
 // -----------------------------------------------------------------------
 // Activation / deactivation

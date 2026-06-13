@@ -277,6 +277,22 @@ final class FIDTF_Run_Service {
         return is_array($row) ? $row : [];
     }
 
+    /**
+     * v0.4.0 — read-only recent run history for the Trend Finder module hub.
+     * Newest first; never throws; [] when the table is unavailable.
+     */
+    public static function list_recent_runs(int $limit = 10): array {
+        global $wpdb;
+        if (!self::db_ready()) { return []; }
+        $limit = max(1, min(50, $limit));
+        try {
+            $rows = $wpdb->get_results($wpdb->prepare('SELECT * FROM ' . FIDTF_DB::table('runs') . ' ORDER BY id DESC LIMIT %d', $limit), (defined('ARRAY_A') ? ARRAY_A : 'ARRAY_A'));
+        } catch (Throwable $e) {
+            return [];
+        }
+        return is_array($rows) ? $rows : [];
+    }
+
     public static function current_user_can_access_run(int $run_id, int $user_id): bool {
         $run = self::get_run($run_id);
         if (empty($run)) { return false; }

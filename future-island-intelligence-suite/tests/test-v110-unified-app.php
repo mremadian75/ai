@@ -42,16 +42,26 @@ $ok(strpos($js, "widget.dataset.shellMode === 'panel'") === false, 'JS no longer
 $ok(preg_match('/widgetPagesFor\s*=\s*\(widget\)\s*=>\s*isProductionMvpWidget/', $js) === 1, 'widgetPagesFor returns one unified set');
 $ok(strpos($router, 'const ROUTES') !== false || strpos($router, 'ROUTES = [') !== false, 'PHP route map (VES_App_Router::ROUTES) exists');
 $ok(strpos($assets, 'window.FIIS_ROUTES') !== false, 'route map localized to JS (FIIS_ROUTES)');
-foreach (['dashboard','social','linkedin','seo','google','trend','deep-trend','brand-audit',
+foreach (['dashboard','social','linkedin','seo','google','deep-trend','brand-audit',
           'ads','creative','memory','knowledge','usage','reports','brief-library','evidence','projects'] as $r) {
     $ok(strpos($router, "'$r'") !== false, "route in map: $r");
 }
+// v0.4.0 — ONE canonical Trend Finder: the legacy 'trend' route is an alias
+// to 'deep-trend', never a standalone route, and the canonical label is
+// 'Trend Finder' (no 'Deep Trend Finder' duplicate entry).
+$ok(strpos($router, "'trend'        => 'deep-trend'") !== false, "legacy 'trend' route aliases to the canonical Trend Finder");
+$ok(preg_match("/'trend'\s*=>\s*\['group'/", $router) !== 1, "'trend' is not a standalone route anymore");
+$ok(substr_count($router, "'label' => 'Trend Finder'") === 1, 'router has exactly one Trend Finder label');
+$ok(strpos($router, "'label' => 'Deep Trend Finder'") === false, "no separate 'Deep Trend Finder' nav label remains");
 
 // ── 4. No duplicate app shells: each route section appears exactly once ──
-foreach (['dashboard','social','linkedin','seo','google','trend','deep-trend','brand-audit',
+foreach (['dashboard','social','linkedin','seo','google','deep-trend','brand-audit',
           'ads','creative','memory','knowledge','usage','brief-library','reports','evidence','projects'] as $r) {
     $ok(substr_count($tpl, 'data-page="' . $r . '"') === 1, "single section for route: $r");
 }
+// v0.4.0 — the legacy 'trend' page section is gone (one Trend Finder page).
+$ok(substr_count($tpl, 'data-page="trend"') === 0, "legacy 'trend' page section removed from the shell");
+$ok(substr_count($tpl, "\$ves_nav('deeptrend', 'Trend Finder', 'deep-trend');") === 1, 'exactly one Trend Finder nav entry');
 $ok(substr_count($tpl, 'ves-page is-active') === 1, 'exactly one initially-active page (dashboard)');
 
 // ── 5. JS functional hooks preserved ────────────────────────────────────

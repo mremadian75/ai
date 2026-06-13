@@ -2196,7 +2196,7 @@
             if (isTyping) return;
             const map = isProductionMvpWidget(widget)
                 ? { '1': 'dashboard', '2': 'social', '3': 'trend', '4': 'google', '5': 'memory' }
-                : { '1': 'dashboard', '2': 'social', '3': 'linkedin', '4': 'seo', '5': 'google', '6': 'trend', '7': 'brand-audit', '8': 'ads', '9': 'creative' };
+                : { '1': 'dashboard', '2': 'social', '3': 'linkedin', '4': 'seo', '5': 'google', '6': 'deep-trend', '7': 'brand-audit', '8': 'ads', '9': 'creative' };
             if (map[ev.key]) { ev.preventDefault(); switchPage(widget, map[ev.key]); }
             // Cmd+Enter to run
             if ((ev.metaKey || ev.ctrlKey) && ev.key === 'Enter') {

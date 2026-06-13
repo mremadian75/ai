@@ -16,8 +16,8 @@ $assert = function($condition, $message) use (&$failures) {
 
 $msg = 'Este módulo no está habilitado en el MVP de producción.';
 
-$assert(strpos($main, 'Version: 1.3.0') !== false, 'Plugin header version bumped to 1.1.0');
-$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.3.0'") !== false, 'VES_PLUGIN_VERSION bumped to 1.1.0');
+$assert(strpos($main, 'Version: 1.4.0') !== false, 'Plugin header version bumped to 1.1.0');
+$assert(strpos($main, "VES_PLUGIN_VERSION',         '1.4.0'") !== false, 'VES_PLUGIN_VERSION bumped to 1.1.0');
 // [v1.1.0 archived] removed obsolete MVP-gating expectation: VES_PRODUCTION_MVP=true. Production decision:
 // MVP gating is retired in FIIS v1.1.0; the unified app shell exposes all main routes. The constant is now
 // false in product and is no longer used to lock the shell. Replaced with the current unified-shell contract.
@@ -28,12 +28,15 @@ $assert(strpos($main, "define('VES_ENABLE_DEEP_VIDEO_ANALYSIS', false)") !== fal
 // not static data-page="..." markup, and there are no locked MVP placeholders. Assert the current
 // contract: every main module is exposed as a nav entry and nothing is MVP-locked.
 $navStart = strpos($shortcode, '<nav class="ves-sidebar-nav"');
-foreach (['social', 'trend', 'google', 'memory', 'linkedin', 'seo', 'ads', 'creative'] as $route) {
+// v0.4.0: the legacy 'trend' nav entry was consolidated into the canonical
+// Trend Finder ('deeptrend' nav -> deep-trend route), asserted below.
+foreach (['social', 'google', 'memory', 'linkedin', 'seo', 'ads', 'creative'] as $route) {
     $assert(strpos($shortcode, "\$ves_nav('" . $route . "'") !== false, 'Unified shell exposes nav route: ' . $route);
 }
 // brand-audit / deep-trend use their canonical nav keys in the unified shell.
 $assert(strpos($shortcode, "\$ves_nav('brand'") !== false, 'Unified shell exposes Brand Audit nav route');
-$assert(strpos($shortcode, "\$ves_nav('deeptrend'") !== false, 'Unified shell exposes Deep Trend Finder nav route');
+$assert(strpos($shortcode, "\$ves_nav('deeptrend', 'Trend Finder', 'deep-trend');") !== false, 'Unified shell exposes exactly the canonical Trend Finder nav route');
+$assert(strpos($shortcode, "\$ves_nav('trend',") === false, 'Legacy duplicate Trend Finder nav entry is gone');
 // [v1.1.0 archived] removed obsolete locked-placeholder + MVP Spanish-message assertions: the unified shell
 // no longer renders data-mvp-disabled="1" placeholders for linkedin/seo/brand-audit/creative/ads.
 $assert(strpos($shortcode, 'data-mvp-disabled="1"') === false, 'Unified shell renders no MVP-locked placeholders');
@@ -66,7 +69,7 @@ $assert(strpos($js, "json.code === 'ves_mvp_module_disabled'") !== false, 'Front
 // [v1.1.0 archived] removed obsolete MVP-only keyboard-shortcut expectation
 // ("{ '1':'social','2':'trend','3':'google','4':'memory' }"). The unified shell ships a full
 // keyboard map covering all main modules; assert that current contract instead.
-$assert(strpos($js, "'2': 'social', '3': 'linkedin', '4': 'seo', '5': 'google', '6': 'trend', '7': 'brand-audit', '8': 'ads', '9': 'creative'") !== false, 'Frontend keyboard shortcuts cover the full unified module set');
+$assert(strpos($js, "'2': 'social', '3': 'linkedin', '4': 'seo', '5': 'google', '6': 'deep-trend', '7': 'brand-audit', '8': 'ads', '9': 'creative'") !== false, 'Frontend keyboard shortcuts cover the full unified module set');
 
 if ($failures) {
     fwrite(STDERR, "v1.1.0 MVP gating checks FAILED:\n - " . implode("\n - ", $failures) . "\n");

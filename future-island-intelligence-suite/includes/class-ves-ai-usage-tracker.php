@@ -501,7 +501,10 @@ final class VES_AI_Usage_Tracker {
             $where .= ' AND provider = %s';
             $params[] = self::sanitize_token((string) $filters['provider'], 40);
         }
+        // v0.4.0: workspace/user/run columns included so ledger rows are
+        // explainable (who, where, which trace) — additive columns only.
         $sql = "SELECT id, created_at, module, operation_type, provider, model, status,
+                       workspace_id, user_id, run_id,
                        input_tokens, output_tokens, total_tokens, latency_ms,
                        actual_provider_cost, estimated_provider_cost, estimated_credits, credits_charged,
                        cache_hit, error_code, metadata

@@ -6,9 +6,10 @@
 
 The plugin is re-architected into a registered module system with one
 canonical Trend Finder, a unified product navigation, working product-loop
-actions, and an installable, integrity-verified ZIP. All 209 tests pass
-(196 pre-existing + 13 updated/new files; 3 new v0.4.0 test files alone add
-143 executed checks). It is NOT staging-validated: no live WordPress,
+actions, and an installable, integrity-verified ZIP. All 210 tests pass;
+4 new v0.4.0 test files add 183 executed checks (module registry 101,
+Trend Finder consolidation 24, memory review 18, deep happy-path render
+smoke 40). It is NOT staging-validated: no live WordPress,
 browser, or provider credentials existed in this environment, so module
 pages, menu behavior and dispatch were verified by executing the real PHP
 under WP shims — not in a running wp-admin. One staging install is the gate
@@ -20,15 +21,15 @@ before anything stronger than local review.
 |----------|------|
 | Installable ZIP | `/home/user/ai/future-island-intelligence-suite-v0.4.0-modular-saas.zip` |
 | SHA256 file | `/home/user/ai/future-island-intelligence-suite-v0.4.0-modular-saas.zip.sha256` |
-| Diff (v0.3.54 package baseline → v0.4.0) | `/home/user/ai/FUTUREISLAND_V040_MODULAR_SAAS.diff` (6,714 lines) |
+| Diff (v0.3.54 package baseline → v0.4.0) | `/home/user/ai/FUTUREISLAND_V040_MODULAR_SAAS.diff` (6,973 lines) |
 | Test output log | `/home/user/ai/FUTUREISLAND_V040_TEST_OUTPUT.log` |
 | Module registry doc | `/home/user/ai/future-island-intelligence-suite/FUTUREISLAND_MODULE_REGISTRY.md` (ships in the ZIP) |
 | Migration notes | `/home/user/ai/future-island-intelligence-suite/FUTUREISLAND_MIGRATION_NOTES.md` (ships in the ZIP) |
 
 Verification performed (recorded above in the build output):
-- `sha256sum` of the ZIP equals the `.sha256` file: `fd3baa3817dacaee12e39dcd732b1eece6f326388eb0841351206950b8b12950`
+- `sha256sum` of the ZIP equals the `.sha256` file: `f8c980b4dd84efc71f4cc5a3b3bb6f8d098e65e72a201e87cc3f054cdc53c619`
 - `sha256sum -c` → OK; `unzip -t` → "No errors detected"
-- Archive contains `future-island-intelligence-suite/future-island-intelligence-suite.php` at the right depth (installable via Plugins → Upload), 651 files, 0 `.git`/`node_modules` entries, 2.3 MB.
+- Archive contains `future-island-intelligence-suite/future-island-intelligence-suite.php` at the right depth (installable via Plugins → Upload), 652 files, 0 `.git`/`node_modules` entries, 2.3 MB.
 - Builder: `future-island-intelligence-suite/scripts/build-release-package.sh` (new, reusable).
 
 ## C. Module registry summary
@@ -130,7 +131,8 @@ no raw-slug nav labels).
 |---------|--------|-------|
 | `php -v` | PHP 8.4.19 | |
 | `bash bin/test-all.sh -q` (before this pass) | 206/206 | v0.3.55 state |
-| `bash bin/test-all.sh` (final, full output captured) | **209/209 passed** | log: `FUTUREISLAND_V040_TEST_OUTPUT.log` |
+| `bash bin/test-all.sh` (final, full output captured) | **210/210 passed** | log: `FUTUREISLAND_V040_TEST_OUTPUT.log` |
+| `php tests/test-v040-deep-render-smoke.php` | 40/40 | happy-path render of every module + real generator→parser ad-field contract (no shimmed unavailable shortcut) |
 | `php tests/test-v040-module-registry.php` | 101/101 | executed registry/menu/render checks |
 | `php tests/test-v040-trend-finder-consolidation.php` | 24/24 | router executed + template/JS/bootstrap contracts + legacy rows readable |
 | `php tests/test-v040-memory-review.php` | 18/18 | executed review decisions with wpdb stub |

@@ -5,3 +5,7 @@ dist
 .svelte-kit
 _nuxt
 __testfixtures__
+
+# Vendored WordPress plugin (own formatting conventions; its test suite
+# asserts on exact source strings, so repo-wide prettier must not touch it)
+future-island-intelligence-suite

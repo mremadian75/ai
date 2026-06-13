@@ -1,0 +1,134 @@
+<?php
+/**
+ * v0.1 RC — Release Candidate page honesty contract.
+ *
+ * Renders the REAL page (real VES_RC_Readiness_Service + VES_Review_State) and
+ * proves:
+ *  1. it renders and identifies itself as Future Island / Release Candidate
+ *  2. live validation reads UNRUN and the page says NOT production-ready —
+ *     there is no affirmative production-ready / fake green state
+ *  3. no Generate / Publish / Auto-approve affordances exist
+ *  4. feature flags and required staging commands are listed
+ *  5. rendering performs zero option writes (read-only)
+ *  6. untrusted dynamic strings are escaped
+ *
+ * Run: php tests/test-ves-release-candidate-page.php
+ */
+error_reporting(E_ALL & ~E_DEPRECATED);
+if (!defined('ABSPATH')) { define('ABSPATH', __DIR__ . '/'); }
+if (!defined('FIS_VERSION')) { define('FIS_VERSION', '1.4.0'); }
+if (!defined('FIS_RC_LABEL')) { define('FIS_RC_LABEL', 'v0.1-rc1'); }
+
+function get_option($k, $d = false) { return $GLOBALS['__opts'][$k] ?? $d; }
+function update_option($k, $v, $a = null) { $GLOBALS['__opt_writes'][] = $k; $GLOBALS['__opts'][$k] = $v; return true; }
+function current_time($t = 'mysql', $g = 0) { return '2026-06-11 11:00:00'; }
+function sanitize_key($s) { return strtolower(preg_replace('/[^a-z0-9_\-]/i', '', (string) $s)); }
+function sanitize_text_field($s) { return trim(strip_tags((string) $s)); }
+function wp_json_encode($d, $o = 0) { return json_encode($d, $o); }
+function esc_html($s) { return htmlspecialchars((string) $s, ENT_QUOTES); }
+function esc_attr($s) { return htmlspecialchars((string) $s, ENT_QUOTES); }
+function apply_filters($t, $v) { return $v; }
+$GLOBALS['__opts'] = [];
+$GLOBALS['__opt_writes'] = [];
+
+require_once dirname(__DIR__) . '/includes/class-ves-review-state.php';
+require_once dirname(__DIR__) . '/includes/class-ves-rc-evidence-pack.php';
+require_once dirname(__DIR__) . '/includes/class-ves-rc-readiness-service.php';
+require_once dirname(__DIR__) . '/includes/class-ves-release-candidate-page.php';
+
+$pass = 0; $fail = 0;
+$ok = function ($c, $l) use (&$pass, &$fail) { if ($c) { $pass++; } else { $fail++; fwrite(STDERR, "FAIL: $l\n"); } };
+
+$html = VES_Release_Candidate_Page::render_html();
+
+// ── 1. Identity ──────────────────────────────────────────────────────────────
+$ok(strpos($html, 'Release Candidate') !== false, 'page titles itself Release Candidate');
+$ok(strpos($html, 'Future Island') !== false, 'page carries the Future Island identity');
+$ok(strpos($html, '1.4.0') !== false && strpos($html, 'v0.1-rc1') !== false, 'version + RC label shown');
+
+// ── 2. Honesty: UNRUN + never production-ready ───────────────────────────────
+$ok(strpos($html, 'UNRUN') !== false, 'page states live staging validation is UNRUN');
+$ok(strpos($html, 'NOT production-ready') !== false, 'page states the build is NOT production-ready');
+$ok(!preg_match('/production[\s-]ready\s*[:=]?\s*(yes|sí|true)/i', $html), 'no affirmative production-ready claim');
+$ok(!preg_match('/\ball\s+(phases|checks)\s+(passed|complete)/i', $html), 'no fake all-passed claim');
+// The "Production-ready" row must render the blocked/negative badge, not ready.
+$ok(strpos($html, 'Production-ready: <span class="fi-status-badge fiis-badge-blocked"') !== false, 'production-ready row uses the blocked badge with label No');
+
+// ── 3. No unsafe affordances ─────────────────────────────────────────────────
+$ok(stripos($html, 'Generate with AI') === false && !preg_match('/<button[^>]*>(\s|&nbsp;)*Generate/i', $html), 'no Generate button');
+$ok(stripos($html, 'Publish now') === false && !preg_match('/<button[^>]*>(\s|&nbsp;)*Publish/i', $html), 'no Publish button');
+$ok(stripos($html, 'Auto approve') === false && stripos($html, 'auto-approve behavior') !== false, 'no auto-approve affordance (only the guarantee text)');
+$ok(strpos($html, '<form') === false && strpos($html, 'type="submit"') === false, 'page contains no mutating form');
+
+// ── 4. Flags + commands listed ───────────────────────────────────────────────
+$ok(strpos($html, 'ves_generation_execution_enabled') !== false, 'generation execution flag listed');
+$ok(strpos($html, 'VES_PRODUCTION_MVP') !== false, 'production MVP flag listed');
+$ok(strpos($html, 'wp ves rc-readiness-check') !== false, 'rc-readiness-check command listed');
+$ok(strpos($html, 'wp ves verify-schema') !== false, 'verify-schema command listed');
+$ok(strpos($html, 'RELEASE-CANDIDATE-RUNBOOK.md') !== false, 'runbook referenced');
+$ok(stripos($html, '--apply') !== false, 'page warns about --apply during validation');
+
+// ── 5. Read-only ─────────────────────────────────────────────────────────────
+$ok($GLOBALS['__opt_writes'] === [], 'rendering performed zero option writes');
+
+// ── 6. Escaping + evidence-pack honesty (Phase 9B.3) ─────────────────────────
+// A manually-written option without an evidence hash is shown as UNVERIFIED.
+$GLOBALS['__opts']['ves_rc_live_validation'] = ['status' => 'passed', 'recorded_at' => '<script>alert(1)</script>', 'note' => 'x'];
+$html2 = VES_Release_Candidate_Page::render_html();
+$ok(strpos($html2, '<script>alert(1)</script>') === false, 'recorded_at is escaped/sanitized (no raw script)');
+$ok(strpos($html2, 'Unverified manual validation record') !== false, 'manual option without evidence pack shows UNVERIFIED, not passed');
+$ok(strpos($html2, 'NOT production-ready') !== false, 'unverified manual record stays NOT production-ready');
+
+// Phase 9E: an evidence-pack record WITHOUT file verification is json_only_unverified.
+$GLOBALS['__opts']['ves_rc_live_validation'] = ['status' => 'passed', 'source' => 'evidence_pack', 'evidence_pack_hash' => str_repeat('ab', 32), 'recorded_at' => '2026-06-12 09:00:00', 'operator' => 'ops'];
+$html2j = VES_Release_Candidate_Page::render_html();
+$ok(strpos($html2j, 'json_only_unverified') !== false, 'JSON-only pack shown as untrusted (json_only_unverified)');
+$ok(strpos($html2j, 'NOT trusted as passed') !== false || strpos($html2j, 'NOT production-ready') !== false, 'JSON-only pack stays untrusted/not production-ready');
+$ok(strpos($html2j, '--evidence-root') !== false, 'JSON-only banner points to file-backed re-recording');
+
+// A FILE-VERIFIED evidence-pack pass shows the hash + schema and still grants nothing.
+$GLOBALS['__opts']['ves_rc_live_validation'] = ['status' => 'passed', 'source' => 'evidence_pack', 'evidence_pack_hash' => str_repeat('ab', 32), 'files_verified' => true, 'schema_version' => '2.0', 'verified_via' => 'evidence_root', 'recorded_at' => '2026-06-12 09:00:00', 'operator' => 'ops'];
+$html2b = VES_Release_Candidate_Page::render_html();
+$ok(strpos($html2b, 'recorded as passed') !== false, 'file-verified pass state is surfaced');
+$ok(strpos($html2b, substr(str_repeat('ab', 32), 0, 16)) !== false, 'evidence pack hash displayed (truncated)');
+$ok(strpos($html2b, 'schema 2.0') !== false && strpos($html2b, 'file-backed: yes') !== false, 'schema version + file-backed state shown');
+$ok(strpos($html2b, 'never grants production status') !== false, 'even a recorded pass does not grant production status');
+unset($GLOBALS['__opts']['ves_rc_live_validation']);
+
+// Flag ON renders as ON (honest), not hidden.
+$GLOBALS['__opts']['ves_generation_execution_enabled'] = true;
+$html3 = VES_Release_Candidate_Page::render_html();
+$ok(strpos($html3, '>ON<') !== false, 'an enabled flag is shown as ON, not hidden');
+$GLOBALS['__opts']['ves_generation_execution_enabled'] = false;
+
+// ── 7. Phase 1 — explicit FAILED + unknown_error banners ─────────────────────
+$GLOBALS['__opts']['ves_rc_live_validation'] = ['status' => 'failed', 'recorded_at' => '2026-06-12 09:00:00'];
+$html4 = VES_Release_Candidate_Page::render_html();
+$ok(strpos($html4, 'Live staging validation: FAILED.') !== false, 'a recorded failed run gets an explicit FAILED banner');
+$ok(strpos($html4, 'NOT production-ready') !== false, 'failed state stays NOT production-ready');
+$ok(strpos($html4, 'recorded as passed') === false, 'failed state never shows the passed banner');
+
+$GLOBALS['__opts']['ves_rc_live_validation'] = 'corrupt-garbage-not-array';
+$html5 = VES_Release_Candidate_Page::render_html();
+$ok(strpos($html5, 'unknown_error') !== false && stripos($html5, 'unreadable') !== false, 'a corrupt record is surfaced as unknown_error/unreadable');
+$ok(strpos($html5, 'NOT production-ready') !== false, 'unknown_error stays NOT production-ready');
+unset($GLOBALS['__opts']['ves_rc_live_validation']);
+
+// ── 8. Phase 1 — staging checklist section ───────────────────────────────────
+$html6 = VES_Release_Candidate_Page::render_html();
+$ok(strpos($html6, 'Staging checklist') !== false && strpos($html6, 'fiis-rc-checklist') !== false, 'staging checklist section renders');
+$ok(strpos($html6, '<th>Next action</th>') !== false, 'checklist has a next-action column');
+foreach (['Release build', 'Live staging validation', 'Archive verification', 'Generation execution', 'Database schema', 'Memory context preview', 'Prompt package preview', 'Operator queue'] as $row) {
+    $ok(strpos($html6, '<td>' . $row . '</td>') !== false, "checklist row present: {$row}");
+}
+$ok(strpos($html6, 'future-island-live-validation-v3.sh') !== false, 'UNRUN next action points at the validation script');
+$ok(strpos($html6, 'can never look greener') !== false, 'checklist carries the never-greener honesty note');
+// Failed validation flips the checklist row too (consistency with the banner).
+$GLOBALS['__opts']['ves_rc_live_validation'] = ['status' => 'failed', 'recorded_at' => '2026-06-12 09:00:00'];
+$html7 = VES_Release_Candidate_Page::render_html();
+$ok(strpos($html7, 're-record a passing file-backed pack') !== false, 'failed state changes the checklist next action');
+unset($GLOBALS['__opts']['ves_rc_live_validation']);
+$ok($GLOBALS['__opt_writes'] === [], 'all renders (including the checklist) performed zero option writes');
+
+echo "\n{$pass} passed, {$fail} failed\n";
+exit($fail === 0 ? 0 : 1);

@@ -1,0 +1,32 @@
+== Verification log: Orchestration-Agnostic + UI/UX Correction Sprint ==
+Generated at: 2026-06-14T12:06:49Z
+
+$ bin/lint-php.sh --core --timeout-per-file=10
+== FIIS PHP lint (core) ==
+PHP: 8.4.16
+Files: 250
+Per-file timeout: 10s (via timeout)
+----------------------------------------
+----------------------------------------
+Linted: 250/250   Errors: 0   Timeouts: 0
+Lint OK: all 250 file(s) syntax-clean.
+
+$ FIIS_TEST_TIMEOUT=20 timeout 120 bin/test-all-timeout-safe.sh -q
+== FIIS timeout-safe test runner ==
+PHP: 8.4.16
+Per-file timeout: 20s
+Tests discovered: 243
+----------------------------------------
+----------------------------------------
+Total: 243   Passed: 243   Failed: 0   Timeouts: 0
+Log: /mnt/data/fi_orch_agnostic/future-island-intelligence-suite/test-all-timeout-safe.log
+covered: 243
+----------------------------------------
+----------------------------------------
+Total: 243   Passed: 243   Failed: 0
+All tests passed.
+
+Notes:
+- The broad `bin/test-all.sh -q` result shown above completed with 243 passed, 0 failed.
+- The timeout-safe runner completed with 243 passed, 0 failed, 0 timeouts.
+- Targeted changed-surface tests included optional n8n example pack, orchestration-agnostic correction, UI/UX upgrade, provider admin/onboarding, ingestion diagnostics, QA/report hardening, provider fixtures, callback auth, REST report readiness, Command Room UI actions and Command Room render.

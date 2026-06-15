@@ -1,0 +1,127 @@
+/* Future Island — operator console / workbench design layer (Phase 7A/7B/8A).
+   Editorial cultural-tech: ink, beige paper, blue system, sand; lime/red-orange as
+   tactical accents only. Scoped under .ves-wrap / .fi-* / .fiis-* so core WP admin
+   is never restyled. Additive; no external assets; responsive. */
+.ves-wrap{--fi-ink:#15161a;--fi-paper:#f3efe6;--fi-sand:#e7e1d4;--fi-blue:#2f5fd0;--fi-blue-2:#1b2a4a;
+  --fi-lime:#7faa00;--fi-red:#e8552b;--fi-bdr:#d9d2c3;--fi-muted:#6c6a62;--fi-ok:#1f7a4d;--fi-warn:#b06a00;}
+
+/* ── Status / review badges (shared token system) ───────────────────────────── */
+.ves-wrap .fi-status-badge,.ves-wrap .fiis-badge{display:inline-block;font:600 10.5px/1.5 ui-monospace,Menlo,Consolas,monospace;
+  letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:999px;border:1px solid var(--fi-bdr);
+  background:#fff;color:var(--fi-ink);white-space:nowrap;vertical-align:middle}
+.ves-wrap .fiis-badge-strong,.ves-wrap .fiis-badge-ready,.ves-wrap .fiis-badge-approved,.ves-wrap .fiis-badge-recorded{background:rgba(31,122,77,.12);border-color:var(--fi-ok);color:var(--fi-ok)}
+.ves-wrap .fiis-badge-limited,.ves-wrap .fiis-badge-warning,.ves-wrap .fiis-badge-needs_review{background:rgba(176,106,0,.12);border-color:var(--fi-warn);color:var(--fi-warn)}
+.ves-wrap .fiis-badge-missing,.ves-wrap .fiis-badge-blocked,.ves-wrap .fiis-badge-conflicting{background:rgba(232,85,43,.12);border-color:var(--fi-red);color:var(--fi-red)}
+.ves-wrap .fiis-badge-candidate{background:var(--fi-sand);border-color:var(--fi-bdr);color:var(--fi-ink)}
+.ves-wrap .fiis-badge-rejected,.ves-wrap .fiis-badge-archived,.ves-wrap .fiis-badge-expired,.ves-wrap .fiis-badge-disabled{background:#eee;border-color:#cfcabb;color:var(--fi-muted)}
+
+/* ── Shared editorial bits ──────────────────────────────────────────────────── */
+.ves-wrap .fi-breadcrumb,.ves-wrap .fiis-sr-eyebrow{font:600 11px/1.4 ui-monospace,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--fi-blue)}
+.ves-wrap .fi-meta-line{font-size:12.5px;color:var(--fi-ink)}
+.ves-wrap .fi-empty-state{color:var(--fi-muted);font-size:12.5px}
+.ves-wrap .fi-memory-policy{font-size:12px;color:var(--fi-blue-2);margin-top:10px}
+.ves-wrap .fi-readiness-panel,.ves-wrap .fi-evidence-binder,.ves-wrap .fi-package-preview,.ves-wrap .fi-review-rail,.ves-wrap .fi-operator-queue-card{
+  border:1px solid var(--fi-bdr);border-radius:12px;background:#fff;padding:12px 14px;margin:10px 0}
+.ves-wrap .fi-readiness-panel h3,.ves-wrap .fi-evidence-binder h3,.ves-wrap .fi-package-preview h3,.ves-wrap .fi-review-rail h3{margin:0 0 8px;font-size:13px}
+
+/* ── Signal Room ────────────────────────────────────────────────────────────── */
+.ves-wrap .fiis-signal-room,.ves-wrap .fi-workbench{max-width:1180px;color:var(--fi-ink)}
+.ves-wrap .fiis-sr-title{font-size:26px;margin:4px 0 2px;letter-spacing:-.01em}
+.ves-wrap .fiis-sr-sub{color:var(--fi-muted);margin:0 0 16px;max-width:64ch}
+.ves-wrap .fiis-sr-h2{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--fi-blue-2);margin:22px 0 8px}
+.ves-wrap .fiis-muted{color:var(--fi-muted)}
+.ves-wrap .fi-workflow-spine ol{display:flex;flex-wrap:wrap;gap:6px;list-style:none;margin:0 0 18px;padding:0}
+.ves-wrap .fiis-sr-step{flex:1 1 110px;min-width:104px;border:1px solid var(--fi-bdr);border-radius:12px;background:var(--fi-paper);padding:10px 12px;display:flex;flex-direction:column;gap:3px}
+.ves-wrap .fiis-sr-step-label{font:600 11px/1.3 ui-monospace,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--fi-muted);white-space:nowrap}
+.ves-wrap .fiis-sr-step-count{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.ves-wrap .fiis-sr-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.ves-wrap .fiis-sr-card-k{font:600 10.5px/1.4 ui-monospace,Menlo,monospace;letter-spacing:.05em;text-transform:uppercase;color:var(--fi-muted)}
+.ves-wrap .fiis-sr-card-v{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:3px}
+
+/* ── Operator queue ─────────────────────────────────────────────────────────── */
+.ves-wrap .fi-operator-queue{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:10px}
+.ves-wrap .fi-queue-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.ves-wrap .fi-queue-label{font:600 11px/1.3 ui-monospace,Menlo,monospace;letter-spacing:.04em;text-transform:uppercase;color:var(--fi-blue-2)}
+.ves-wrap .fi-queue-items{list-style:none;margin:0;padding:0;font-size:12.5px;display:flex;flex-direction:column;gap:4px}
+
+/* ── Status strip ───────────────────────────────────────────────────────────── */
+.ves-wrap .fiis-sr-strip{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 6px}
+.ves-wrap .fiis-sr-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--fi-bdr);border-radius:999px;background:var(--fi-paper);padding:4px 10px;font-size:12px}
+.ves-wrap .fiis-sr-chip .fiis-chip-k{font:600 10.5px/1.4 ui-monospace,Menlo,monospace;letter-spacing:.04em;text-transform:uppercase;color:var(--fi-muted)}
+
+/* ── Workbench ──────────────────────────────────────────────────────────────── */
+.ves-wrap .fi-evidence-ids code{margin-right:4px}
+.ves-wrap .fi-output-slots{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px}
+.ves-wrap .fi-output-slots li{border:1px dashed var(--fi-bdr);border-radius:8px;padding:8px 10px;font-size:12px}
+.ves-wrap .fi-review-rail button[disabled]{opacity:.55;cursor:not-allowed}
+@media (max-width:782px){.ves-wrap .fi-workflow-spine ol{gap:4px}.ves-wrap .fiis-sr-step{min-width:84px}}
+
+/* ── v0.3.55 Intake signal-room layout ─────────────────────────────────────────
+   The pipeline is the workspace (center); intake forms live on a right rail;
+   by-id forms are a collapsed debug panel. No equal-card dashboard grid. */
+.ves-wrap.fi-signal-room{max-width:1280px}
+.ves-wrap .fi-room-context{border-bottom:2px solid var(--fi-ink);padding-bottom:14px;margin-bottom:16px}
+.ves-wrap .fi-room-context h1{margin:2px 0 4px;letter-spacing:-.01em}
+.ves-wrap .fi-room-workspace{font:600 11px/1.4 ui-monospace,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--fi-muted);margin:4px 0 0}
+.ves-wrap .fi-room-grid{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-items:start}
+.ves-wrap .fi-room-main{min-width:0}
+.ves-wrap .fi-room-rail{display:flex;flex-direction:column;gap:12px;position:sticky;top:46px}
+.ves-wrap .fi-room-rail .fi-intake-card{margin:0}
+.ves-wrap .fi-intake-card{border:1px solid var(--fi-bdr);border-radius:12px;background:#fff;padding:14px 16px;margin:0 0 14px}
+.ves-wrap .fi-intake-card h2{margin:0 0 6px;font-size:14px;text-transform:uppercase;letter-spacing:.05em;color:var(--fi-blue-2)}
+.ves-wrap .fi-intake-card h3{margin:14px 0 6px;font-size:13px}
+.ves-wrap .fi-intake-hint{color:var(--fi-muted);font-size:12.5px;margin:0 0 10px}
+.ves-wrap .fi-intake-inline-action{display:inline-block;margin:0 4px 4px 0}
+.ves-wrap .fi-intake-disabled{font-size:12px;color:var(--fi-muted)}
+.ves-wrap .fi-intake-danger{color:var(--fi-red);border-color:var(--fi-red)}
+.ves-wrap .fi-intake-advanced{margin-top:18px;border:1px dashed var(--fi-bdr);border-radius:12px;background:var(--fi-paper);padding:10px 14px}
+.ves-wrap .fi-intake-advanced>summary{cursor:pointer;font:600 12px/1.5 ui-monospace,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--fi-muted)}
+.ves-wrap .fi-intake-advanced-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px;margin-top:12px}
+.ves-wrap .fi-intake-mono{font:12px ui-monospace,Menlo,monospace;overflow-wrap:anywhere}
+@media (max-width: 1024px){
+  .ves-wrap .fi-room-grid{grid-template-columns:1fr}
+  .ves-wrap .fi-room-rail{position:static}
+}
+
+/* ── v0.4.0 module registry + module pages ─────────────────────────────────────
+   One product navigation, dedicated tool pages. The index is a registry view
+   (status + one next action per module), never a metric dashboard. */
+.ves-wrap .fi-module-list{display:flex;flex-direction:column;gap:10px;max-width:980px}
+.ves-wrap .fi-module-row{display:flex;gap:18px;align-items:flex-start;justify-content:space-between;
+  border:1px solid var(--fi-bdr);border-left:4px solid var(--fi-blue);border-radius:10px;background:#fff;padding:14px 18px}
+.ves-wrap .fi-module-row.is-configuration_needed{border-left-color:var(--fi-warn)}
+.ves-wrap .fi-module-row.is-unavailable{border-left-color:var(--fi-red);opacity:.75}
+.ves-wrap .fi-module-row.is-read_only{border-left-color:var(--fi-muted)}
+.ves-wrap .fi-module-row-main h2{margin:0 0 4px;font-size:15px}
+.ves-wrap .fi-module-row-main p{margin:0;color:var(--fi-muted);font-size:12.5px;max-width:62ch}
+.ves-wrap .fi-module-row-main .fi-module-detail{color:var(--fi-blue-2);margin-top:4px}
+.ves-wrap .fi-module-row-side{display:flex;flex-direction:column;gap:8px;align-items:flex-end;flex:0 0 auto}
+.ves-wrap .fi-module-page .fi-module-detail{font-size:12.5px;color:var(--fi-blue-2);margin:6px 0 0}
+.ves-wrap .fi-asset-block{border:1px solid var(--fi-bdr);border-radius:12px;background:#fff;padding:14px 16px;margin:0 0 14px}
+.ves-wrap .fi-asset-block .fidtf-asset-field-group h5{margin:14px 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--fi-blue-2)}
+.ves-wrap .fi-asset-block .fidtf-asset-field{display:flex;align-items:center;gap:8px;border:1px solid var(--fi-bdr);border-radius:8px;padding:6px 10px;margin:0 0 6px;background:var(--fi-paper)}
+.ves-wrap .fi-asset-block .fidtf-asset-field.is-invalid{border-color:var(--fi-red)}
+.ves-wrap .fi-asset-block .fidtf-asset-field > span{flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
+.ves-wrap .fi-asset-block .fidtf-asset-field > small{color:var(--fi-muted);flex:0 0 auto}
+.ves-wrap .fidtf-copy-btn{font:600 11px/1.4 ui-monospace,Menlo,monospace;border:1px solid var(--fi-bdr);border-radius:6px;
+  background:#fff;color:var(--fi-ink);padding:2px 8px;cursor:pointer;flex:0 0 auto}
+.ves-wrap .fidtf-copy-btn:hover{background:var(--fi-sand)}
+.ves-wrap .fidtf-copy-btn.is-copied{border-color:var(--fi-ok);color:var(--fi-ok)}
+.ves-wrap .fi-asset-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;border-top:1px dashed var(--fi-bdr);padding-top:10px}
+.ves-wrap .fi-asset-queue-row{display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px dashed var(--fi-bdr);padding:7px 0;font-size:12.5px}
+.ves-wrap .fi-policy-list{margin:0;padding-left:18px;font-size:12.5px;color:var(--fi-ink)}
+.ves-wrap .fi-policy-list li{margin:0 0 6px}
+.ves-wrap .fi-module-page .fidtf-source-rail{display:flex;flex-direction:column;gap:10px}
+.ves-wrap .fi-module-page .fidtf-source-row{border:1px solid var(--fi-bdr);border-left-width:4px;border-radius:10px;background:#fff;padding:10px 14px;min-width:0}
+.ves-wrap .fi-module-page .fidtf-source-row.is-live{border-left-color:var(--fi-ok)}
+.ves-wrap .fi-module-page .fidtf-source-row.is-warn{border-left-color:var(--fi-warn)}
+.ves-wrap .fi-module-page .fidtf-source-row.is-err{border-left-color:var(--fi-red)}
+.ves-wrap .fi-module-page .fidtf-source-row-head{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-bottom:4px}
+.ves-wrap .fi-module-page .fidtf-chip{display:inline-block;font:600 10.5px/1.5 ui-monospace,Menlo,monospace;letter-spacing:.04em;
+  text-transform:uppercase;padding:2px 8px;border-radius:999px;border:1px solid var(--fi-bdr);background:var(--fi-paper);color:var(--fi-ink)}
+.ves-wrap .fi-module-page .fidtf-diagnostics{margin-top:6px}
+.ves-wrap .fi-module-page .fidtf-diagnostics > summary{cursor:pointer;font-size:11.5px;color:var(--fi-muted)}
+@media (max-width:782px){
+  .ves-wrap .fi-module-row{flex-direction:column}
+  .ves-wrap .fi-module-row-side{align-items:flex-start}
+}

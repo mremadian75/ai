@@ -1,0 +1,209 @@
+/* FIIS Frontend refinements — additive, scoped UI/UX layer.
+ *
+ * Loaded LAST (depends on fiis-app) and every rule is scoped under .ves-wrap /
+ * .fiis-app, so desktop and the React markup are untouched. Most rules are gated
+ * behind mobile/touch media queries; the "results region" block below applies at
+ * all widths to let the results panel use the full content area (width + height).
+ * Pure progressive enhancement: safe to remove with zero side effects. */
+
+/* ── Results region: use the full content area (full width + fill height) ──── */
+/* The page column (.ves-page-inner) is a flex column inside the scrollable
+   .ves-page-body; letting the results region grow makes the panel fill the
+   screen instead of being a small boxed card. */
+.ves-wrap .fiis-results-region {
+  width: 100%;
+  min-height: clamp(340px, 60vh, 900px);
+}
+.ves-wrap .ves-page-inner > .fiis-results-region:last-child { flex: 1 1 auto; }
+@media (max-width: 768px) {
+  .ves-wrap .fiis-results-region { min-height: 56vh; }
+}
+
+/* ── Mobile shell: natural document flow so content is never clipped ─────────
+ * The app shell uses height:100dvh + overflow:hidden with the content scrolling
+ * inside .ves-page-body. On mobile that fixed-viewport + hidden-overflow model
+ * (or a missing shell-variant class) can leave the main column blank while the
+ * off-canvas sidebar still works — "only the menu shows". On phones/tablets we
+ * switch to natural page flow + full-width single column so content always
+ * renders and scrolls normally. Scoped to ≤1024px; desktop is untouched. */
+@media (max-width: 1024px) {
+  .ves-wrap.fiis-app,
+  .ves-wrap.ves-dashboard-shell,
+  .ves-wrap.ves-shell-v3 {
+    display: block !important;
+    grid-template-columns: 1fr !important;
+    height: auto !important;
+    min-height: 100vh !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  .ves-wrap .ves-main-col {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 70vh;
+  }
+  .ves-wrap .ves-page-body {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  /* Keep the off-canvas drawer + its toggle working in block flow. */
+  .ves-wrap .ves-sidebar { z-index: 90; }
+}
+
+/* ── Lead form readability fix ──────────────────────────────────────────────
+ * The public lead form renders OUTSIDE .ves-wrap (it replaces the app shell as
+ * the gate), so the design tokens (--card, --t1, --violet…) that the .ves-auth-*
+ * rules rely on are undefined → transparent card + faint labels + invisible
+ * button, which is unreadable on a dark host page. Defining a light token set on
+ * the lead-shell wrapper makes every existing var() rule resolve correctly. The
+ * benefits panel uses explicit colors, so it is unaffected. */
+.ves-lead-shell {
+  --card: #ffffff; --panel: #f6f8fc; --overlay: #f1f5f9; --topbar: #ffffff;
+  --t1: #0f172a; --t2: #475569; --t3: #94a3b8;
+  --bdr: #e2e8f0; --bdr2: #cbd5e1;
+  --violet: #4f46e5; --violet2: #4338ca; --violetd: rgba(79,70,229,.10); --violetb: rgba(79,70,229,.20); --vi: #4f46e5;
+  --em: #2563eb; --ok: #0a7d2c; --ok10: #edfaef; --ok18: #b8e6c2;
+  --err: #cf222e; --er10: #fdeeee; --er18: #f3c2c2;
+  --r2: 8px; --r4: 16px; --e3: 0 12px 34px rgba(2,6,23,.14);
+}
+/* Hard safety overrides (in case a rule used a literal dark value). */
+.ves-lead-shell .ves-auth-card,
+.ves-lead-shell .ves-auth-card-modern { background: #ffffff !important; color: #0f172a !important; box-shadow: 0 12px 34px rgba(2,6,23,.14) !important; }
+.ves-lead-shell .ves-auth-title { color: #0f172a !important; }
+.ves-lead-shell .ves-auth-sub,
+.ves-lead-shell .ves-auth-foot { color: #475569 !important; }
+.ves-lead-shell .ves-label { color: #334155 !important; }
+.ves-lead-shell .ves-input { background: #ffffff !important; color: #0f172a !important; border: 1px solid #cbd5e1 !important; }
+.ves-lead-shell .ves-input::placeholder { color: #94a3b8 !important; }
+.ves-lead-shell .ves-btn-primary { background: #4f46e5 !important; color: #ffffff !important; border-color: #4f46e5 !important; }
+.ves-lead-shell .ves-btn-primary:hover:not(:disabled) { background: #4338ca !important; border-color: #4338ca !important; }
+.ves-lead-shell .ves-auth-sub a,
+.ves-lead-shell .ves-auth-foot a { color: #4f46e5 !important; font-weight: 600; }
+.ves-lead-shell .ves-auth-notice-error,
+.ves-lead-shell .ves-auth-notice.is-error { background: #fdeeee !important; color: #b42318 !important; border: 1px solid #f3c2c2 !important; }
+.ves-lead-shell .ves-auth-notice-success,
+.ves-lead-shell .ves-auth-notice.is-success { background: #edfaef !important; color: #0a7d2c !important; border: 1px solid #b8e6c2 !important; }
+
+/* ── Demo CTA (shown when a free user's 10 requests run out) ────────────────── */
+.ves-wrap .ves-demo-cta,
+.ves-demo-cta {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px;
+  margin: 0 0 16px; padding: 16px 20px;
+  border: 1px solid #d9c8ff; border-radius: 14px;
+  background: linear-gradient(135deg, #f3f0ff 0%, #eef6ff 100%);
+  color: #1f2937;
+}
+.ves-demo-cta-body { font-size: 14px; line-height: 1.5; min-width: 0; flex: 1 1 320px; }
+.ves-demo-cta-actions { flex: 0 0 auto; }
+@media (max-width: 600px) {
+  .ves-demo-cta { flex-direction: column; align-items: stretch; text-align: left; }
+  .ves-demo-cta-actions .ves-btn { width: 100%; justify-content: center; }
+}
+
+/* ── Free-requests counter pill (shown above the panel for free users) ─────── */
+.ves-wrap .ves-requests-pill,
+.ves-requests-pill {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin: 0 0 14px; padding: 10px 16px;
+  border: 1px solid #d9c8ff; border-radius: 999px;
+  background: #f7f4ff; color: #3a2d6b; font-size: 13px; font-weight: 600;
+}
+.ves-requests-pill-label { color: #6b5bb0; }
+.ves-requests-pill-count strong { font-size: 15px; color: #4326b3; }
+.ves-requests-pill-bar { flex: 1 1 120px; min-width: 90px; height: 8px; border-radius: 999px; background: #e6def9; overflow: hidden; }
+.ves-requests-pill-fill { display: block; height: 100%; background: linear-gradient(90deg, #7c5cff, #4493f8); }
+
+/* ── Phones & small tablets ──────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Keep the shell within the viewport without setting overflow-x:hidden on the
+     whole wrap — that would break position:sticky descendants and clip popovers.
+     Overflow is contained at the source (media / code / tables) instead. */
+  .ves-wrap,
+  .ves-wrap.fiis-app { max-width: 100%; }
+
+  /* Media and code blocks stay inside the viewport. */
+  .ves-wrap img,
+  .ves-wrap video,
+  .ves-wrap canvas,
+  .ves-wrap svg { max-width: 100%; height: auto; }
+  .ves-wrap pre,
+  .ves-wrap code { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: pre-wrap; word-break: break-word; }
+
+  /* Wide data tables scroll horizontally inside their own box instead of
+     stretching the layout. */
+  .ves-wrap .ves-table-wrap,
+  .ves-wrap .ves-report-table-wrap,
+  .ves-wrap .fiis-results-region table { max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Long unbreakable strings (URLs, hashes, handles) wrap instead of forcing the
+     page to scroll sideways — the safe replacement for overflow-x:hidden. */
+  .ves-wrap p,
+  .ves-wrap li,
+  .ves-wrap td,
+  .ves-wrap dd,
+  .ves-wrap .ves-card,
+  .ves-wrap .fiis-card,
+  .ves-wrap a { overflow-wrap: anywhere; word-break: break-word; }
+
+  /* Comfortable reading rhythm on small screens. */
+  .ves-wrap { line-height: 1.55; }
+  .ves-wrap h1 { font-size: 1.45rem; }
+  .ves-wrap h2 { font-size: 1.2rem; }
+
+  /* Primary actions go full-width and finger-friendly. */
+  .ves-wrap .ves-btn-primary,
+  .ves-wrap .ves-page-head-actions .ves-btn { width: 100%; justify-content: center; }
+  .ves-wrap .ves-btn { min-height: 46px; }
+
+  /* Cards/sections breathe a little more. */
+  .ves-wrap .fiis-results-region { padding-left: 12px; padding-right: 12px; }
+}
+
+/* ── iOS: prevent auto-zoom on input focus (font-size must be ≥16px) ──────── */
+@media (max-width: 768px) {
+  .ves-wrap input,
+  .ves-wrap select,
+  .ves-wrap textarea,
+  .ves-wrap .ves-input { font-size: 16px; }
+}
+
+/* ── Touch devices: larger, easier targets and spacing ───────────────────── */
+@media (pointer: coarse) {
+  .ves-wrap .ves-nav-item,
+  .ves-wrap .ves-sidebar-nav a,
+  .ves-wrap .ves-tab,
+  .ves-wrap [role="tab"],
+  .ves-wrap .ves-btn,
+  .ves-wrap .ves-sidebar-toggle,
+  .ves-wrap .ves-sidebar-collapse,
+  .ves-wrap .ves-mobile-menu-toggle { min-height: 48px; }
+
+  .ves-wrap .ves-sidebar-nav a { padding-top: 12px; padding-bottom: 12px; }
+
+  /* Roomier checkbox/radio hit areas. */
+  .ves-wrap input[type="checkbox"],
+  .ves-wrap input[type="radio"] { min-width: 20px; min-height: 20px; }
+}
+
+/* ── Safe-area insets for notched / gesture-bar phones ───────────────────── */
+@media (max-width: 768px) {
+  .ves-wrap .ves-sidebar-foot,
+  .ves-wrap .ves-sidebar-credits { padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+  .ves-wrap .fiis-results-region { padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* ── Very small phones: tighten chrome, keep content first ───────────────── */
+@media (max-width: 420px) {
+  .ves-wrap .ves-sidebar-credits-row { flex-wrap: wrap; gap: 4px; }
+  .ves-wrap .ves-page-head { gap: 10px; }
+  .ves-wrap .ves-result-filters > *,
+  .ves-wrap .ves-evidence-filters > * { flex: 1 1 auto; }
+}
+
+/* ── Smooth, momentum scrolling for any scoped scroll container ───────────── */
+@media (pointer: coarse) {
+  .ves-wrap .fiis-results-region,
+  .ves-wrap .ves-scroll { -webkit-overflow-scrolling: touch; }
+}

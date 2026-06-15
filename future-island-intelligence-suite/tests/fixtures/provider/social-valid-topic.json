@@ -1,0 +1,23 @@
+{
+  "run_id": 0,
+  "provider_key": "approved_social_provider",
+  "provider_run_id": "fixture-social-valid",
+  "mode": "topic",
+  "rows": [
+    {
+      "platform": "linkedin",
+      "source_url": "https://www.linkedin.com/posts/example-valid",
+      "origin_ref": "li-valid-1",
+      "author_name": "Public Operator",
+      "author_handle": "public-operator",
+      "title": "Evidence before generation",
+      "caption": "Teams want evidence before AI content.",
+      "hashtags": ["futureofmarketing"],
+      "published_at": "2026-06-01T10:00:00Z",
+      "metrics": {"likes": 12, "comments": 2},
+      "language": "en",
+      "market": "Spain",
+      "provider_ref": "fixture-social-row-1"
+    }
+  ]
+}

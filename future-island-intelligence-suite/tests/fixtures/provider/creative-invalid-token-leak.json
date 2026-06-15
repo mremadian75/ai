@@ -1,0 +1,8 @@
+{
+  "run_id": 0,
+  "provider_key": "manual_creative_analysis",
+  "provider_run_id": "fixture-creative-token",
+  "rows": [
+    {"summary": "Leaky row sk-fixturesupersecret123456", "authorization": "Bearer fixturetoken123456789", "platform": "linkedin"}
+  ]
+}

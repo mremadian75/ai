@@ -1,0 +1,11 @@
+56115fded0b71154f12353a0bec9fe35b76f7fc418c24f9fd9c8d05a2e28f968  /home/user/ai/future-island-intelligence-suite/.staging-trial-evidence-pack/MANIFEST.md
+c1f1be17115d7a29c9340dcd89d20a4e0b0e43274b336bb14ab87710f115cd4e  /home/user/ai/future-island-intelligence-suite/.staging-trial-evidence-pack/SHA256SUMS.txt
+facb8124943576ad46960d102c7c01606a04eeabe98d858a806a988277ca11b5  /home/user/ai/future-island-intelligence-suite/.staging-trial-evidence-pack/integrations/examples/n8n/OPTIONAL_future-island-provider-callback-template.json
+ce64f51c6d4890e03fae56470d27b35c67a020e09ed92f47efca2227c7ac08be  /home/user/ai/future-island-intelligence-suite/.staging-trial-evidence-pack/integrations/examples/n8n/README_OPTIONAL_N8N_PROVIDER_CALLBACK.md
+9c522e8494eac5069216dd2caf4ac73f64226691b880024eae2b1d075a62d4fd  /home/user/ai/future-island-intelligence-suite/.staging-trial-evidence-pack/logs/provider-fixture-trial.log
+1954a86881eb1d494a90cd96ab14cfe7e3f252cb6e5b8a307c53742d81257a8c  /home/user/ai/future-island-intelligence-suite/.staging-trial-evidence-pack/logs/test-all-timeout-safe.log
+8a73512f854d572e8d4d61a4e659c645d1915d013f4aa4a30f890e7eac674b75  /home/user/ai/future-island-intelligence-suite/.staging-trial-evidence-pack/reports/ORCHESTRATION_AGNOSTIC_CORRECTION_REPORT.md
+07332b0bc4ef0e6fc7c502638b01b80793392ddf129af5c4ef2bb4b34b30649e  /home/user/ai/future-island-intelligence-suite/.staging-trial-evidence-pack/reports/ORCHESTRATOR_AGNOSTIC_CALLBACK_GUIDE.md
+05da40fed352ceda183c7365ef8439b2842e8a6510af0a7393ade42d2737e95d  /home/user/ai/future-island-intelligence-suite/.staging-trial-evidence-pack/reports/UPDATED_OPERATOR_QA_PLAYBOOK.md
+134f66177d8aeffd533b0547ba49537e9290e93e1859fb13a730a8d61c33e6ec  /home/user/ai/future-island-intelligence-suite/.staging-trial-evidence-pack/reports/UPDATED_RELEASE_EVIDENCE_PACK_NOTES.md
+637457ce0b5f5ba23283b88062a41b594a969bb8ade1ab331303b25fcbde0793  /home/user/ai/future-island-intelligence-suite/.staging-trial-evidence-pack/reports/UPDATED_STAGING_VALIDATION_GUIDE.md

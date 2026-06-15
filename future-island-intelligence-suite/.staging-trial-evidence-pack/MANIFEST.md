@@ -1,5 +1,5 @@
 Future Island Orchestration-Agnostic Staging Trial Evidence Pack
-Generated at: 2026-06-15T17:07:10Z
+Generated at: 2026-06-15T22:23:53Z
 Included files (optional n8n example is collected only when present):
 - MANIFEST.md
 - integrations/examples/n8n/OPTIONAL_future-island-provider-callback-template.json

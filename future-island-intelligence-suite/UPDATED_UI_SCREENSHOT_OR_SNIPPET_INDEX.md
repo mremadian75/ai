@@ -25,3 +25,32 @@ Bundle generated:
 ```text
 SCREENSHOTS_OR_HTML_SNIPPETS_BUNDLE.zip
 ```
+
+## v0.9.34 — Live WordPress admin screenshots (this sprint)
+
+Real `wp-admin` screenshots from a live local WordPress 7.0 / PHP 8.4 install, captured
+with a logged-in admin via headless Chromium. Directory:
+
+```text
+evidence/live-wordpress-screenshots/
+```
+
+| # | Screen | Files |
+|---|---|---|
+| 01 | Overview | `01-overview-desktop.png` |
+| 02 | Command Room (+ Object Flow, Run Timeline, evidence drawer) | `02-command-room-desktop.png`, `-mobile.png` |
+| 03 | Signal Room / Social results | `03-social-results-desktop.png`, `-mobile.png` |
+| 05/07 | Object Flow / Run Timeline (Command Room) | `05-object-flow-desktop.png`, `07-run-timeline-desktop.png` |
+| 08 | Provider Ingestions Ledger | `08-provider-ingestion-ledger-desktop.png`, `-mobile.png` |
+| 09 | Decision / Intelligence Map | `09-decision-map-desktop.png` |
+| 10 | Decision Report (render_html, run #1) | `10-decision-report-desktop.png` |
+| 11 | Provider Settings | `11-provider-settings-desktop.png` |
+| 12 | Plans & Access | `12-plans-access-desktop.png` |
+| 13 | Credits & Limits | `13-credits-limits-desktop.png` |
+| 14 | Insight detail | `14-insight-detail-desktop.png`, `-mobile.png` |
+| 15 | Admin footer / overlap check | `15-admin-footer-overlap-check.png` |
+| 16–28 | Intelligence Suite Overview, Diagnostics, Usage Ledger, Memory, Audit Log, Operator QA, Staging Browser Validation, Provider Contracts, Settings (slots), Trend Finder, Source Intelligence, Brief Builder, Workbench | `16-…` through `28-…-desktop.png` |
+
+Per-page machine-readable scan (HTTP status, PHP-error markers, secret markers):
+`evidence/live-wordpress-screenshots/_live-findings.json` — all pages HTTP 200, 0 PHP error
+markers, 0 secret markers.

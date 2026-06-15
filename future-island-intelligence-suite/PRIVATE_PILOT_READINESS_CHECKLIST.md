@@ -1,5 +1,25 @@
 # Future Island — Private Pilot Readiness Checklist
 
+## v0.9.34 live WordPress validation update
+
+The prior `[ ]` "must be confirmed on live WP staging" items are now **confirmed** on a
+live local WordPress 7.0 / PHP 8.4 admin (real browser session). See
+`LIVE_WORDPRESS_STAGING_VALIDATION_REPORT.md`:
+
+- [x] Plugin installs and **activates** with no fatal; 60 migration tables created.
+- [x] All Future Island admin screens load in real `wp-admin` (25 screens, HTTP 200).
+- [x] Previously-broken screens re-validated in WordPress (P0/P1/P2).
+- [x] No admin-bar/footer overlap in this environment (footer below content).
+- [x] No token/secret/signature/raw-payload in any rendered admin page.
+- [x] Thin loop seeded and rendered end to end.
+- [ ] Remaining: one pass on the **customer's** host (MySQL + production theme), and
+      redaction confirmed with **real** provider rows.
+
+Two issues found in the live admin were fixed and re-verified (Settings-page fatal; PHP 8.4
+deprecation). The original v0.9.33 checklist follows for reference.
+
+---
+
 Use this checklist to take the v0.9.33 build into a controlled private pilot.
 Legend: `[x]` verified in this environment · `[ ]` must be confirmed on live WP staging.
 

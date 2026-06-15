@@ -91,7 +91,7 @@ final class VES_Provider_Callback_Auth_Service {
         return true;
     }
 
-    public static function sign_body(string $body, string $secret, int $timestamp = null): array {
+    public static function sign_body(string $body, string $secret, ?int $timestamp = null): array {
         $timestamp = $timestamp === null ? time() : $timestamp;
         return [
             'X-FI-Timestamp' => (string) $timestamp,

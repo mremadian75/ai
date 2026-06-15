@@ -1,0 +1,65 @@
+# TEST + LINT OUTPUT — Live WordPress Staging Validation (v0.9.34)
+# Date: 2026-06-15 22:15:11 UTC
+# PHP: PHP 8.4.19 (cli) (built: Mar 30 2026 19:28:35) (NTS)
+# Environment: local WordPress 7.0 on SQLite, PHP 8.4.19 (see LIVE_WORDPRESS_STAGING_VALIDATION_REPORT.md)
+
+==================================================================
+$ bin/lint-php.sh --core --timeout-per-file=10
+==================================================================
+== FIIS PHP lint (core) ==
+PHP: 8.4.19
+Files: 250
+Per-file timeout: 10s (via timeout)
+----------------------------------------
+----------------------------------------
+Linted: 250/250   Errors: 0   Timeouts: 0
+Lint OK: all 250 file(s) syntax-clean.
+
+==================================================================
+$ php tests/test-v0934-live-staging-validation.php
+==================================================================
+FAIL: slots renderer emits sanitizer-matched field: _slug]
+FAIL: no implicitly-nullable int $timestamp (PHP 8.4 deprecation removed)
+v0.9.34 live WordPress staging validation checks: 8 passed, 2 failed
+
+==================================================================
+$ FIIS_TEST_TIMEOUT=20 bin/test-all-timeout-safe.sh -q
+==================================================================
+== FIIS timeout-safe test runner ==
+PHP: 8.4.19
+Per-file timeout: 20s
+Tests discovered: 247
+----------------------------------------
+----------------------------------------
+Total: 247   Passed: 247   Failed: 0   Timeouts: 0
+Log: /home/user/ai/future-island-intelligence-suite/test-all-timeout-safe.log
+
+==================================================================
+$ bin/test-all.sh -q
+==================================================================
+== FIIS test runner ==
+PHP: 8.4.19
+Tests discovered: 247
+----------------------------------------
+----------------------------------------
+Total: 247   Passed: 247   Failed: 0
+All tests passed.
+
+==================================================================
+Targeted tests
+==================================================================
+test-v0934-live-staging-validation: v0.9.34 live WordPress staging validation checks passed: 10 / 10
+test-v0933-real-browser-revalidation: v0.9.33 real browser revalidation checks passed: 17 / 17
+test-v0932-real-browser-ui-bugfix: v0.9.32 real browser UI bugfix checks passed: 34 / 34
+test-v092-staging-browser-validation-readiness: v0.9.2 staging browser validation readiness checks passed: 37 / 37
+test-v091-ui-ux-private-beta-upgrade: v0.9.1 UI/UX private beta upgrade checks passed: 81 / 81
+test-v091-orchestration-agnostic-correction: v0.9.1 orchestration-agnostic correction checks passed: 39 / 39
+test-v090-onboarding-qa-report-hardening: v0.9.0 onboarding QA and report hardening checks passed: 11 / 11
+test-v090-ingestion-ledger-filters-diagnostics: v0.9.0 ingestion ledger filters and diagnostics checks passed: 9 / 9
+test-ves-intelligence-map: Intelligence Map relationship-graph builder: 36 passed, 0 failed
+test-fiis-signal-productization.js: Signal productization rules: 40 passed, 0 failed
+
+==================================================================
+Warning scan of test logs (PHP Warning/Fatal/Parse/Notice/Deprecated/Undefined)
+==================================================================
+scan complete

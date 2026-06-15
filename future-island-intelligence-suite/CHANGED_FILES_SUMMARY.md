@@ -1,4 +1,18 @@
-# Changed Files Summary — Real Browser UI Bugfix
+# Changed Files Summary
+
+## v0.9.34 — Live WordPress Staging Validation (this sprint)
+
+| File | Change | Why |
+|---|---|---|
+| `includes/class-ves-admin.php` | Implemented missing `render_trend_source_slots_field()` settings-field callback (escaped; matches the sanitizer's per-slot field contract). | The callback was registered via `add_settings_field` but did not exist → **fatal** when the Settings page rendered on live WordPress / PHP 8.4. |
+| `includes/class-ves-provider-callback-auth-service.php` | `int $timestamp = null` → `?int $timestamp = null`. | Remove a PHP 8.4 implicit-nullable **Deprecated** notice seen at runtime. |
+| `tests/test-v0934-live-staging-validation.php` | New regression test (10 checks) locking both fixes. | Prevent regression of issues only a live install surfaces. |
+| `evidence/live-wordpress-screenshots/*` | 38 live `wp-admin` screenshots + `_live-findings.json` (per-page HTTP / PHP-error / secret scan). | Real WordPress admin evidence. |
+| Pilot reports (see CONTROLLED_PRIVATE_PILOT_FINAL_REPORT.md §15) | Added. | Pilot documentation set. |
+
+No schema, REST route, capability, nonce, dependency, or CSS/JS behavior changed this sprint.
+
+## v0.9.32 — Real Browser UI Bugfix (prior sprint)
 
 | File | Change | Why |
 |---|---|---|

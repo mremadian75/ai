@@ -1,8 +1,16 @@
 # Future Island — Private Pilot Acceptance Report
 
-Build: **v0.9.33** (Real Browser Revalidation + Private Pilot Prep)
-Decision: **Conditional GO** for a controlled private pilot — conditioned on one live
-WordPress staging confirmation pass (see §4).
+Build: **v0.9.34** (Live WordPress Staging Validation + Controlled Private Pilot Candidate)
+Decision: **GO for controlled private pilot after live WordPress validation.** The live
+WordPress validation has now been performed (local WP 7.0 / PHP 8.4 admin, real browser):
+the plugin installs, activates, migrates 60 tables, renders all admin screens with no
+plugin-caused errors and no secret leakage, and the thin loop runs end to end. Two issues
+found in the live admin (a Settings-page fatal and a PHP 8.4 deprecation) were fixed and
+re-verified. Production-ready: **No** (controlled private pilot only). See
+`LIVE_WORDPRESS_STAGING_VALIDATION_REPORT.md` and `CONTROLLED_PRIVATE_PILOT_FINAL_REPORT.md`.
+
+> Note: the original v0.9.33 acceptance content below is retained for history; its
+> "PENDING — live WordPress staging" gate is now satisfied.
 
 ## 1. Acceptance criteria and status
 

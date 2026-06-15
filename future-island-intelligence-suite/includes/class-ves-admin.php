@@ -1099,6 +1099,48 @@ final class VES_Admin {
         self::render_constant_notice($key);
     }
 
+    /**
+     * Render the admin-only Trend Finder source slots table.
+     *
+     * This field was registered via add_settings_field() but its callback method
+     * was missing, which caused a fatal error when the Settings page rendered the
+     * "Trend Finder Source Slots" section on PHP 8.4 / WordPress. Implemented to
+     * match the existing sanitize contract in sanitize_settings() (slug / enabled /
+     * cost_level / reliability_note per slot; last_status is read-only).
+     */
+    public static function render_trend_source_slots_field($args = []) {
+        $slots = self::trend_source_slots();
+        $opt = self::OPTION_KEY;
+        echo '<table class="widefat striped" style="max-width:1100px"><thead><tr>';
+        foreach (['Slot', 'Familia / rol', 'Actor slug', 'Activo', 'Coste', 'Nota de fiabilidad', 'Último estado'] as $h) {
+            echo '<th scope="col">' . esc_html($h) . '</th>';
+        }
+        echo '</tr></thead><tbody>';
+        foreach ($slots as $slot_key => $slot) {
+            $slug_key = $slot_key . '_slug';
+            $slug = (string) self::get($slug_key, (string) ($slot['default_slug'] ?? ''));
+            $enabled = (int) self::get($slot_key . '_enabled', (int) ($slot['enabled'] ?? 0));
+            $cost = (string) self::get($slot_key . '_cost_level', (string) ($slot['cost'] ?? 'medium'));
+            $note = (string) self::get($slot_key . '_reliability_note', '');
+            $status = (string) self::get($slot_key . '_last_status', 'not_run');
+            echo '<tr>';
+            echo '<td><strong>' . esc_html((string) ($slot['label'] ?? $slot_key)) . '</strong><br><code>' . esc_html($slot_key) . '</code></td>';
+            echo '<td>' . esc_html((string) ($slot['family'] ?? '')) . '<br><span class="description">' . esc_html((string) ($slot['role'] ?? '')) . '</span></td>';
+            echo '<td><input type="text" class="regular-text" name="' . esc_attr($opt . '[' . $slug_key . ']') . '" value="' . esc_attr($slug) . '" placeholder="' . esc_attr((string) ($slot['default_slug'] ?? '')) . '"></td>';
+            echo '<td><label><input type="checkbox" name="' . esc_attr($opt . '[' . $slot_key . '_enabled]') . '" value="1" ' . checked($enabled, 1, false) . '> ' . esc_html__('Activo', 'ves') . '</label></td>';
+            echo '<td><select name="' . esc_attr($opt . '[' . $slot_key . '_cost_level]') . '">';
+            foreach (['low' => 'baja', 'medium' => 'media', 'high' => 'alta'] as $cv => $cl) {
+                echo '<option value="' . esc_attr($cv) . '" ' . selected($cost, $cv, false) . '>' . esc_html($cl) . '</option>';
+            }
+            echo '</select></td>';
+            echo '<td><input type="text" class="regular-text" name="' . esc_attr($opt . '[' . $slot_key . '_reliability_note]') . '" value="' . esc_attr($note) . '"></td>';
+            echo '<td><code>' . esc_html($status !== '' ? $status : 'not_run') . '</code></td>';
+            echo '</tr>';
+        }
+        echo '</tbody></table>';
+        echo '<p class="description">' . esc_html__('Slots internos de inteligencia. Los usuarios normales no eligen actores; solo administradores ajustan slug, estado, coste y notas.', 'ves') . '</p>';
+    }
+
     public static function render_text_field($args) {
         $key = $args['key'];
         $value = (string) self::get($key, '');

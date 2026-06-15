@@ -1,0 +1,256 @@
+[
+  {
+    "name": "01-overview",
+    "path": "/wp-admin/admin.php?page=future-island",
+    "phpErrors": [],
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID"
+    ],
+    "secrets": [],
+    "http": 200
+  },
+  {
+    "name": "02-command-room",
+    "path": "/wp-admin/admin.php?page=fi-command-room",
+    "phpErrors": [],
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID",
+      "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID"
+    ],
+    "secrets": [],
+    "http": 200
+  },
+  {
+    "name": "03-social-results",
+    "path": "/wp-admin/tools.php?page=fi-signal-room",
+    "phpErrors": [],
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID"
+    ],
+    "secrets": [],
+    "http": 200
+  },
+  {
+    "name": "05-object-flow",
+    "path": "/wp-admin/admin.php?page=fi-command-room#object-flow",
+    "phpErrors": [],
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID",
+      "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID"
+    ],
+    "secrets": [],
+    "http": 200
+  },
+  {
+    "name": "07-run-timeline",
+    "path": "/wp-admin/admin.php?page=fi-command-room&run_id=1",
+    "phpErrors": [],
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID",
+      "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID"
+    ],
+    "secrets": [],
+    "http": 200
+  },
+  {
+    "name": "08-provider-ingestion-ledger",
+    "path": "/wp-admin/admin.php?page=fi-provider-ingestions",
+    "phpErrors": [],
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID"
+    ],
+    "secrets": [],
+    "http": 200
+  },
+  {
+    "name": "09-decision-map",
+    "path": "/wp-admin/admin.php?page=ves-intelligence-map",
+    "phpErrors": [],
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID"
+    ],
+    "secrets": [],
+    "http": 200
+  },
+  {
+    "name": "10-decision-report",
+    "path": "/fi-decision-report-preview.html",
+    "phpErrors": [],
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID"
+    ],
+    "secrets": [],
+    "http": 200
+  },
+  {
+    "name": "11-provider-settings",
+    "path": "/wp-admin/admin.php?page=ves-provider-settings",
+    "phpErrors": [],
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID"
+    ],
+    "secrets": [],
+    "http": 200
+  },
+  {
+    "name": "12-plans-access",
+    "path": "/wp-admin/admin.php?page=ves-plans-access",
+    "phpErrors": [],
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID"
+    ],
+    "secrets": [],
+    "http": 200
+  },
+  {
+    "name": "13-credits-limits",
+    "path": "/wp-admin/admin.php?page=ves-credits-usage",
+    "phpErrors": [],
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID"
+    ],
+    "secrets": [],
+    "http": 200
+  },
+  {
+    "name": "14-insight-detail",
+    "path": "/wp-admin/tools.php?page=fi-signal-room&insight_id=1",
+    "phpErrors": [],
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID"
+    ],
+    "secrets": [],
+    "http": 200
+  },
+  {
+    "name": "16-intelligence-suite-overview",
+    "path": "/wp-admin/admin.php?page=ves-intelligence-suite",
+    "phpErrors": [],
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID"
+    ],
+    "secrets": [],
+    "http": 200
+  },
+  {
+    "name": "17-diagnostics",
+    "path": "/wp-admin/admin.php?page=ves-diagnostics",
+    "phpErrors": [],
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID"
+    ],
+    "secrets": [],
+    "http": 200
+  },
+  {
+    "name": "18-usage-ledger",
+    "path": "/wp-admin/admin.php?page=fi-usage-ledger",
+    "phpErrors": [],
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID"
+    ],
+    "secrets": [],
+    "http": 200
+  },
+  {
+    "name": "19-memory",
+    "path": "/wp-admin/admin.php?page=fi-memory",
+    "phpErrors": [],
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID"
+    ],
+    "secrets": [],
+    "http": 200
+  },
+  {
+    "name": "20-audit-log",
+    "path": "/wp-admin/admin.php?page=ves-audit-log",
+    "phpErrors": [],
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID"
+    ],
+    "secrets": [],
+    "http": 200
+  },
+  {
+    "name": "21-operator-qa",
+    "path": "/wp-admin/admin.php?page=fi-beta-qa",
+    "phpErrors": [],
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID"
+    ],
+    "secrets": [],
+    "http": 200
+  },
+  {
+    "name": "22-staging-browser-validation",
+    "path": "/wp-admin/admin.php?page=fi-staging-browser-validation",
+    "phpErrors": [],
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID"
+    ],
+    "secrets": [],
+    "http": 200
+  },
+  {
+    "name": "23-provider-contracts",
+    "path": "/wp-admin/admin.php?page=fi-provider-contracts",
+    "phpErrors": [],
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID"
+    ],
+    "secrets": [],
+    "http": 200
+  },
+  {
+    "name": "24-settings",
+    "path": "/wp-admin/options-general.php?page=ves-social-scraper",
+    "phpErrors": [],
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID"
+    ],
+    "secrets": [],
+    "http": 200
+  },
+  {
+    "name": "25-trend-finder",
+    "path": "/wp-admin/admin.php?page=fi-trend-finder",
+    "phpErrors": [],
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID"
+    ],
+    "secrets": [],
+    "http": 200
+  },
+  {
+    "name": "26-source-intelligence",
+    "path": "/wp-admin/admin.php?page=fi-source-intelligence",
+    "phpErrors": [],
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID"
+    ],
+    "secrets": [],
+    "http": 200
+  },
+  {
+    "name": "27-brief-workbench",
+    "path": "/wp-admin/tools.php?page=fi-brief-workbench",
+    "phpErrors": [],
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID"
+    ],
+    "secrets": [],
+    "http": 200
+  },
+  {
+    "name": "28-workbench-intake",
+    "path": "/wp-admin/tools.php?page=fi-intake",
+    "phpErrors": [],
+    "consoleErrors": [
+      "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID",
+      "Failed to load resource: net::ERR_CERT_AUTHORITY_INVALID"
+    ],
+    "secrets": [],
+    "http": 200
+  }
+]

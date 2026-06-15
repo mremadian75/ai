@@ -1,0 +1,8 @@
+$ bin/test-all.sh -q
+== FIIS test runner ==
+PHP: 8.4.16
+Tests discovered: 245
+----------------------------------------
+----------------------------------------
+Total: 245   Passed: 245   Failed: 0
+All tests passed.

@@ -1,0 +1,162 @@
+Future Island Staging Browser Validation - final clean verification log
+Generated: 2026-06-14T21:21:15Z
+Scope: verification and evidence cleanup only; no source-code or UI changes.
+Base archive: future-island-staging-browser-validation-patched.zip
+
+== Command 1 ==
+bin/lint-php.sh --core --timeout-per-file=10
+== FIIS PHP lint (core) ==
+PHP: 8.4.16
+Files: 250
+Per-file timeout: 10s (via timeout)
+----------------------------------------
+----------------------------------------
+Linted: 250/250   Errors: 0   Timeouts: 0
+Lint OK: all 250 file(s) syntax-clean.
+
+== Command 2 ==
+FIIS_TEST_TIMEOUT=20 bin/test-all-timeout-safe.sh -q
+== FIIS timeout-safe test runner ==
+PHP: 8.4.16
+Per-file timeout: 20s
+Tests discovered: 244
+----------------------------------------
+----------------------------------------
+Total: 244   Passed: 244   Failed: 0   Timeouts: 0
+Log: /tmp/fi_timeout_safe_combined.log
+
+== Command 3 ==
+bin/test-all.sh -q
+== FIIS test runner ==
+PHP: 8.4.16
+Tests discovered: 244
+----------------------------------------
+----------------------------------------
+Total: 244   Passed: 244   Failed: 0
+All tests passed.
+
+== Targeted checks ==
+-- php tests/test-v092-staging-browser-validation-readiness.php
+v0.9.2 staging browser validation readiness checks passed: 37 / 37
+
+-- php tests/test-v091-orchestration-agnostic-correction.php
+v0.9.1 orchestration-agnostic correction checks passed: 39 / 39
+
+-- php tests/test-v091-ui-ux-private-beta-upgrade.php
+v0.9.1 UI/UX private beta upgrade checks passed: 81 / 81
+
+-- php tests/test-v090-optional-n8n-example-pack.php
+v0.9.0 optional n8n example pack checks passed: 18 / 18
+
+-- php tests/test-v090-onboarding-qa-report-hardening.php
+v0.9.0 onboarding QA and report hardening checks passed: 11 / 11
+
+-- php tests/test-v090-ingestion-ledger-filters-diagnostics.php
+v0.9.0 ingestion ledger filters and diagnostics checks passed: 9 / 9
+
+-- php tests/test-v090-provider-fixture-trials.php
+v0.9.0 provider fixture trial runner checks passed: 12 / 12
+
+-- php tests/test-v090-signed-callback-simulator.php
+v0.9.0 signed callback simulator checks passed: 9 / 9
+
+-- php tests/test-v090-staging-evidence-pack.php
+v0.9.0 staging evidence pack script checks passed: 3 / 3
+
+-- php modules/deep-trend-finder/tests/test-fidtf-v0350-live-instagram-malformed-provider-row-gates.php
+FIDTF v0.1.0 checks passed: 30 / 30
+FIDTF v0.3.53 live Instagram malformed provider row gate checks passed.
+
+-- php modules/deep-trend-finder/tests/test-fidtf-v0340-full-live-openai-json-schema-and-key-safety.php
+FIDTF v0.1.0 checks passed: 30 / 30
+FIDTF v0.3.19 READY polling fix checks passed: 47 / 47
+FIDTF v0.3.20 Apidojo flat output and repair refresh checks passed: 63 / 63
+FIDTF v0.3.21 dataset-id fallback and repeat repair checks passed: 70 / 70
+FIDTF v0.3.22 repair force and public count checks passed: 84 / 84
+FIDTF v0.3.23 real Apidojo normalization and count checks passed: 105 / 105
+FIDTF v0.3.24 durable diagnostics and count checks passed: 119 / 119
+FIDTF v0.3.25 multi-source live and professional report checks passed: 149 / 149
+FIDTF v0.3.26 professional intelligence and quality gate checks passed: 177 / 177
+FIDTF v0.3.27 report intelligence, UI grouping and adapter QA checks passed: 194 / 194
+FIDTF v0.3.28 all actor contract and normalizer checks passed: 234 / 234
+FIDTF v0.3.29 all actor live QA hardening checks passed: 267 / 267
+FIDTF v0.3.30 live contract diagnostics and provider total counts checks passed: 282 / 282
+FIDTF v0.3.31 live actor contract fixes checks passed: 299 / 299
+FIDTF v0.3.32 live clean fetch and Instagram confirmation checks passed: 309 / 309
+FIDTF v0.3.34 live QA diagnostics and zero-row reasoning checks passed: 327 / 327
+FIDTF v0.3.34 live GPT response and trends timeseries hardening checks passed: 346 / 346
+FIDTF v0.3.35 live GPT error and analysis hardening checks passed: 359 / 359
+FIDTF v0.3.36 full live actor and GPT QA hardening checks passed: 381 / 381
+FIDTF v0.3.37 full live actors provider-query context and GPT preflight checks passed: 392 / 392
+FIDTF v0.3.38 full live GPT preflight, trends summary, and relevance hardening checks passed: 402 / 402
+FIDTF v0.3.40 full live actor and OpenAI network diagnostic checks passed: 411 / 411
+FIDTF v0.3.40 live OpenAI JSON-schema smoke-test hardening checks passed: 420 / 420
+
+-- php modules/deep-trend-finder/tests/test-fidtf-v0341-cross-platform-data-scientist-and-live-gpt-safety.php
+FIDTF v0.1.0 checks passed: 30 / 30
+FIDTF v0.3.19 READY polling fix checks passed: 47 / 47
+FIDTF v0.3.20 Apidojo flat output and repair refresh checks passed: 63 / 63
+FIDTF v0.3.21 dataset-id fallback and repeat repair checks passed: 70 / 70
+FIDTF v0.3.22 repair force and public count checks passed: 84 / 84
+FIDTF v0.3.23 real Apidojo normalization and count checks passed: 105 / 105
+FIDTF v0.3.24 durable diagnostics and count checks passed: 119 / 119
+FIDTF v0.3.25 multi-source live and professional report checks passed: 149 / 149
+FIDTF v0.3.26 professional intelligence and quality gate checks passed: 177 / 177
+FIDTF v0.3.27 report intelligence, UI grouping and adapter QA checks passed: 194 / 194
+FIDTF v0.3.28 all actor contract and normalizer checks passed: 234 / 234
+FIDTF v0.3.29 all actor live QA hardening checks passed: 267 / 267
+FIDTF v0.3.30 live contract diagnostics and provider total counts checks passed: 282 / 282
+FIDTF v0.3.31 live actor contract fixes checks passed: 299 / 299
+FIDTF v0.3.32 live clean fetch and Instagram confirmation checks passed: 309 / 309
+FIDTF v0.3.34 live QA diagnostics and zero-row reasoning checks passed: 327 / 327
+FIDTF v0.3.34 live GPT response and trends timeseries hardening checks passed: 346 / 346
+FIDTF v0.3.35 live GPT error and analysis hardening checks passed: 359 / 359
+FIDTF v0.3.36 full live actor and GPT QA hardening checks passed: 381 / 381
+FIDTF v0.3.37 full live actors provider-query context and GPT preflight checks passed: 392 / 392
+FIDTF v0.3.38 full live GPT preflight, trends summary, and relevance hardening checks passed: 402 / 402
+FIDTF v0.3.40 full live actor and OpenAI network diagnostic checks passed: 411 / 411
+FIDTF v0.3.40 live OpenAI JSON-schema smoke-test hardening checks passed: 420 / 420
+FIDTF v0.3.41 cross-platform data-scientist analysis and GPT safety checks passed: 436 / 436
+
+-- php modules/deep-trend-finder/tests/test-fidtf-v0342-cross-platform-statistical-scoring-and-gpt-analysis-contract.php
+FIDTF v0.1.0 checks passed: 30 / 30
+FIDTF v0.3.19 READY polling fix checks passed: 47 / 47
+FIDTF v0.3.20 Apidojo flat output and repair refresh checks passed: 63 / 63
+FIDTF v0.3.21 dataset-id fallback and repeat repair checks passed: 70 / 70
+FIDTF v0.3.22 repair force and public count checks passed: 84 / 84
+FIDTF v0.3.23 real Apidojo normalization and count checks passed: 105 / 105
+FIDTF v0.3.24 durable diagnostics and count checks passed: 119 / 119
+FIDTF v0.3.25 multi-source live and professional report checks passed: 149 / 149
+FIDTF v0.3.26 professional intelligence and quality gate checks passed: 177 / 177
+FIDTF v0.3.27 report intelligence, UI grouping and adapter QA checks passed: 194 / 194
+FIDTF v0.3.28 all actor contract and normalizer checks passed: 234 / 234
+FIDTF v0.3.29 all actor live QA hardening checks passed: 267 / 267
+FIDTF v0.3.30 live contract diagnostics and provider total counts checks passed: 282 / 282
+FIDTF v0.3.31 live actor contract fixes checks passed: 299 / 299
+FIDTF v0.3.32 live clean fetch and Instagram confirmation checks passed: 309 / 309
+FIDTF v0.3.34 live QA diagnostics and zero-row reasoning checks passed: 327 / 327
+FIDTF v0.3.34 live GPT response and trends timeseries hardening checks passed: 346 / 346
+FIDTF v0.3.35 live GPT error and analysis hardening checks passed: 359 / 359
+FIDTF v0.3.36 full live actor and GPT QA hardening checks passed: 381 / 381
+FIDTF v0.3.37 full live actors provider-query context and GPT preflight checks passed: 392 / 392
+FIDTF v0.3.38 full live GPT preflight, trends summary, and relevance hardening checks passed: 402 / 402
+FIDTF v0.3.40 full live actor and OpenAI network diagnostic checks passed: 411 / 411
+FIDTF v0.3.40 live OpenAI JSON-schema smoke-test hardening checks passed: 420 / 420
+FIDTF v0.3.41 cross-platform data-scientist analysis and GPT safety checks passed: 436 / 436
+FIDTF v0.3.42 cross-platform statistical scoring and GPT analysis contract checks passed: 450 / 450
+
+-- php tests/test-v093017-error-category-ordering.php
+[PASS] version bumped to 1.1.0
+[PASS] classification uses fatal-only context gate
+[PASS] provider flags are only checked inside fatal context
+[PASS] actor_dispatch_error branch remains after fatal gate
+[PASS] dataset_fetch_failed branch remains reachable after fatal gate
+[PASS] post-dispatch fatal wording still exists for real PHP fatals
+
+v0.9.30.21 error category ordering checks passed: 6 / 6
+
+== Clean-log audit ==
+Blocked diagnostic-token scan: clean.
+
+== Final status ==
+All requested checks completed successfully.

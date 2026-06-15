@@ -1,0 +1,21 @@
+<?php
+require_once __DIR__ . '/fixtures/fake-wpdb-spine.php';
+$root = dirname(__DIR__);
+$script = $root . '/bin/fi-provider-callback-simulate.php';
+$fixture = $root . '/tests/fixtures/provider/social-valid-topic.json';
+fi_spine_ok(is_file($script) && is_executable($script), 'simulator exists and is executable');
+$secret = 'fi_test_secret_never_print_me';
+$cmd = 'FI_PROVIDER_SECRET=' . escapeshellarg($secret) . ' php ' . escapeshellarg($script) . ' --endpoint=' . escapeshellarg('https://staging.example.com/wp-json/fi/v1/provider/social/ingest') . ' --fixture=' . escapeshellarg($fixture) . ' --provider-family=social_signal --provider-key=approved_social_provider --secret-env=FI_PROVIDER_SECRET --run-id=123 --dry-run 2>&1';
+$out = shell_exec($cmd);
+fi_spine_ok(is_string($out) && strpos($out, 'Future Island provider callback simulator dry run') !== false, 'dry-run output generated');
+fi_spine_ok(strpos($out, $secret) === false, 'raw secret not printed');
+fi_spine_ok(strpos($out, 'X-FI-Signature') !== false && strpos($out, 'sha256=[redacted]') !== false, 'signature header redacted');
+fi_spine_ok(strpos($out, 'Provider family: social_signal') !== false, 'provider family accepted');
+fi_spine_ok(strpos($out, 'Run ID: 123') !== false, 'run id applied');
+$bad = shell_exec('FI_PROVIDER_SECRET=' . escapeshellarg($secret) . ' php ' . escapeshellarg($script) . ' --endpoint=https://staging.example.com/wp-json/fi/v1/provider/social/ingest --fixture=' . escapeshellarg($fixture) . ' --provider-key=approved_social_provider --secret-env=FI_PROVIDER_SECRET --run-id=123 --bad-signature --dry-run 2>&1');
+fi_spine_ok(strpos((string) $bad, 'Bad signature mode: yes') !== false, 'bad signature mode reported');
+$stale = shell_exec('FI_PROVIDER_SECRET=' . escapeshellarg($secret) . ' php ' . escapeshellarg($script) . ' --endpoint=https://staging.example.com/wp-json/fi/v1/provider/social/ingest --fixture=' . escapeshellarg($fixture) . ' --provider-key=approved_social_provider --secret-env=FI_PROVIDER_SECRET --run-id=123 --stale-timestamp --dry-run 2>&1');
+fi_spine_ok(strpos((string) $stale, '(stale mode)') !== false, 'stale timestamp mode reported');
+$missing = shell_exec('php ' . escapeshellarg($script) . ' --endpoint=https://staging.example.com/wp-json/fi/v1/provider/social/ingest --provider-key=approved_social_provider --run-id=123 --dry-run 2>&1');
+fi_spine_ok(strpos((string) $missing, 'Missing required argument') !== false, 'missing required args rejected');
+fi_spine_finish('v0.9.0 signed callback simulator checks');

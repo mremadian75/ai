@@ -1,0 +1,10 @@
+{
+  "run_id": 0,
+  "provider_key": "approved_social_provider",
+  "provider_run_id": "fixture-social-mixed",
+  "mode": "topic",
+  "rows": [
+    {"platform": "linkedin", "source_url": "https://www.linkedin.com/posts/mixed-valid", "caption": "Marketing operators want proof trails.", "metrics": {"likes": 8}, "provider_ref": "mixed-1"},
+    {"platform": "linkedin", "caption": "Private row", "logged_in": true}
+  ]
+}

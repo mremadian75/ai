@@ -1,0 +1,116 @@
+{
+  "name": "OPTIONAL Future Island n8n Provider Callback Example",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "manual-trigger",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            { "name": "endpoint", "value": "https://staging.example.com/wp-json/fi/v1/provider/social/ingest" },
+            { "name": "provider_key", "value": "approved_social_provider" },
+            { "name": "provider_family", "value": "social_signal" },
+            { "name": "idempotency_key", "value": "={{ 'optional-n8n-fi-' + $now.toMillis() }}" },
+            { "name": "provider_run_id", "value": "={{ 'optional-n8n-run-' + $now.toMillis() }}" }
+          ],
+          "number": [
+            { "name": "run_id", "value": 123 }
+          ],
+          "json": [
+            {
+              "name": "rows",
+              "value": "[{\"platform\":\"linkedin\",\"caption\":\"Evidence-first operator trial row\",\"source_url\":\"https://example.com/public-post\",\"engagement_count\":12}]"
+            }
+          ]
+        }
+      },
+      "id": "set-provider-payload",
+      "name": "Set Provider Payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [220, 0]
+    },
+    {
+      "parameters": {
+        "functionCode": "const payload = { run_id: $json.run_id, provider_key: $json.provider_key, provider_family: $json.provider_family, provider_run_id: $json.provider_run_id, rows: typeof $json.rows === 'string' ? JSON.parse($json.rows) : $json.rows };\nconst rawBody = JSON.stringify(payload);\nconst timestamp = Math.floor(Date.now() / 1000).toString();\nreturn [{ json: { ...$json, payload, rawBody, timestamp } }];"
+      },
+      "id": "build-raw-body",
+      "name": "Generate Timestamp + Build Raw Body",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [460, 0]
+    },
+    {
+      "parameters": {
+        "action": "hmac",
+        "type": "SHA256",
+        "value": "={{ $json.timestamp + '.' + $json.rawBody }}",
+        "secret": "={{ $env.FI_PROVIDER_SECRET }}"
+      },
+      "id": "hmac-sha256-signature",
+      "name": "HMAC SHA256 Signature",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 1,
+      "position": [700, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.endpoint }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "X-FI-Provider-Key", "value": "={{ $json.provider_key }}" },
+            { "name": "X-FI-Timestamp", "value": "={{ $json.timestamp }}" },
+            { "name": "X-FI-Signature", "value": "={{ 'sha256=' + $json.data }}" },
+            { "name": "X-FI-Idempotency-Key", "value": "={{ $json.idempotency_key }}" }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.rawBody }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "http-request-future-island",
+      "name": "HTTP Request to Future Island",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [940, 0]
+    },
+    {
+      "parameters": {
+        "functionCode": "return [{ json: { status: 'callback_complete', response: $json, note: 'Do not log secrets, signatures, cookies, or raw provider tokens.' } }];"
+      },
+      "id": "response-logger",
+      "name": "Response Logger",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [1180, 0]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": { "main": [[{ "node": "Set Provider Payload", "type": "main", "index": 0 }]] },
+    "Set Provider Payload": { "main": [[{ "node": "Generate Timestamp + Build Raw Body", "type": "main", "index": 0 }]] },
+    "Generate Timestamp + Build Raw Body": { "main": [[{ "node": "HMAC SHA256 Signature", "type": "main", "index": 0 }]] },
+    "HMAC SHA256 Signature": { "main": [[{ "node": "HTTP Request to Future Island", "type": "main", "index": 0 }]] },
+    "HTTP Request to Future Island": { "main": [[{ "node": "Response Logger", "type": "main", "index": 0 }]] }
+  },
+  "pinData": {},
+  "settings": { "executionOrder": "v1" },
+  "staticData": null,
+  "tags": ["future-island", "optional-n8n-example", "provider-callback", "staging"],
+  "triggerCount": 0,
+  "updatedAt": "2026-06-14T00:00:00.000Z",
+  "versionId": "optional-future-island-n8n-provider-callback-example-v1"
+}

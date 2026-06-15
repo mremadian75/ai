@@ -1,0 +1,65 @@
+FILES CHANGED — Future Island Deep Trend Finder Add-on v0.3.10
+================================================================
+Baseline:   v0.3.9-scraptik-social-request-contract
+Target:     v0.3.10-core-social-apify-execution-parity
+Patch type: focused production debugging (no rewrite, no Core changes)
+
+SOURCE CHANGES
+--------------
+M  future-island-deep-trend-finder-addon.php
+   Plugin header Version + FIDTF_VERSION bumped to 0.3.10-core-social-apify-execution-parity
+
+M  includes/providers/class-fidtf-core-apify-client-adapter.php
+   - run_url(): set $options['waitForFinish'] = 0 after ves_prepare_run_options() to mirror
+     Core's class-ves-run-execution-service.php:725-728 exactly.
+     HTTP-fallback URL also uses waitForFinish=0 (was 20).
+   - completed_result(): emits outcome_reason ∈ {evidence_returned, flattened_empty,
+     zero_dataset_items}, plus provider_mode_used=core_apify_client and request_attempted=true.
+   - normalize_start_response()/normalize_refresh_response() "queued"/"running" returns now
+     also carry provider_mode_used, request_attempted, and outcome_reason ∈ {run_queued, run_running}.
+
+M  includes/class-fidtf-rest-controller.php
+   - Per-job dispatch_diagnostic (admin-only) gains: request_attempted, outcome_reason,
+     provider_mode_used, addon_version, sanitized_actor_input.
+   - New derive_outcome_reason() distinguishes: planned_only, run_running, provider_failed,
+     evidence_returned, zero_dataset_items, normalizer_extracted_zero, no_items_passed_relevance.
+
+M  includes/class-fidtf-admin.php
+   Header copy describes v0.3.10 parity goal so admins see the live version.
+
+M  assets/js/fidtf-frontend.js
+   updateRunView() poll-status banner now distinguishes four post-completion states:
+   running, zero-raw, normalizer-failure, relevance-failure. Each emits a different message
+   instead of collapsing to "no items passed the relevance filter".
+
+TEST CHANGES
+------------
+A  tests/test-fidtf-v0310-core-social-apify-execution-parity.php   (new — 45+ assertions)
+M  tests/test-fidtf-v030-tiktok-provider-bridge.php                 (accept either v0.3.5
+                                                                     "returned data" or v0.3.10
+                                                                     "returned posts" copy)
+M  tests/test-fidtf-v013-async-readiness.php                        (version-acceptance updated)
+M  tests/test-fidtf-v014-bridge-safety.php                          (version-acceptance updated)
+M  tests/test-fidtf-v020-ai-planner-bridge.php                      (version-acceptance updated)
+M  tests/test-fidtf-v021-planner-contract-hardening.php             (version-acceptance updated)
+M  tests/test-fidtf-v022-source-job-contract-hardening.php          (version-acceptance updated)
+M  tests/test-fidtf-v032-core-shell-integration-ui.php              (version-acceptance updated)
+M  tests/test-fidtf-v036-scraptik-output-flattening.php             (version-acceptance updated)
+M  tests/test-fidtf-v037-scraptik-input-region-hotfix.php           (version-acceptance updated)
+M  tests/test-fidtf-v038-core-apify-dispatch-parity.php             (version-acceptance updated)
+M  tests/test-fidtf-v039-scraptik-social-request-contract.php       (version-acceptance updated)
+
+DOCS
+----
+A  docs/CHANGELOG_deep-trend-finder-addon-v0.3.10-core-social-apify-execution-parity.md
+A  docs/FILES_CHANGED_deep-trend-finder-addon-v0.3.10-core-social-apify-execution-parity.txt  (this file)
+
+NOT CHANGED
+-----------
+Core plugin (ves_plugin/): untouched.
+DB schema (class-fidtf-db.php): untouched.
+Shortcode (templates/, class-fidtf-plugin.php boot): untouched.
+Provider files for instagram/reddit/google_trends/google_news/ai_research: untouched.
+TikTok minimum-view gate (relevance filter v0.3.9): retained as-is.
+Scraptik endpoint-only input contract (v0.3.9): retained.
+Clockworks alternative input contract (v0.3.9): retained.

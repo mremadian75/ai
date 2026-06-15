@@ -1,0 +1,9 @@
+$ FIIS_TEST_TIMEOUT=20 bin/test-all-timeout-safe.sh -q
+== FIIS timeout-safe test runner ==
+PHP: 8.4.16
+Per-file timeout: 20s
+Tests discovered: 245
+----------------------------------------
+----------------------------------------
+Total: 245   Passed: 245   Failed: 0   Timeouts: 0
+Log: /mnt/data/fi_ui_bugfix_work/base/future-island-intelligence-suite/test-all-timeout-safe.log

@@ -1,0 +1,608 @@
+[
+  {
+    "snippet": "ab-testing-plan",
+    "group": "bugfix",
+    "vp": "desktop",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 29
+  },
+  {
+    "snippet": "ab-testing-plan",
+    "group": "bugfix",
+    "vp": "tablet",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 29
+  },
+  {
+    "snippet": "ab-testing-plan",
+    "group": "bugfix",
+    "vp": "mobile",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 29
+  },
+  {
+    "snippet": "credits-limits",
+    "group": "bugfix",
+    "vp": "desktop",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {
+      ".ves-kpis": 7
+    },
+    "minProseW": 21
+  },
+  {
+    "snippet": "credits-limits",
+    "group": "bugfix",
+    "vp": "tablet",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {
+      ".ves-kpis": 4
+    },
+    "minProseW": 21
+  },
+  {
+    "snippet": "credits-limits",
+    "group": "bugfix",
+    "vp": "mobile",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {
+      ".ves-kpis": 1
+    },
+    "minProseW": 21
+  },
+  {
+    "snippet": "diagnostics",
+    "group": "bugfix",
+    "vp": "desktop",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 82
+  },
+  {
+    "snippet": "diagnostics",
+    "group": "bugfix",
+    "vp": "tablet",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 82
+  },
+  {
+    "snippet": "diagnostics",
+    "group": "bugfix",
+    "vp": "mobile",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 82
+  },
+  {
+    "snippet": "insight-detail-executive-reading",
+    "group": "bugfix",
+    "vp": "desktop",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 55
+  },
+  {
+    "snippet": "insight-detail-executive-reading",
+    "group": "bugfix",
+    "vp": "tablet",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 55
+  },
+  {
+    "snippet": "insight-detail-executive-reading",
+    "group": "bugfix",
+    "vp": "mobile",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 55
+  },
+  {
+    "snippet": "intelligence-map-lineage-list",
+    "group": "bugfix",
+    "vp": "desktop",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 33
+  },
+  {
+    "snippet": "intelligence-map-lineage-list",
+    "group": "bugfix",
+    "vp": "tablet",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 33
+  },
+  {
+    "snippet": "intelligence-map-lineage-list",
+    "group": "bugfix",
+    "vp": "mobile",
+    "narrowCards": [],
+    "midWordBreak": [
+      {
+        "cls": "TD",
+        "word": "2026-06-15",
+        "contentW": 56,
+        "needW": 61,
+        "wb": "normal",
+        "ow": "normal"
+      }
+    ],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 27
+  },
+  {
+    "snippet": "object-flow-evidence-gate-next-actions",
+    "group": "bugfix",
+    "vp": "desktop",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {
+      ".fiis-route-track": 7
+    },
+    "minProseW": 66
+  },
+  {
+    "snippet": "object-flow-evidence-gate-next-actions",
+    "group": "bugfix",
+    "vp": "tablet",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {
+      ".fiis-route-track": 4
+    },
+    "minProseW": 66
+  },
+  {
+    "snippet": "object-flow-evidence-gate-next-actions",
+    "group": "bugfix",
+    "vp": "mobile",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {
+      ".fiis-route-track": 1
+    },
+    "minProseW": 66
+  },
+  {
+    "snippet": "overview-missing-token-warning",
+    "group": "bugfix",
+    "vp": "desktop",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 65
+  },
+  {
+    "snippet": "overview-missing-token-warning",
+    "group": "bugfix",
+    "vp": "tablet",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 65
+  },
+  {
+    "snippet": "overview-missing-token-warning",
+    "group": "bugfix",
+    "vp": "mobile",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 65
+  },
+  {
+    "snippet": "plans-access",
+    "group": "bugfix",
+    "vp": "desktop",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 51
+  },
+  {
+    "snippet": "plans-access",
+    "group": "bugfix",
+    "vp": "tablet",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 51
+  },
+  {
+    "snippet": "plans-access",
+    "group": "bugfix",
+    "vp": "mobile",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 51
+  },
+  {
+    "snippet": "provider-settings",
+    "group": "bugfix",
+    "vp": "desktop",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 69
+  },
+  {
+    "snippet": "provider-settings",
+    "group": "bugfix",
+    "vp": "tablet",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 69
+  },
+  {
+    "snippet": "provider-settings",
+    "group": "bugfix",
+    "vp": "mobile",
+    "narrowCards": [],
+    "midWordBreak": [
+      {
+        "cls": "SMALL",
+        "word": "google_search",
+        "contentW": 85,
+        "needW": 87,
+        "wb": "normal",
+        "ow": "normal"
+      }
+    ],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 55
+  },
+  {
+    "snippet": "social-intelligence-results",
+    "group": "bugfix",
+    "vp": "desktop",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {
+      ".ves-items": 4
+    },
+    "minProseW": 52
+  },
+  {
+    "snippet": "social-intelligence-results",
+    "group": "bugfix",
+    "vp": "tablet",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {
+      ".ves-items": 2
+    },
+    "minProseW": 52
+  },
+  {
+    "snippet": "social-intelligence-results",
+    "group": "bugfix",
+    "vp": "mobile",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {
+      ".ves-items": 1
+    },
+    "minProseW": 52
+  },
+  {
+    "snippet": "social-result-card-detail",
+    "group": "bugfix",
+    "vp": "desktop",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 52
+  },
+  {
+    "snippet": "social-result-card-detail",
+    "group": "bugfix",
+    "vp": "tablet",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 52
+  },
+  {
+    "snippet": "social-result-card-detail",
+    "group": "bugfix",
+    "vp": "mobile",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 52
+  },
+  {
+    "snippet": "command-room",
+    "group": "top",
+    "vp": "desktop",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 46
+  },
+  {
+    "snippet": "command-room",
+    "group": "top",
+    "vp": "tablet",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 46
+  },
+  {
+    "snippet": "command-room",
+    "group": "top",
+    "vp": "mobile",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 46
+  },
+  {
+    "snippet": "decision-map",
+    "group": "top",
+    "vp": "desktop",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 54
+  },
+  {
+    "snippet": "decision-map",
+    "group": "top",
+    "vp": "tablet",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 54
+  },
+  {
+    "snippet": "decision-map",
+    "group": "top",
+    "vp": "mobile",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 54
+  },
+  {
+    "snippet": "decision-report",
+    "group": "top",
+    "vp": "desktop",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 28
+  },
+  {
+    "snippet": "decision-report",
+    "group": "top",
+    "vp": "tablet",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 28
+  },
+  {
+    "snippet": "decision-report",
+    "group": "top",
+    "vp": "mobile",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 28
+  },
+  {
+    "snippet": "onboarding",
+    "group": "top",
+    "vp": "desktop",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 30
+  },
+  {
+    "snippet": "onboarding",
+    "group": "top",
+    "vp": "tablet",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 30
+  },
+  {
+    "snippet": "onboarding",
+    "group": "top",
+    "vp": "mobile",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 30
+  },
+  {
+    "snippet": "operator-qa",
+    "group": "top",
+    "vp": "desktop",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 12
+  },
+  {
+    "snippet": "operator-qa",
+    "group": "top",
+    "vp": "tablet",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 12
+  },
+  {
+    "snippet": "operator-qa",
+    "group": "top",
+    "vp": "mobile",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 12
+  },
+  {
+    "snippet": "provider-ingestion-ledger",
+    "group": "top",
+    "vp": "desktop",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 34
+  },
+  {
+    "snippet": "provider-ingestion-ledger",
+    "group": "top",
+    "vp": "tablet",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 34
+  },
+  {
+    "snippet": "provider-ingestion-ledger",
+    "group": "top",
+    "vp": "mobile",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 34
+  },
+  {
+    "snippet": "run-timeline",
+    "group": "top",
+    "vp": "desktop",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 44
+  },
+  {
+    "snippet": "run-timeline",
+    "group": "top",
+    "vp": "tablet",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 44
+  },
+  {
+    "snippet": "run-timeline",
+    "group": "top",
+    "vp": "mobile",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 44
+  },
+  {
+    "snippet": "staging-browser-validation",
+    "group": "top",
+    "vp": "desktop",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 38
+  },
+  {
+    "snippet": "staging-browser-validation",
+    "group": "top",
+    "vp": "tablet",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 38
+  },
+  {
+    "snippet": "staging-browser-validation",
+    "group": "top",
+    "vp": "mobile",
+    "narrowCards": [],
+    "midWordBreak": [],
+    "charByChar": [],
+    "gridCols": {},
+    "minProseW": 38
+  }
+]

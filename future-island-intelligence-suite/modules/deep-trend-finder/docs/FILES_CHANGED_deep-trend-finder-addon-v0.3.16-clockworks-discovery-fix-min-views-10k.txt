@@ -1,0 +1,7 @@
+future-island-deep-trend-finder-addon.php
+includes/providers/class-fidtf-provider-tiktok.php
+includes/class-fidtf-settings.php
+includes/class-fidtf-source-job-service.php
+assets/js/fidtf-frontend.js
+docs/CHANGELOG_deep-trend-finder-addon-v0.3.16-clockworks-discovery-fix-min-views-10k.md
+docs/FILES_CHANGED_deep-trend-finder-addon-v0.3.16-clockworks-discovery-fix-min-views-10k.txt

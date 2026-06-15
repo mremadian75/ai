@@ -1,0 +1,94 @@
+$ php tests/test-v0932-real-browser-ui-bugfix.php
+v0.9.32 real browser UI bugfix checks passed: 34 / 34
+$ node tests/test-fiis-signal-productization.js
+  PASS  1: route bar = Source→Signals→Insight→Brief→Draft→Memory→Usage
+  PASS  1: data-aware states (source completed when signals exist, insight current)
+  PASS  2: low confidence + 1 channel ⇒ insufficient ⇒ cannot_approve
+  PASS  2: insufficient ⇒ no brief
+  PASS  2: approve button DISABLED even with service wired, honest reason (no silent approval)
+  PASS  3: sufficient evidence still requires reviewer confirmation (never auto-approve)
+  PASS  3: sufficient ⇒ brief allowed (with caution)
+  PASS  4: confident_recommendations_allowed=false forces insufficient/cannot_approve
+  PASS  5: object CTAs disabled when backend services not flagged wired
+  PASS  5: generate draft blocked w/o approved insight/brief
+  PASS  6: no usage event ⇒ honest missing message
+  PASS  6: real usage shows present numbers only; absent cost/credits stay null (never fabricated)
+  PASS  7: renderProductization returns non-empty HTML
+  PASS  7: HTML contains route bar + evidence gate + usage panel
+  PASS  7: recommendation text is HTML-escaped (no XSS passthrough)
+  PASS  7: no secret patterns in rendered output
+  PASS  8: disabled actions expose no data-fiis-action hook
+  PASS  8b: usage in meta renders as posted (not missing)
+  PASS  8b: usage_event alias renders as pending
+  PASS  8b: missing usage still shows honest missing state
+  PASS  8b: meta.confident_recommendations_allowed=false blocks approval
+  PASS  8b: bare boolean services do NOT enable actions (no real contract)
+  PASS  8b: real contract (nonce+action) enables brief/memory
+  PASS  8b: draft enables only with approved_insight/brief AND a real contract
+  PASS  8b: draft stays disabled when no approved insight/brief, even with a wired service
+  PASS  8b: gate is UI-only (no implied server enforcement) by default
+  PASS  8b: gate reflects server lifecycle status when threaded
+  PASS  8b: UI-only gate carries an honest "interface pre-check" label
+  PASS  9b: Evidence Gate title is Spanish-first
+  PASS  9b: low confidence is rendered as baja
+  PASS  9b: route labels use Spanish visible UI
+  PASS  9b: stale English visible labels removed from productization block
+  PASS  8c: renderStructuredItemAnalysis accepts meta
+  PASS  8c: renderAnalysisPanel passes meta through
+  PASS  8c: module is called with productizationMeta (not {})
+  PASS  8c: no stale empty-meta productization calls remain
+  PASS  9: model-first label replaced with user-value 'Análisis asistido por IA'
+  PASS  9: missing 'select' label added (Spanish default 'Seleccionar')
+  PASS  9: 'scraper' primary naming removed from fa locale
+  PASS  9: productization module registered and ves-frontend depends on it (load order)
+
+Signal productization rules: 40 passed, 0 failed
+$ php tests/test-ves-intelligence-map.php
+  PASS  1: run node built
+  PASS  1: insight node built
+  PASS  1: opportunity node built
+  PASS  1: brief node built
+  PASS  1: memory node built
+  PASS  1: aggregated evidence node built for run with refs
+  PASS  2: insight --generated_by--> run
+  PASS  2: opportunity --derived_from--> insight
+  PASS  2: opportunity --converted_to--> brief
+  PASS  2: brief --derived_from--> insight
+  PASS  2: memory --stored_as_memory--> run
+  PASS  2: evidence --created_from--> run
+  PASS  3: no edge references a missing node
+  PASS  3: all edge types are canonical
+  PASS  4: run node aggregates multiple relationships
+  PASS  5: 0..1 confidence normalised to 0..100
+  PASS  5: evidence_ref_count preserved on insight node
+  PASS  5: evidence_validation_status carried through
+  PASS  6: connected graph is not empty
+  PASS  6: stats counts match
+  PASS  6: nodes_by_type counts insights
+  PASS  7: type filter restricts node types
+  PASS  8: low-confidence insight excluded by min_confidence
+  PASS  8: high-confidence insight retained
+  PASS  9: node count respects max_nodes cap
+  PASS  9: run hub survives capping
+  PASS  9: stats flag capped=true
+  PASS  10: empty input yields empty state with message
+  PASS  11: assemble_graph does not mutate the input sets
+  PASS  12: malformed sets handled without error
+  PASS  13: workspace_id cast to int
+  PASS  13: days clamped to max 365
+  PASS  13: max_nodes clamped to hard cap
+  PASS  13: unknown types dropped, known kept
+  PASS  13: statuses lowercased/sanitised
+  PASS  13: run_id stripped of unsafe chars
+
+Intelligence Map relationship-graph builder: 36 passed, 0 failed
+$ php tests/test-v092-staging-browser-validation-readiness.php
+v0.9.2 staging browser validation readiness checks passed: 37 / 37
+$ php tests/test-v091-ui-ux-private-beta-upgrade.php
+v0.9.1 UI/UX private beta upgrade checks passed: 81 / 81
+$ php tests/test-v091-orchestration-agnostic-correction.php
+v0.9.1 orchestration-agnostic correction checks passed: 39 / 39
+$ php tests/test-v090-onboarding-qa-report-hardening.php
+v0.9.0 onboarding QA and report hardening checks passed: 11 / 11
+$ php tests/test-v090-ingestion-ledger-filters-diagnostics.php
+v0.9.0 ingestion ledger filters and diagnostics checks passed: 9 / 9

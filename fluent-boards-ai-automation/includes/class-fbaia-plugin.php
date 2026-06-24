@@ -34,8 +34,11 @@ class FBAIA_Plugin
         $runner = new FBAIA_Runner();
         $runner->register();
 
-        $rest = new FBAIA_REST_Controller();
-        $rest->register();
+        // Load the REST controller only on REST requests so its class file (and routes)
+        // never touch normal page loads.
+        add_action('rest_api_init', function () {
+            (new FBAIA_REST_Controller())->routes();
+        });
 
         if (is_admin()) {
             $admin = new FBAIA_Admin();

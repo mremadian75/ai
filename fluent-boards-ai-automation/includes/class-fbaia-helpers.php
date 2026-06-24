@@ -496,6 +496,8 @@ class FBAIA_Helpers
             'custom_field_changed'      => 'Custom field changed',
             'task_attachment_added'     => 'Task attachment added',
             'task_attachment_deleted'   => 'Task attachment deleted',
+            'task_dependency_added'     => 'Task dependency added',
+            'task_dependency_removed'   => 'Task dependency removed',
             'external_event'            => 'Manual REST event',
         ];
     }

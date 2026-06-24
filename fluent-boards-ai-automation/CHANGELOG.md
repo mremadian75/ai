@@ -1,3 +1,24 @@
+# 0.9.5
+
+Performance and integration release. This add-on stays a **separate companion** to Fluent Boards / Fluent Boards Pro (the right architecture for updateability, safety, and load time) — it is not merged into the host plugin.
+
+### Faster
+
+- **Lazy class autoloader.** Replaced eager `require_once` of all ~18 class files on every request with an `spl_autoload_register()` that loads each class only when it is first used. A normal front-end page load now pulls in almost none of the plugin's classes.
+- **REST controller is loaded only on REST requests** (`rest_api_init`), so its class and route registration never run on normal admin/front page loads.
+
+### Deeper integration
+
+- Added **task dependency** triggers — `task_dependency_added` and `task_dependency_removed` (real Fluent Boards Pro hooks). Dependencies and blockers are high-signal for task intelligence, so the assistant can react when a task becomes blocked or unblocked. Both are **opt-in** (off by default) and honor the master engine switch and review-first policy like every other trigger.
+
+### More accurate
+
+- Dependency events flow into the existing AI context, which already reasons about `dependencies` / `blocked_by`, so analyses reflect blocking relationships when those events are enabled.
+
+### Tests
+
+- Added autoloader class→file mapping guards and trigger checks (69 checks total).
+
 # 0.9.4
 
 Fixes the admin sidebar / capability bug: activating the plugin could hide WordPress **Settings** submenu items and feel like it "restricted admin access." Root cause: the **AI Company Knowledge** custom post type auto-injected itself into the core Settings menu (`show_in_menu => 'options-general.php'`) using a custom `capability_type` plus a `map_meta_cap` anti-pattern (meta caps `edit_post`/`read_post`/`delete_post` listed under `capabilities`). On some sites this interferes with how WordPress builds/filters the Settings submenu.

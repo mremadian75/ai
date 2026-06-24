@@ -50,6 +50,41 @@ class FBAIA_Runner
         add_action('fluent_boards/task_custom_field_changed', [$this, 'on_custom_field_changed'], 10, 5);
         add_action('fluent_boards/task_attachment_added', [$this, 'on_task_attachment_added'], 10, 1);
         add_action('fluent_boards/task_attachment_deleted', [$this, 'on_task_attachment_deleted'], 10, 1);
+
+        // Dependency events (Fluent Boards Pro). Dependencies and blockers are high-signal for
+        // task intelligence, so the assistant can react when a task is blocked or unblocked.
+        add_action('fluent_boards/task_dependency_added', [$this, 'on_task_dependency_added'], 10, 2);
+        add_action('fluent_boards/task_dependency_removed', [$this, 'on_task_dependency_removed'], 10, 2);
+    }
+
+    public function on_task_dependency_added($task = null, $dependency = null)
+    {
+        $this->queue('task_dependency_added', $this->dependency_payload($task, $dependency));
+    }
+
+    public function on_task_dependency_removed($task = null, $dependency = null)
+    {
+        $this->queue('task_dependency_removed', $this->dependency_payload($task, $dependency));
+    }
+
+    /**
+     * Build a normalized payload for dependency events. Fluent Boards may pass the task as an
+     * object/array or as a numeric id, so handle both robustly.
+     */
+    private function dependency_payload($task, $dependency)
+    {
+        $payload = [];
+        if (is_numeric($task)) {
+            $payload['task_id'] = (int) $task;
+        } elseif ($task !== null) {
+            $payload['task'] = $task;
+        }
+        if (is_numeric($dependency)) {
+            $payload['dependency_task_id'] = (int) $dependency;
+        } elseif ($dependency !== null) {
+            $payload['dependency'] = $dependency;
+        }
+        return $payload;
     }
 
     public function on_task_created($task)

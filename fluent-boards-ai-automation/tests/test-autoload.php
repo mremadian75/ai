@@ -14,7 +14,7 @@ $classes = [
     'FBAIA_Audit_Trail', 'FBAIA_Usage_Tracker', 'FBAIA_Automation_Playbooks', 'FBAIA_Health_Check',
     'FBAIA_Insights', 'FBAIA_Exporter', 'FBAIA_Context_Builder', 'FBAIA_OpenAI_Client',
     'FBAIA_FluentBoards_Adapter', 'FBAIA_Internal_Actions', 'FBAIA_Runner', 'FBAIA_REST_Controller',
-    'FBAIA_Admin', 'FBAIA_Board_UI', 'FBAIA_Plugin',
+    'FBAIA_Admin', 'FBAIA_Board_UI', 'FBAIA_Recipes', 'FBAIA_Plugin',
 ];
 
 $inc = dirname(__DIR__) . '/includes/';

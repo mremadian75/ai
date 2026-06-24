@@ -1,3 +1,20 @@
+# 0.10.0
+
+### Added — Automation Recipes (monday.com-style)
+
+A deterministic **"When [trigger] → If [conditions] → Then [actions]"** engine that complements the AI layer — inspired by monday.com automations, but built to the plugin's safe-by-default standard.
+
+- **Triggers:** any Fluent Boards event (task created, stage/priority/date changed, comment created, dependency added/removed, etc.).
+- **Conditions:** `field op value` with operators `equals, not_equals, contains, not_contains, is_empty, is_not_empty, gt, lt, in`, combined with `match: all|any`. Fields include `priority, status, stage_id, board_id, due_at, title, description, label, comment, assignee, event`, plus an optional per-recipe `board_allowlist`.
+- **Actions:** `notify` (email), `flag` (log + audit), and the task-mutating `set_priority`, `create_subtasks`, `add_comment`.
+- **Safe by default:**
+  - The whole engine is **off** until you enable **Automations → Enable recipes**.
+  - Non-mutating actions (notify/flag) run when enabled; **mutating actions only run when a recipe is `run_mode: auto` AND the global "Allow recipe auto-changes" opt-in is on** — otherwise they are recorded as *held* (visible in Logs + Audit), never silently applied.
+  - Recipes ride the existing async, deduped, board-filtered pipeline and respect the master engine switch.
+  - Recipe-written comments carry the generated marker, so they never re-trigger comment automation (no loops).
+- **Editor:** a JSON recipe editor on the **Automations** tab with copyable examples. Recipes are stored in their own `fbaia_recipes` option (kept out of the settings blob), removed on uninstall.
+- Extensively unit-tested (parsing, condition logic, field resolution, and the execution safety tiering).
+
 # 0.9.8
 
 ### Added — zero-friction in-board workflow

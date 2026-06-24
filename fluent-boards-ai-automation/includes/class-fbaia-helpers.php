@@ -126,6 +126,10 @@ class FBAIA_Helpers
             'admin_ui_density'               => 'comfortable',
             'admin_show_guidance'            => 'yes',
 
+            // v0.10 monday-style automation recipes (deterministic When/If/Then).
+            'recipes_enabled'                => 'no',
+            'recipe_allow_mutations'         => 'no',
+
             // Legacy webhook settings are retained only so upgrades do not lose data.
             'webhook_url'                    => '',
             'webhook_secret'                 => '',
@@ -266,6 +270,8 @@ class FBAIA_Helpers
             'review_lenses'                   => ['type' => 'largetext'],
             'admin_ui_density'                => ['type' => 'enum', 'options' => ['comfortable', 'compact']],
             'admin_show_guidance'             => ['type' => 'checkbox'],
+            'recipes_enabled'                 => ['type' => 'checkbox'],
+            'recipe_allow_mutations'          => ['type' => 'checkbox'],
         ];
     }
 
@@ -305,6 +311,7 @@ class FBAIA_Helpers
                 'overdue_scan_enabled', 'overdue_comment_enabled', 'overdue_email_enabled', 'overdue_scan_limit',
                 'daily_digest_enabled', 'daily_digest_email', 'daily_digest_hour',
                 'weekly_intelligence_enabled', 'weekly_intelligence_email', 'weekly_intelligence_day', 'weekly_intelligence_hour',
+                'recipes_enabled', 'recipe_allow_mutations',
             ],
             'memory' => [
                 'company_profile', 'company_products', 'company_goals', 'company_customers',

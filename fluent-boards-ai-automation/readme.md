@@ -2,8 +2,10 @@
 
 Internal WordPress AI automation and project-intelligence add-on for the official Fluent Boards / Fluent Boards Pro plugin.
 
-Version: 0.9.8
+Version: 0.10.0
 
+> **0.10.0** adds **Automation Recipes** — a monday.com-style "when → if → then" engine (triggers, conditions, actions) that complements the AI layer. Off by default; task-changing actions need an explicit per-recipe `auto` mode plus a global opt-in, so it stays safe-by-default. Manage them on the **Automations** tab.
+>
 > **0.9.8** auto-detects the open task (no manual ID entry) and lets a manager **Approve & apply** or **Reject** the AI suggestion directly inside the board panel.
 >
 > **0.9.7** makes the in-board **"AI Analyze"** panel show the result inline (summary, priority, confidence, risk) instead of just "queued", via an optional `task_id` filter on the suggestions REST endpoint that returns a slim, display-only projection.

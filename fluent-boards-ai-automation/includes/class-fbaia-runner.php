@@ -188,7 +188,12 @@ class FBAIA_Runner
         }
 
         $event = sanitize_key($event);
-        if (!$force && !in_array($event, $settings['triggers'] ?? [], true)) {
+        // Queue the event when it is an enabled trigger OR an enabled automation recipe targets
+        // it — so recipes can react to events even if the global AI trigger is off.
+        $recipe_match = (($settings['recipes_enabled'] ?? 'no') === 'yes')
+            && class_exists('FBAIA_Recipes')
+            && FBAIA_Recipes::has_enabled_for_event($event);
+        if (!$force && !$recipe_match && !in_array($event, $settings['triggers'] ?? [], true)) {
             return ['queued' => false, 'reason' => 'trigger_not_enabled', 'event' => $event];
         }
 
@@ -256,6 +261,11 @@ class FBAIA_Runner
         $payload = is_array($payload) ? FBAIA_Helpers::normalize($payload) : [];
         if (FBAIA_Helpers::payload_contains_generated_marker($payload)) {
             return;
+        }
+
+        // Deterministic automation recipes (monday-style) run independently of the AI layer.
+        if (class_exists('FBAIA_Recipes') && ($settings['recipes_enabled'] ?? 'no') === 'yes') {
+            FBAIA_Recipes::run($event, $payload);
         }
 
         $mode = $settings['mode'] ?? 'internal_ai_actions';

@@ -222,6 +222,26 @@ if (!function_exists('get_current_user_id')) {
         return 1;
     }
 }
+if (!function_exists('site_url')) {
+    function site_url($path = '')
+    {
+        return 'http://example.test' . $path;
+    }
+}
+if (!function_exists('wp_specialchars_decode')) {
+    function wp_specialchars_decode($string, $quote_style = ENT_QUOTES)
+    {
+        return html_entity_decode((string) $string, $quote_style);
+    }
+}
+$GLOBALS['__fbaia_mail'] = [];
+if (!function_exists('wp_mail')) {
+    function wp_mail($to, $subject, $message, $headers = '', $attachments = [])
+    {
+        $GLOBALS['__fbaia_mail'][] = ['to' => $to, 'subject' => $subject, 'message' => $message];
+        return true;
+    }
+}
 
 // Minimal WP_REST_Request / WP_REST_Response stand-ins for controller-level checks.
 if (!class_exists('WP_REST_Request')) {

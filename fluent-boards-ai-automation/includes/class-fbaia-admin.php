@@ -117,6 +117,7 @@ class FBAIA_Admin
     public function handle_actions()
     {
         if (!isset($_POST['fbaia_save_settings'])
+            && !isset($_POST['fbaia_save_recipes'])
             && !isset($_POST['fbaia_clear_logs'])
             && !isset($_POST['fbaia_clear_audit'])
             && !isset($_POST['fbaia_export_snapshot'])
@@ -142,6 +143,13 @@ class FBAIA_Admin
             check_admin_referer('fbaia_save_settings');
             $this->handle_save_settings();
             // handle_save_settings() always redirects + exits.
+        }
+
+        if (isset($_POST['fbaia_save_recipes'])) {
+            check_admin_referer('fbaia_save_recipes');
+            $raw = isset($_POST['fbaia_recipes_json']) ? wp_unslash($_POST['fbaia_recipes_json']) : '';
+            $result = class_exists('FBAIA_Recipes') ? FBAIA_Recipes::save_from_raw($raw) : ['saved' => 0];
+            $this->redirect('automations', ['fbaia_recipes_saved' => (string) absint($result['saved'] ?? 0)]);
         }
 
         if (isset($_POST['fbaia_clear_logs'])) {
@@ -491,6 +499,9 @@ class FBAIA_Admin
         }
         if (isset($_GET['fbaia_export']) && sanitize_key(wp_unslash($_GET['fbaia_export'])) === 'failed') {
             echo '<div class="notice notice-error inline"><p>' . esc_html__('Export failed.', 'fluent-boards-ai-automation') . '</p></div>';
+        }
+        if (isset($_GET['fbaia_recipes_saved'])) {
+            printf('<div class="notice notice-success inline"><p>%s</p></div>', esc_html(sprintf(__('Saved %d recipe(s).', 'fluent-boards-ai-automation'), absint(wp_unslash($_GET['fbaia_recipes_saved'])))));
         }
     }
 
@@ -868,9 +879,49 @@ class FBAIA_Admin
                 </div>
             </div>
 
+            <h3><?php esc_html_e('Automation recipes (monday-style)', 'fluent-boards-ai-automation'); ?></h3>
+            <table class="form-table" role="presentation">
+                <?php $this->checkbox_row('recipes_enabled', __('Enable recipes', 'fluent-boards-ai-automation'), __('Run deterministic "when → if → then" recipes (defined below) in addition to AI suggestions', 'fluent-boards-ai-automation'), $settings); ?>
+                <?php $this->checkbox_row('recipe_allow_mutations', __('Allow recipe auto-changes', 'fluent-boards-ai-automation'), __('Permit recipes marked run_mode=auto to change tasks (priority/subtasks/comments). Off = those actions are held and only notify/flag run.', 'fluent-boards-ai-automation'), $settings, true); ?>
+            </table>
+
             <?php $this->section_form_close(__('Save Automations', 'fluent-boards-ai-automation')); ?>
         </div>
+
+        <div class="fbaia-card fbaia-full" id="fbaia-recipes">
+            <h2><?php esc_html_e('Recipes', 'fluent-boards-ai-automation'); ?></h2>
+            <p class="description"><?php esc_html_e('Define recipes as a JSON array. Each: when a trigger fires and the conditions match, run the actions. Non-mutating actions (notify, flag) always run when recipes are enabled; mutating actions (set_priority, create_subtasks, add_comment) need run_mode "auto" plus the "Allow recipe auto-changes" toggle above.', 'fluent-boards-ai-automation'); ?></p>
+            <form method="post" class="fbaia-section-form" data-fbaia-dirty-watch="1">
+                <?php wp_nonce_field('fbaia_save_recipes'); ?>
+                <input type="hidden" name="fbaia_save_recipes" value="1">
+                <div class="fbaia-field-block">
+                    <label for="fbaia-recipes-json"><strong><?php esc_html_e('Recipes (JSON)', 'fluent-boards-ai-automation'); ?></strong></label>
+                    <textarea id="fbaia-recipes-json" name="fbaia_recipes_json" rows="12" class="large-text code"><?php echo esc_textarea($this->recipes_json()); ?></textarea>
+                </div>
+                <p class="submit"><button type="submit" class="button button-primary"><?php esc_html_e('Save recipes', 'fluent-boards-ai-automation'); ?></button></p>
+            </form>
+            <details>
+                <summary><?php esc_html_e('Example recipes (copy & adapt)', 'fluent-boards-ai-automation'); ?></summary>
+                <pre><?php echo esc_html(class_exists('FBAIA_Recipes') ? FBAIA_Recipes::example_template() : ''); ?></pre>
+            </details>
+            <p class="description">
+                <?php esc_html_e('Fields per recipe: name, enabled (true/false), trigger (a Triggers event key above), match (all|any), conditions [{field, op, value}], actions [{type, value|to|message|items}], run_mode (review|auto), board_allowlist (optional).', 'fluent-boards-ai-automation'); ?><br>
+                <?php esc_html_e('Operators: equals, not_equals, contains, not_contains, is_empty, is_not_empty, gt, lt, in. Fields: priority, status, stage_id, board_id, due_at, title, description, label, comment, assignee, event. Actions: notify, flag, set_priority, create_subtasks, add_comment.', 'fluent-boards-ai-automation'); ?>
+            </p>
+        </div>
         <?php
+    }
+
+    private function recipes_json()
+    {
+        if (!class_exists('FBAIA_Recipes')) {
+            return '';
+        }
+        $recipes = FBAIA_Recipes::all();
+        if (empty($recipes)) {
+            return '';
+        }
+        return wp_json_encode($recipes, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     }
 
     // ---------------------------------------------------------------------

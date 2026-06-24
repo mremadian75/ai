@@ -150,10 +150,38 @@ class FBAIA_REST_Controller
             return new WP_REST_Response(['ok' => false, 'error' => 'Suggestion store is not available.'], 500);
         }
         $status = sanitize_key($request->get_param('status') ?: '');
+        $items = FBAIA_Suggestion_Store::all($status);
+
+        // Optional task filter. When set, return a slim, display-only projection (no raw
+        // ai_payload/payload) — keeps the in-board panel fast and avoids shipping the full
+        // analysis blob to the browser.
+        $task_id = absint($request->get_param('task_id'));
+        if ($task_id) {
+            $items = array_values(array_filter($items, function ($item) use ($task_id) {
+                return (int) ($item['task_id'] ?? 0) === $task_id;
+            }));
+            $items = array_map([$this, 'slim_suggestion'], $items);
+        }
+
         return [
             'ok' => true,
             'stats' => FBAIA_Suggestion_Store::stats(),
-            'suggestions' => FBAIA_Suggestion_Store::all($status),
+            'suggestions' => $items,
+        ];
+    }
+
+    private function slim_suggestion(array $item)
+    {
+        return [
+            'id' => sanitize_text_field($item['id'] ?? ''),
+            'task_id' => (int) ($item['task_id'] ?? 0),
+            'status' => sanitize_key($item['status'] ?? 'pending'),
+            'created_at' => sanitize_text_field($item['created_at'] ?? ''),
+            'summary' => sanitize_textarea_field($item['summary'] ?? ''),
+            'recommended_priority' => sanitize_key($item['recommended_priority'] ?? ''),
+            'confidence' => (float) ($item['confidence'] ?? 0),
+            'risk_score' => (float) ($item['risk_score'] ?? 0),
+            'decision_brief' => sanitize_textarea_field($item['decision_brief'] ?? ''),
         ];
     }
 

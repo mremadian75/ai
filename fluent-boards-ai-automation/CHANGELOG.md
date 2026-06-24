@@ -1,3 +1,10 @@
+# 0.9.7
+
+### Improved — in-board result, not just "queued"
+
+- The in-board **AI Analyze** panel now shows the result **inline**: after queuing, it polls for the new suggestion and renders the summary, recommended priority, confidence, and risk right in the panel — with a one-click link to the full review queue. If the background job is still running after a few seconds, it falls back to a clear "it will appear in the review queue shortly" message.
+- The `/suggestions` REST endpoint accepts an optional `task_id` filter and returns a **slim, display-only projection** (no raw `ai_payload`/`payload`) for that case, so the panel stays fast and the full analysis blob is never shipped to the browser. The unfiltered endpoint is unchanged for the admin tables.
+
 # 0.9.6
 
 ### Added — in-board AI analysis

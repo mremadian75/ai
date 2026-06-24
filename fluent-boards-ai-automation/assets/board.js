@@ -50,6 +50,7 @@
             '<input id="fbaia-bp-task" type="number" min="1" class="fbaia-bp-input" value="' + esc(detectTaskId()) + '">' +
             '<button type="button" class="fbaia-bp-go">' + esc(cfg.i18n.analyze) + '</button></div>' +
             '<p class="fbaia-bp-status" role="status" aria-live="polite"></p>' +
+            '<div class="fbaia-bp-result" hidden></div>' +
             '<div class="fbaia-bp-links"><a href="' + esc(cfg.reviewUrl) + '">' + esc(cfg.i18n.review) + '</a> · ' +
             '<a href="' + esc(cfg.settingsUrl) + '">' + esc(cfg.i18n.settings) + '</a></div>';
 
@@ -84,9 +85,62 @@
         });
     }
 
+    function getJSON(url) {
+        return fetch(url, {
+            method: 'GET',
+            headers: { 'X-WP-Nonce': cfg.nonce },
+            credentials: 'same-origin'
+        }).then(function (r) { return r.json().catch(function () { return {}; }); });
+    }
+
+    function latestFor(taskId) {
+        return getJSON(cfg.restRoot + 'suggestions?task_id=' + taskId).then(function (d) {
+            var list = (d && d.suggestions) ? d.suggestions : [];
+            return list.length ? list[0] : null; // newest first
+        }).catch(function () { return null; });
+    }
+
+    function pct(n) { return Math.round((parseFloat(n) || 0) * 100); }
+
+    function renderResult(panel, s) {
+        var box = panel.querySelector('.fbaia-bp-result');
+        var prio = s.recommended_priority ? '<span class="fbaia-bp-badge fbaia-bp-prio-' + esc(s.recommended_priority) + '">' +
+            esc(cfg.i18n.priority) + ': ' + esc(s.recommended_priority) + '</span>' : '';
+        box.innerHTML =
+            '<p class="fbaia-bp-summary">' + esc(s.summary || s.decision_brief || '') + '</p>' +
+            '<p class="fbaia-bp-meta">' + prio +
+            '<span class="fbaia-bp-badge">' + esc(cfg.i18n.confidence) + ': ' + pct(s.confidence) + '%</span>' +
+            '<span class="fbaia-bp-badge">' + esc(cfg.i18n.risk) + ': ' + pct(s.risk_score) + '%</span></p>' +
+            '<p class="fbaia-bp-pending">' + esc(cfg.i18n.pendingReview) + ' · ' +
+            '<a href="' + esc(cfg.reviewUrl) + '">' + esc(cfg.i18n.review) + '</a></p>';
+        box.hidden = false;
+    }
+
+    function poll(panel, taskId, prevId, tries) {
+        var status = panel.querySelector('.fbaia-bp-status');
+        var go = panel.querySelector('.fbaia-bp-go');
+        latestFor(taskId).then(function (s) {
+            if (s && s.id !== prevId) {
+                status.textContent = '';
+                status.className = 'fbaia-bp-status is-ok';
+                renderResult(panel, s);
+                go.disabled = false;
+                return;
+            }
+            if (tries <= 0) {
+                status.innerHTML = esc(cfg.i18n.stillRunning) + ' <a href="' + esc(cfg.reviewUrl) + '">' + esc(cfg.i18n.review) + '</a>';
+                status.className = 'fbaia-bp-status is-warn';
+                go.disabled = false;
+                return;
+            }
+            setTimeout(function () { poll(panel, taskId, prevId, tries - 1); }, 3000);
+        });
+    }
+
     function analyze(panel) {
         var input = panel.querySelector('#fbaia-bp-task');
         var status = panel.querySelector('.fbaia-bp-status');
+        var result = panel.querySelector('.fbaia-bp-result');
         var go = panel.querySelector('.fbaia-bp-go');
         var id = parseInt(input.value, 10);
 
@@ -101,30 +155,37 @@
             return;
         }
 
+        result.hidden = true;
+        result.innerHTML = '';
         status.textContent = cfg.i18n.working;
         status.className = 'fbaia-bp-status';
         go.disabled = true;
 
-        fetch(cfg.restRoot + 'task/' + id + '/analyze', {
-            method: 'POST',
-            headers: { 'X-WP-Nonce': cfg.nonce, 'Content-Type': 'application/json' },
-            credentials: 'same-origin'
-        }).then(function (r) {
-            return r.json().catch(function () { return {}; });
-        }).then(function (d) {
-            go.disabled = false;
-            if (d && d.queued) {
-                status.innerHTML = esc(cfg.i18n.queued) + ' <a href="' + esc(cfg.reviewUrl) + '">' + esc(cfg.i18n.review) + '</a>';
-                status.className = 'fbaia-bp-status is-ok';
-            } else {
-                var reason = (d && (d.reason || d.error)) ? (d.reason || d.error) : 'error';
-                status.textContent = cfg.i18n.notQueued + ' (' + reason + ')';
+        // Record the newest existing suggestion id for this task so we can detect the new one.
+        latestFor(id).then(function (prev) {
+            var prevId = prev ? prev.id : null;
+            fetch(cfg.restRoot + 'task/' + id + '/analyze', {
+                method: 'POST',
+                headers: { 'X-WP-Nonce': cfg.nonce, 'Content-Type': 'application/json' },
+                credentials: 'same-origin'
+            }).then(function (r) {
+                return r.json().catch(function () { return {}; });
+            }).then(function (d) {
+                if (d && d.queued) {
+                    status.textContent = cfg.i18n.analyzing;
+                    status.className = 'fbaia-bp-status';
+                    poll(panel, id, prevId, 8);
+                } else {
+                    go.disabled = false;
+                    var reason = (d && (d.reason || d.error)) ? (d.reason || d.error) : 'error';
+                    status.textContent = cfg.i18n.notQueued + ' (' + reason + ')';
+                    status.className = 'fbaia-bp-status is-warn';
+                }
+            }).catch(function () {
+                go.disabled = false;
+                status.textContent = cfg.i18n.error;
                 status.className = 'fbaia-bp-status is-warn';
-            }
-        }).catch(function () {
-            go.disabled = false;
-            status.textContent = cfg.i18n.error;
-            status.className = 'fbaia-bp-status is-warn';
+            });
         });
     }
 

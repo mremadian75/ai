@@ -35,6 +35,17 @@
 .fbaia-bp-status.is-warn { color: #8a4b00; }
 .fbaia-bp-links { margin-top: 6px; font-size: 12px; }
 
+.fbaia-bp-result { margin: 8px 0; padding: 10px; background: #f6f7f7; border: 1px solid #e0e3df; border-radius: 10px; }
+.fbaia-bp-result[hidden] { display: none; }
+.fbaia-bp-summary { margin: 0 0 8px; line-height: 1.45; }
+.fbaia-bp-meta { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 6px; }
+.fbaia-bp-badge { display: inline-block; background: #eef1ee; border: 1px solid #dfe5dc; border-radius: 999px; padding: 1px 8px; font-size: 11px; font-weight: 600; color: #3c4a3f; }
+.fbaia-bp-prio-urgent { background: #fce9e9; border-color: #f2b8bd; color: #8a1f11; }
+.fbaia-bp-prio-high { background: #fff1e3; border-color: #f0c79a; color: #8a4b00; }
+.fbaia-bp-prio-medium { background: #eef6ff; border-color: #bcd6f2; color: #135e96; }
+.fbaia-bp-prio-low { background: #eef1ee; border-color: #dfe5dc; color: #3c4a3f; }
+.fbaia-bp-pending { margin: 0; font-size: 12px; color: #646970; }
+
 @media (max-width: 600px) {
     .fbaia-board-panel { right: 8px; left: 8px; width: auto; }
 }

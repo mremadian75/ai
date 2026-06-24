@@ -216,6 +216,52 @@ if (!function_exists('is_wp_error')) {
         return $thing instanceof WP_Error;
     }
 }
+if (!function_exists('get_current_user_id')) {
+    function get_current_user_id()
+    {
+        return 1;
+    }
+}
+
+// Minimal WP_REST_Request / WP_REST_Response stand-ins for controller-level checks.
+if (!class_exists('WP_REST_Request')) {
+    class WP_REST_Request
+    {
+        private $params;
+        public function __construct($params = [])
+        {
+            $this->params = is_array($params) ? $params : [];
+        }
+        public function get_param($key)
+        {
+            return array_key_exists($key, $this->params) ? $this->params[$key] : null;
+        }
+        public function set_param($key, $value)
+        {
+            $this->params[$key] = $value;
+        }
+        public function get_params()
+        {
+            return $this->params;
+        }
+        public function get_json_params()
+        {
+            return $this->params;
+        }
+    }
+}
+if (!class_exists('WP_REST_Response')) {
+    class WP_REST_Response
+    {
+        public $data;
+        public $status;
+        public function __construct($data = null, $status = 200)
+        {
+            $this->data = $data;
+            $this->status = $status;
+        }
+    }
+}
 
 // Stub for FBAIA_Plugin::reschedule_events() so settings saves don't fatal in isolation.
 if (!class_exists('FBAIA_Plugin')) {

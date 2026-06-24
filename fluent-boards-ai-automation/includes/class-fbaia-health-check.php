@@ -84,6 +84,13 @@ class FBAIA_Health_Check
 
     private static function options_writable()
     {
+        // Cache per request: diagnostics() can run several times per admin page load
+        // (dashboard cards, health panel) — probe the options table at most once.
+        static $cached = null;
+        if ($cached !== null) {
+            return $cached;
+        }
+
         $key = 'fbaia_writable_probe';
         $value = 'probe_' . substr(md5(current_time('mysql', true)), 0, 8);
         $ok = update_option($key, $value, false);
@@ -91,7 +98,8 @@ class FBAIA_Health_Check
             $ok = false;
         }
         delete_option($key);
-        return (bool) $ok;
+        $cached = (bool) $ok;
+        return $cached;
     }
 
     private static function has_company_memory(array $settings)

@@ -1,3 +1,18 @@
+# 0.9.4
+
+Fixes the admin sidebar / capability bug: activating the plugin could hide WordPress **Settings** submenu items and feel like it "restricted admin access." Root cause: the **AI Company Knowledge** custom post type auto-injected itself into the core Settings menu (`show_in_menu => 'options-general.php'`) using a custom `capability_type` plus a `map_meta_cap` anti-pattern (meta caps `edit_post`/`read_post`/`delete_post` listed under `capabilities`). On some sites this interferes with how WordPress builds/filters the Settings submenu.
+
+### Fixed
+
+- The Knowledge CPT no longer injects itself into the core Settings menu (`show_in_menu => false`). The "AI Company Knowledge" link is now added by the plugin itself via a plain `add_submenu_page()` with a `manage_options` capability, so it stays visible under **Settings** without ever touching the core submenu list or other plugins' menu items.
+- Removed the `map_meta_cap` anti-pattern: the meta capabilities (`edit_post`, `read_post`, `delete_post`) are no longer listed under `capabilities` (they are derived from the primitive caps). Access remains strictly limited to administrators (`manage_options`).
+
+### Added
+
+- `FBAIA_DISABLE_KNOWLEDGE_CPT` constant — define it as `true` in `wp-config.php` to skip the Knowledge custom post type entirely. Useful as an instant escape hatch / confirmation if a site still shows any admin-menu issue.
+
+No settings, knowledge posts, or other data are affected by this change.
+
 # 0.9.3
 
 Stability, safety, and admin UX hardening release. **No settings keys were removed or renamed; all existing data is preserved and migrated automatically.**

@@ -2,9 +2,9 @@
 
 Internal WordPress AI automation and project-intelligence add-on for the official Fluent Boards / Fluent Boards Pro plugin.
 
-Version: 0.9.3
+Version: 0.9.4
 
-> **0.9.3 is a stability + safety release.** It fixes a bug where saving the settings page could wipe Company Memory / Team Directory, makes a fresh install **safe by default** (the engine is disabled until you turn it on), guards against a missing Fluent Boards, and reorganizes the admin page into a tabbed command center. All existing settings and knowledge are preserved and migrated automatically.
+> **0.9.4** fixes the admin sidebar bug: activating the plugin could hide WordPress **Settings** submenu items. The AI Company Knowledge post type no longer injects itself into the core Settings menu and the capability setup was corrected; the menu link is now added safely by the plugin. (0.9.3 fixed settings being wiped on save, made fresh installs **safe by default**, guarded against a missing Fluent Boards, and introduced the tabbed command center.) All existing settings and knowledge are preserved and migrated automatically.
 
 ## Requirements
 
@@ -205,8 +205,17 @@ This was a bug in 0.9.2 and is fixed in 0.9.3. Saving is now non-destructive and
 **I see "Settings were NOT saved … the form submission was incomplete."**
 Your server's PHP `max_input_vars` (or `post_max_size`) clipped the request. Save one tab at a time (each tab is small), or ask your host to raise `max_input_vars` (e.g. to 3000). Nothing was changed when you see this notice.
 
+**Activating the plugin hid Settings submenu items / felt like it restricted admin access.**
+Fixed in 0.9.4. The AI Company Knowledge post type used to inject itself into the core **Settings** menu with a custom capability setup that could interfere with how WordPress builds that submenu on some sites. It no longer does — the link is added safely by the plugin instead. If you ever need to rule the post type out entirely, add this to `wp-config.php`:
+
+```php
+define('FBAIA_DISABLE_KNOWLEDGE_CPT', true);
+```
+
+With that defined, the Knowledge post type is not registered at all (the rest of the plugin keeps working). If your menus return only after defining it, tell us — but 0.9.4 should already resolve it without the constant.
+
 **Other WordPress / Fluent Boards admin pages looked broken after activating.**
-0.9.3 hardens activation and admin rendering: the plugin no longer auto-enables on install, only registers Fluent Boards hooks when Fluent Boards is present, scopes all CSS under `.fbaia-wrap`, and guards every Fluent Boards reference. Update to 0.9.3 and the wider admin should be unaffected.
+0.9.3+ hardens activation and admin rendering: the plugin no longer auto-enables on install, only registers Fluent Boards hooks when Fluent Boards is present, scopes all CSS under `.fbaia-wrap`, and guards every Fluent Boards reference. Update to the latest version and the wider admin should be unaffected.
 
 **Fluent Boards "not detected" notice.**
 Install/activate the official Fluent Boards or Fluent Boards Pro plugin. Until then the add-on stays inert (no hooks, no writes).

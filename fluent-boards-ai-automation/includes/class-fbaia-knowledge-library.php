@@ -10,6 +10,12 @@ class FBAIA_Knowledge_Library
 
     public function register()
     {
+        // Escape hatch: define FBAIA_DISABLE_KNOWLEDGE_CPT in wp-config.php to skip the
+        // custom post type entirely. Useful to confirm whether the CPT is the cause of any
+        // admin-menu issue on a given site.
+        if (defined('FBAIA_DISABLE_KNOWLEDGE_CPT') && FBAIA_DISABLE_KNOWLEDGE_CPT) {
+            return;
+        }
         add_action('init', [$this, 'register_post_type'], 25);
     }
 
@@ -24,15 +30,22 @@ class FBAIA_Knowledge_Library
             ],
             'public' => false,
             'show_ui' => true,
-            'show_in_menu' => 'options-general.php',
+            // IMPORTANT: do NOT auto-inject into the core Settings menu. WordPress'
+            // _add_post_type_submenus() inserts a CPT submenu into options-general.php with
+            // the post type's own capability mapping; for an admin-only CPT with a custom
+            // capability_type this can interact badly with the Settings submenu list on some
+            // sites and hide items. We register the menu link ourselves, safely, in
+            // FBAIA_Admin::menu() using a plain manage_options add_submenu_page().
+            'show_in_menu' => false,
             'show_in_rest' => true,
             'supports' => ['title', 'editor', 'excerpt', 'revisions'],
             'capability_type' => 'fbaia_knowledge',
             'map_meta_cap' => true,
+            // Only PRIMITIVE caps belong here when map_meta_cap is true. The meta caps
+            // (edit_post / read_post / delete_post) are derived by map_meta_cap() from these
+            // primitives — listing them explicitly is an anti-pattern that breaks meta-cap
+            // mapping. All primitives require manage_options, so access stays admin-only.
             'capabilities' => [
-                'edit_post' => 'manage_options',
-                'read_post' => 'manage_options',
-                'delete_post' => 'manage_options',
                 'edit_posts' => 'manage_options',
                 'edit_others_posts' => 'manage_options',
                 'publish_posts' => 'manage_options',

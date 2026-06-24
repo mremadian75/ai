@@ -33,6 +33,20 @@ class FBAIA_Admin
             self::MENU_SLUG,
             [$this, 'page']
         );
+
+        // Add the Knowledge Library link ourselves, with a plain manage_options capability,
+        // instead of letting the custom post type auto-inject itself into the Settings menu.
+        // Keeps full control over the Settings submenu and avoids the CPT capability mapping
+        // ever affecting other admin menu items.
+        if (class_exists('FBAIA_Knowledge_Library') && post_type_exists(FBAIA_Knowledge_Library::CPT)) {
+            add_submenu_page(
+                'options-general.php',
+                __('AI Company Knowledge', 'fluent-boards-ai-automation'),
+                __('AI Company Knowledge', 'fluent-boards-ai-automation'),
+                'manage_options',
+                'edit.php?post_type=' . FBAIA_Knowledge_Library::CPT
+            );
+        }
     }
 
     public function assets($hook)

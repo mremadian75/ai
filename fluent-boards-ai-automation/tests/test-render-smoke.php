@@ -42,7 +42,7 @@ if (!defined('FBAIA_URL')) { define('FBAIA_URL', 'http://example.test/wp-content
 
 // Load the remaining classes needed to render (helpers/adapter/etc. came from bootstrap).
 $inc = dirname(__DIR__) . '/includes/';
-foreach (['knowledge-library','suggestion-store','audit-trail','automation-playbooks','health-check','insights','recipes','admin'] as $c) {
+foreach (['knowledge-library','suggestion-store','audit-trail','automation-playbooks','health-check','insights','recipes','recipe-queue','admin'] as $c) {
     require_once $inc . 'class-fbaia-' . $c . '.php';
 }
 

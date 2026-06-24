@@ -1,3 +1,25 @@
+# 0.11.0
+
+Builds on the Automation Recipes engine with the three most-requested monday-style capabilities.
+
+### Added — Visual recipe builder
+
+- A no-JSON **visual builder** on the Automations tab: dropdowns for trigger, condition `field/op/value`, and action `type`, with **Add recipe / Add condition / Add action / Remove** buttons. Each recipe also has enabled, match (all/any), run-mode, board allowlist, and a days field. The raw **JSON editor remains** under "Advanced" for power users; both save to the same store.
+
+### Added — Time-based recipes (stuck items & date reminders)
+
+- New scheduled triggers: **`task_stale`** (open task with no activity for N days — the "stuck" case), **`task_overdue`**, and **`task_due_soon`** (due within N days).
+- An hourly **time scan** (cron `fbaia_recipe_time_scan`) evaluates these against Fluent Boards tasks and runs the recipe's actions, with a per-recipe/per-task/per-day guard so a task is acted on at most once a day. The scan only schedules when recipes are enabled, at least one time-based recipe exists, and the master engine is on.
+- New adapter queries `get_stale_tasks()` and `get_tasks_due_within()` (guarded + try/catch like the rest).
+
+### Added — Review queue for held actions
+
+- Task-mutating recipe actions that are *held* (review-mode recipes, or with auto-changes off) are now recorded in a **Held recipe actions** queue on the Review tab, each with **Approve & apply** and **Reject** buttons — so a manager can apply them deliberately without leaving the dashboard. Approving applies the change through the same executor; the store lives in `fbaia_recipe_actions` (removed on uninstall).
+
+### Tests
+
+- Added coverage for the structured (builder) parser, time-trigger parsing + time scan, and the held-action queue record/approve/reject flow (146 checks total).
+
 # 0.10.0
 
 ### Added — Automation Recipes (monday.com-style)

@@ -15,6 +15,14 @@ class FBAIA_Runner
         add_action('fbaia_overdue_scan', [$this, 'process_overdue_scan']);
         add_action('fbaia_daily_digest', [$this, 'send_daily_digest']);
         add_action('fbaia_weekly_intelligence_digest', [$this, 'send_weekly_intelligence_digest']);
+        add_action('fbaia_recipe_time_scan', [$this, 'run_recipe_time_scan']);
+    }
+
+    public function run_recipe_time_scan()
+    {
+        if (class_exists('FBAIA_Recipes')) {
+            FBAIA_Recipes::time_scan();
+        }
     }
 
     public function register_fluent_hooks()

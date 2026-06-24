@@ -515,6 +515,83 @@ class FBAIA_FluentBoards_Adapter
         }
     }
 
+    /**
+     * Open tasks not updated since $before_gmt — the "stuck / inactive" set used by time-based
+     * recipes. Uses updated_at as a dependency-version-safe proxy for inactivity.
+     */
+    public function get_stale_tasks($before_gmt, $limit = 50, $allowlist = '')
+    {
+        if (!class_exists('FluentBoards\\App\\Models\\Task')) {
+            return new WP_Error('task_model_missing', __('Fluent Boards Task model is not available.', 'fluent-boards-ai-automation'));
+        }
+
+        $limit = max(1, min(100, absint($limit)));
+        $before_gmt = sanitize_text_field($before_gmt);
+
+        try {
+            $class = 'FluentBoards\\App\\Models\\Task';
+            $query = $class::query()
+                ->where('status', '!=', 'closed')
+                ->where('updated_at', '<', $before_gmt)
+                ->orderBy('updated_at', 'asc')
+                ->limit($limit);
+
+            $tasks = $query->get();
+            $out = [];
+            foreach ($tasks as $task) {
+                if (isset($task->parent_id) && (int) $task->parent_id > 0) {
+                    continue; // skip subtasks
+                }
+                $board_id = isset($task->board_id) ? (int) $task->board_id : 0;
+                if ($board_id && !FBAIA_Helpers::board_is_allowed($board_id, $allowlist)) {
+                    continue;
+                }
+                $out[] = $task;
+            }
+            return $out;
+        } catch (Throwable $e) {
+            return new WP_Error('stale_task_query_failed', $e->getMessage());
+        }
+    }
+
+    /**
+     * Open tasks whose due date falls between $from_gmt and $to_gmt — the "due soon" set.
+     */
+    public function get_tasks_due_within($from_gmt, $to_gmt, $limit = 50, $allowlist = '')
+    {
+        if (!class_exists('FluentBoards\\App\\Models\\Task')) {
+            return new WP_Error('task_model_missing', __('Fluent Boards Task model is not available.', 'fluent-boards-ai-automation'));
+        }
+
+        $limit = max(1, min(100, absint($limit)));
+        $from_gmt = sanitize_text_field($from_gmt);
+        $to_gmt = sanitize_text_field($to_gmt);
+
+        try {
+            $class = 'FluentBoards\\App\\Models\\Task';
+            $query = $class::query()
+                ->where('status', '!=', 'closed')
+                ->whereNotNull('due_at')
+                ->where('due_at', '>=', $from_gmt)
+                ->where('due_at', '<=', $to_gmt)
+                ->orderBy('due_at', 'asc')
+                ->limit($limit);
+
+            $tasks = $query->get();
+            $out = [];
+            foreach ($tasks as $task) {
+                $board_id = isset($task->board_id) ? (int) $task->board_id : 0;
+                if ($board_id && !FBAIA_Helpers::board_is_allowed($board_id, $allowlist)) {
+                    continue;
+                }
+                $out[] = $task;
+            }
+            return $out;
+        } catch (Throwable $e) {
+            return new WP_Error('due_soon_task_query_failed', $e->getMessage());
+        }
+    }
+
     public function get_recent_tasks($since_gmt, $limit = 50, $allowlist = '')
     {
         if (!class_exists('FluentBoards\\App\\Models\\Task')) {

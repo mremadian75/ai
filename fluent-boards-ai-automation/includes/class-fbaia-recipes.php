@@ -143,9 +143,33 @@ class FBAIA_Recipes
         return self::normalize_recipe($data);
     }
 
+    /**
+     * Time-based (scheduled) recipe triggers. These are not Fluent Boards events — they are
+     * evaluated by the periodic time scan, not the live event pipeline.
+     */
+    public static function time_triggers()
+    {
+        return [
+            'task_stale'    => __('Task inactive for N days (stuck)', 'fluent-boards-ai-automation'),
+            'task_overdue'  => __('Task overdue', 'fluent-boards-ai-automation'),
+            'task_due_soon' => __('Task due within N days', 'fluent-boards-ai-automation'),
+        ];
+    }
+
+    public static function is_time_trigger($trigger)
+    {
+        return array_key_exists($trigger, self::time_triggers());
+    }
+
+    /** All triggers selectable for recipes: live Fluent Boards events + time-based ones. */
+    public static function selectable_triggers()
+    {
+        return FBAIA_Helpers::available_triggers() + self::time_triggers();
+    }
+
     private static function normalize_recipe(array $item)
     {
-        $triggers = FBAIA_Helpers::available_triggers();
+        $triggers = self::selectable_triggers();
         $trigger = sanitize_key($item['trigger'] ?? '');
         if ($trigger === '' || !isset($triggers[$trigger])) {
             return [];
@@ -197,12 +221,68 @@ class FBAIA_Recipes
             'name' => sanitize_text_field($item['name'] ?? 'Recipe'),
             'enabled' => FBAIA_Helpers::to_bool($item['enabled'] ?? false),
             'trigger' => $trigger,
+            'days' => max(0, min(365, (int) ($item['days'] ?? 3))),
             'board_allowlist' => sanitize_text_field($item['board_allowlist'] ?? ''),
             'match' => in_array($match, ['all', 'any'], true) ? $match : 'all',
             'conditions' => $conditions,
             'actions' => $actions,
             'run_mode' => in_array($run_mode, ['review', 'auto'], true) ? $run_mode : 'review',
         ];
+    }
+
+    /**
+     * Build a recipes array from the visual builder's structured POST data
+     * ($_POST['fbaia_recipe']). Returns a sanitized recipes list (same shape as parse()).
+     */
+    public static function from_structured($raw)
+    {
+        if (!is_array($raw)) {
+            return [];
+        }
+        $out = [];
+        foreach ($raw as $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+            $conditions = [];
+            foreach ((array) ($row['conditions'] ?? []) as $c) {
+                if (!is_array($c) || trim((string) ($c['field'] ?? '')) === '') {
+                    continue;
+                }
+                $conditions[] = [
+                    'field' => $c['field'] ?? '',
+                    'op' => $c['op'] ?? 'equals',
+                    'value' => $c['value'] ?? '',
+                ];
+            }
+            $actions = [];
+            foreach ((array) ($row['actions'] ?? []) as $a) {
+                if (!is_array($a) || trim((string) ($a['type'] ?? '')) === '') {
+                    continue;
+                }
+                $actions[] = [
+                    'type' => $a['type'] ?? '',
+                    'value' => $a['value'] ?? '',
+                    'to' => $a['to'] ?? '',
+                    'message' => $a['message'] ?? '',
+                ];
+            }
+            $recipe = self::normalize_recipe([
+                'name' => $row['name'] ?? 'Recipe',
+                'enabled' => !empty($row['enabled']),
+                'trigger' => $row['trigger'] ?? '',
+                'days' => $row['days'] ?? 3,
+                'board_allowlist' => $row['board_allowlist'] ?? '',
+                'match' => $row['match'] ?? 'all',
+                'run_mode' => $row['run_mode'] ?? 'review',
+                'conditions' => $conditions,
+                'actions' => $actions,
+            ]);
+            if ($recipe) {
+                $out[] = $recipe;
+            }
+        }
+        return array_slice($out, 0, self::MAX_RECIPES);
     }
 
     private static function valid_op($op)
@@ -242,6 +322,76 @@ class FBAIA_Recipes
             }
             foreach ($recipe['actions'] as $action) {
                 $results[] = self::execute($recipe, $action, $payload, $adapter, $allow_mutations);
+            }
+        }
+        return $results;
+    }
+
+    public static function has_time_recipes()
+    {
+        foreach (self::all() as $recipe) {
+            if (($recipe['enabled'] ?? false) && self::is_time_trigger($recipe['trigger'] ?? '')) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Scheduled scan for time-based recipes (stuck / overdue / due-soon). Runs on cron. Uses a
+     * per-recipe/per-task/per-day transient so a matching task is only acted on once a day.
+     */
+    public static function time_scan($adapter = null)
+    {
+        $settings = FBAIA_Helpers::get_settings();
+        if (($settings['recipes_enabled'] ?? 'no') !== 'yes') {
+            return [];
+        }
+        $adapter = $adapter ?: new FBAIA_FluentBoards_Adapter();
+        $allow_mutations = ($settings['recipe_allow_mutations'] ?? 'no') === 'yes';
+        $limit = 50;
+        $now = time();
+        $results = [];
+
+        foreach (self::all() as $recipe) {
+            if (!($recipe['enabled'] ?? false) || !self::is_time_trigger($recipe['trigger'] ?? '')) {
+                continue;
+            }
+            $trigger = $recipe['trigger'];
+            $days = max(0, (int) ($recipe['days'] ?? 3));
+            $allowlist = $recipe['board_allowlist'] ?? '';
+
+            if ($trigger === 'task_stale') {
+                $tasks = $adapter->get_stale_tasks(gmdate('Y-m-d H:i:s', $now - ($days * DAY_IN_SECONDS)), $limit, $allowlist);
+            } elseif ($trigger === 'task_overdue') {
+                $tasks = $adapter->get_due_tasks(gmdate('Y-m-d H:i:s', $now), $limit, $allowlist);
+            } elseif ($trigger === 'task_due_soon') {
+                $tasks = $adapter->get_tasks_due_within(gmdate('Y-m-d H:i:s', $now), gmdate('Y-m-d H:i:s', $now + ($days * DAY_IN_SECONDS)), $limit, $allowlist);
+            } else {
+                continue;
+            }
+
+            if (is_wp_error($tasks) || !is_array($tasks)) {
+                continue;
+            }
+
+            foreach ($tasks as $task) {
+                $payload = ['task' => $adapter->task_to_array($task)];
+                $task_id = FBAIA_Helpers::extract_task_id($payload);
+                if (!$task_id) {
+                    continue;
+                }
+                if (!self::conditions_pass($recipe, $payload, $trigger)) {
+                    continue;
+                }
+                $key = 'fbaia_recipe_t_' . md5(($recipe['name'] ?? '') . '|' . $trigger . '|' . $task_id . '|' . gmdate('Y-m-d'));
+                if (get_transient($key)) {
+                    continue;
+                }
+                set_transient($key, 1, DAY_IN_SECONDS);
+                foreach ($recipe['actions'] as $action) {
+                    $results[] = self::execute($recipe, $action, $payload, $adapter, $allow_mutations);
+                }
             }
         }
         return $results;
@@ -350,26 +500,47 @@ class FBAIA_Recipes
             return ['recipe' => $name, 'action' => 'flag', 'status' => 'flagged'];
         }
 
-        // Mutating actions are gated.
+        // Mutating actions are gated. When held, record them in the review queue so an admin
+        // can approve and apply them later — no silent changes.
         $can_mutate = $allow_mutations && (($recipe['run_mode'] ?? 'review') === 'auto');
         if (!$can_mutate) {
-            self::log('info', 'Recipe mutating action held (needs auto mode + global opt-in)', ['recipe' => $name, 'action' => $type, 'task_id' => $task_id]);
+            if (class_exists('FBAIA_Recipe_Queue')) {
+                FBAIA_Recipe_Queue::record($name, $action, $task_id, $board_id);
+            }
+            self::log('info', 'Recipe mutating action held for review', ['recipe' => $name, 'action' => $type, 'task_id' => $task_id]);
             self::audit('recipe_action_held', ['recipe' => $name, 'task_id' => $task_id, 'board_id' => $board_id, 'status' => 'held']);
             return ['recipe' => $name, 'action' => $type, 'status' => 'held'];
         }
 
+        $result = self::apply_mutation($type, $action, $task_id, $board_id, $adapter, $name);
+        return ['recipe' => $name, 'action' => $type, 'status' => $result['status'], 'count' => $result['count'] ?? null];
+    }
+
+    /**
+     * Perform a mutating recipe action against Fluent Boards. Shared by the auto path and by
+     * the review-queue approval path (which is an explicit, authorized human action).
+     *
+     * @return array{status:string,count?:int}
+     */
+    public static function apply_mutation($type, array $action, $task_id, $board_id, $adapter = null, $name = 'Recipe')
+    {
+        $adapter = $adapter ?: new FBAIA_FluentBoards_Adapter();
+        $task_id = absint($task_id);
+        $board_id = absint($board_id);
+
         if ($type === 'set_priority') {
-            $result = $adapter->update_task_priority($task_id, sanitize_key($action['value']));
+            $result = $adapter->update_task_priority($task_id, sanitize_key($action['value'] ?? ''));
             $status = is_wp_error($result) ? 'failed' : 'applied';
-            self::log(is_wp_error($result) ? 'error' : 'success', 'Recipe set priority', ['recipe' => $name, 'task_id' => $task_id, 'priority' => $action['value'], 'status' => $status]);
+            self::log(is_wp_error($result) ? 'error' : 'success', 'Recipe set priority', ['recipe' => $name, 'task_id' => $task_id, 'priority' => $action['value'] ?? '', 'status' => $status]);
             self::audit('recipe_priority_set', ['recipe' => $name, 'task_id' => $task_id, 'board_id' => $board_id, 'status' => $status]);
-            return ['recipe' => $name, 'action' => $type, 'status' => $status];
+            return ['status' => $status];
         }
 
         if ($type === 'create_subtasks') {
-            $items = !empty($action['items']) ? $action['items'] : array_filter(array_map('trim', explode('|', (string) $action['value'])));
+            $items = !empty($action['items']) ? $action['items'] : array_filter(array_map('trim', explode('|', (string) ($action['value'] ?? ''))));
             $count = 0;
             foreach (array_slice($items, 0, 20) as $title) {
+                $title = sanitize_text_field((string) $title);
                 if ($title === '') {
                     continue;
                 }
@@ -380,22 +551,22 @@ class FBAIA_Recipes
             }
             self::log('success', 'Recipe created subtasks', ['recipe' => $name, 'task_id' => $task_id, 'count' => $count]);
             self::audit('recipe_subtasks_created', ['recipe' => $name, 'task_id' => $task_id, 'board_id' => $board_id, 'count' => $count, 'status' => 'applied']);
-            return ['recipe' => $name, 'action' => $type, 'status' => 'applied', 'count' => $count];
+            return ['status' => 'applied', 'count' => $count];
         }
 
         if ($type === 'add_comment') {
             $settings = FBAIA_Helpers::get_settings();
             $privacy = ($settings['write_private_comment'] ?? 'yes') === 'yes' ? 'private' : 'public';
-            $text = FBAIA_Helpers::GENERATED_MARKER . "\n<strong>" . esc_html($name) . "</strong>\n<p>" . esc_html($action['message'] ?: $action['value']) . '</p>'
+            $text = FBAIA_Helpers::GENERATED_MARKER . "\n<strong>" . esc_html($name) . "</strong>\n<p>" . esc_html(($action['message'] ?? '') ?: ($action['value'] ?? '')) . '</p>'
                 . '<p><small>' . esc_html(FBAIA_FluentBoards_Adapter::GENERATED_TEXT_MARKER) . '</small></p>';
             $result = $adapter->create_ai_comment($task_id, $board_id, $text, $privacy);
             $status = is_wp_error($result) ? 'failed' : 'applied';
             self::log(is_wp_error($result) ? 'error' : 'success', 'Recipe added comment', ['recipe' => $name, 'task_id' => $task_id, 'status' => $status]);
             self::audit('recipe_comment_added', ['recipe' => $name, 'task_id' => $task_id, 'board_id' => $board_id, 'status' => $status]);
-            return ['recipe' => $name, 'action' => $type, 'status' => $status];
+            return ['status' => $status];
         }
 
-        return ['recipe' => $name, 'action' => $type, 'status' => 'unknown'];
+        return ['status' => 'unknown'];
     }
 
     private static function do_notify($name, array $action, array $payload, $task_id)

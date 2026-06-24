@@ -19,6 +19,8 @@ require __DIR__ . '/test-safemode.php';
 echo "\n";
 require __DIR__ . '/test-recipes.php';
 echo "\n";
+require __DIR__ . '/test-recipe-queue.php';
+echo "\n";
 require __DIR__ . '/test-rest.php';
 echo "\n";
 require __DIR__ . '/test-render-smoke.php';

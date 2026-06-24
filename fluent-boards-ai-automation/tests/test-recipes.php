@@ -148,3 +148,54 @@ update_option(FBAIA_OPTION, $s, false);
 $fa = new FBAIA_Fake_Adapter_Recipes();
 $res = FBAIA_Recipes::run('task_priority_changed', ['task' => ['priority' => 'low', 'id' => 7, 'board_id' => 12]], $fa);
 fbaia_assert('condition mismatch -> no actions', $res === []);
+
+// --- from_structured() (visual builder POST shape) ---
+$structured = [
+    '0' => [
+        'name' => 'Builder recipe', 'enabled' => '1', 'trigger' => 'task_created',
+        'match' => 'all', 'run_mode' => 'review', 'days' => '5', 'board_allowlist' => '12',
+        'conditions' => ['0' => ['field' => 'due_at', 'op' => 'is_empty', 'value' => '']],
+        'actions' => ['0' => ['type' => 'notify', 'to' => 'a@b.com', 'message' => 'no due date']],
+    ],
+    '1' => ['name' => 'No actions -> dropped', 'trigger' => 'task_created', 'actions' => []],
+];
+$built = FBAIA_Recipes::from_structured($structured);
+fbaia_assert('from_structured builds valid recipe', count($built) === 1);
+fbaia_assert('from_structured parsed trigger', $built[0]['trigger'] === 'task_created');
+fbaia_assert('from_structured parsed condition', $built[0]['conditions'][0]['op'] === 'is_empty');
+fbaia_assert('from_structured enabled "1" -> true', $built[0]['enabled'] === true);
+fbaia_assert('from_structured days clamped int', $built[0]['days'] === 5);
+
+// --- time triggers accepted by parse ---
+$t = FBAIA_Recipes::parse(json_encode([['trigger' => 'task_stale', 'days' => 7, 'enabled' => true, 'actions' => [['type' => 'notify']]]]));
+fbaia_assert('time trigger task_stale accepted', count($t) === 1 && $t[0]['trigger'] === 'task_stale');
+fbaia_assert('is_time_trigger true for task_stale', FBAIA_Recipes::is_time_trigger('task_stale') === true);
+fbaia_assert('is_time_trigger false for task_created', FBAIA_Recipes::is_time_trigger('task_created') === false);
+
+// --- time_scan() drives the adapter query + executes actions ---
+class FBAIA_Fake_Adapter_Time
+{
+    public $staleCalled = 0;
+    public function get_stale_tasks($before, $limit = 50, $allow = '') { $this->staleCalled++; return [['id' => 5, 'board_id' => 12, 'priority' => 'low']]; }
+    public function get_due_tasks($before, $limit = 25, $allow = '') { return []; }
+    public function get_tasks_due_within($from, $to, $limit = 50, $allow = '') { return []; }
+    public function task_to_array($t) { return is_array($t) ? $t : []; }
+    public function is_available() { return true; }
+}
+
+fbaia_reset_options();
+update_option(FBAIA_Recipes::OPTION, FBAIA_Recipes::parse(json_encode([[
+    'name' => 'Nudge stale', 'enabled' => true, 'trigger' => 'task_stale', 'days' => 3,
+    'actions' => [['type' => 'notify', 'to' => 'a@b.com', 'message' => 'stale']],
+]])), false);
+$s = FBAIA_Helpers::defaults(); $s['recipes_enabled'] = 'yes';
+update_option(FBAIA_OPTION, $s, false);
+$ft = new FBAIA_Fake_Adapter_Time();
+$res = FBAIA_Recipes::time_scan($ft);
+fbaia_assert('time_scan queried stale tasks', $ft->staleCalled === 1);
+fbaia_assert('time_scan executed notify for stale task', in_array('notify:sent', array_map(function ($r) { return $r['action'] . ':' . $r['status']; }, $res), true));
+
+// time_scan respects global recipes_enabled = no.
+$s['recipes_enabled'] = 'no'; update_option(FBAIA_OPTION, $s, false);
+$ft2 = new FBAIA_Fake_Adapter_Time();
+fbaia_assert('time_scan no-op when recipes disabled', FBAIA_Recipes::time_scan($ft2) === [] && $ft2->staleCalled === 0);

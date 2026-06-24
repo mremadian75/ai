@@ -118,6 +118,9 @@ class FBAIA_Admin
     {
         if (!isset($_POST['fbaia_save_settings'])
             && !isset($_POST['fbaia_save_recipes'])
+            && !isset($_POST['fbaia_save_recipes_builder'])
+            && !isset($_POST['fbaia_apply_recipe_action'])
+            && !isset($_POST['fbaia_reject_recipe_action'])
             && !isset($_POST['fbaia_clear_logs'])
             && !isset($_POST['fbaia_clear_audit'])
             && !isset($_POST['fbaia_export_snapshot'])
@@ -149,7 +152,39 @@ class FBAIA_Admin
             check_admin_referer('fbaia_save_recipes');
             $raw = isset($_POST['fbaia_recipes_json']) ? wp_unslash($_POST['fbaia_recipes_json']) : '';
             $result = class_exists('FBAIA_Recipes') ? FBAIA_Recipes::save_from_raw($raw) : ['saved' => 0];
+            if (class_exists('FBAIA_Plugin')) {
+                FBAIA_Plugin::reschedule_events();
+            }
             $this->redirect('automations', ['fbaia_recipes_saved' => (string) absint($result['saved'] ?? 0)]);
+        }
+
+        if (isset($_POST['fbaia_save_recipes_builder'])) {
+            check_admin_referer('fbaia_save_recipes_builder');
+            $count = 0;
+            if (class_exists('FBAIA_Recipes')) {
+                $structured = (isset($_POST['fbaia_recipe']) && is_array($_POST['fbaia_recipe'])) ? wp_unslash($_POST['fbaia_recipe']) : [];
+                $recipes = FBAIA_Recipes::from_structured($structured);
+                update_option(FBAIA_Recipes::OPTION, $recipes, false);
+                $count = count($recipes);
+                if (class_exists('FBAIA_Plugin')) {
+                    FBAIA_Plugin::reschedule_events();
+                }
+            }
+            $this->redirect('automations', ['fbaia_recipes_saved' => (string) $count]);
+        }
+
+        if (isset($_POST['fbaia_apply_recipe_action'])) {
+            check_admin_referer('fbaia_apply_recipe_action');
+            $id = isset($_POST['fbaia_action_id']) ? sanitize_text_field(wp_unslash($_POST['fbaia_action_id'])) : '';
+            $result = class_exists('FBAIA_Recipe_Queue') ? FBAIA_Recipe_Queue::approve($id) : new WP_Error('missing', 'Queue unavailable.');
+            $this->redirect('review', ['fbaia_recipe_action' => is_wp_error($result) ? 'failed' : 'applied']);
+        }
+
+        if (isset($_POST['fbaia_reject_recipe_action'])) {
+            check_admin_referer('fbaia_reject_recipe_action');
+            $id = isset($_POST['fbaia_action_id']) ? sanitize_text_field(wp_unslash($_POST['fbaia_action_id'])) : '';
+            $result = class_exists('FBAIA_Recipe_Queue') ? FBAIA_Recipe_Queue::reject($id) : new WP_Error('missing', 'Queue unavailable.');
+            $this->redirect('review', ['fbaia_recipe_action' => is_wp_error($result) ? 'failed' : 'rejected']);
         }
 
         if (isset($_POST['fbaia_clear_logs'])) {
@@ -502,6 +537,11 @@ class FBAIA_Admin
         }
         if (isset($_GET['fbaia_recipes_saved'])) {
             printf('<div class="notice notice-success inline"><p>%s</p></div>', esc_html(sprintf(__('Saved %d recipe(s).', 'fluent-boards-ai-automation'), absint(wp_unslash($_GET['fbaia_recipes_saved'])))));
+        }
+        if (isset($_GET['fbaia_recipe_action'])) {
+            $st = sanitize_key(wp_unslash($_GET['fbaia_recipe_action']));
+            $good = in_array($st, ['applied', 'rejected'], true);
+            printf('<div class="notice %s inline"><p>%s</p></div>', $good ? 'notice-success' : 'notice-error', esc_html(sprintf(__('Held action %s.', 'fluent-boards-ai-automation'), $st)));
         }
     }
 
@@ -889,27 +929,156 @@ class FBAIA_Admin
         </div>
 
         <div class="fbaia-card fbaia-full" id="fbaia-recipes">
-            <h2><?php esc_html_e('Recipes', 'fluent-boards-ai-automation'); ?></h2>
-            <p class="description"><?php esc_html_e('Define recipes as a JSON array. Each: when a trigger fires and the conditions match, run the actions. Non-mutating actions (notify, flag) always run when recipes are enabled; mutating actions (set_priority, create_subtasks, add_comment) need run_mode "auto" plus the "Allow recipe auto-changes" toggle above.', 'fluent-boards-ai-automation'); ?></p>
+            <h2><?php esc_html_e('Recipes — visual builder', 'fluent-boards-ai-automation'); ?></h2>
+            <p class="description"><?php esc_html_e('Build recipes with menus: pick a trigger, optionally add conditions, then add actions. Non-mutating actions (notify, flag) run when recipes are enabled; mutating actions (set priority / create subtasks / add comment) need run_mode "auto" plus the "Allow recipe auto-changes" toggle above — otherwise they are held in the Review queue for approval.', 'fluent-boards-ai-automation'); ?></p>
+
+            <?php $recipes = class_exists('FBAIA_Recipes') ? FBAIA_Recipes::all() : []; ?>
             <form method="post" class="fbaia-section-form" data-fbaia-dirty-watch="1">
-                <?php wp_nonce_field('fbaia_save_recipes'); ?>
-                <input type="hidden" name="fbaia_save_recipes" value="1">
-                <div class="fbaia-field-block">
-                    <label for="fbaia-recipes-json"><strong><?php esc_html_e('Recipes (JSON)', 'fluent-boards-ai-automation'); ?></strong></label>
-                    <textarea id="fbaia-recipes-json" name="fbaia_recipes_json" rows="12" class="large-text code"><?php echo esc_textarea($this->recipes_json()); ?></textarea>
+                <?php wp_nonce_field('fbaia_save_recipes_builder'); ?>
+                <input type="hidden" name="fbaia_save_recipes_builder" value="1">
+                <div id="fbaia-recipe-list">
+                    <?php foreach ($recipes as $i => $recipe) {
+                        echo $this->recipe_row((string) $i, $recipe);
+                    } ?>
                 </div>
+                <p>
+                    <button type="button" class="button fbaia-add-recipe">+ <?php esc_html_e('Add recipe', 'fluent-boards-ai-automation'); ?></button>
+                </p>
                 <p class="submit"><button type="submit" class="button button-primary"><?php esc_html_e('Save recipes', 'fluent-boards-ai-automation'); ?></button></p>
             </form>
-            <details>
-                <summary><?php esc_html_e('Example recipes (copy & adapt)', 'fluent-boards-ai-automation'); ?></summary>
+
+            <template id="fbaia-recipe-tpl"><?php echo $this->recipe_row('__RINDEX__', null); ?></template>
+            <template id="fbaia-cond-tpl"><?php echo $this->condition_row('__RINDEX__', '__CINDEX__', null); ?></template>
+            <template id="fbaia-action-tpl"><?php echo $this->action_row('__RINDEX__', '__AINDEX__', null); ?></template>
+
+            <details class="fbaia-recipe-advanced">
+                <summary><?php esc_html_e('Advanced: edit as JSON', 'fluent-boards-ai-automation'); ?></summary>
+                <form method="post" class="fbaia-section-form" data-fbaia-dirty-watch="1">
+                    <?php wp_nonce_field('fbaia_save_recipes'); ?>
+                    <input type="hidden" name="fbaia_save_recipes" value="1">
+                    <div class="fbaia-field-block">
+                        <label for="fbaia-recipes-json"><strong><?php esc_html_e('Recipes (JSON)', 'fluent-boards-ai-automation'); ?></strong></label>
+                        <textarea id="fbaia-recipes-json" name="fbaia_recipes_json" rows="12" class="large-text code"><?php echo esc_textarea($this->recipes_json()); ?></textarea>
+                    </div>
+                    <p class="submit"><button type="submit" class="button"><?php esc_html_e('Save JSON recipes', 'fluent-boards-ai-automation'); ?></button></p>
+                </form>
+                <p class="description"><?php esc_html_e('Saving here replaces all recipes. The visual builder above also replaces all recipes when saved — use one or the other per save.', 'fluent-boards-ai-automation'); ?></p>
                 <pre><?php echo esc_html(class_exists('FBAIA_Recipes') ? FBAIA_Recipes::example_template() : ''); ?></pre>
             </details>
-            <p class="description">
-                <?php esc_html_e('Fields per recipe: name, enabled (true/false), trigger (a Triggers event key above), match (all|any), conditions [{field, op, value}], actions [{type, value|to|message|items}], run_mode (review|auto), board_allowlist (optional).', 'fluent-boards-ai-automation'); ?><br>
-                <?php esc_html_e('Operators: equals, not_equals, contains, not_contains, is_empty, is_not_empty, gt, lt, in. Fields: priority, status, stage_id, board_id, due_at, title, description, label, comment, assignee, event. Actions: notify, flag, set_priority, create_subtasks, add_comment.', 'fluent-boards-ai-automation'); ?>
-            </p>
         </div>
         <?php
+    }
+
+    private function recipe_row($ri, $recipe)
+    {
+        $r = is_array($recipe) ? $recipe : [];
+        $name = $r['name'] ?? '';
+        $enabled = !empty($r['enabled']);
+        $trigger = $r['trigger'] ?? 'task_created';
+        $days = isset($r['days']) ? (int) $r['days'] : 3;
+        $match = $r['match'] ?? 'all';
+        $run_mode = $r['run_mode'] ?? 'review';
+        $board = $r['board_allowlist'] ?? '';
+        $base = 'fbaia_recipe[' . $ri . ']';
+
+        ob_start();
+        ?>
+        <fieldset class="fbaia-recipe" data-ri="<?php echo esc_attr($ri); ?>">
+            <div class="fbaia-recipe-head">
+                <label><input type="checkbox" name="<?php echo esc_attr($base); ?>[enabled]" value="1" <?php checked($enabled); ?>> <?php esc_html_e('Enabled', 'fluent-boards-ai-automation'); ?></label>
+                <input type="text" class="regular-text" name="<?php echo esc_attr($base); ?>[name]" value="<?php echo esc_attr($name); ?>" placeholder="<?php esc_attr_e('Recipe name', 'fluent-boards-ai-automation'); ?>">
+                <button type="button" class="button-link fbaia-remove-recipe" aria-label="<?php esc_attr_e('Remove recipe', 'fluent-boards-ai-automation'); ?>">&times;</button>
+            </div>
+            <div class="fbaia-recipe-grid">
+                <label><?php esc_html_e('When (trigger)', 'fluent-boards-ai-automation'); ?>
+                    <?php echo $this->select($base . '[trigger]', FBAIA_Recipes::selectable_triggers(), $trigger); ?>
+                </label>
+                <label><?php esc_html_e('Days (time triggers)', 'fluent-boards-ai-automation'); ?>
+                    <input type="number" min="0" max="365" name="<?php echo esc_attr($base); ?>[days]" value="<?php echo esc_attr($days); ?>">
+                </label>
+                <label><?php esc_html_e('Match', 'fluent-boards-ai-automation'); ?>
+                    <?php echo $this->select($base . '[match]', ['all' => __('All conditions', 'fluent-boards-ai-automation'), 'any' => __('Any condition', 'fluent-boards-ai-automation')], $match); ?>
+                </label>
+                <label><?php esc_html_e('Run mode', 'fluent-boards-ai-automation'); ?>
+                    <?php echo $this->select($base . '[run_mode]', ['review' => __('Review (hold changes)', 'fluent-boards-ai-automation'), 'auto' => __('Auto (apply changes)', 'fluent-boards-ai-automation')], $run_mode); ?>
+                </label>
+                <label><?php esc_html_e('Board allowlist', 'fluent-boards-ai-automation'); ?>
+                    <input type="text" name="<?php echo esc_attr($base); ?>[board_allowlist]" value="<?php echo esc_attr($board); ?>" placeholder="<?php esc_attr_e('e.g. 12, 18', 'fluent-boards-ai-automation'); ?>">
+                </label>
+            </div>
+
+            <p class="fbaia-recipe-sub"><strong><?php esc_html_e('If (conditions)', 'fluent-boards-ai-automation'); ?></strong></p>
+            <div class="fbaia-conditions">
+                <?php foreach ((array) ($r['conditions'] ?? []) as $ci => $cond) {
+                    echo $this->condition_row($ri, (string) $ci, $cond);
+                } ?>
+            </div>
+            <p><button type="button" class="button button-small fbaia-add-condition">+ <?php esc_html_e('Add condition', 'fluent-boards-ai-automation'); ?></button></p>
+
+            <p class="fbaia-recipe-sub"><strong><?php esc_html_e('Then (actions)', 'fluent-boards-ai-automation'); ?></strong></p>
+            <div class="fbaia-actions-list">
+                <?php foreach ((array) ($r['actions'] ?? []) as $ai => $action) {
+                    echo $this->action_row($ri, (string) $ai, $action);
+                } ?>
+            </div>
+            <p><button type="button" class="button button-small fbaia-add-action">+ <?php esc_html_e('Add action', 'fluent-boards-ai-automation'); ?></button></p>
+        </fieldset>
+        <?php
+        return ob_get_clean();
+    }
+
+    private function condition_row($ri, $ci, $cond)
+    {
+        $c = is_array($cond) ? $cond : [];
+        $base = 'fbaia_recipe[' . $ri . '][conditions][' . $ci . ']';
+        $fields = ['priority', 'status', 'stage_id', 'board_id', 'due_at', 'title', 'description', 'label', 'comment', 'assignee', 'event'];
+        $field_opts = array_combine($fields, $fields);
+        $ops = ['equals', 'not_equals', 'contains', 'not_contains', 'is_empty', 'is_not_empty', 'gt', 'lt', 'in'];
+        $op_opts = array_combine($ops, $ops);
+        ob_start();
+        ?>
+        <div class="fbaia-recipe-row fbaia-cond-row">
+            <?php echo $this->select($base . '[field]', $field_opts, $c['field'] ?? 'priority'); ?>
+            <?php echo $this->select($base . '[op]', $op_opts, $c['op'] ?? 'equals'); ?>
+            <input type="text" name="<?php echo esc_attr($base); ?>[value]" value="<?php echo esc_attr($c['value'] ?? ''); ?>" placeholder="<?php esc_attr_e('value', 'fluent-boards-ai-automation'); ?>">
+            <button type="button" class="button-link fbaia-remove-row" aria-label="<?php esc_attr_e('Remove', 'fluent-boards-ai-automation'); ?>">&times;</button>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
+    private function action_row($ri, $ai, $action)
+    {
+        $a = is_array($action) ? $action : [];
+        $base = 'fbaia_recipe[' . $ri . '][actions][' . $ai . ']';
+        $types = [
+            'notify' => __('Notify (email)', 'fluent-boards-ai-automation'),
+            'flag' => __('Flag (log + audit)', 'fluent-boards-ai-automation'),
+            'set_priority' => __('Set priority', 'fluent-boards-ai-automation'),
+            'create_subtasks' => __('Create subtasks', 'fluent-boards-ai-automation'),
+            'add_comment' => __('Add comment', 'fluent-boards-ai-automation'),
+        ];
+        ob_start();
+        ?>
+        <div class="fbaia-recipe-row fbaia-action-row">
+            <?php echo $this->select($base . '[type]', $types, $a['type'] ?? 'notify'); ?>
+            <input type="text" name="<?php echo esc_attr($base); ?>[to]" value="<?php echo esc_attr($a['to'] ?? ''); ?>" placeholder="<?php esc_attr_e('email (notify)', 'fluent-boards-ai-automation'); ?>">
+            <input type="text" name="<?php echo esc_attr($base); ?>[value]" value="<?php echo esc_attr($a['value'] ?? ''); ?>" placeholder="<?php esc_attr_e('value (priority / subtasks a|b|c)', 'fluent-boards-ai-automation'); ?>">
+            <input type="text" name="<?php echo esc_attr($base); ?>[message]" value="<?php echo esc_attr($a['message'] ?? ''); ?>" placeholder="<?php esc_attr_e('message (notify / comment)', 'fluent-boards-ai-automation'); ?>">
+            <button type="button" class="button-link fbaia-remove-row" aria-label="<?php esc_attr_e('Remove', 'fluent-boards-ai-automation'); ?>">&times;</button>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+
+    private function select($name, array $options, $current)
+    {
+        $html = '<select name="' . esc_attr($name) . '">';
+        foreach ($options as $value => $label) {
+            $html .= '<option value="' . esc_attr($value) . '" ' . selected((string) $current, (string) $value, false) . '>' . esc_html($label) . '</option>';
+        }
+        $html .= '</select>';
+        return $html;
     }
 
     private function recipes_json()
@@ -984,7 +1153,70 @@ class FBAIA_Admin
 
     private function tab_review()
     {
+        $this->held_recipe_actions_panel();
         $this->suggestions_table();
+    }
+
+    private function held_recipe_actions_panel()
+    {
+        if (!class_exists('FBAIA_Recipe_Queue')) {
+            return;
+        }
+        $pending = FBAIA_Recipe_Queue::all('pending');
+        $stats = FBAIA_Recipe_Queue::stats();
+        ?>
+        <div id="fbaia-recipe-actions" class="fbaia-card fbaia-full">
+            <h2><?php esc_html_e('Held recipe actions', 'fluent-boards-ai-automation'); ?></h2>
+            <p class="description"><?php echo esc_html(sprintf(__('%1$d pending · %2$d applied · %3$d rejected. These are task-changing recipe actions waiting for your approval (recipes in review mode, or with auto-changes off).', 'fluent-boards-ai-automation'), (int) $stats['pending'], (int) $stats['applied'], (int) $stats['rejected'])); ?></p>
+            <?php if (empty($pending)) : ?>
+                <p><?php esc_html_e('No held actions waiting for review.', 'fluent-boards-ai-automation'); ?></p>
+            <?php else : ?>
+                <table class="widefat striped">
+                    <thead><tr><th><?php esc_html_e('Created UTC', 'fluent-boards-ai-automation'); ?></th><th><?php esc_html_e('Recipe', 'fluent-boards-ai-automation'); ?></th><th><?php esc_html_e('Task', 'fluent-boards-ai-automation'); ?></th><th><?php esc_html_e('Action', 'fluent-boards-ai-automation'); ?></th><th><?php esc_html_e('Decision', 'fluent-boards-ai-automation'); ?></th></tr></thead>
+                    <tbody>
+                    <?php foreach (array_slice($pending, 0, 60) as $item) : ?>
+                        <tr>
+                            <td><?php echo esc_html($item['created_at'] ?? ''); ?></td>
+                            <td><?php echo esc_html($item['recipe'] ?? ''); ?></td>
+                            <td>#<?php echo esc_html($item['task_id'] ?? 0); ?></td>
+                            <td>
+                                <strong><?php echo esc_html(str_replace('_', ' ', $item['action_type'] ?? '')); ?></strong>
+                                <?php
+                                $detail = '';
+                                if (($item['action_type'] ?? '') === 'set_priority') {
+                                    $detail = $item['value'] ?? '';
+                                } elseif (($item['action_type'] ?? '') === 'create_subtasks') {
+                                    $detail = implode(' · ', array_slice((array) ($item['items'] ?? []), 0, 5));
+                                    if ($detail === '') { $detail = $item['value'] ?? ''; }
+                                } elseif (($item['action_type'] ?? '') === 'add_comment') {
+                                    $detail = $item['message'] ?: ($item['value'] ?? '');
+                                }
+                                if ($detail !== '') {
+                                    echo '<br><small>' . esc_html($detail) . '</small>';
+                                }
+                                ?>
+                            </td>
+                            <td>
+                                <form method="post" class="fbaia-inline-form">
+                                    <?php wp_nonce_field('fbaia_apply_recipe_action'); ?>
+                                    <input type="hidden" name="fbaia_apply_recipe_action" value="1">
+                                    <input type="hidden" name="fbaia_action_id" value="<?php echo esc_attr($item['id'] ?? ''); ?>">
+                                    <button class="button button-primary"><?php esc_html_e('Approve & apply', 'fluent-boards-ai-automation'); ?></button>
+                                </form>
+                                <form method="post" class="fbaia-inline-form">
+                                    <?php wp_nonce_field('fbaia_reject_recipe_action'); ?>
+                                    <input type="hidden" name="fbaia_reject_recipe_action" value="1">
+                                    <input type="hidden" name="fbaia_action_id" value="<?php echo esc_attr($item['id'] ?? ''); ?>">
+                                    <button class="button"><?php esc_html_e('Reject', 'fluent-boards-ai-automation'); ?></button>
+                                </form>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                    </tbody>
+                </table>
+            <?php endif; ?>
+        </div>
+        <?php
     }
 
     // ---------------------------------------------------------------------

@@ -11,6 +11,7 @@ delete_option('fbaia_suggestions');
 delete_option('fbaia_audit_trail');
 delete_option('fbaia_usage_stats');
 delete_option('fbaia_recipes');
+delete_option('fbaia_recipe_actions');
 delete_option('fbaia_writable_probe');
 
 // NOTE: AI Company Knowledge posts (the fbaia_knowledge CPT) and their topics are

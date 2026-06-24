@@ -234,6 +234,27 @@ if (!function_exists('wp_specialchars_decode')) {
         return html_entity_decode((string) $string, $quote_style);
     }
 }
+$GLOBALS['__fbaia_transients'] = [];
+if (!function_exists('get_transient')) {
+    function get_transient($key)
+    {
+        return array_key_exists($key, $GLOBALS['__fbaia_transients']) ? $GLOBALS['__fbaia_transients'][$key] : false;
+    }
+}
+if (!function_exists('set_transient')) {
+    function set_transient($key, $value, $ttl = 0)
+    {
+        $GLOBALS['__fbaia_transients'][$key] = $value;
+        return true;
+    }
+}
+if (!function_exists('delete_transient')) {
+    function delete_transient($key)
+    {
+        unset($GLOBALS['__fbaia_transients'][$key]);
+        return true;
+    }
+}
 $GLOBALS['__fbaia_mail'] = [];
 if (!function_exists('wp_mail')) {
     function wp_mail($to, $subject, $message, $headers = '', $attachments = [])
@@ -302,6 +323,7 @@ $GLOBALS['__fbaia_fail'] = 0;
 function fbaia_reset_options()
 {
     $GLOBALS['__fbaia_options'] = [];
+    $GLOBALS['__fbaia_transients'] = [];
 }
 
 function fbaia_assert($label, $condition)

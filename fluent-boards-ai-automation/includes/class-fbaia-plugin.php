@@ -157,6 +157,7 @@ class FBAIA_Plugin
         wp_clear_scheduled_hook('fbaia_overdue_scan');
         wp_clear_scheduled_hook('fbaia_daily_digest');
         wp_clear_scheduled_hook('fbaia_weekly_intelligence_digest');
+        wp_clear_scheduled_hook('fbaia_recipe_time_scan');
     }
 
     public static function reschedule_events($settings = null)
@@ -166,6 +167,7 @@ class FBAIA_Plugin
         wp_clear_scheduled_hook('fbaia_overdue_scan');
         wp_clear_scheduled_hook('fbaia_daily_digest');
         wp_clear_scheduled_hook('fbaia_weekly_intelligence_digest');
+        wp_clear_scheduled_hook('fbaia_recipe_time_scan');
 
         // Honor the master switch / safe mode: when the engine is disabled, schedule no
         // background jobs at all. Otherwise an admin could enable the overdue scan while
@@ -176,6 +178,12 @@ class FBAIA_Plugin
 
         if (($settings['overdue_scan_enabled'] ?? 'no') === 'yes') {
             wp_schedule_event(time() + 300, 'hourly', 'fbaia_overdue_scan');
+        }
+
+        // Time-based automation recipes (stuck / overdue / due-soon) need an hourly scan.
+        if (($settings['recipes_enabled'] ?? 'no') === 'yes'
+            && class_exists('FBAIA_Recipes') && FBAIA_Recipes::has_time_recipes()) {
+            wp_schedule_event(time() + 600, 'hourly', 'fbaia_recipe_time_scan');
         }
 
         if (($settings['daily_digest_enabled'] ?? 'no') === 'yes') {

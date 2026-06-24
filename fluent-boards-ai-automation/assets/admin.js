@@ -112,11 +112,61 @@
         });
     }
 
+    // Visual recipe builder: add/remove recipes, conditions, and actions. Indices only need to
+    // be unique within their parent array; a single incrementing counter guarantees that.
+    function recipeBuilder() {
+        var list = document.getElementById('fbaia-recipe-list');
+        if (!list) {
+            return;
+        }
+        var counter = 100000;
+        function nextIdx() { return ++counter; }
+
+        function tpl(id) {
+            var el = document.getElementById(id);
+            return el ? el.innerHTML : '';
+        }
+
+        function addRow(recipe, type) {
+            var ri = recipe.getAttribute('data-ri');
+            var token = type === 'condition' ? '__CINDEX__' : '__AINDEX__';
+            var html = tpl(type === 'condition' ? 'fbaia-cond-tpl' : 'fbaia-action-tpl')
+                .split('__RINDEX__').join(ri)
+                .split(token).join(String(nextIdx()));
+            var wrap = document.createElement('div');
+            wrap.innerHTML = html.trim();
+            var node = wrap.firstElementChild;
+            recipe.querySelector(type === 'condition' ? '.fbaia-conditions' : '.fbaia-actions-list').appendChild(node);
+        }
+
+        $(list).closest('.fbaia-card').on('click', '.fbaia-add-recipe', function () {
+            var html = tpl('fbaia-recipe-tpl').split('__RINDEX__').join(String(nextIdx()));
+            var wrap = document.createElement('div');
+            wrap.innerHTML = html.trim();
+            var node = wrap.firstElementChild;
+            list.appendChild(node);
+            addRow(node, 'action'); // start with one action so the recipe is valid
+        });
+        $(list).on('click', '.fbaia-add-condition', function () {
+            addRow($(this).closest('.fbaia-recipe')[0], 'condition');
+        });
+        $(list).on('click', '.fbaia-add-action', function () {
+            addRow($(this).closest('.fbaia-recipe')[0], 'action');
+        });
+        $(list).on('click', '.fbaia-remove-recipe', function () {
+            $(this).closest('.fbaia-recipe').remove();
+        });
+        $(list).on('click', '.fbaia-remove-row', function () {
+            $(this).closest('.fbaia-recipe-row').remove();
+        });
+    }
+
     $(function () {
         addTextareaTools();
         bindTemplateButtons();
         createCopyButton();
         enhanceTables();
         guardUnsavedChanges();
+        recipeBuilder();
     });
 })(jQuery);

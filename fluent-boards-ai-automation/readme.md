@@ -2,8 +2,10 @@
 
 Internal WordPress AI automation and project-intelligence add-on for the official Fluent Boards / Fluent Boards Pro plugin.
 
-Version: 0.9.5
+Version: 0.9.6
 
+> **0.9.6** adds an admin-only **"AI Analyze" launcher inside the Fluent Boards screens** — analyze a task by ID without leaving the board, then jump to the review queue. It loads only on Fluent Boards screens, only for administrators, and uses the existing capability-protected REST endpoint.
+>
 > **0.9.5** adds a lazy class autoloader (classes load on demand) and loads the REST layer only on REST requests for faster page loads, plus opt-in **task dependency** triggers for deeper task intelligence. It stays a separate companion to Fluent Boards — by design it is not merged into the host plugin, so Fluent Boards keeps receiving official updates.
 >
 > **0.9.4** fixes the admin sidebar bug: activating the plugin could hide WordPress **Settings** submenu items. The AI Company Knowledge post type no longer injects itself into the core Settings menu and the capability setup was corrected; the menu link is now added safely by the plugin. (0.9.3 fixed settings being wiped on save, made fresh installs **safe by default**, guarded against a missing Fluent Boards, and introduced the tabbed command center.) All existing settings and knowledge are preserved and migrated automatically.

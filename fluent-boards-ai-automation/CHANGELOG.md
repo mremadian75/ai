@@ -1,3 +1,13 @@
+# 0.9.6
+
+### Added — in-board AI analysis
+
+- **"AI Analyze" launcher inside Fluent Boards.** A small, admin-only floating button now appears on Fluent Boards screens, opening a panel where a manager can analyze a task by ID without leaving the board. It pre-fills the task ID from the board URL when possible, shows the result inline, and links straight to the Review Queue.
+- Injected via the official `fluent_boards/after_enqueue_assets` hook, so its assets load **only on Fluent Boards screens** and **only for `manage_options` users**. It calls the existing capability-protected REST endpoint with a REST nonce — no secrets are exposed to the browser.
+- Fully decoupled from Fluent Boards' Vue internals (renders its own launcher/panel), so it is resilient across Fluent Boards versions.
+- Respects safe mode: while the engine is OFF it shows a clear "enable the engine" message instead of doing anything.
+- All styles are namespaced under `.fbaia-board-*` (no global CSS); the panel is keyboard accessible (Enter to run, Esc to close, visible focus).
+
 # 0.9.5
 
 Performance and integration release. This add-on stays a **separate companion** to Fluent Boards / Fluent Boards Pro (the right architecture for updateability, safety, and load time) — it is not merged into the host plugin.

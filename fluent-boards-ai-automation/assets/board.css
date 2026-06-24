@@ -1,0 +1,40 @@
+/* Fluent Boards AI — in-board launcher. All selectors are namespaced under .fbaia-board-*
+   so nothing leaks into Fluent Boards or WordPress styles. */
+.fbaia-board-launcher {
+    position: fixed; right: 18px; bottom: 18px; z-index: 99999;
+    background: #113416; color: #fff; border: none; border-radius: 999px;
+    padding: 10px 16px; font-weight: 700; font-size: 13px; line-height: 1; cursor: pointer;
+    box-shadow: 0 6px 20px rgba(0,0,0,.25);
+}
+.fbaia-board-launcher:hover { background: #0c2510; }
+.fbaia-board-launcher:focus-visible { outline: 2px solid #f2c94c; outline-offset: 2px; }
+
+.fbaia-board-panel {
+    position: fixed; right: 18px; bottom: 64px; z-index: 99999;
+    width: 300px; max-width: 92vw; background: #fff; border: 1px solid #dcdcde;
+    border-radius: 14px; padding: 14px; box-shadow: 0 12px 40px rgba(0,0,0,.22);
+    color: #1d2327; font-size: 13px;
+}
+.fbaia-board-panel[hidden] { display: none; }
+.fbaia-bp-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.fbaia-bp-head strong { color: #113416; }
+.fbaia-bp-close { background: none; border: none; font-size: 20px; line-height: 1; cursor: pointer; color: #646970; padding: 0 4px; }
+.fbaia-bp-close:focus-visible { outline: 2px solid #113416; }
+.fbaia-bp-label { display: block; font-weight: 600; margin: 6px 0 4px; }
+.fbaia-bp-row { display: flex; gap: 6px; }
+.fbaia-bp-input { flex: 1; min-width: 0; padding: 5px 8px; border: 1px solid #8c8f94; border-radius: 6px; }
+.fbaia-bp-go {
+    background: #113416; color: #fff; border: none; border-radius: 6px;
+    padding: 5px 12px; font-weight: 600; cursor: pointer;
+}
+.fbaia-bp-go:hover { background: #0c2510; }
+.fbaia-bp-go:disabled { opacity: .6; cursor: default; }
+.fbaia-bp-go:focus-visible, .fbaia-bp-input:focus-visible { outline: 2px solid #113416; outline-offset: 1px; }
+.fbaia-bp-status { margin: 10px 0 4px; min-height: 1.2em; }
+.fbaia-bp-status.is-ok { color: #0a5f2d; }
+.fbaia-bp-status.is-warn { color: #8a4b00; }
+.fbaia-bp-links { margin-top: 6px; font-size: 12px; }
+
+@media (max-width: 600px) {
+    .fbaia-board-panel { right: 8px; left: 8px; width: auto; }
+}

@@ -1,3 +1,10 @@
+# 0.9.8
+
+### Added — zero-friction in-board workflow
+
+- **Automatic open-task detection.** The in-board panel now detects the currently open task (from the Fluent Boards URL route, with a visible-DOM `data-task-id` fallback) and pre-fills the Task ID — no manual typing. The launcher shows the detected task (e.g. "AI · #123") and updates as you navigate between tasks (`hashchange`). You can still override the ID manually.
+- **Approve / Reject in the panel.** When the analysis result appears, a manager can **Approve & apply** or **Reject** (with optional feedback) directly in the panel — no trip to the settings screen. These call the existing capability-protected REST endpoints and show the new state inline.
+
 # 0.9.7
 
 ### Improved — in-board result, not just "queued"

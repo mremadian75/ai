@@ -2,8 +2,10 @@
 
 Internal WordPress AI automation and project-intelligence add-on for the official Fluent Boards / Fluent Boards Pro plugin.
 
-Version: 0.9.7
+Version: 0.9.8
 
+> **0.9.8** auto-detects the open task (no manual ID entry) and lets a manager **Approve & apply** or **Reject** the AI suggestion directly inside the board panel.
+>
 > **0.9.7** makes the in-board **"AI Analyze"** panel show the result inline (summary, priority, confidence, risk) instead of just "queued", via an optional `task_id` filter on the suggestions REST endpoint that returns a slim, display-only projection.
 >
 > **0.9.6** adds an admin-only **"AI Analyze" launcher inside the Fluent Boards screens** — analyze a task by ID without leaving the board, then jump to the review queue. It loads only on Fluent Boards screens, only for administrators, and uses the existing capability-protected REST endpoint.

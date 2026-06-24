@@ -45,6 +45,22 @@
 .fbaia-bp-prio-medium { background: #eef6ff; border-color: #bcd6f2; color: #135e96; }
 .fbaia-bp-prio-low { background: #eef1ee; border-color: #dfe5dc; color: #3c4a3f; }
 .fbaia-bp-pending { margin: 0; font-size: 12px; color: #646970; }
+.fbaia-bp-detected { margin: 0 0 6px; font-size: 11px; font-weight: 600; color: #0a5f2d; }
+.fbaia-bp-detected[hidden] { display: none; }
+.fbaia-bp-actions { display: flex; gap: 6px; margin-top: 8px; }
+.fbaia-bp-approve {
+    background: #113416; color: #fff; border: none; border-radius: 6px;
+    padding: 5px 10px; font-weight: 600; cursor: pointer;
+}
+.fbaia-bp-approve:hover { background: #0c2510; }
+.fbaia-bp-reject {
+    background: #fff; color: #8a1f11; border: 1px solid #f2b8bd; border-radius: 6px;
+    padding: 5px 10px; font-weight: 600; cursor: pointer;
+}
+.fbaia-bp-reject:hover { background: #fce9e9; }
+.fbaia-bp-approve:focus-visible, .fbaia-bp-reject:focus-visible { outline: 2px solid #113416; outline-offset: 1px; }
+.fbaia-bp-applied { color: #0a5f2d; font-weight: 700; }
+.fbaia-bp-rejected { color: #8a1f11; font-weight: 700; }
 
 @media (max-width: 600px) {
     .fbaia-board-panel { right: 8px; left: 8px; width: auto; }

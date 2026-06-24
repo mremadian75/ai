@@ -396,6 +396,12 @@ class FBAIA_Internal_Actions
 
     public function process_overdue_scan()
     {
+        // Safe-mode contract: a globally disabled engine must never mutate a task, even via
+        // an overdue-scan cron or the manual "Run overdue scan" button.
+        if (($this->settings['enabled'] ?? 'no') !== 'yes') {
+            FBAIA_Logger::add('info', 'Overdue scan skipped because the engine is disabled (safe mode)');
+            return;
+        }
         if (($this->settings['overdue_scan_enabled'] ?? 'no') !== 'yes') {
             return;
         }

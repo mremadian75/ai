@@ -12,7 +12,7 @@ Stability, safety, and admin UX hardening release. **No settings keys were remov
 
 ### Added (safety & resilience)
 
-- **Safe mode on fresh install.** A brand-new activation is now **disabled by default** — the plugin makes no AI calls and mutates no tasks until an admin reviews the settings and explicitly enables the engine.
+- **Safe mode on fresh install.** A brand-new activation is now **disabled by default** — the plugin makes no AI calls and mutates no tasks until an admin reviews the settings and explicitly enables the engine. The master switch also gates background jobs: while the engine is disabled, no cron is scheduled and the overdue scan (the only background job that writes to tasks) is blocked even via its manual button — so a disabled engine truly never mutates a task.
 - **Versioned migrations with backup.** The plugin stores a DB version (`fbaia_db_version`) and, before any upgrade transform, backs up the current settings to `fbaia_settings_backup`. Migrations add new keys without overwriting or deleting existing data, and run automatically on upgrade.
 - **Dependency guard.** Fluent Boards task hooks are only registered when Fluent Boards is actually present. With the dependency missing/inactive the add-on stays completely inert and shows a clear admin notice.
 - **More health checks:** WordPress version, PHP version, Fluent Boards Task/Comment model classes, and options-table writability.

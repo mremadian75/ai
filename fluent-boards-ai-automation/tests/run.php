@@ -13,6 +13,8 @@ require __DIR__ . '/test-settings.php';
 echo "\n";
 require __DIR__ . '/test-ai-and-deps.php';
 echo "\n";
+require __DIR__ . '/test-safemode.php';
+echo "\n";
 require __DIR__ . '/test-render-smoke.php';
 
 exit(fbaia_test_summary());

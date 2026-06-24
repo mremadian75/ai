@@ -159,6 +159,13 @@ class FBAIA_Plugin
         wp_clear_scheduled_hook('fbaia_daily_digest');
         wp_clear_scheduled_hook('fbaia_weekly_intelligence_digest');
 
+        // Honor the master switch / safe mode: when the engine is disabled, schedule no
+        // background jobs at all. Otherwise an admin could enable the overdue scan while
+        // the engine is globally off and tasks would still be mutated by cron.
+        if (($settings['enabled'] ?? 'no') !== 'yes') {
+            return;
+        }
+
         if (($settings['overdue_scan_enabled'] ?? 'no') === 'yes') {
             wp_schedule_event(time() + 300, 'hourly', 'fbaia_overdue_scan');
         }

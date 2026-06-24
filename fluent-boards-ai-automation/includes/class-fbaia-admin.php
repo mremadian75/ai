@@ -288,8 +288,23 @@ class FBAIA_Admin
 
     private function redirect($tab, array $args)
     {
-        wp_safe_redirect($this->tab_url($tab, $args));
+        wp_safe_redirect($this->tab_url($this->tab_for_section($tab), $args));
         exit;
+    }
+
+    /**
+     * Map a settings-section key to the tab that actually renders it. Most sections are
+     * their own tab; "team" lives inside the Company Memory tab and "advanced" inside the
+     * Logs & Health tab. Real tab names map to themselves. This keeps a save from landing
+     * the user on the Dashboard after submitting the Team Directory or Advanced forms.
+     */
+    private function tab_for_section($section)
+    {
+        $map = [
+            'team' => 'memory',
+            'advanced' => 'diagnostics',
+        ];
+        return isset($map[$section]) ? $map[$section] : $section;
     }
 
     private function run_batch_triage()
@@ -635,7 +650,7 @@ class FBAIA_Admin
                 <tr>
                     <th scope="row"><label for="fbaia-api-key"><?php esc_html_e('API key', 'fluent-boards-ai-automation'); ?></label></th>
                     <td>
-                        <input id="fbaia-api-key" type="password" autocomplete="new-password" class="regular-text" name="fbaia[api_key]" value="" placeholder="<?php echo esc_attr($using_constant_key ? __('Defined in wp-config.php', 'fluent-boards-ai-automation') : ($stored_key ? FBAIA_Helpers::mask_secret($stored_key) : __('Paste key to save', 'fluent-boards-ai-automation'))); ?>" <?php disabled($using_constant_key); ?>>
+                        <input id="fbaia-api-key" type="password" autocomplete="new-password" class="regular-text" name="fbaia[api_key]" value="" placeholder="<?php echo esc_attr($using_constant_key ? __('Defined in wp-config.php', 'fluent-boards-ai-automation') : ($stored_key ? __('Saved — paste a new key to replace', 'fluent-boards-ai-automation') : __('Paste key to save', 'fluent-boards-ai-automation'))); ?>" <?php disabled($using_constant_key); ?>>
                         <p class="description"><?php esc_html_e('Recommended: define', 'fluent-boards-ai-automation'); ?> <code>FBAIA_OPENAI_API_KEY</code> <?php esc_html_e('in wp-config.php. Leave blank to keep the stored key.', 'fluent-boards-ai-automation'); ?></p>
                     </td>
                 </tr>

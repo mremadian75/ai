@@ -466,11 +466,6 @@ class FBAIA_Helpers
         }
     }
 
-    private static function checkbox(array $settings, $key)
-    {
-        return isset($settings[$key]) && $settings[$key] === 'yes' ? 'yes' : 'no';
-    }
-
     public static function sanitize_large_text($value)
     {
         // Callers pass already-unslashed values (the admin handler unslashes $_POST once).

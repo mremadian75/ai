@@ -121,3 +121,19 @@
 .fbaia-wrap .fbaia-remove-recipe, .fbaia-wrap .fbaia-remove-row { color:#b32d2e; text-decoration:none; font-size:18px; line-height:1; cursor:pointer; }
 .fbaia-wrap .fbaia-remove-recipe:focus-visible, .fbaia-wrap .fbaia-remove-row:focus-visible { outline:2px solid var(--fbaia-green); }
 .fbaia-wrap .fbaia-recipe-advanced { margin-top:12px; }
+
+/* AI Command Console */
+.fbaia-wrap .fbaia-cmd { background:linear-gradient(135deg,#f3f7f1,#ffffff); }
+.fbaia-wrap .fbaia-cmd-bar { display:flex; gap:8px; align-items:center; margin:10px 0; }
+.fbaia-wrap .fbaia-cmd-input { flex:1; min-width:0; padding:8px 12px; border-radius:10px; }
+.fbaia-wrap .fbaia-cmd-mic { width:40px; height:40px; flex:0 0 auto; border-radius:50%; border:1px solid var(--fbaia-border); background:#fff; cursor:pointer; font-size:18px; line-height:1; }
+.fbaia-wrap .fbaia-cmd-mic:hover { border-color:var(--fbaia-green); }
+.fbaia-wrap .fbaia-cmd-mic.is-listening { background:#fce9e9; border-color:#e0726b; animation:fbaia-pulse 1s infinite; }
+.fbaia-wrap .fbaia-cmd-mic:focus-visible { outline:2px solid var(--fbaia-green); outline-offset:2px; }
+@keyframes fbaia-pulse { 0%,100% { box-shadow:0 0 0 0 rgba(224,114,107,.5); } 50% { box-shadow:0 0 0 6px rgba(224,114,107,0); } }
+.fbaia-wrap .fbaia-cmd-output { margin-top:6px; }
+.fbaia-wrap .fbaia-cmd-output .is-ok { color:#0a5f2d; font-weight:600; }
+.fbaia-wrap .fbaia-cmd-output .is-warn { color:#8a4b00; font-weight:600; }
+.fbaia-wrap .fbaia-cmd-tasks { margin:6px 0 0; padding-left:18px; }
+.fbaia-wrap .fbaia-cmd-tasks li { margin:2px 0; }
+.fbaia-wrap .fbaia-cmd-confirm { margin-top:10px; display:flex; gap:8px; }

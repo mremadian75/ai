@@ -95,6 +95,52 @@ class FBAIA_REST_Controller
                 return current_user_can('manage_options');
             },
         ]);
+
+        register_rest_route('fb-ai-automation/v1', '/command', [
+            'methods' => 'POST',
+            'callback' => [$this, 'command'],
+            'permission_callback' => function () {
+                return current_user_can('manage_options');
+            },
+        ]);
+
+        register_rest_route('fb-ai-automation/v1', '/command/execute', [
+            'methods' => 'POST',
+            'callback' => [$this, 'command_execute'],
+            'permission_callback' => function () {
+                return current_user_can('manage_options');
+            },
+        ]);
+    }
+
+    public function command(WP_REST_Request $request)
+    {
+        if (!class_exists('FBAIA_Command')) {
+            return new WP_REST_Response(['ok' => false, 'error' => 'Command engine unavailable.'], 500);
+        }
+        $text = sanitize_textarea_field((string) $request->get_param('text'));
+        $intent = FBAIA_Command::interpret($text);
+        if (is_wp_error($intent)) {
+            return new WP_REST_Response(['ok' => false, 'error' => $intent->get_error_message()], 400);
+        }
+        $result = FBAIA_Command::execute($intent, false);
+        $result['interpreted'] = ['intent' => $intent['intent'], 'params' => $intent['params'], 'speak' => $intent['speak']];
+        return new WP_REST_Response($result, 200);
+    }
+
+    public function command_execute(WP_REST_Request $request)
+    {
+        if (!class_exists('FBAIA_Command')) {
+            return new WP_REST_Response(['ok' => false, 'error' => 'Command engine unavailable.'], 500);
+        }
+        // Re-sanitize server-side; never trust the client's intent/params blindly.
+        $raw = [
+            'intent' => sanitize_key((string) $request->get_param('intent')),
+            'params' => (array) $request->get_param('params'),
+        ];
+        $intent = FBAIA_Command::sanitize_intent($raw);
+        $result = FBAIA_Command::execute($intent, true);
+        return new WP_REST_Response($result, 200);
     }
 
     public function preview(WP_REST_Request $request)

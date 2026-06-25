@@ -161,6 +161,121 @@
         });
     }
 
+    // AI Command Console: free text (or voice) -> REST interpret -> run, or confirm-then-run
+    // for task-changing commands.
+    function commandConsole() {
+        var card = document.getElementById('fbaia-command');
+        if (!card || !window.FBAIAAdmin || !FBAIAAdmin.restRoot) {
+            return;
+        }
+        var input = card.querySelector('.fbaia-cmd-input');
+        var sendBtn = card.querySelector('.fbaia-cmd-send');
+        var micBtn = card.querySelector('.fbaia-cmd-mic');
+        var out = card.querySelector('.fbaia-cmd-output');
+        var i18n = FBAIAAdmin.cmd || {};
+        var viaVoice = false;
+
+        function speak(text) {
+            if (!viaVoice || !window.speechSynthesis || !text) { return; }
+            try {
+                var u = new SpeechSynthesisUtterance(String(text));
+                u.lang = (document.documentElement.lang || 'en-US');
+                window.speechSynthesis.cancel();
+                window.speechSynthesis.speak(u);
+            } catch (e) { /* ignore */ }
+        }
+
+        function esc(s) {
+            return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+            });
+        }
+
+        function post(path, payload) {
+            return fetch(FBAIAAdmin.restRoot + path, {
+                method: 'POST',
+                headers: { 'X-WP-Nonce': FBAIAAdmin.nonce, 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify(payload || {})
+            }).then(function (r) { return r.json().catch(function () { return {}; }); });
+        }
+
+        function renderTasks(tasks) {
+            if (!tasks || !tasks.length) { return ''; }
+            var rows = tasks.slice(0, 25).map(function (t) {
+                return '<li>#' + esc(t.id) + ' — ' + esc(t.title || '') +
+                    (t.priority ? ' <em>(' + esc(t.priority) + ')</em>' : '') +
+                    (t.due_at ? ' · ' + esc(t.due_at) : '') + '</li>';
+            }).join('');
+            return '<ul class="fbaia-cmd-tasks">' + rows + '</ul>';
+        }
+
+        function showResult(d) {
+            var html = '<p class="' + (d.ok ? 'is-ok' : 'is-warn') + '">' + esc(d.message || (d.ok ? i18n.done : i18n.error)) + '</p>';
+            if (d.data && d.data.tasks) { html += renderTasks(d.data.tasks); }
+            if (d.data && d.data.next_actions && d.data.next_actions.length) {
+                html += '<ul class="fbaia-cmd-tasks">' + d.data.next_actions.map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ul>';
+            }
+            if (d.needs_confirm) {
+                html += '<div class="fbaia-cmd-confirm">' +
+                    '<button type="button" class="button button-primary fbaia-cmd-yes">' + esc(i18n.confirm || 'Confirm') + '</button> ' +
+                    '<button type="button" class="button fbaia-cmd-no">' + esc(i18n.cancel || 'Cancel') + '</button></div>';
+            }
+            out.innerHTML = html;
+            speak(d.message);
+            if (d.needs_confirm) {
+                out.querySelector('.fbaia-cmd-yes').addEventListener('click', function () {
+                    out.innerHTML = '<p>' + esc(i18n.thinking || '…') + '</p>';
+                    post('command/execute', { intent: d.intent, params: d.params }).then(showResult);
+                });
+                out.querySelector('.fbaia-cmd-no').addEventListener('click', function () { out.innerHTML = ''; viaVoice = false; });
+            } else {
+                viaVoice = false;
+            }
+        }
+
+        function run() {
+            var text = (input.value || '').trim();
+            if (!text) { return; }
+            out.innerHTML = '<p>' + esc(i18n.thinking || '…') + '</p>';
+            sendBtn.disabled = true;
+            post('command', { text: text }).then(function (d) {
+                sendBtn.disabled = false;
+                if (d && d.error) { out.innerHTML = '<p class="is-warn">' + esc(d.error) + '</p>'; return; }
+                showResult(d);
+            }).catch(function () { sendBtn.disabled = false; out.innerHTML = '<p class="is-warn">' + esc(i18n.error) + '</p>'; });
+        }
+
+        sendBtn.addEventListener('click', run);
+        input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); run(); } });
+
+        // Voice input via the Web Speech API (graceful fallback when unsupported).
+        var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SR) {
+            micBtn.disabled = true;
+            micBtn.title = i18n.micUnsupported || '';
+        } else {
+            micBtn.addEventListener('click', function () {
+                var rec = new SR();
+                rec.lang = (document.documentElement.lang || 'en-US');
+                rec.interimResults = false;
+                rec.maxAlternatives = 1;
+                micBtn.classList.add('is-listening');
+                micBtn.setAttribute('aria-pressed', 'true');
+                out.innerHTML = '<p>' + esc(i18n.listening || '…') + '</p>';
+                rec.onresult = function (ev) {
+                    var said = ev.results[0][0].transcript;
+                    input.value = said;
+                    viaVoice = true;
+                    run();
+                };
+                rec.onerror = function () { out.innerHTML = ''; };
+                rec.onend = function () { micBtn.classList.remove('is-listening'); micBtn.setAttribute('aria-pressed', 'false'); };
+                rec.start();
+            });
+        }
+    }
+
     $(function () {
         addTextareaTools();
         bindTemplateButtons();
@@ -168,5 +283,6 @@
         enhanceTables();
         guardUnsavedChanges();
         recipeBuilder();
+        commandConsole();
     });
 })(jQuery);

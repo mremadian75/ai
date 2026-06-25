@@ -143,6 +143,94 @@ class FBAIA_OpenAI_Client
         ]);
     }
 
+    /**
+     * Lightweight JSON chat call used by the AI Command Console for intent interpretation.
+     * Reuses the same budget / rate-limit / parsing safeguards as complete(), but with a
+     * caller-supplied system + user prompt and no task-context enrichment.
+     *
+     * @return array{parsed: ?array, raw: string, usage: array, model: string}|WP_Error
+     */
+    public function chat_json($system, $user, $max_tokens = 800)
+    {
+        if (class_exists('FBAIA_Usage_Tracker')) {
+            $budget_check = FBAIA_Usage_Tracker::can_call($this->settings);
+            if (is_wp_error($budget_check)) {
+                return $budget_check;
+            }
+        }
+
+        $api_key = trim((string) ($this->settings['api_key'] ?? ''));
+        if ($api_key === '') {
+            return new WP_Error('missing_api_key', __('OpenAI API key is missing.', 'fluent-boards-ai-automation'));
+        }
+        if (!$this->rate_limit_ok()) {
+            return new WP_Error('fbaia_rate_limited', __('AI rate limit reached. Increase the limit or wait for the next hour.', 'fluent-boards-ai-automation'));
+        }
+
+        $base = rtrim((string) ($this->settings['api_base'] ?? 'https://api.openai.com/v1'), '/');
+        $url = esc_url_raw($base . '/chat/completions');
+
+        $body = [
+            'model' => sanitize_text_field($this->settings['model'] ?? 'gpt-4o-mini'),
+            'messages' => [
+                ['role' => 'system', 'content' => (string) $system],
+                ['role' => 'user', 'content' => (string) $user],
+            ],
+            'temperature' => 0.1,
+            'max_tokens' => max(100, min(2000, (int) $max_tokens)),
+        ];
+        if (($this->settings['force_json_response'] ?? 'yes') === 'yes') {
+            $body['response_format'] = ['type' => 'json_object'];
+        }
+
+        $encoded = wp_json_encode($body);
+        if (!$encoded) {
+            return new WP_Error('openai_body_encode_failed', __('Could not encode OpenAI request body.', 'fluent-boards-ai-automation'));
+        }
+        $estimated_tokens = class_exists('FBAIA_Usage_Tracker') ? FBAIA_Usage_Tracker::estimate_tokens_from_text($encoded) : 0;
+
+        $response = wp_remote_post($url, [
+            'headers' => [
+                'Authorization' => 'Bearer ' . $api_key,
+                'Content-Type'  => 'application/json',
+                'Accept'        => 'application/json',
+            ],
+            'timeout' => 45,
+            'body'    => $encoded,
+        ]);
+
+        if (is_wp_error($response)) {
+            return $response;
+        }
+
+        $code = wp_remote_retrieve_response_code($response);
+        $raw_body = wp_remote_retrieve_body($response);
+        $decoded = json_decode($raw_body, true);
+
+        if ($code < 200 || $code >= 300) {
+            $message = is_array($decoded) ? ($decoded['error']['message'] ?? ('OpenAI request failed with HTTP ' . $code)) : ('OpenAI request failed with HTTP ' . $code);
+            return new WP_Error('openai_http_error', sanitize_text_field($message), ['status' => $code]);
+        }
+        if (!is_array($decoded)) {
+            return new WP_Error('openai_invalid_json', __('OpenAI returned invalid JSON at transport level.', 'fluent-boards-ai-automation'));
+        }
+
+        $content = $decoded['choices'][0]['message']['content'] ?? '';
+        $json = $this->parse_model_json((string) $content);
+        $usage = is_array($decoded['usage'] ?? null) ? $decoded['usage'] : [];
+        $model = $decoded['model'] ?? ($this->settings['model'] ?? '');
+        if (class_exists('FBAIA_Usage_Tracker')) {
+            FBAIA_Usage_Tracker::record($usage, ['event' => 'command', 'model' => $model, 'estimated_tokens' => $estimated_tokens]);
+        }
+
+        return [
+            'parsed' => is_array($json) ? $json : null,
+            'raw' => FBAIA_Helpers::truncate_string((string) $content),
+            'usage' => $usage,
+            'model' => $model,
+        ];
+    }
+
     private function build_task_context(array $payload)
     {
         if (($this->settings['enable_task_enrichment'] ?? 'yes') !== 'yes') {

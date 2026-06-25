@@ -60,6 +60,17 @@ class FBAIA_Admin
             'templates' => $this->ui_templates(),
             'copied' => __('Copied', 'fluent-boards-ai-automation'),
             'unsavedWarning' => __('You have unsaved changes in this tab. Leave without saving?', 'fluent-boards-ai-automation'),
+            'restRoot' => esc_url_raw(rest_url('fb-ai-automation/v1/')),
+            'nonce' => wp_create_nonce('wp_rest'),
+            'cmd' => [
+                'thinking' => __('Thinking…', 'fluent-boards-ai-automation'),
+                'confirm' => __('Confirm', 'fluent-boards-ai-automation'),
+                'cancel' => __('Cancel', 'fluent-boards-ai-automation'),
+                'listening' => __('Listening…', 'fluent-boards-ai-automation'),
+                'micUnsupported' => __('Voice input is not supported in this browser.', 'fluent-boards-ai-automation'),
+                'error' => __('Command failed.', 'fluent-boards-ai-automation'),
+                'done' => __('Done', 'fluent-boards-ai-automation'),
+            ],
         ]);
     }
 
@@ -558,11 +569,34 @@ class FBAIA_Admin
 
     private function tab_dashboard(array $settings)
     {
+        $this->command_console($settings);
         $this->dashboard_cards($settings);
         $this->quick_actions();
         if (($settings['admin_show_guidance'] ?? 'yes') === 'yes') {
             $this->onboarding_panel($settings);
         }
+    }
+
+    private function command_console(array $settings)
+    {
+        $has_key = !empty($settings['api_key']);
+        ?>
+        <div class="fbaia-card fbaia-full fbaia-cmd" id="fbaia-command">
+            <h2><?php esc_html_e('AI Command Console', 'fluent-boards-ai-automation'); ?></h2>
+            <p class="description"><?php esc_html_e('Tell the assistant what to do in plain language — type or use the mic. Read-only commands run instantly; anything that changes a task asks you to confirm first.', 'fluent-boards-ai-automation'); ?></p>
+            <?php if (!$has_key) : ?>
+                <p class="fbaia-warn-text"><?php esc_html_e('Add an AI provider key on the AI Provider tab to use the console.', 'fluent-boards-ai-automation'); ?></p>
+            <?php endif; ?>
+            <div class="fbaia-cmd-bar">
+                <button type="button" class="fbaia-cmd-mic" aria-label="<?php esc_attr_e('Voice command', 'fluent-boards-ai-automation'); ?>" title="<?php esc_attr_e('Voice command', 'fluent-boards-ai-automation'); ?>">&#127908;</button>
+                <label class="screen-reader-text" for="fbaia-cmd-input"><?php esc_html_e('Command', 'fluent-boards-ai-automation'); ?></label>
+                <input type="text" id="fbaia-cmd-input" class="fbaia-cmd-input regular-text" placeholder="<?php esc_attr_e('e.g. analyze task 42 · show overdue tasks · set task 42 to high', 'fluent-boards-ai-automation'); ?>" autocomplete="off">
+                <button type="button" class="button button-primary fbaia-cmd-send"><?php esc_html_e('Run', 'fluent-boards-ai-automation'); ?></button>
+            </div>
+            <div class="fbaia-cmd-output" role="status" aria-live="polite"></div>
+            <p class="description"><?php esc_html_e('Examples: "summarize task 17", "find stale tasks older than 5 days", "create subtasks on task 8: design, build, QA", "comment on task 8: please add a tracking plan".', 'fluent-boards-ai-automation'); ?></p>
+        </div>
+        <?php
     }
 
     private function dashboard_cards(array $settings)

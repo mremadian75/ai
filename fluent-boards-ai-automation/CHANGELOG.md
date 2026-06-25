@@ -1,3 +1,16 @@
+# 0.12.0
+
+### Added — AI Command Console ("Siri-style" natural-language commands)
+
+Tell the assistant what to do in plain language — by **typing or voice** — and it does it, safely.
+
+- A **Command Console** on the Dashboard: type a request (or press the mic for voice input via the browser's Web Speech API) like *"analyze task 42"*, *"show overdue tasks"*, *"set task 42 to high"*, *"create subtasks on task 8: design, build, QA"*, *"comment on task 8: add a tracking plan"*.
+- The AI converts the request into ONE **structured intent from a fixed whitelist**; the plugin validates and sanitizes every parameter — the AI never executes anything itself.
+- **Read-only** commands (find tasks, analyze, summarize, help) run immediately and show results inline. **Task-changing** commands (set priority, create subtasks, add comment) show a **preview and require an explicit Confirm** before anything changes — consistent with the plugin's review-first design.
+- Voice commands also **speak the result back** (text-to-speech) for a hands-free, assistant-like feel. All of it is graceful: no mic/speech support → it silently falls back to typing.
+- New REST routes `POST /command` (interpret + run/preview) and `POST /command/execute` (confirm a change), both `manage_options` + nonce protected. New lightweight `FBAIA_OpenAI_Client::chat_json()` powers interpretation with the same budget/rate-limit safeguards. No secrets reach the browser.
+- New `FBAIA_Command` engine with a fully unit-tested intent allowlist, parameter sanitization, and the read-now / mutate-confirm gate.
+
 # 0.11.0
 
 Builds on the Automation Recipes engine with the three most-requested monday-style capabilities.

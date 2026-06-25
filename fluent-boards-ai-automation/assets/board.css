@@ -1,0 +1,67 @@
+/* Fluent Boards AI — in-board launcher. All selectors are namespaced under .fbaia-board-*
+   so nothing leaks into Fluent Boards or WordPress styles. */
+.fbaia-board-launcher {
+    position: fixed; right: 18px; bottom: 18px; z-index: 99999;
+    background: #113416; color: #fff; border: none; border-radius: 999px;
+    padding: 10px 16px; font-weight: 700; font-size: 13px; line-height: 1; cursor: pointer;
+    box-shadow: 0 6px 20px rgba(0,0,0,.25);
+}
+.fbaia-board-launcher:hover { background: #0c2510; }
+.fbaia-board-launcher:focus-visible { outline: 2px solid #f2c94c; outline-offset: 2px; }
+
+.fbaia-board-panel {
+    position: fixed; right: 18px; bottom: 64px; z-index: 99999;
+    width: 300px; max-width: 92vw; background: #fff; border: 1px solid #dcdcde;
+    border-radius: 14px; padding: 14px; box-shadow: 0 12px 40px rgba(0,0,0,.22);
+    color: #1d2327; font-size: 13px;
+}
+.fbaia-board-panel[hidden] { display: none; }
+.fbaia-bp-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.fbaia-bp-head strong { color: #113416; }
+.fbaia-bp-close { background: none; border: none; font-size: 20px; line-height: 1; cursor: pointer; color: #646970; padding: 0 4px; }
+.fbaia-bp-close:focus-visible { outline: 2px solid #113416; }
+.fbaia-bp-label { display: block; font-weight: 600; margin: 6px 0 4px; }
+.fbaia-bp-row { display: flex; gap: 6px; }
+.fbaia-bp-input { flex: 1; min-width: 0; padding: 5px 8px; border: 1px solid #8c8f94; border-radius: 6px; }
+.fbaia-bp-go {
+    background: #113416; color: #fff; border: none; border-radius: 6px;
+    padding: 5px 12px; font-weight: 600; cursor: pointer;
+}
+.fbaia-bp-go:hover { background: #0c2510; }
+.fbaia-bp-go:disabled { opacity: .6; cursor: default; }
+.fbaia-bp-go:focus-visible, .fbaia-bp-input:focus-visible { outline: 2px solid #113416; outline-offset: 1px; }
+.fbaia-bp-status { margin: 10px 0 4px; min-height: 1.2em; }
+.fbaia-bp-status.is-ok { color: #0a5f2d; }
+.fbaia-bp-status.is-warn { color: #8a4b00; }
+.fbaia-bp-links { margin-top: 6px; font-size: 12px; }
+
+.fbaia-bp-result { margin: 8px 0; padding: 10px; background: #f6f7f7; border: 1px solid #e0e3df; border-radius: 10px; }
+.fbaia-bp-result[hidden] { display: none; }
+.fbaia-bp-summary { margin: 0 0 8px; line-height: 1.45; }
+.fbaia-bp-meta { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 6px; }
+.fbaia-bp-badge { display: inline-block; background: #eef1ee; border: 1px solid #dfe5dc; border-radius: 999px; padding: 1px 8px; font-size: 11px; font-weight: 600; color: #3c4a3f; }
+.fbaia-bp-prio-urgent { background: #fce9e9; border-color: #f2b8bd; color: #8a1f11; }
+.fbaia-bp-prio-high { background: #fff1e3; border-color: #f0c79a; color: #8a4b00; }
+.fbaia-bp-prio-medium { background: #eef6ff; border-color: #bcd6f2; color: #135e96; }
+.fbaia-bp-prio-low { background: #eef1ee; border-color: #dfe5dc; color: #3c4a3f; }
+.fbaia-bp-pending { margin: 0; font-size: 12px; color: #646970; }
+.fbaia-bp-detected { margin: 0 0 6px; font-size: 11px; font-weight: 600; color: #0a5f2d; }
+.fbaia-bp-detected[hidden] { display: none; }
+.fbaia-bp-actions { display: flex; gap: 6px; margin-top: 8px; }
+.fbaia-bp-approve {
+    background: #113416; color: #fff; border: none; border-radius: 6px;
+    padding: 5px 10px; font-weight: 600; cursor: pointer;
+}
+.fbaia-bp-approve:hover { background: #0c2510; }
+.fbaia-bp-reject {
+    background: #fff; color: #8a1f11; border: 1px solid #f2b8bd; border-radius: 6px;
+    padding: 5px 10px; font-weight: 600; cursor: pointer;
+}
+.fbaia-bp-reject:hover { background: #fce9e9; }
+.fbaia-bp-approve:focus-visible, .fbaia-bp-reject:focus-visible { outline: 2px solid #113416; outline-offset: 1px; }
+.fbaia-bp-applied { color: #0a5f2d; font-weight: 700; }
+.fbaia-bp-rejected { color: #8a1f11; font-weight: 700; }
+
+@media (max-width: 600px) {
+    .fbaia-board-panel { right: 8px; left: 8px; width: auto; }
+}

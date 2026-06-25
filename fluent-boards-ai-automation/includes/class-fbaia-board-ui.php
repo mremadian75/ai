@@ -16,8 +16,21 @@ class FBAIA_Board_UI
 {
     public function register()
     {
-        // Fires while Fluent Boards enqueues its own assets — i.e. only on its screens.
+        // Primary: fires while Fluent Boards enqueues its own assets — i.e. only on its screens.
         add_action('fluent_boards/after_enqueue_assets', [$this, 'enqueue_assets']);
+        // Fallback: some Fluent Boards versions may not fire that hook. Detect the Fluent
+        // Boards admin screen by its page slug and enqueue there too. wp_enqueue_* are keyed by
+        // handle, so this never double-loads.
+        add_action('admin_enqueue_scripts', [$this, 'maybe_enqueue_on_fb_screen']);
+    }
+
+    public function maybe_enqueue_on_fb_screen($hook)
+    {
+        $page = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
+        if ($page === '' || strpos($page, 'fluent-boards') !== 0) {
+            return;
+        }
+        $this->enqueue_assets();
     }
 
     public function enqueue_assets()

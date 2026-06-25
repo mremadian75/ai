@@ -20,27 +20,30 @@ class FBAIA_Admin
     {
         add_action('admin_menu', [$this, 'menu']);
         add_action('admin_init', [$this, 'handle_actions']);
+        add_action('admin_init', [$this, 'maybe_dismiss_setup_notice']);
         add_action('admin_enqueue_scripts', [$this, 'assets']);
         add_action('admin_notices', [$this, 'dependency_notice']);
+        add_action('admin_notices', [$this, 'setup_notice']);
     }
 
     public function menu()
     {
-        add_options_page(
+        // Top-level menu so the plugin is easy to find (it used to be tucked under Settings).
+        add_menu_page(
             __('Fluent Boards AI Automation', 'fluent-boards-ai-automation'),
             __('Fluent Boards AI', 'fluent-boards-ai-automation'),
             'manage_options',
             self::MENU_SLUG,
-            [$this, 'page']
+            [$this, 'page'],
+            'dashicons-superhero-alt',
+            58
         );
 
-        // Add the Knowledge Library link ourselves, with a plain manage_options capability,
-        // instead of letting the custom post type auto-inject itself into the Settings menu.
-        // Keeps full control over the Settings submenu and avoids the CPT capability mapping
-        // ever affecting other admin menu items.
+        // Knowledge Library as a submenu (plain manage_options; the CPT itself stays out of
+        // the core menu to avoid capability/menu interference).
         if (class_exists('FBAIA_Knowledge_Library') && post_type_exists(FBAIA_Knowledge_Library::CPT)) {
             add_submenu_page(
-                'options-general.php',
+                self::MENU_SLUG,
                 __('AI Company Knowledge', 'fluent-boards-ai-automation'),
                 __('AI Company Knowledge', 'fluent-boards-ai-automation'),
                 'manage_options',
@@ -51,7 +54,7 @@ class FBAIA_Admin
 
     public function assets($hook)
     {
-        if ($hook !== 'settings_page_' . self::MENU_SLUG) {
+        if ($hook !== 'toplevel_page_' . self::MENU_SLUG) {
             return;
         }
         wp_enqueue_style('fbaia-admin', FBAIA_URL . 'assets/admin.css', [], FBAIA_VERSION);
@@ -91,6 +94,54 @@ class FBAIA_Admin
     private function is_our_page()
     {
         return isset($_GET['page']) && sanitize_key(wp_unslash($_GET['page'])) === self::MENU_SLUG;
+    }
+
+    /**
+     * Site-wide setup banner so the plugin is obviously present and points to the next step.
+     * Shows only while setup is incomplete (no API key or engine still off), is dismissible
+     * per user, and never shows on the plugin's own page (which has its own guidance).
+     */
+    public function setup_notice()
+    {
+        if (!current_user_can('manage_options') || $this->is_our_page()) {
+            return;
+        }
+        if (get_user_meta(get_current_user_id(), 'fbaia_setup_notice_dismissed', true)) {
+            return;
+        }
+        $settings = FBAIA_Helpers::get_settings();
+        $has_key = !empty($settings['api_key']);
+        $enabled = (($settings['enabled'] ?? 'no') === 'yes');
+        if ($has_key && $enabled) {
+            return; // Fully connected — nothing to nag about.
+        }
+
+        $next = !$has_key
+            ? __('add your AI provider key', 'fluent-boards-ai-automation')
+            : __('turn the engine on', 'fluent-boards-ai-automation');
+        $url = FBAIA_Helpers::admin_url();
+        $dismiss = wp_nonce_url(add_query_arg('fbaia_dismiss_setup', '1'), 'fbaia_dismiss_setup');
+        ?>
+        <div class="notice notice-info">
+            <p>
+                <strong><?php esc_html_e('Fluent Boards AI is installed but not connected yet.', 'fluent-boards-ai-automation'); ?></strong>
+                <?php echo esc_html(sprintf(__('To start, %s.', 'fluent-boards-ai-automation'), $next)); ?>
+                <a href="<?php echo esc_url($url); ?>" class="button button-primary" style="margin-left:6px;"><?php esc_html_e('Open Fluent Boards AI', 'fluent-boards-ai-automation'); ?></a>
+                <a href="<?php echo esc_url($dismiss); ?>" style="margin-left:6px;"><?php esc_html_e('Dismiss', 'fluent-boards-ai-automation'); ?></a>
+            </p>
+        </div>
+        <?php
+    }
+
+    public function maybe_dismiss_setup_notice()
+    {
+        if (!isset($_GET['fbaia_dismiss_setup']) || !current_user_can('manage_options')) {
+            return;
+        }
+        check_admin_referer('fbaia_dismiss_setup');
+        update_user_meta(get_current_user_id(), 'fbaia_setup_notice_dismissed', 1);
+        wp_safe_redirect(remove_query_arg(['fbaia_dismiss_setup', '_wpnonce']));
+        exit;
     }
 
     private function tabs()

@@ -1,3 +1,15 @@
+# 0.12.1
+
+### Improved — discoverability & "it's connected" feedback
+
+Several people activated the plugin and saw "no difference" — because it is **disabled by default (safe mode)** and its screen was tucked under Settings. This release makes its presence and the next step obvious, without changing the safe-by-default behavior.
+
+- **Top-level admin menu** "Fluent Boards AI" (with an icon) instead of a hidden item under Settings. (The plugin page URL is now `admin.php?page=fluent-boards-ai-automation`.)
+- **Setup banner** across the admin while setup is incomplete: it says the plugin is installed but not connected yet and links straight to the right place ("add your API key" / "turn the engine on"). Dismissible per user; disappears once you're connected.
+- **In-board launcher fallback**: the "AI" button now also loads on Fluent Boards admin screens (detected by page slug) even if your Fluent Boards version doesn't fire the asset hook the launcher previously relied on.
+
+To actually connect it: open **Fluent Boards AI → AI Provider**, add a key (or define `FBAIA_OPENAI_API_KEY`), then **Automations → enable the engine** and pick a few triggers. Or just use the **Command Console** on the Dashboard right away.
+
 # 0.12.0
 
 ### Added — AI Command Console ("Siri-style" natural-language commands)

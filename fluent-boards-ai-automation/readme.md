@@ -2,8 +2,10 @@
 
 Internal WordPress AI automation and project-intelligence add-on for the official Fluent Boards / Fluent Boards Pro plugin.
 
-Version: 0.12.0
+Version: 0.12.1
 
+> **0.12.1** makes the plugin discoverable: a **top-level "Fluent Boards AI" menu**, a **setup banner** that points to the next step while it's not connected yet, and a more reliable in-board launcher. (The plugin is intentionally **disabled on fresh install** — see "I don't see any difference" below.)
+>
 > **0.12.0** adds an **AI Command Console** — give the assistant a natural-language instruction by **typing or voice** ("analyze task 42", "show overdue tasks", "set task 42 to high") and it does it. Read-only commands run instantly; task-changing commands ask you to confirm first. Voice commands are spoken back. Find it on the Dashboard tab.
 >
 > **0.11.0** expands Automation Recipes with a **visual builder** (dropdowns, no JSON), **time-based recipes** (`task_stale` "stuck N days", `task_overdue`, `task_due_soon` via an hourly scan), and a **Held recipe actions** review queue with **Approve & apply** / **Reject** for task-changing actions.
@@ -212,6 +214,14 @@ The admin page now includes:
 The export intentionally removes API secrets.
 
 ## Troubleshooting
+
+**I installed and activated it but I see no difference / it isn't connected.**
+This is by design: a fresh install is in **safe mode (disabled)** so it never changes anything until you set it up. To connect it:
+1. Open the **Fluent Boards AI** menu (top-level in the admin sidebar, with a hero icon).
+2. **AI Provider** tab → add your OpenAI-compatible API key (or define `FBAIA_OPENAI_API_KEY` in `wp-config.php`) → click **Test OpenAI + Context**.
+3. **Automations** tab → turn **Engine enabled** on and select a few triggers (task created, stage/priority/date changed, comment created).
+4. Try the **AI Command Console** on the Dashboard (type "analyze task 42") for instant results, or open a task and use the floating **AI** button.
+A banner appears across the admin until these are done. Nothing fires on task events while the engine is off, which is why an unconfigured install looks "silent."
 
 **My settings (Company Memory / Team Directory) disappeared after saving.**
 This was a bug in 0.9.2 and is fixed in 0.9.3. Saving is now non-destructive and each tab saves only its own fields. If a save is ever truncated by your server, the plugin now refuses to save and shows a clear error instead of wiping data. A pre-upgrade backup of your settings is stored in the `fbaia_settings_backup` option.

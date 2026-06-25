@@ -725,6 +725,6 @@ class FBAIA_Helpers
 
     public static function admin_url()
     {
-        return admin_url('options-general.php?page=fluent-boards-ai-automation');
+        return admin_url('admin.php?page=fluent-boards-ai-automation');
     }
 }

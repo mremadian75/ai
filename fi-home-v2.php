@@ -40,11 +40,16 @@ if ( ! function_exists( 'fi_home_v2_shortcode' ) ) {
   --maxw:1200px; --ease:cubic-bezier(.22,.61,.36,1);
 }
 .fi-v2 *{box-sizing:border-box;margin:0;padding:0}
-.fi-v2{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;scroll-behavior:smooth}
+.fi-v2{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+html:has(.fi-v2){scroll-behavior:smooth}
 .fi-v2{position:relative;isolation:isolate;width:100%;overflow-x:hidden;background:var(--beige);color:var(--ink);font-family:"Inter",system-ui,sans-serif;font-size:17px;line-height:1.55;font-weight:400}
 .fi-v2::selection{background:var(--negro);color:var(--beige)}
 .fi-v2::before{content:"";position:absolute;inset:0;z-index:40;pointer-events:none;opacity:.05;mix-blend-mode:multiply;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
 .fi-v2 a{color:inherit;text-decoration:none}
+/* Keyboard accessibility — visible focus rings (mouse clicks stay clean) */
+.fi-v2 a:focus-visible,.fi-v2 .btn:focus-visible,.fi-v2 .tlink:focus-visible,.fi-v2 button:focus-visible{outline:2px solid var(--azul);outline-offset:3px;border-radius:2px}
+.fi-v2 .btn-rojo:focus-visible{outline-color:var(--negro)}
+.fi-v2 .feed *:focus-visible,.fi-v2 .band *:focus-visible{outline-color:var(--lime)}
 .fi-v2 img{display:block;max-width:100%}
 .fi-v2 .wrap{max-width:var(--maxw);margin:0 auto;padding:0 40px}
 .fi-v2 .display{font-family:"Archivo Black",sans-serif;font-weight:400;text-transform:uppercase;line-height:.96;letter-spacing:-.015em}
@@ -212,6 +217,8 @@ if ( ! function_exists( 'fi_home_v2_shortcode' ) ) {
 
 /* ─────────── SECTION SHELL ─────────── */
 .fi-v2 section{padding:clamp(92px,10.5vw,160px) 0}
+/* Offset anchor jumps so headings don't hide under a sticky header */
+.fi-v2 section[id],.fi-v2 header[id]{scroll-margin-top:90px}
 .fi-v2 .kick{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:46px;padding-bottom:18px;border-bottom:1px solid var(--line)}
 .fi-v2 .sec-head{display:grid;grid-template-columns:1fr 1.12fr;gap:50px;align-items:end;margin-bottom:70px}
 .fi-v2 .sec-head h2{font-size:clamp(1.9rem,4.3vw,3.3rem);max-width:15ch}

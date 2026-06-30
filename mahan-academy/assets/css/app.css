@@ -1,0 +1,245 @@
+/* Mahan Academy — front-end styles. Coursera structure + Duolingo energy. */
+.mahan-app {
+	--m-primary: var(--mahan-primary, #4f46e5);
+	--m-accent: var(--mahan-accent, #22c55e);
+	--m-bg: #f6f7fb;
+	--m-surface: #ffffff;
+	--m-text: #1f2433;
+	--m-muted: #6b7280;
+	--m-border: #e7e9f0;
+	--m-radius: 16px;
+	--m-shadow: 0 10px 30px rgba(20, 23, 40, .08);
+	--m-shadow-sm: 0 2px 8px rgba(20, 23, 40, .06);
+	box-sizing: border-box;
+	color: var(--m-text);
+	background: var(--m-bg);
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+	line-height: 1.55;
+	min-height: 60vh;
+	margin: 0 calc(50% - 50vw);
+	width: 100vw;
+}
+.mahan-app * { box-sizing: border-box; }
+.mahan-app.mahan-theme-dark {
+	--m-bg: #0d1117;
+	--m-surface: #161b25;
+	--m-text: #e6e8ee;
+	--m-muted: #9aa3b2;
+	--m-border: #262c39;
+	--m-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+}
+
+/* Boot */
+.mahan-boot, .mahan-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 80px 20px; color: var(--m-muted); }
+.mahan-boot-spinner { width: 40px; height: 40px; border-radius: 50%; border: 4px solid var(--m-border); border-top-color: var(--m-primary); animation: m-spin 1s linear infinite; }
+@keyframes m-spin { to { transform: rotate(360deg); } }
+
+/* Topbar / HUD */
+.mahan-topbar { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; gap: 18px; padding: 12px clamp(16px, 5vw, 48px); background: var(--m-surface); border-bottom: 1px solid var(--m-border); box-shadow: var(--m-shadow-sm); }
+.mahan-brand { font-weight: 800; font-size: 20px; color: var(--m-text); text-decoration: none; letter-spacing: -.02em; }
+.mahan-brand span { color: var(--m-primary); }
+.mahan-nav { display: flex; gap: 6px; margin-left: 8px; }
+.mahan-nav-link { padding: 8px 14px; border-radius: 999px; color: var(--m-muted); text-decoration: none; font-weight: 600; font-size: 14px; }
+.mahan-nav-link:hover { background: var(--m-bg); color: var(--m-text); }
+.mahan-nav-link.is-active { color: var(--m-primary); background: color-mix(in srgb, var(--m-primary) 10%, transparent); }
+.mahan-hud { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+.mahan-hud-item { display: flex; align-items: center; gap: 5px; font-weight: 800; font-size: 15px; }
+.mahan-hud-streak { color: #f59e0b; }
+.mahan-hud-xp { color: var(--m-primary); }
+.mahan-hud-level { color: var(--m-accent); }
+.mahan-hud-icon { font-size: 16px; }
+.mahan-hud-avatar { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 2px solid var(--m-border); }
+
+/* Main wrap */
+.mahan-main { max-width: 1120px; margin: 0 auto; padding: clamp(20px, 4vw, 40px) clamp(16px, 5vw, 48px) 80px; }
+
+/* Buttons */
+.mahan-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: none; cursor: pointer; font-weight: 700; font-size: 15px; padding: 11px 20px; border-radius: 12px; text-decoration: none; transition: transform .08s ease, box-shadow .15s ease, filter .15s ease; }
+.mahan-btn:active { transform: translateY(1px); }
+.mahan-btn-primary { background: var(--m-primary); color: #fff; box-shadow: 0 4px 0 color-mix(in srgb, var(--m-primary) 60%, #000); }
+.mahan-btn-primary:hover { filter: brightness(1.05); }
+.mahan-btn-primary.is-done { background: var(--m-accent); box-shadow: 0 4px 0 color-mix(in srgb, var(--m-accent) 60%, #000); }
+.mahan-btn-ghost { background: var(--m-surface); color: var(--m-text); border: 1px solid var(--m-border); }
+.mahan-btn-ghost:hover { background: var(--m-bg); }
+.mahan-btn-sm { padding: 7px 14px; font-size: 13px; border-radius: 10px; }
+.mahan-btn-lg { padding: 14px 26px; font-size: 16px; }
+.mahan-btn[disabled] { opacity: .55; cursor: not-allowed; box-shadow: none; }
+
+/* Hero */
+.mahan-hero { text-align: center; padding: 18px 0 26px; }
+.mahan-hero h1 { font-size: clamp(28px, 5vw, 44px); margin: 0 0 8px; letter-spacing: -.03em; }
+.mahan-hero-sub { color: var(--m-muted); font-size: 18px; margin: 0; }
+
+/* Chips */
+.mahan-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 24px; }
+.mahan-chip { border: 1px solid var(--m-border); background: var(--m-surface); color: var(--m-muted); padding: 7px 16px; border-radius: 999px; font-weight: 600; font-size: 14px; cursor: pointer; }
+.mahan-chip.is-active { background: var(--m-primary); color: #fff; border-color: var(--m-primary); }
+
+/* Grid + cards */
+.mahan-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 22px; }
+.mahan-card { display: flex; flex-direction: column; background: var(--m-surface); border: 1px solid var(--m-border); border-radius: var(--m-radius); overflow: hidden; text-decoration: none; color: inherit; box-shadow: var(--m-shadow-sm); transition: transform .12s ease, box-shadow .15s ease; }
+.mahan-card:hover { transform: translateY(-4px); box-shadow: var(--m-shadow); }
+.mahan-card-media { height: 140px; background-size: cover; background-position: center; background-color: color-mix(in srgb, var(--m-primary) 14%, var(--m-surface)); }
+.mahan-card-media-ph { display: flex; align-items: center; justify-content: center; }
+.mahan-card-media-ph span { font-size: 54px; font-weight: 800; color: var(--m-primary); opacity: .65; }
+.mahan-card-body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.mahan-card-cat { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--m-primary); }
+.mahan-card-title { font-size: 18px; margin: 0; line-height: 1.25; }
+.mahan-card-sub { color: var(--m-muted); font-size: 14px; margin: 0 0 8px; flex: 1; }
+.mahan-card-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+.mahan-tag { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: color-mix(in srgb, var(--m-primary) 12%, transparent); color: var(--m-primary); }
+.mahan-tag-soft { background: var(--m-bg); color: var(--m-muted); }
+
+/* Progress bar */
+.mahan-progress { display: flex; align-items: center; gap: 10px; }
+.mahan-progress-bar { flex: 1; height: 10px; border-radius: 999px; background: var(--m-bg); overflow: hidden; }
+.mahan-progress-bar span { display: block; height: 100%; background: var(--m-accent); border-radius: 999px; transition: width .5s ease; }
+.mahan-progress-label { font-size: 13px; font-weight: 700; color: var(--m-accent); }
+
+/* Empty */
+.mahan-empty { text-align: center; padding: 60px 20px; color: var(--m-muted); display: flex; flex-direction: column; align-items: center; gap: 16px; }
+
+/* Course view */
+.mahan-course-hero { display: grid; grid-template-columns: 1fr; gap: 24px; background: var(--m-surface); border: 1px solid var(--m-border); border-radius: var(--m-radius); padding: 28px; box-shadow: var(--m-shadow-sm); margin-bottom: 28px; }
+@media (min-width: 760px) { .mahan-course-hero { grid-template-columns: 1.5fr 1fr; } }
+.mahan-back { color: var(--m-muted); text-decoration: none; font-weight: 600; font-size: 14px; }
+.mahan-back:hover { color: var(--m-primary); }
+.mahan-course-hero h1 { font-size: clamp(24px, 4vw, 36px); margin: 12px 0 6px; letter-spacing: -.02em; }
+.mahan-course-sub { color: var(--m-muted); font-size: 17px; margin: 0 0 14px; }
+.mahan-course-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+.mahan-course-hero-media { border-radius: 12px; background-size: cover; background-position: center; min-height: 180px; }
+.mahan-section { margin: 26px 0; background: var(--m-surface); border: 1px solid var(--m-border); border-radius: var(--m-radius); padding: 24px 26px; box-shadow: var(--m-shadow-sm); }
+.mahan-section h2 { margin: 0 0 14px; font-size: 22px; }
+.mahan-outcomes { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr; gap: 10px; }
+@media (min-width: 640px) { .mahan-outcomes { grid-template-columns: 1fr 1fr; } }
+.mahan-outcomes li { display: flex; gap: 10px; align-items: flex-start; }
+.mahan-check { color: var(--m-accent); font-weight: 800; }
+
+/* Units + lessons */
+.mahan-unit-title { font-weight: 800; font-size: 15px; margin: 18px 0 8px; color: var(--m-muted); text-transform: uppercase; letter-spacing: .03em; }
+.mahan-lesson-list { list-style: none; margin: 0 0 6px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.mahan-lesson-row { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid var(--m-border); border-radius: 12px; text-decoration: none; color: inherit; background: var(--m-surface); transition: border-color .12s, background .12s; }
+a.mahan-lesson-row:hover { border-color: var(--m-primary); background: color-mix(in srgb, var(--m-primary) 5%, var(--m-surface)); }
+.mahan-lesson-row.is-done { background: color-mix(in srgb, var(--m-accent) 8%, var(--m-surface)); }
+.mahan-lesson-row.is-locked { opacity: .6; cursor: not-allowed; }
+.mahan-lesson-icon { width: 30px; height: 30px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--m-bg); font-size: 14px; }
+.mahan-lesson-row.is-done .mahan-lesson-icon { background: var(--m-accent); color: #fff; }
+.mahan-lesson-name { flex: 1; font-weight: 600; }
+.mahan-lesson-meta { display: flex; gap: 10px; align-items: center; color: var(--m-muted); font-size: 13px; font-weight: 600; }
+.mahan-lesson-xp { color: var(--m-primary); }
+
+/* Lesson player */
+.mahan-lesson-top { margin-bottom: 14px; }
+.mahan-lesson-layout { display: grid; grid-template-columns: 1fr; gap: 24px; }
+@media (min-width: 980px) { .mahan-lesson-layout { grid-template-columns: 1fr 360px; align-items: start; } }
+.mahan-lesson-col { background: var(--m-surface); border: 1px solid var(--m-border); border-radius: var(--m-radius); padding: clamp(20px, 4vw, 38px); box-shadow: var(--m-shadow-sm); min-width: 0; }
+.mahan-lesson-title { font-size: clamp(24px, 4vw, 34px); margin: 0 0 18px; letter-spacing: -.02em; }
+
+/* Prose */
+.mahan-prose { font-size: 16.5px; color: var(--m-text); }
+.mahan-prose h1, .mahan-prose h2, .mahan-prose h3 { line-height: 1.25; margin: 1.4em 0 .5em; }
+.mahan-prose h2 { font-size: 24px; }
+.mahan-prose h3 { font-size: 19px; }
+.mahan-prose p { margin: 0 0 1em; }
+.mahan-prose ul, .mahan-prose ol { margin: 0 0 1em 1.3em; }
+.mahan-prose li { margin: .4em 0; }
+.mahan-prose img { max-width: 100%; height: auto; border-radius: 12px; }
+.mahan-prose pre { background: var(--m-bg); padding: 16px; border-radius: 12px; overflow: auto; }
+.mahan-prose code { background: var(--m-bg); padding: 2px 6px; border-radius: 6px; font-size: .9em; }
+.mahan-prose pre code { background: none; padding: 0; }
+.mahan-prose blockquote { margin: 1em 0; padding: 12px 18px; border-left: 4px solid var(--m-primary); background: color-mix(in srgb, var(--m-primary) 6%, transparent); border-radius: 8px; }
+.mahan-prose a { color: var(--m-primary); }
+.mahan-prose table { width: 100%; border-collapse: collapse; margin: 1em 0; }
+.mahan-prose th, .mahan-prose td { border: 1px solid var(--m-border); padding: 10px; }
+
+/* Exercises */
+.mahan-exercises { margin-top: 34px; padding-top: 22px; border-top: 2px dashed var(--m-border); }
+.mahan-exercises > h2 { font-size: 22px; margin: 0 0 16px; }
+.mahan-ex { border: 2px solid var(--m-border); border-radius: var(--m-radius); padding: 20px; margin-bottom: 18px; transition: border-color .2s; }
+.mahan-ex.is-solved { border-color: var(--m-accent); background: color-mix(in srgb, var(--m-accent) 5%, transparent); }
+.mahan-ex-q { font-weight: 600; font-size: 16.5px; margin-bottom: 14px; }
+.mahan-ex-q p { margin: 0 0 .5em; }
+.mahan-ex-options { display: flex; flex-direction: column; gap: 10px; }
+.mahan-ex-option { text-align: left; padding: 14px 16px; border: 2px solid var(--m-border); border-radius: 12px; background: var(--m-surface); color: var(--m-text); font-weight: 600; font-size: 15px; cursor: pointer; transition: border-color .12s, background .12s; }
+.mahan-ex-option:hover { border-color: var(--m-primary); }
+.mahan-ex-option.is-chosen { border-color: var(--m-primary); background: color-mix(in srgb, var(--m-primary) 8%, transparent); }
+.mahan-ex-option.is-correct { border-color: var(--m-accent); background: color-mix(in srgb, var(--m-accent) 12%, transparent); }
+.mahan-ex-option[disabled] { cursor: default; }
+.mahan-ex-input { width: 100%; border: 2px solid var(--m-border); border-radius: 12px; padding: 12px 14px; font-size: 15px; font-family: inherit; background: var(--m-surface); color: var(--m-text); resize: vertical; }
+.mahan-ex-input:focus { outline: none; border-color: var(--m-primary); }
+.mahan-ex-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; }
+.mahan-ex-hint-btn { background: none; border: none; color: var(--m-muted); font-weight: 600; cursor: pointer; font-size: 14px; }
+.mahan-ex-feedback { margin-top: 14px; padding: 14px 16px; border-radius: 12px; font-size: 15px; }
+.mahan-ex-feedback.is-correct { background: color-mix(in srgb, var(--m-accent) 14%, transparent); color: color-mix(in srgb, var(--m-accent) 70%, #000); }
+.mahan-ex-feedback.is-incorrect { background: color-mix(in srgb, #ef4444 12%, transparent); color: #b91c1c; }
+.mahan-ex-feedback p { margin: .35em 0 0; }
+
+/* Lesson footer */
+.mahan-lesson-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--m-border); }
+
+/* Tutor panel */
+.mahan-tutor { position: sticky; top: 76px; display: flex; flex-direction: column; background: var(--m-surface); border: 1px solid var(--m-border); border-radius: var(--m-radius); box-shadow: var(--m-shadow-sm); overflow: hidden; max-height: calc(100vh - 100px); }
+.mahan-tutor-head { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--m-border); background: color-mix(in srgb, var(--m-primary) 6%, var(--m-surface)); }
+.mahan-tutor-avatar { font-size: 22px; }
+.mahan-tutor-head strong { display: block; font-size: 15px; }
+.mahan-tutor-status { font-size: 12px; color: var(--m-accent); font-weight: 600; }
+.mahan-tutor-log { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-height: 220px; }
+.mahan-bubble { max-width: 88%; padding: 10px 14px; border-radius: 14px; font-size: 14.5px; line-height: 1.5; }
+.mahan-bubble p { margin: 0 0 .5em; } .mahan-bubble p:last-child { margin-bottom: 0; }
+.mahan-bubble ul, .mahan-bubble ol { margin: .3em 0 .3em 1.1em; }
+.mahan-bubble code { background: rgba(127,127,127,.16); padding: 1px 5px; border-radius: 5px; }
+.mahan-bubble-assistant { align-self: flex-start; background: var(--m-bg); border-bottom-left-radius: 4px; }
+.mahan-bubble-user { align-self: flex-end; background: var(--m-primary); color: #fff; border-bottom-right-radius: 4px; }
+.mahan-tutor-bar { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--m-border); }
+.mahan-tutor-input { flex: 1; resize: none; border: 1px solid var(--m-border); border-radius: 12px; padding: 10px 12px; font-family: inherit; font-size: 14px; max-height: 120px; background: var(--m-surface); color: var(--m-text); }
+.mahan-tutor-input:focus { outline: none; border-color: var(--m-primary); }
+.mahan-tutor-send { flex: none; width: 42px; border: none; border-radius: 12px; background: var(--m-primary); color: #fff; font-size: 16px; cursor: pointer; }
+.mahan-typing { display: inline-flex; gap: 4px; }
+.mahan-typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--m-muted); animation: m-bounce 1.2s infinite; }
+.mahan-typing i:nth-child(2) { animation-delay: .2s; } .mahan-typing i:nth-child(3) { animation-delay: .4s; }
+@keyframes m-bounce { 0%, 60%, 100% { transform: translateY(0); opacity: .5; } 30% { transform: translateY(-5px); opacity: 1; } }
+
+/* Dashboard */
+.mahan-dash-hero { background: var(--m-surface); border: 1px solid var(--m-border); border-radius: var(--m-radius); padding: 28px; box-shadow: var(--m-shadow-sm); margin-bottom: 26px; }
+.mahan-dash-hero h1 { margin: 0 0 18px; font-size: 28px; }
+.mahan-dash-stats { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; }
+.mahan-stat-big { flex: 1; min-width: 120px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 18px; border-radius: 14px; background: var(--m-bg); }
+.mahan-stat-icon { font-size: 26px; }
+.mahan-stat-value { font-size: 28px; font-weight: 800; }
+.mahan-stat-label { font-size: 13px; color: var(--m-muted); font-weight: 600; }
+.mahan-level-bar-track { height: 12px; border-radius: 999px; background: var(--m-bg); overflow: hidden; margin-bottom: 6px; }
+.mahan-level-bar-track span { display: block; height: 100%; background: linear-gradient(90deg, var(--m-primary), var(--m-accent)); border-radius: 999px; transition: width .5s ease; }
+.mahan-level-bar-label { font-size: 13px; color: var(--m-muted); font-weight: 600; }
+.mahan-dash-h2 { margin: 8px 0 16px; }
+
+/* Modal / profile */
+.mahan-modal-overlay { position: fixed; inset: 0; z-index: 100000; background: rgba(15, 18, 30, .6); display: flex; align-items: center; justify-content: center; padding: 18px; backdrop-filter: blur(3px); }
+.mahan-modal { background: var(--m-surface); color: var(--m-text); width: 100%; max-width: 560px; max-height: 90vh; overflow: auto; border-radius: 20px; padding: 28px; box-shadow: 0 24px 70px rgba(0, 0, 0, .35); }
+.mahan-modal h2 { margin: 0 0 6px; font-size: 24px; }
+.mahan-modal-sub { color: var(--m-muted); margin: 0 0 18px; }
+.mahan-profile-form { display: grid; grid-template-columns: 1fr; gap: 14px; }
+@media (min-width: 520px) { .mahan-profile-form { grid-template-columns: 1fr 1fr; } }
+.mahan-field { display: flex; flex-direction: column; gap: 6px; }
+.mahan-field label { font-weight: 600; font-size: 14px; }
+.mahan-field input[type="text"], .mahan-field textarea, .mahan-field select { width: 100%; padding: 10px 12px; border: 1px solid var(--m-border); border-radius: 10px; font-family: inherit; font-size: 14px; background: var(--m-surface); color: var(--m-text); }
+.mahan-checks { display: flex; flex-direction: column; gap: 6px; border: 1px solid var(--m-border); border-radius: 10px; padding: 10px; }
+.mahan-check-item { font-weight: 500; display: flex; align-items: center; gap: 6px; }
+.mahan-modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.mahan-modal-actions.mahan-center { justify-content: center; }
+.mahan-profile-msg { margin-top: 12px; color: #b91c1c; font-size: 14px; }
+.mahan-login-gate { gap: 18px; }
+
+/* Toasts */
+.mahan-toasts { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 100001; display: flex; flex-direction: column; gap: 10px; align-items: center; pointer-events: none; }
+.mahan-toast { background: #111827; color: #fff; padding: 12px 20px; border-radius: 999px; font-weight: 700; font-size: 15px; box-shadow: 0 10px 30px rgba(0, 0, 0, .25); animation: m-pop .3s ease; }
+.mahan-toast.is-out { opacity: 0; transform: translateY(10px); transition: all .4s ease; }
+.mahan-toast-xp { background: var(--m-primary); }
+.mahan-toast-level { background: linear-gradient(90deg, var(--m-primary), var(--m-accent)); }
+.mahan-toast-error { background: #b91c1c; }
+@keyframes m-pop { from { opacity: 0; transform: translateY(14px) scale(.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+@media (max-width: 640px) {
+	.mahan-topbar { gap: 10px; padding: 10px 16px; }
+	.mahan-nav { display: none; }
+	.mahan-lesson-foot { flex-wrap: wrap; }
+}

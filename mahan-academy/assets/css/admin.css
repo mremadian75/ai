@@ -1,0 +1,42 @@
+/* Mahan Academy — admin styles */
+.mahan-admin-wrap h1 { display: flex; align-items: center; gap: 8px; }
+.mahan-admin-wrap .mahan-ver { font-size: 13px; font-weight: 500; color: #6b7280; padding: 3px 8px; border-radius: 999px; background: #eef2ff; color: #4f46e5; }
+.mahan-tagline { color: #6b7280; font-size: 14px; margin: 6px 0 22px; }
+
+.mahan-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin: 18px 0 26px; }
+.mahan-card { background: #fff; border: 1px solid #e7e9f0; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 2px 8px rgba(20,23,40,.04); }
+.mahan-card-num { font-size: 30px; font-weight: 800; line-height: 1; }
+.mahan-card-num.mahan-ok { color: #22c55e; }
+.mahan-card-num.mahan-warn { color: #f59e0b; }
+.mahan-card-label { color: #6b7280; font-size: 13px; }
+.mahan-card .button { width: fit-content; margin-top: 6px; }
+
+.mahan-steps { line-height: 1.8; }
+
+/* Tabs */
+.mahan-tabs { margin-bottom: 18px; }
+.mahan-tab-panel { background: #fff; border: 1px solid #c3c4c7; border-top: none; padding: 18px 20px; }
+.mahan-tab-panel h3 { margin-top: 22px; }
+
+.mahan-test-result { margin-left: 12px; font-weight: 600; }
+.mahan-test-result.is-ok { color: #22c55e; }
+.mahan-test-result.is-err { color: #b91c1c; }
+
+/* Exercise builder */
+#mahan-exercise-builder .mahan-ex-list { display: flex; flex-direction: column; gap: 14px; }
+.mahan-ex-edit { border: 1px solid #c3c4c7; border-radius: 8px; padding: 14px; background: #f9fafb; }
+.mahan-ex-edit-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.mahan-ex-edit-head .button-link { color: #b91c1c; font-weight: 600; }
+.mahan-ex-row { display: grid; grid-template-columns: 160px 1fr; gap: 10px; margin: 8px 0; align-items: start; }
+.mahan-ex-row label { font-weight: 600; padding-top: 6px; }
+.mahan-ex-row textarea, .mahan-ex-row input[type="text"], .mahan-ex-row input[type="number"], .mahan-ex-row select { width: 100%; }
+.mahan-ex-opts { display: flex; flex-direction: column; gap: 6px; }
+.mahan-ex-opt { display: flex; align-items: center; gap: 8px; }
+.mahan-ex-opt input[type="text"] { flex: 1; }
+.mahan-ex-opt .button-link { color: #b91c1c; font-size: 18px; line-height: 1; }
+.mahan-ex-add-opt { width: fit-content; }
+.mahan-ex-empty { color: #6b7280; font-style: italic; }
+
+@media (max-width: 720px) {
+	.mahan-ex-row { grid-template-columns: 1fr; }
+}

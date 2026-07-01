@@ -328,3 +328,15 @@ button.mahan-quiz-row:hover { border-color: var(--m-primary); background: color-
 .mahan-quiz-result-icon { font-size: 30px; }
 .mahan-quiz-result-sub { color: var(--m-muted); font-size: 14px; }
 .mahan-quiz-msg { color: #b91c1c; font-size: 14px; margin-top: 8px; }
+
+/* Learning paths */
+.mahan-path-courses { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; counter-reset: pc; }
+.mahan-path-course { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid var(--m-border); border-radius: 12px; background: var(--m-surface); }
+.mahan-path-course.is-done { background: color-mix(in srgb, var(--m-accent) 8%, var(--m-surface)); }
+.mahan-path-step { width: 32px; height: 32px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--m-bg); font-weight: 800; }
+.mahan-path-course.is-done .mahan-path-step { background: var(--m-accent); color: #fff; }
+.mahan-path-course-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.mahan-path-course-title { font-weight: 700; color: var(--m-text); text-decoration: none; }
+.mahan-path-course-title:hover { color: var(--m-primary); }
+.mahan-path-course-sub { color: var(--m-muted); font-size: 13px; }
+.mahan-path-course .mahan-progress { max-width: 260px; }

@@ -13,6 +13,7 @@ class Mahan_CPT {
 
 	const COURSE = 'mahan_course';
 	const LESSON = 'mahan_lesson';
+	const PATH   = 'mahan_path';
 	const CAT    = 'mahan_category';
 
 	public static function init() {
@@ -71,6 +72,34 @@ class Mahan_CPT {
 				'has_archive'   => false,
 				'supports'      => array( 'title', 'editor', 'thumbnail', 'page-attributes' ),
 				'rewrite'       => array( 'slug' => 'lesson', 'with_front' => false ),
+				'capability_type' => 'post',
+			)
+		);
+
+		register_post_type(
+			self::PATH,
+			array(
+				'label'         => __( 'Learning Paths', 'mahan-academy' ),
+				'labels'        => array(
+					'name'               => __( 'Learning Paths', 'mahan-academy' ),
+					'singular_name'      => __( 'Learning Path', 'mahan-academy' ),
+					'add_new'            => __( 'Add Path', 'mahan-academy' ),
+					'add_new_item'       => __( 'Add New Path', 'mahan-academy' ),
+					'edit_item'          => __( 'Edit Path', 'mahan-academy' ),
+					'new_item'           => __( 'New Path', 'mahan-academy' ),
+					'view_item'          => __( 'View Path', 'mahan-academy' ),
+					'search_items'       => __( 'Search Paths', 'mahan-academy' ),
+					'not_found'          => __( 'No paths found', 'mahan-academy' ),
+					'not_found_in_trash' => __( 'No paths in trash', 'mahan-academy' ),
+					'menu_name'          => __( 'Learning Paths', 'mahan-academy' ),
+				),
+				'public'          => true,
+				'show_in_menu'    => 'mahan-academy',
+				'show_in_rest'    => true,
+				'has_archive'     => false,
+				'menu_icon'       => 'dashicons-networking',
+				'supports'        => array( 'title', 'editor', 'thumbnail', 'excerpt', 'page-attributes' ),
+				'rewrite'         => array( 'slug' => 'path', 'with_front' => false ),
 				'capability_type' => 'post',
 			)
 		);

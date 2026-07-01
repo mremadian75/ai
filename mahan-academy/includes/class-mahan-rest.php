@@ -94,6 +94,18 @@ class Mahan_REST {
 			'permission_callback' => $public,
 		) );
 
+		register_rest_route( self::NS, '/paths', array(
+			'methods'             => WP_REST_Server::READABLE,
+			'callback'            => array( __CLASS__, 'paths' ),
+			'permission_callback' => $public,
+		) );
+
+		register_rest_route( self::NS, '/path/(?P<id>\d+)', array(
+			'methods'             => WP_REST_Server::READABLE,
+			'callback'            => array( __CLASS__, 'path' ),
+			'permission_callback' => $public,
+		) );
+
 		register_rest_route( self::NS, '/profile', array(
 			array(
 				'methods'             => WP_REST_Server::READABLE,
@@ -494,6 +506,32 @@ class Mahan_REST {
 			);
 		}
 		return rest_ensure_response( array( 'ok' => true, 'entries' => $entries ) );
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Learning paths                                                      */
+	/* ------------------------------------------------------------------ */
+
+	public static function paths( WP_REST_Request $request ) {
+		$user_id = get_current_user_id();
+		$items   = array();
+		foreach ( Mahan_Paths::get_paths() as $path ) {
+			$summary = Mahan_Paths::summary( $path, $user_id );
+			if ( $summary ) {
+				$items[] = $summary;
+			}
+		}
+		return rest_ensure_response( array( 'ok' => true, 'paths' => $items, 'logged_in' => (bool) $user_id ) );
+	}
+
+	public static function path( WP_REST_Request $request ) {
+		$user_id = get_current_user_id();
+		$path_id = (int) $request['id'];
+		$detail  = Mahan_Paths::detail( $path_id, $user_id );
+		if ( ! $detail ) {
+			return new WP_REST_Response( array( 'ok' => false, 'error' => 'not_found' ), 404 );
+		}
+		return rest_ensure_response( array( 'ok' => true, 'path' => $detail, 'logged_in' => (bool) $user_id ) );
 	}
 
 	public static function get_profile( WP_REST_Request $request ) {

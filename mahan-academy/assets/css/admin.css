@@ -47,3 +47,13 @@
 .mahan-ai-out { margin-top: 8px; }
 .mahan-ai-out textarea { font-family: Menlo, Consolas, monospace; font-size: 12px; }
 #mahan-ai-draft .description { display: block; margin-top: 4px; }
+
+/* Learning Path course picker */
+.mahan-path-list { margin: 6px 0 12px; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.mahan-path-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border: 1px solid #dcdde1; border-radius: 6px; background: #fff; }
+.mahan-path-drag { cursor: grab; color: #a7aaad; }
+.mahan-path-num { width: 22px; height: 22px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; background: #eef2ff; color: #4f46e5; font-weight: 700; font-size: 12px; }
+.mahan-path-title { flex: 1; font-weight: 600; }
+.mahan-path-rm { color: #b32d2e !important; font-size: 18px; line-height: 1; text-decoration: none; }
+.mahan-path-empty { color: #787c82; font-style: italic; }
+.mahan-path-add { display: flex; gap: 8px; align-items: center; }

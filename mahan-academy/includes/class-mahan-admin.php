@@ -19,6 +19,7 @@ class Mahan_Admin {
 
 		Mahan_Course_Meta::init();
 		Mahan_Lesson_Meta::init();
+		Mahan_Path_Meta::init();
 		Mahan_Course_Builder::init();
 		Mahan_AI_Author::init();
 	}
@@ -142,7 +143,7 @@ class Mahan_Admin {
 	public static function assets( $hook ) {
 		$screen = get_current_screen();
 		$is_our = false;
-		if ( $screen && in_array( $screen->post_type, array( Mahan_CPT::COURSE, Mahan_CPT::LESSON ), true ) ) {
+		if ( $screen && in_array( $screen->post_type, array( Mahan_CPT::COURSE, Mahan_CPT::LESSON, Mahan_CPT::PATH ), true ) ) {
 			$is_our = true;
 		}
 		if ( in_array( $hook, array( 'toplevel_page_mahan-academy', 'mahan-academy_page_mahan-settings' ), true ) ) {
@@ -211,6 +212,22 @@ class Mahan_Admin {
 						'false_'       => __( 'False', 'mahan-academy' ),
 						'save'         => __( 'Save quiz', 'mahan-academy' ),
 						'cancel'       => __( 'Cancel', 'mahan-academy' ),
+					),
+				)
+			);
+		}
+
+		// Learning Path course picker — on the Path edit screen.
+		if ( $screen && Mahan_CPT::PATH === $screen->post_type && 'post' === $screen->base ) {
+			wp_enqueue_script( 'mahan-path-admin', MAHAN_URL . 'assets/js/path-admin.js', array( 'jquery', 'jquery-ui-sortable' ), MAHAN_VERSION, true );
+			wp_localize_script(
+				'mahan-path-admin',
+				'MahanPath',
+				array(
+					'i18n' => array(
+						'choose'   => __( '— choose a course —', 'mahan-academy' ),
+						'allAdded' => __( '— all courses added —', 'mahan-academy' ),
+						'empty'    => __( 'No courses yet — add some below.', 'mahan-academy' ),
 					),
 				)
 			);

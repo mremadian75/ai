@@ -96,6 +96,7 @@
 		state.view = p.get('view') || 'catalog';
 		state.courseId = parseInt(p.get('course') || '0', 10);
 		state.lessonId = parseInt(p.get('lesson') || '0', 10);
+		state.pathId = parseInt(p.get('path') || '0', 10);
 	}
 
 	function urlFor(view, params) {
@@ -104,6 +105,7 @@
 		u.searchParams.set('view', view);
 		if (params && params.course) { u.searchParams.set('course', params.course); }
 		if (params && params.lesson) { u.searchParams.set('lesson', params.lesson); }
+		if (params && params.path) { u.searchParams.set('path', params.path); }
 		return u.pathname + u.search;
 	}
 
@@ -111,6 +113,7 @@
 		state.view = view;
 		state.courseId = (params && params.course) || 0;
 		state.lessonId = (params && params.lesson) || 0;
+		state.pathId = (params && params.path) || 0;
 		window.history.pushState({ view: view, params: params }, '', urlFor(view, params));
 		window.scrollTo(0, 0);
 		render();
@@ -132,6 +135,8 @@
 				onClick: function (e) { e.preventDefault(); go('catalog'); }, text: t('catalog', 'Explore') }),
 			D.loggedIn ? h('a', { class: 'mahan-nav-link' + (state.view === 'dashboard' ? ' is-active' : ''), href: urlFor('dashboard'),
 				onClick: function (e) { e.preventDefault(); go('dashboard'); }, text: t('dashboard', 'My Learning') }) : null,
+			D.hasPaths ? h('a', { class: 'mahan-nav-link' + (state.view === 'paths' || state.view === 'path' ? ' is-active' : ''), href: urlFor('paths'),
+				onClick: function (e) { e.preventDefault(); go('paths'); }, text: t('paths', 'Paths') }) : null,
 			D.leaderboard ? h('a', { class: 'mahan-nav-link' + (state.view === 'leaderboard' ? ' is-active' : ''), href: urlFor('leaderboard'),
 				onClick: function (e) { e.preventDefault(); go('leaderboard'); }, text: t('leaderboard', 'Leaderboard') }) : null
 		]);
@@ -922,6 +927,105 @@
 	}
 
 	/* ------------------------------------------------------------------ */
+	/* View: Learning paths                                                */
+	/* ------------------------------------------------------------------ */
+
+	function renderPaths() {
+		mount(loadingShell());
+		api('/paths').then(function (j) {
+			var wrap = h('div', { class: 'mahan-paths' });
+			wrap.appendChild(h('div', { class: 'mahan-hero' }, [
+				h('h1', { text: t('learningPaths', 'Learning paths') }),
+				h('p', { class: 'mahan-hero-sub', text: t('pathsSub', 'Guided programs — courses in a recommended order.') })
+			]));
+			var paths = j.paths || [];
+			if (!paths.length) {
+				wrap.appendChild(h('div', { class: 'mahan-empty', text: t('emptyPaths', 'No learning paths yet.') }));
+			} else {
+				var grid = h('div', { class: 'mahan-grid' });
+				paths.forEach(function (p) { grid.appendChild(pathCard(p)); });
+				wrap.appendChild(grid);
+			}
+			mount(wrap);
+		}).catch(function () { mount(errorBox(renderPaths)); });
+	}
+
+	function pathCard(p) {
+		var media = p.image
+			? h('div', { class: 'mahan-card-media', style: 'background-image:url(' + esc(p.image) + ')' })
+			: h('div', { class: 'mahan-card-media mahan-card-media-ph' }, [h('span', { text: '🧭' })]);
+		var foot = (D.loggedIn && p.completed > 0)
+			? h('div', { class: 'mahan-progress' }, [
+				h('div', { class: 'mahan-progress-bar' }, [h('span', { style: 'width:' + (p.progress_pct || 0) + '%' })]),
+				h('span', { class: 'mahan-progress-label', text: p.completed + '/' + p.course_count })])
+			: h('div', { class: 'mahan-card-tags' }, [
+				h('span', { class: 'mahan-tag', text: p.course_count + ' ' + t('courses', 'courses') })]);
+		return h('a', {
+			class: 'mahan-card', href: urlFor('path', { path: p.id }),
+			onClick: function (e) { e.preventDefault(); go('path', { path: p.id }); }
+		}, [
+			media,
+			h('div', { class: 'mahan-card-body' }, [
+				h('span', { class: 'mahan-card-cat', text: t('paths', 'Paths') }),
+				h('h3', { class: 'mahan-card-title', text: p.title }),
+				h('p', { class: 'mahan-card-sub', text: p.subtitle || p.excerpt || '' }),
+				foot
+			])
+		]);
+	}
+
+	function renderPath() {
+		mount(loadingShell());
+		api('/path/' + state.pathId).then(function (j) {
+			if (!j.ok) { mount(errorBox(renderPath)); return; }
+			var p = j.path;
+			var wrap = h('div', { class: 'mahan-path' });
+			wrap.appendChild(h('div', { class: 'mahan-course-hero' }, [
+				h('div', { class: 'mahan-course-hero-text' }, [
+					h('a', { class: 'mahan-back', href: urlFor('paths'), onClick: function (e) { e.preventDefault(); go('paths'); }, text: '← ' + t('paths', 'Paths') }),
+					h('h1', { text: p.title }),
+					p.subtitle ? h('p', { class: 'mahan-course-sub', text: p.subtitle }) : null,
+					h('div', { class: 'mahan-course-meta' }, [
+						h('span', { class: 'mahan-tag', text: p.course_count + ' ' + t('courses', 'courses') }),
+						(D.loggedIn) ? h('span', { class: 'mahan-tag mahan-tag-soft', text: p.completed + '/' + p.course_count + ' ' + t('pathComplete', 'completed') }) : null
+					]),
+					(D.loggedIn && p.course_count) ? h('div', { class: 'mahan-progress', style: 'max-width:320px' }, [
+						h('div', { class: 'mahan-progress-bar' }, [h('span', { style: 'width:' + p.progress_pct + '%' })]),
+						h('span', { class: 'mahan-progress-label', text: p.progress_pct + '%' })
+					]) : null
+				]),
+				p.image ? h('div', { class: 'mahan-course-hero-media', style: 'background-image:url(' + esc(p.image) + ')' }) : null
+			]));
+
+			if (p.description && p.description.trim()) {
+				wrap.appendChild(h('section', { class: 'mahan-section mahan-prose', html: p.description }));
+			}
+
+			var sec = h('section', { class: 'mahan-section' }, [h('h2', { text: t('coursesInPath', 'Courses in this path') })]);
+			var list = h('ol', { class: 'mahan-path-courses' });
+			(p.courses || []).forEach(function (c, i) {
+				list.appendChild(h('li', { class: 'mahan-path-course' + (c.completed ? ' is-done' : '') }, [
+					h('span', { class: 'mahan-path-step', text: c.completed ? '✓' : String(i + 1) }),
+					h('div', { class: 'mahan-path-course-body' }, [
+						h('a', { class: 'mahan-path-course-title', href: urlFor('course', { course: c.id }),
+							onClick: function (e) { e.preventDefault(); go('course', { course: c.id }); }, text: c.title }),
+						c.subtitle ? h('span', { class: 'mahan-path-course-sub', text: c.subtitle }) : null,
+						c.enrolled ? h('div', { class: 'mahan-progress' }, [
+							h('div', { class: 'mahan-progress-bar' }, [h('span', { style: 'width:' + c.progress_pct + '%' })]),
+							h('span', { class: 'mahan-progress-label', text: c.progress_pct + '%' })
+						]) : null
+					]),
+					h('a', { class: 'mahan-btn mahan-btn-sm mahan-btn-ghost', href: urlFor('course', { course: c.id }),
+						onClick: function (e) { e.preventDefault(); go('course', { course: c.id }); }, text: t('openCourse', 'Open') })
+				]));
+			});
+			sec.appendChild(list);
+			wrap.appendChild(sec);
+			mount(wrap);
+		}).catch(function () { mount(errorBox(renderPath)); });
+	}
+
+	/* ------------------------------------------------------------------ */
 	/* Certificate (printable)                                             */
 	/* ------------------------------------------------------------------ */
 
@@ -1102,6 +1206,8 @@
 			case 'lesson': return D.loggedIn ? renderLesson() : mount(loginGate());
 			case 'dashboard': return renderDashboard();
 			case 'leaderboard': return D.leaderboard ? renderLeaderboard() : renderCatalog();
+			case 'paths': return renderPaths();
+			case 'path': return renderPath();
 			case 'catalog':
 			default: return renderCatalog();
 		}

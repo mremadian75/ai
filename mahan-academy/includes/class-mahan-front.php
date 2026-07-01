@@ -87,6 +87,7 @@ class Mahan_Front {
 				'gateEnabled'  => (int) Mahan_Settings::get( 'gate_enabled', 1 ),
 				'aiReady'      => Mahan_Settings::ai_ready(),
 				'leaderboard'  => (bool) Mahan_Settings::get( 'leaderboard_enabled', 0 ),
+				'hasPaths'     => ( (int) wp_count_posts( Mahan_CPT::PATH )->publish > 0 ),
 				'siteName'     => get_bloginfo( 'name' ),
 				'i18n'         => self::strings(),
 			)
@@ -206,6 +207,15 @@ class Mahan_Front {
 			'correctCount'     => __( 'correct', 'mahan-academy' ),
 			'done'             => __( 'Done', 'mahan-academy' ),
 			'retry'            => __( 'Try again', 'mahan-academy' ),
+			'paths'            => __( 'Paths', 'mahan-academy' ),
+			'learningPaths'    => __( 'Learning paths', 'mahan-academy' ),
+			'pathsSub'         => __( 'Guided programs — courses in a recommended order.', 'mahan-academy' ),
+			'courses'          => __( 'courses', 'mahan-academy' ),
+			'emptyPaths'       => __( 'No learning paths yet.', 'mahan-academy' ),
+			'viewPath'         => __( 'View path', 'mahan-academy' ),
+			'coursesInPath'    => __( 'Courses in this path', 'mahan-academy' ),
+			'pathComplete'     => __( 'completed', 'mahan-academy' ),
+			'openCourse'       => __( 'Open', 'mahan-academy' ),
 		);
 	}
 }

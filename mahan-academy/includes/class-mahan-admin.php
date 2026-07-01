@@ -16,6 +16,7 @@ class Mahan_Admin {
 		add_action( 'admin_init', array( __CLASS__, 'register_settings' ) );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'assets' ) );
 		add_action( 'wp_ajax_mahan_test_ai', array( __CLASS__, 'ajax_test_ai' ) );
+		add_action( 'admin_post_mahan_export_csv', array( 'Mahan_Reports', 'export_csv' ) );
 
 		Mahan_Course_Meta::init();
 		Mahan_Lesson_Meta::init();
@@ -45,6 +46,14 @@ class Mahan_Admin {
 			'manage_options',
 			'mahan-academy',
 			array( __CLASS__, 'render_dashboard' )
+		);
+		add_submenu_page(
+			'mahan-academy',
+			__( 'Reports', 'mahan-academy' ),
+			__( 'Reports', 'mahan-academy' ),
+			'manage_options',
+			'mahan-reports',
+			array( __CLASS__, 'render_reports' )
 		);
 		add_submenu_page(
 			'mahan-academy',
@@ -155,7 +164,7 @@ class Mahan_Admin {
 		if ( $screen && in_array( $screen->post_type, array( Mahan_CPT::COURSE, Mahan_CPT::LESSON, Mahan_CPT::PATH ), true ) ) {
 			$is_our = true;
 		}
-		if ( in_array( $hook, array( 'toplevel_page_mahan-academy', 'mahan-academy_page_mahan-settings' ), true ) ) {
+		if ( in_array( $hook, array( 'toplevel_page_mahan-academy', 'mahan-academy_page_mahan-settings', 'mahan-academy_page_mahan-reports' ), true ) ) {
 			$is_our = true;
 		}
 		if ( ! $is_our ) {
@@ -372,6 +381,117 @@ class Mahan_Admin {
 					?>
 				</li>
 			</ol>
+		</div>
+		<?php
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Reports page                                                        */
+	/* ------------------------------------------------------------------ */
+
+	public static function render_reports() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		$o       = Mahan_Reports::overview();
+		$courses = Mahan_Reports::per_course();
+		$recent  = Mahan_Reports::recent( 15 );
+		$top     = Mahan_Reports::top_learners( 10 );
+		$export  = wp_nonce_url( admin_url( 'admin-post.php?action=mahan_export_csv' ), 'mahan_export' );
+
+		$cards = array(
+			array( __( 'Learners', 'mahan-academy' ), number_format_i18n( $o['learners'] ) ),
+			array( __( 'Enrollments', 'mahan-academy' ), number_format_i18n( $o['enrollments'] ) ),
+			array( __( 'Course completions', 'mahan-academy' ), number_format_i18n( $o['completions'] ) ),
+			array( __( 'Active today', 'mahan-academy' ), number_format_i18n( $o['active_today'] ) ),
+			array( __( 'Active this week', 'mahan-academy' ), number_format_i18n( $o['active_week'] ) ),
+			array( __( 'Total XP', 'mahan-academy' ), number_format_i18n( $o['total_xp'] ) ),
+			array( __( 'Lessons completed', 'mahan-academy' ), number_format_i18n( $o['lessons_done'] ) ),
+			array( __( 'Exercise accuracy', 'mahan-academy' ), $o['exercise_accuracy'] . '%' ),
+			array( __( 'Quiz pass rate', 'mahan-academy' ), $o['quiz_pass_rate'] . '%' ),
+		);
+		?>
+		<div class="wrap mahan-admin-wrap">
+			<h1><?php esc_html_e( 'Mahan Academy — Reports', 'mahan-academy' ); ?></h1>
+
+			<div class="mahan-cards mahan-report-cards">
+				<?php foreach ( $cards as $c ) : ?>
+					<div class="mahan-card">
+						<span class="mahan-card-num"><?php echo esc_html( $c[1] ); ?></span>
+						<span class="mahan-card-label"><?php echo esc_html( $c[0] ); ?></span>
+					</div>
+				<?php endforeach; ?>
+			</div>
+
+			<h2>
+				<?php esc_html_e( 'Courses', 'mahan-academy' ); ?>
+				<a class="button button-secondary" style="margin-inline-start:8px" href="<?php echo esc_url( $export ); ?>"><?php esc_html_e( 'Export CSV', 'mahan-academy' ); ?></a>
+			</h2>
+			<table class="widefat striped">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'Course', 'mahan-academy' ); ?></th>
+						<th><?php esc_html_e( 'Enrolled', 'mahan-academy' ); ?></th>
+						<th><?php esc_html_e( 'Completed', 'mahan-academy' ); ?></th>
+						<th><?php esc_html_e( 'Completion', 'mahan-academy' ); ?></th>
+						<th><?php esc_html_e( 'Avg progress', 'mahan-academy' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php if ( empty( $courses ) ) : ?>
+						<tr><td colspan="5"><?php esc_html_e( 'No courses yet.', 'mahan-academy' ); ?></td></tr>
+					<?php else : ?>
+						<?php foreach ( $courses as $c ) : ?>
+							<tr>
+								<td><a href="<?php echo esc_url( get_edit_post_link( $c['id'] ) ); ?>"><?php echo esc_html( $c['title'] ); ?></a></td>
+								<td><?php echo esc_html( number_format_i18n( $c['enrolled'] ) ); ?></td>
+								<td><?php echo esc_html( number_format_i18n( $c['completed'] ) ); ?></td>
+								<td><?php echo esc_html( $c['completion'] . '%' ); ?></td>
+								<td><?php echo esc_html( $c['avg_progress'] . '%' ); ?></td>
+							</tr>
+						<?php endforeach; ?>
+					<?php endif; ?>
+				</tbody>
+			</table>
+
+			<div class="mahan-report-cols">
+				<div>
+					<h2><?php esc_html_e( 'Top learners', 'mahan-academy' ); ?></h2>
+					<table class="widefat striped">
+						<thead><tr><th>#</th><th><?php esc_html_e( 'Learner', 'mahan-academy' ); ?></th><th>XP</th><th><?php esc_html_e( 'Level', 'mahan-academy' ); ?></th><th>🔥</th></tr></thead>
+						<tbody>
+							<?php if ( empty( $top ) ) : ?>
+								<tr><td colspan="5"><?php esc_html_e( 'No learners yet.', 'mahan-academy' ); ?></td></tr>
+							<?php else : foreach ( $top as $i => $l ) : ?>
+								<tr>
+									<td><?php echo esc_html( $i + 1 ); ?></td>
+									<td><?php echo esc_html( $l['name'] ); ?></td>
+									<td><?php echo esc_html( number_format_i18n( $l['xp'] ) ); ?></td>
+									<td><?php echo esc_html( $l['level'] ); ?></td>
+									<td><?php echo esc_html( $l['streak'] ); ?></td>
+								</tr>
+							<?php endforeach; endif; ?>
+						</tbody>
+					</table>
+				</div>
+				<div>
+					<h2><?php esc_html_e( 'Recent completions', 'mahan-academy' ); ?></h2>
+					<table class="widefat striped">
+						<thead><tr><th><?php esc_html_e( 'Learner', 'mahan-academy' ); ?></th><th><?php esc_html_e( 'Lesson', 'mahan-academy' ); ?></th><th><?php esc_html_e( 'When', 'mahan-academy' ); ?></th></tr></thead>
+						<tbody>
+							<?php if ( empty( $recent ) ) : ?>
+								<tr><td colspan="3"><?php esc_html_e( 'No activity yet.', 'mahan-academy' ); ?></td></tr>
+							<?php else : foreach ( $recent as $r ) : ?>
+								<tr>
+									<td><?php echo esc_html( $r['user'] ); ?></td>
+									<td><?php echo esc_html( $r['lesson'] ); ?> <span class="mahan-muted">· <?php echo esc_html( $r['course'] ); ?></span></td>
+									<td><?php echo esc_html( human_time_diff( strtotime( $r['when'] ), current_time( 'timestamp' ) ) ); ?> <?php esc_html_e( 'ago', 'mahan-academy' ); ?></td>
+								</tr>
+							<?php endforeach; endif; ?>
+						</tbody>
+					</table>
+				</div>
+			</div>
 		</div>
 		<?php
 	}

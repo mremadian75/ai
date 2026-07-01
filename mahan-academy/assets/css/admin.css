@@ -57,3 +57,11 @@
 .mahan-path-rm { color: #b32d2e !important; font-size: 18px; line-height: 1; text-decoration: none; }
 .mahan-path-empty { color: #787c82; font-style: italic; }
 .mahan-path-add { display: flex; gap: 8px; align-items: center; }
+
+/* Reports page */
+.mahan-report-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+.mahan-report-cards .mahan-card-num { font-size: 26px; }
+.mahan-report-cols { display: grid; grid-template-columns: 1fr; gap: 24px; margin-top: 8px; }
+@media (min-width: 1100px) { .mahan-report-cols { grid-template-columns: 1fr 1fr; } }
+.mahan-report-cols h2 { margin-top: 20px; }
+.mahan-muted { color: #787c82; }

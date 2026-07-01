@@ -49,6 +49,7 @@ if ( is_admin() ) {
 	require_once MAHAN_DIR . 'includes/class-mahan-meta-boxes-path.php';
 	require_once MAHAN_DIR . 'includes/class-mahan-course-builder.php';
 	require_once MAHAN_DIR . 'includes/class-mahan-ai-author.php';
+	require_once MAHAN_DIR . 'includes/class-mahan-reports.php';
 	require_once MAHAN_DIR . 'includes/class-mahan-admin.php';
 }
 

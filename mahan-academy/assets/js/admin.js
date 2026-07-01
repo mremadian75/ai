@@ -118,7 +118,14 @@
 
 			// Type.
 			var $type = $('<select class="mahan-ex-type"></select>');
-			[['multiple_choice', I.multiple_choice], ['short_answer', I.short_answer], ['reflection', I.reflection], ['prompt_task', I.prompt_task]].forEach(function (t) {
+			[
+				['multiple_choice', I.multiple_choice || 'Multiple choice'],
+				['true_false', I.true_false || 'True / False'],
+				['fill_blank', I.fill_blank || 'Fill in the blank'],
+				['short_answer', I.short_answer || 'Short answer (AI graded)'],
+				['reflection', I.reflection || 'Reflection (AI graded)'],
+				['prompt_task', I.prompt_task || 'Prompt-writing task (AI graded)']
+			].forEach(function (t) {
 				var $o = $('<option></option>').val(t[0]).text(t[1] || t[0]);
 				if (t[0] === ex.type) { $o.prop('selected', true); }
 				$type.append($o);
@@ -160,6 +167,47 @@
 			var $q = $('<textarea rows="3"></textarea>').val(ex.question || '');
 			$q.on('input', function () { ex.question = $(this).val(); persist(); });
 			$body.append($('<div class="mahan-ex-row"></div>').append($('<label></label>').text(qLabel)).append($q));
+
+			if (ex.type === 'true_false') {
+				ex.options = [I.true_ || 'True', I.false_ || 'False'];
+				if (typeof ex.answer !== 'number') { ex.answer = 0; }
+				var $tf = $('<div class="mahan-ex-opts"></div>');
+				['0', '1'].forEach(function (val) {
+					var i = parseInt(val, 10);
+					var $row = $('<label class="mahan-ex-opt"></label>');
+					var $radio = $('<input type="radio" name="tf_' + ex.key + '" />').prop('checked', ex.answer === i)
+						.on('change', function () { ex.answer = i; persist(); });
+					$row.append($radio).append(' ' + ex.options[i]);
+					$tf.append($row);
+				});
+				$body.append($('<div class="mahan-ex-row"></div>').append($('<label></label>').text(I.correct || 'Correct answer')).append($tf));
+				return;
+			}
+
+			if (ex.type === 'fill_blank') {
+				var $ans = $('<input type="text" />').val(ex.answer_text || '');
+				$ans.attr('placeholder', I.answerText || 'The exact word/phrase for the blank');
+				$ans.on('input', function () { ex.answer_text = $(this).val(); persist(); });
+				$body.append($('<div class="mahan-ex-row"></div>').append($('<label></label>').text(I.answer || 'Answer')).append($ans));
+
+				var $acc = $('<input type="text" />').val((ex.accept || []).join(', '));
+				$acc.attr('placeholder', 'synonym1, synonym2');
+				$acc.on('input', function () {
+					ex.accept = $(this).val().split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+					persist();
+				});
+				$body.append($('<div class="mahan-ex-row"></div>').append($('<label></label>').text(I.alsoAccept || 'Also accept')).append($acc));
+
+				var $cs = $('<label></label>');
+				var $csbox = $('<input type="checkbox" />').prop('checked', !!ex.case_sensitive)
+					.on('change', function () { ex.case_sensitive = this.checked ? 1 : 0; persist(); });
+				$cs.append($csbox).append(' ' + (I.caseSensitive || 'Case sensitive'));
+				$body.append($('<div class="mahan-ex-row"></div>').append($('<label></label>').text('')).append($cs));
+
+				var $hintNote = $('<p class="description"></p>').text(I.blankHint || 'Tip: use ___ (three underscores) in the question to mark the blank.');
+				$body.append($hintNote);
+				return;
+			}
 
 			if (ex.type === 'multiple_choice') {
 				if (!Array.isArray(ex.options)) { ex.options = []; }
@@ -220,6 +268,14 @@
 
 		$('#mahan-add-exercise').on('click', function () {
 			exercises.push({ key: uid(), type: 'multiple_choice', question: '', options: ['', ''], answer: 0, xp: 0 });
+			render();
+		});
+
+		// AI-generated exercises arrive here (from ai-author.js). Append them.
+		$root.on('mahan:load', function (e, list, append) {
+			if (!Array.isArray(list)) { return; }
+			if (!append) { exercises = []; }
+			list.forEach(function (ex) { ex.key = uid(); exercises.push(ex); });
 			render();
 		});
 

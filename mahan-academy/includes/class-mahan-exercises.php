@@ -36,8 +36,10 @@ class Mahan_Exercises {
 		}
 		$type = isset( $ex['type'] ) ? (string) $ex['type'] : 'multiple_choice';
 
-		if ( 'multiple_choice' === $type ) {
+		if ( 'multiple_choice' === $type || 'true_false' === $type ) {
 			$graded = self::grade_multiple_choice( $ex, $answer );
+		} elseif ( 'fill_blank' === $type ) {
+			$graded = self::grade_fill_blank( $ex, $answer );
 		} elseif ( in_array( $type, self::AI_TYPES, true ) ) {
 			$graded = self::grade_ai( $ex, $answer, $user_id );
 		} else {
@@ -87,6 +89,55 @@ class Mahan_Exercises {
 			'score'         => $is_ok ? 100 : 0,
 			'feedback'      => $feedback,
 			'correct_index' => $correct,
+		);
+	}
+
+	private static function grade_fill_blank( $ex, $answer ) {
+		$given = is_array( $answer ) ? implode( ' ', $answer ) : (string) $answer;
+		$given = trim( $given );
+
+		$accepted = array();
+		if ( isset( $ex['answer_text'] ) && '' !== trim( (string) $ex['answer_text'] ) ) {
+			$accepted[] = (string) $ex['answer_text'];
+		}
+		if ( ! empty( $ex['accept'] ) && is_array( $ex['accept'] ) ) {
+			foreach ( $ex['accept'] as $a ) {
+				$accepted[] = (string) $a;
+			}
+		}
+
+		$case = ! empty( $ex['case_sensitive'] );
+		$norm = function ( $s ) use ( $case ) {
+			$s = trim( preg_replace( '/\s+/', ' ', (string) $s ) );
+			return $case ? $s : mb_strtolower( $s );
+		};
+
+		$is_ok = false;
+		$given_n = $norm( $given );
+		foreach ( $accepted as $a ) {
+			if ( '' !== $norm( $a ) && $norm( $a ) === $given_n ) {
+				$is_ok = true;
+				break;
+			}
+		}
+
+		if ( '' === $given ) {
+			return array(
+				'is_correct' => false,
+				'score'      => 0,
+				'feedback'   => __( 'Please fill in the blank before submitting.', 'mahan-academy' ),
+			);
+		}
+
+		$feedback = $is_ok
+			? self::pick( $ex, 'feedback_correct', __( 'Correct! Nicely done.', 'mahan-academy' ) )
+			: self::pick( $ex, 'feedback_incorrect', __( 'Not quite — check your spelling and try again.', 'mahan-academy' ) );
+
+		return array(
+			'is_correct'    => $is_ok,
+			'score'         => $is_ok ? 100 : 0,
+			'feedback'      => $feedback,
+			'correct_index' => null,
 		);
 	}
 

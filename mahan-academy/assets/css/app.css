@@ -243,3 +243,8 @@ a.mahan-lesson-row:hover { border-color: var(--m-primary); background: color-mix
 	.mahan-nav { display: none; }
 	.mahan-lesson-foot { flex-wrap: wrap; }
 }
+
+/* True/False + fill-in-the-blank exercises */
+.mahan-ex-options.mahan-ex-tf { flex-direction: row; }
+.mahan-ex-options.mahan-ex-tf .mahan-ex-option { flex: 1; text-align: center; }
+.mahan-ex-blank { max-width: 320px; }

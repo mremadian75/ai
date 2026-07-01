@@ -40,3 +40,10 @@
 @media (max-width: 720px) {
 	.mahan-ex-row { grid-template-columns: 1fr; }
 }
+
+/* AI authoring assistant */
+.mahan-ai-inline { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.mahan-ai-spin.is-active { visibility: visible; }
+.mahan-ai-out { margin-top: 8px; }
+.mahan-ai-out textarea { font-family: Menlo, Consolas, monospace; font-size: 12px; }
+#mahan-ai-draft .description { display: block; margin-top: 4px; }

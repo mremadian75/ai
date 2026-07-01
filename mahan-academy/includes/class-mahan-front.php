@@ -163,6 +163,7 @@ class Mahan_Front {
 			'required'         => __( 'Please fill in the required fields.', 'mahan-academy' ),
 			'submit'           => __( 'Submit', 'mahan-academy' ),
 			'writeAnswer'      => __( 'Write your answer…', 'mahan-academy' ),
+			'typeAnswer'       => __( 'Type your answer…', 'mahan-academy' ),
 			'hint'             => __( 'Hint', 'mahan-academy' ),
 			'empty'            => __( 'Nothing here yet.', 'mahan-academy' ),
 			'emptyCatalog'     => __( 'No courses are available yet. Check back soon!', 'mahan-academy' ),

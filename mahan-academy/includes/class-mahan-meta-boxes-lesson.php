@@ -111,6 +111,7 @@ class Mahan_Lesson_Meta {
 		$exercises = Mahan_Courses::get_exercises( $post->ID );
 		?>
 		<div id="mahan-exercise-builder"
+			data-lesson="<?php echo esc_attr( $post->ID ); ?>"
 			data-exercises="<?php echo esc_attr( wp_json_encode( $exercises, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ) ); ?>">
 			<div class="mahan-ex-list"></div>
 			<p>
@@ -177,7 +178,7 @@ class Mahan_Lesson_Meta {
 				continue;
 			}
 			$type = isset( $ex['type'] ) ? sanitize_key( (string) $ex['type'] ) : 'multiple_choice';
-			$valid_types = array( 'multiple_choice', 'short_answer', 'reflection', 'prompt_task' );
+			$valid_types = array( 'multiple_choice', 'true_false', 'fill_blank', 'short_answer', 'reflection', 'prompt_task' );
 			if ( ! in_array( $type, $valid_types, true ) ) {
 				$type = 'multiple_choice';
 			}
@@ -196,8 +197,12 @@ class Mahan_Lesson_Meta {
 				'xp'       => isset( $ex['xp'] ) ? absint( $ex['xp'] ) : 0,
 			);
 
-			if ( 'multiple_choice' === $type ) {
-				$opts = isset( $ex['options'] ) && is_array( $ex['options'] ) ? $ex['options'] : array();
+			if ( 'multiple_choice' === $type || 'true_false' === $type ) {
+				if ( 'true_false' === $type ) {
+					$opts = array( __( 'True', 'mahan-academy' ), __( 'False', 'mahan-academy' ) );
+				} else {
+					$opts = isset( $ex['options'] ) && is_array( $ex['options'] ) ? $ex['options'] : array();
+				}
 				$row['options'] = array_values( array_map(
 					function ( $o ) {
 						return sanitize_text_field( (string) $o );
@@ -207,6 +212,12 @@ class Mahan_Lesson_Meta {
 				$row['answer']             = isset( $ex['answer'] ) ? (int) $ex['answer'] : 0;
 				$row['feedback_correct']   = isset( $ex['feedback_correct'] ) ? sanitize_textarea_field( (string) $ex['feedback_correct'] ) : '';
 				$row['feedback_incorrect'] = isset( $ex['feedback_incorrect'] ) ? sanitize_textarea_field( (string) $ex['feedback_incorrect'] ) : '';
+			} elseif ( 'fill_blank' === $type ) {
+				$row['answer_text']    = isset( $ex['answer_text'] ) ? sanitize_text_field( (string) $ex['answer_text'] ) : '';
+				$row['accept']         = isset( $ex['accept'] ) && is_array( $ex['accept'] )
+					? array_values( array_map( 'sanitize_text_field', $ex['accept'] ) )
+					: array();
+				$row['case_sensitive'] = ! empty( $ex['case_sensitive'] ) ? 1 : 0;
 			} else {
 				$row['rubric']      = isset( $ex['rubric'] ) ? sanitize_textarea_field( (string) $ex['rubric'] ) : '';
 				$row['placeholder'] = isset( $ex['placeholder'] ) ? sanitize_text_field( (string) $ex['placeholder'] ) : '';

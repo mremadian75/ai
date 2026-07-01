@@ -252,7 +252,7 @@ class Mahan_Courses {
 			'hint'     => isset( $ex['hint'] ) ? (string) $ex['hint'] : '',
 			'xp'       => isset( $ex['xp'] ) ? (int) $ex['xp'] : (int) Mahan_Settings::get( 'xp_per_exercise', 10 ),
 		);
-		if ( 'multiple_choice' === $out['type'] && ! empty( $ex['options'] ) && is_array( $ex['options'] ) ) {
+		if ( in_array( $out['type'], array( 'multiple_choice', 'true_false' ), true ) && ! empty( $ex['options'] ) && is_array( $ex['options'] ) ) {
 			// Labels only — never the correct index.
 			$out['options'] = array_values( array_map( 'strval', $ex['options'] ) );
 		}

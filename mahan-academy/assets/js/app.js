@@ -479,9 +479,9 @@
 		var feedback = h('div', { class: 'mahan-ex-feedback', style: 'display:none' });
 		var checkBtn;
 
-		if (ex.type === 'multiple_choice' && ex.options) {
+		if ((ex.type === 'multiple_choice' || ex.type === 'true_false') && ex.options) {
 			var chosen = { i: -1 };
-			var opts = h('div', { class: 'mahan-ex-options' }, ex.options.map(function (o, i) {
+			var opts = h('div', { class: 'mahan-ex-options' + (ex.type === 'true_false' ? ' mahan-ex-tf' : '') }, ex.options.map(function (o, i) {
 				return h('button', { class: 'mahan-ex-option', type: 'button', text: o,
 					onClick: function (e) {
 						if (card.classList.contains('is-solved')) { return; }
@@ -496,6 +496,13 @@
 				onClick: function () {
 					submitExercise(L.id, ex, chosen.i, card, feedback, checkBtn, opts);
 				} });
+		} else if (ex.type === 'fill_blank') {
+			var inp = h('input', { class: 'mahan-ex-input mahan-ex-blank', type: 'text', placeholder: ex.placeholder || t('typeAnswer', 'Type your answer…') });
+			if (ex.solved) { inp.disabled = true; }
+			card.appendChild(inp);
+			checkBtn = h('button', { class: 'mahan-btn mahan-btn-primary mahan-ex-check', text: t('check', 'Check'),
+				onClick: function () { submitExercise(L.id, ex, inp.value, card, feedback, checkBtn, null); } });
+			inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); checkBtn.click(); } });
 		} else {
 			var ta = h('textarea', { class: 'mahan-ex-input', rows: 4, placeholder: ex.placeholder || t('writeAnswer', 'Write your answer…') });
 			if (ex.solved) { ta.disabled = true; }
@@ -517,8 +524,9 @@
 	}
 
 	function submitExercise(lessonId, ex, answer, card, feedback, btn, opts) {
-		if (ex.type === 'multiple_choice' && (answer === -1 || answer === '')) { return; }
-		if (ex.type !== 'multiple_choice' && !String(answer).trim()) { return; }
+		var isChoice = (ex.type === 'multiple_choice' || ex.type === 'true_false');
+		if (isChoice && (answer === -1 || answer === '')) { return; }
+		if (!isChoice && !String(answer).trim()) { return; }
 		btn.disabled = true;
 		var oldLabel = btn.textContent;
 		btn.textContent = '…';
@@ -528,7 +536,7 @@
 			feedback.className = 'mahan-ex-feedback ' + (r.is_correct ? 'is-correct' : 'is-incorrect');
 			var head = r.is_correct ? '✓ ' + t('correct', 'Correct!') : '✕ ' + t('incorrect', 'Not quite');
 			feedback.innerHTML = '<strong>' + head + '</strong>' + (r.feedback ? '<div>' + mdToHtml(r.feedback) + '</div>' : '');
-			if (opts && ex.type === 'multiple_choice' && typeof r.correct_index === 'number') {
+			if (opts && (ex.type === 'multiple_choice' || ex.type === 'true_false') && typeof r.correct_index === 'number') {
 				var btns = opts.querySelectorAll('.mahan-ex-option');
 				if (btns[r.correct_index]) { btns[r.correct_index].classList.add('is-correct'); }
 			}

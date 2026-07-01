@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -17,11 +17,14 @@ Mahan Academy is a self-contained learning plugin built to teach people how to u
 **Key features:**
 
 * Standalone courses & lessons (no Tutor LMS, LearnDash, etc. required)
+* Visual drag-and-drop Course Builder — build the whole curriculum on one screen
+* AI authoring assistant — generate outcomes, draft lessons, and create exercises
 * Beautiful single-page application front-end (Coursera structure + Duolingo energy)
 * Real-time streaming AI tutor via Server-Sent Events (Anthropic / OpenAI / Google)
-* Interactive exercises with instant multiple-choice grading and AI-graded open responses
+* Five exercise types: multiple choice, true/false, fill-in-the-blank, short answer, and prompt-writing (open answers graded by AI)
 * Schema-driven learner profile that personalizes the tutor and grading prompts
-* Gamification: XP, levels, daily streaks
+* Gamification: XP, configurable levels & titles, daily streaks, achievements/badges, and an opt-in leaderboard
+* Featured courses, promo videos, prerequisites, and printable completion certificates
 * English UI, fully translatable
 * Lightweight: vanilla JS, no build step, no external runtime dependencies
 
@@ -45,6 +48,16 @@ No. Everything happens inside WordPress.
 Yes — *Settings → Profile Form* takes a JSON schema. The placeholders you define there flow into the tutor's system prompt automatically.
 
 == Changelog ==
+
+= 1.1.0 =
+* New: Visual drag-and-drop Course Builder on the course editor (units + lessons in one place; inline add/rename/duplicate/delete; per-lesson type/XP/duration).
+* New: AI authoring assistant — generate course outcomes, draft lesson content, and generate exercises from lesson material.
+* New: True/False and Fill-in-the-blank exercise types.
+* New: Achievements/badges with a dashboard showcase.
+* New: Opt-in public XP leaderboard.
+* New: Configurable level titles.
+* New: Per-course featured flag, promo video, prerequisite, and printable completion certificate.
+* Docs: added an admin guide and developer reference under /docs.
 
 = 1.0.0 =
 * Initial release.

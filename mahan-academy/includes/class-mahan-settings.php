@@ -23,7 +23,7 @@ class Mahan_Settings {
 	 * @return array
 	 */
 	public static function defaults() {
-		return array(
+		$defaults = array(
 			// AI provider configuration.
 			'ai_provider'         => 'anthropic',
 			'anthropic_key'       => '',
@@ -62,10 +62,25 @@ class Mahan_Settings {
 			// Pages (auto-created on activation).
 			'app_page_id'         => 0,
 
+			// Email notifications.
+			'emails_enabled'      => 1,
+			'email_from_name'     => '',
+			'email_from_email'    => '',
+			'email_welcome'       => 1,
+			'email_complete'      => 1,
+			'email_badge'         => 0,
+			'email_streak'        => 0,
+
 			// Misc.
 			'ai_cache_ttl'        => 0,
 			'debug'               => 0,
 		);
+
+		if ( class_exists( 'Mahan_Emails' ) ) {
+			$defaults = array_merge( $defaults, Mahan_Emails::default_templates() );
+		}
+
+		return $defaults;
 	}
 
 	/**

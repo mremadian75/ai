@@ -49,17 +49,31 @@ $options = array(
 	'mahan_theme', 'mahan_custom_css', 'mahan_app_page_id',
 	'mahan_ai_cache_ttl', 'mahan_debug', 'mahan_profile_schema',
 	'mahan_db_version', 'mahan_remove_all_data',
+	// Gamification & courses (1.1.0).
+	'mahan_badges_enabled', 'mahan_leaderboard_enabled', 'mahan_level_titles', 'mahan_certificate_enabled',
+	// Emails (1.2.0).
+	'mahan_emails_enabled', 'mahan_email_from_name', 'mahan_email_from_email',
+	'mahan_email_welcome', 'mahan_email_complete', 'mahan_email_badge', 'mahan_email_streak',
+	'mahan_email_welcome_subject', 'mahan_email_welcome_body',
+	'mahan_email_complete_subject', 'mahan_email_complete_body',
+	'mahan_email_badge_subject', 'mahan_email_badge_body',
+	'mahan_email_streak_subject', 'mahan_email_streak_body',
 );
 foreach ( $options as $opt ) {
 	delete_option( $opt );
 }
 
 // Delete user meta.
-// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->usermeta} WHERE meta_key = %s", 'mahan_profile' ) );
+foreach ( array( 'mahan_profile', 'mahan_badges' ) as $umeta ) {
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+	$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->usermeta} WHERE meta_key = %s", $umeta ) );
+}
+
+// Clear scheduled events.
+wp_clear_scheduled_hook( 'mahan_daily_cron' );
 
 // Delete CPTs.
-foreach ( array( 'mahan_course', 'mahan_lesson' ) as $cpt ) {
+foreach ( array( 'mahan_course', 'mahan_lesson', 'mahan_path' ) as $cpt ) {
 	$posts = get_posts(
 		array(
 			'post_type'      => $cpt,

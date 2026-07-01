@@ -87,13 +87,22 @@ class Mahan_Admin {
 		$key    = preg_replace( '/^sanitize_option_' . preg_quote( Mahan_Settings::PREFIX, '/' ) . '/', '', $filter );
 
 		$int_keys  = array( 'max_tokens', 'xp_per_lesson', 'xp_per_exercise', 'level_curve', 'hearts_max', 'ai_cache_ttl', 'app_page_id' );
-		$bool_keys = array( 'gate_enabled', 'streak_enabled', 'hearts_enabled', 'debug', 'badges_enabled', 'leaderboard_enabled', 'certificate_enabled' );
+		$bool_keys = array( 'gate_enabled', 'streak_enabled', 'hearts_enabled', 'debug', 'badges_enabled', 'leaderboard_enabled', 'certificate_enabled', 'emails_enabled', 'email_welcome', 'email_complete', 'email_badge', 'email_streak' );
 
 		if ( in_array( $key, $int_keys, true ) ) {
 			return absint( $value );
 		}
 		if ( in_array( $key, $bool_keys, true ) ) {
 			return $value ? 1 : 0;
+		}
+		if ( '_body' === substr( $key, -5 ) ) {
+			return wp_kses_post( wp_unslash( (string) $value ) );
+		}
+		if ( '_subject' === substr( $key, -8 ) ) {
+			return sanitize_text_field( wp_unslash( (string) $value ) );
+		}
+		if ( 'email_from_email' === $key ) {
+			return sanitize_email( wp_unslash( (string) $value ) );
 		}
 
 		switch ( $key ) {
@@ -384,6 +393,7 @@ class Mahan_Admin {
 			<h2 class="nav-tab-wrapper mahan-tabs">
 				<a href="#tab-ai" class="nav-tab nav-tab-active"><?php esc_html_e( 'AI Provider', 'mahan-academy' ); ?></a>
 				<a href="#tab-game" class="nav-tab"><?php esc_html_e( 'Gamification', 'mahan-academy' ); ?></a>
+				<a href="#tab-emails" class="nav-tab"><?php esc_html_e( 'Emails', 'mahan-academy' ); ?></a>
 				<a href="#tab-appearance" class="nav-tab"><?php esc_html_e( 'Appearance', 'mahan-academy' ); ?></a>
 				<a href="#tab-profile" class="nav-tab"><?php esc_html_e( 'Profile Form', 'mahan-academy' ); ?></a>
 				<a href="#tab-advanced" class="nav-tab"><?php esc_html_e( 'Advanced', 'mahan-academy' ); ?></a>
@@ -524,6 +534,62 @@ class Mahan_Admin {
 							</td>
 						</tr>
 					</table>
+				</div>
+
+				<!-- EMAILS -->
+				<div class="mahan-tab-panel" id="tab-emails" style="display:none">
+					<table class="form-table" role="presentation">
+						<tr>
+							<th scope="row"><?php esc_html_e( 'Email notifications', 'mahan-academy' ); ?></th>
+							<td>
+								<input type="hidden" name="mahan_emails_enabled" value="0" />
+								<label><input type="checkbox" name="mahan_emails_enabled" value="1" <?php checked( (int) $g( 'emails_enabled' ), 1 ); ?> /> <?php esc_html_e( 'Send notification emails', 'mahan-academy' ); ?></label>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><label for="mahan_email_from_name"><?php esc_html_e( 'From name', 'mahan-academy' ); ?></label></th>
+							<td><input type="text" class="regular-text" id="mahan_email_from_name" name="mahan_email_from_name" value="<?php echo esc_attr( $g( 'email_from_name' ) ); ?>" placeholder="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>" /></td>
+						</tr>
+						<tr>
+							<th scope="row"><label for="mahan_email_from_email"><?php esc_html_e( 'From email', 'mahan-academy' ); ?></label></th>
+							<td><input type="email" class="regular-text" id="mahan_email_from_email" name="mahan_email_from_email" value="<?php echo esc_attr( $g( 'email_from_email' ) ); ?>" placeholder="<?php echo esc_attr( get_option( 'admin_email' ) ); ?>" /></td>
+						</tr>
+					</table>
+					<p class="description"><?php esc_html_e( 'Placeholders: {{name}}, {{course}}, {{badge}}, {{streak}}, {{site}}, {{academy_url}}, {{login_url}}. Basic HTML is allowed in the body.', 'mahan-academy' ); ?></p>
+					<?php
+					$emails = array(
+						'welcome'  => __( 'Enrollment / welcome', 'mahan-academy' ),
+						'complete' => __( 'Course completed', 'mahan-academy' ),
+						'badge'    => __( 'New achievement', 'mahan-academy' ),
+						'streak'   => __( 'Daily streak reminder', 'mahan-academy' ),
+					);
+					foreach ( $emails as $slug => $label ) :
+						?>
+						<h3><?php echo esc_html( $label ); ?></h3>
+						<table class="form-table" role="presentation">
+							<tr>
+								<th scope="row"><?php esc_html_e( 'Enabled', 'mahan-academy' ); ?></th>
+								<td>
+									<input type="hidden" name="mahan_email_<?php echo esc_attr( $slug ); ?>" value="0" />
+									<label><input type="checkbox" name="mahan_email_<?php echo esc_attr( $slug ); ?>" value="1" <?php checked( (int) $g( 'email_' . $slug ), 1 ); ?> />
+									<?php
+									echo 'streak' === $slug
+										? esc_html__( 'Send a daily reminder to learners with an active streak (requires wp-cron).', 'mahan-academy' )
+										: esc_html__( 'Send this email', 'mahan-academy' );
+									?>
+									</label>
+								</td>
+							</tr>
+							<tr>
+								<th scope="row"><label for="mahan_email_<?php echo esc_attr( $slug ); ?>_subject"><?php esc_html_e( 'Subject', 'mahan-academy' ); ?></label></th>
+								<td><input type="text" class="large-text" id="mahan_email_<?php echo esc_attr( $slug ); ?>_subject" name="mahan_email_<?php echo esc_attr( $slug ); ?>_subject" value="<?php echo esc_attr( $g( 'email_' . $slug . '_subject' ) ); ?>" /></td>
+							</tr>
+							<tr>
+								<th scope="row"><label for="mahan_email_<?php echo esc_attr( $slug ); ?>_body"><?php esc_html_e( 'Body', 'mahan-academy' ); ?></label></th>
+								<td><textarea id="mahan_email_<?php echo esc_attr( $slug ); ?>_body" name="mahan_email_<?php echo esc_attr( $slug ); ?>_body" rows="5" class="large-text"><?php echo esc_textarea( $g( 'email_' . $slug . '_body' ) ); ?></textarea></td>
+							</tr>
+						</table>
+					<?php endforeach; ?>
 				</div>
 
 				<!-- APPEARANCE -->

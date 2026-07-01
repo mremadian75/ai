@@ -26,6 +26,7 @@ class Mahan_Plugin {
 	}
 
 	public static function deactivate() {
+		Mahan_Emails::clear_cron();
 		flush_rewrite_rules();
 	}
 
@@ -79,6 +80,7 @@ class Mahan_Plugin {
 
 		Mahan_CPT::init();
 		Mahan_Badges::init();
+		Mahan_Emails::init();
 		Mahan_REST::init();
 		Mahan_AI_Stream::init();
 		Mahan_Front::init();

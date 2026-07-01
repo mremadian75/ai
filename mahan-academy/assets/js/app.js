@@ -131,7 +131,9 @@
 			h('a', { class: 'mahan-nav-link' + (state.view === 'catalog' ? ' is-active' : ''), href: urlFor('catalog'),
 				onClick: function (e) { e.preventDefault(); go('catalog'); }, text: t('catalog', 'Explore') }),
 			D.loggedIn ? h('a', { class: 'mahan-nav-link' + (state.view === 'dashboard' ? ' is-active' : ''), href: urlFor('dashboard'),
-				onClick: function (e) { e.preventDefault(); go('dashboard'); }, text: t('dashboard', 'My Learning') }) : null
+				onClick: function (e) { e.preventDefault(); go('dashboard'); }, text: t('dashboard', 'My Learning') }) : null,
+			D.leaderboard ? h('a', { class: 'mahan-nav-link' + (state.view === 'leaderboard' ? ' is-active' : ''), href: urlFor('leaderboard'),
+				onClick: function (e) { e.preventDefault(); go('leaderboard'); }, text: t('leaderboard', 'Leaderboard') }) : null
 		]);
 
 		var right;
@@ -251,9 +253,10 @@
 				h('span', { class: 'mahan-tag mahan-tag-soft', text: c.lesson_count + ' ' + t('lessons', 'lessons') })]);
 
 		return h('a', {
-			class: 'mahan-card', href: urlFor('course', { course: c.id }),
+			class: 'mahan-card' + (c.featured ? ' is-featured' : ''), href: urlFor('course', { course: c.id }),
 			onClick: function (e) { e.preventDefault(); go('course', { course: c.id }); }
 		}, [
+			c.featured ? h('span', { class: 'mahan-ribbon', text: '★ ' + t('featured', 'Featured') }) : null,
 			media,
 			h('div', { class: 'mahan-card-body' }, [
 				h('span', { class: 'mahan-card-cat', text: (c.categories && c.categories[0]) || 'AI Skills' }),
@@ -295,6 +298,35 @@
 				c.image ? h('div', { class: 'mahan-course-hero-media', style: 'background-image:url(' + esc(c.image) + ')' }) : null
 			]);
 			wrap.appendChild(hero);
+
+			// Prerequisite note.
+			if (j.prerequisite) {
+				wrap.appendChild(h('div', { class: 'mahan-note' }, [
+					h('span', { text: '💡 ' + t('prereqNote', 'Recommended first:') + ' ' }),
+					h('a', { href: urlFor('course', { course: j.prerequisite.id }), text: j.prerequisite.title,
+						onClick: function (e) { e.preventDefault(); go('course', { course: j.prerequisite.id }); } })
+				]));
+			}
+
+			// Promo video.
+			if (j.promo_video && j.promo_video.src) {
+				var pv = j.promo_video;
+				var media = pv.type === 'file'
+					? h('video', { class: 'mahan-promo', src: pv.src, controls: 'controls' })
+					: h('div', { class: 'mahan-promo mahan-promo-embed' }, [
+						h('iframe', { src: pv.src, frameborder: '0', allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture', allowfullscreen: 'allowfullscreen' })
+					]);
+				wrap.appendChild(h('section', { class: 'mahan-section mahan-promo-wrap' }, [media]));
+			}
+
+			// Certificate note.
+			if (j.certificate) {
+				wrap.appendChild(h('div', { class: 'mahan-note mahan-note-cert' }, [
+					h('span', { text: '🎓 ' + t('certificate', 'Certificate of completion') }),
+					j.completed ? h('button', { class: 'mahan-btn mahan-btn-sm mahan-btn-ghost', text: t('viewCertificate', 'View certificate'),
+						onClick: function () { showCertificate(j.course); } }) : null
+				]));
+			}
 
 			// Outcomes.
 			if (j.outcomes && j.outcomes.length) {
@@ -694,7 +726,7 @@
 				h('div', { class: 'mahan-dash-stats' }, [
 					statBig('🔥', s.streak || 0, t('streak', 'day streak')),
 					statBig('⚡', s.xp || 0, 'XP'),
-					statBig('◆', s.level || 1, t('level', 'Level'))
+					statBig('◆', s.level || 1, s.level_title || t('level', 'Level'))
 				]),
 				h('div', { class: 'mahan-level-bar' }, [
 					h('div', { class: 'mahan-level-bar-track' }, [h('span', { style: 'width:' + levelPct(s) + '%' })]),
@@ -714,8 +746,86 @@
 				courses.forEach(function (c) { c.enrolled = true; grid.appendChild(courseCard(c)); });
 				wrap.appendChild(grid);
 			}
+
+			// Achievements.
+			if (j.badges && j.badges.length) {
+				wrap.appendChild(h('h2', { class: 'mahan-dash-h2', text: t('achievements', 'Achievements') }));
+				var earned = j.badges.filter(function (b) { return b.earned; }).length;
+				wrap.appendChild(h('p', { class: 'mahan-badges-sub', text: earned + ' / ' + j.badges.length }));
+				var bgrid = h('div', { class: 'mahan-badges' });
+				j.badges.forEach(function (b) {
+					bgrid.appendChild(h('div', { class: 'mahan-badge' + (b.earned ? ' is-earned' : ' is-locked'), title: b.desc }, [
+						h('span', { class: 'mahan-badge-icon', text: b.icon }),
+						h('span', { class: 'mahan-badge-title', text: b.title }),
+						h('span', { class: 'mahan-badge-desc', text: b.desc })
+					]));
+				});
+				wrap.appendChild(bgrid);
+			}
+
 			mount(wrap);
 		}).catch(function () { mount(errorBox(renderDashboard)); });
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* View: Leaderboard                                                   */
+	/* ------------------------------------------------------------------ */
+
+	function renderLeaderboard() {
+		mount(loadingShell());
+		api('/leaderboard').then(function (j) {
+			var wrap = h('div', { class: 'mahan-leaderboard' });
+			wrap.appendChild(h('div', { class: 'mahan-dash-hero' }, [h('h1', { text: '🏆 ' + t('leaderboard', 'Leaderboard') })]));
+			var entries = j.entries || [];
+			if (!entries.length) {
+				wrap.appendChild(h('div', { class: 'mahan-empty', text: t('emptyLeaderboard', 'No ranked learners yet — earn some XP!') }));
+			} else {
+				var list = h('div', { class: 'mahan-lb-list' });
+				entries.forEach(function (e) {
+					list.appendChild(h('div', { class: 'mahan-lb-row' + (e.is_me ? ' is-me' : '') + (e.rank <= 3 ? ' is-top' : '') }, [
+						h('span', { class: 'mahan-lb-rank', text: e.rank <= 3 ? ['🥇', '🥈', '🥉'][e.rank - 1] : String(e.rank) }),
+						h('img', { class: 'mahan-lb-avatar', src: e.avatar, alt: e.name }),
+						h('span', { class: 'mahan-lb-name', text: e.name + (e.is_me ? ' (' + t('you', 'You') + ')' : '') }),
+						h('span', { class: 'mahan-lb-streak', text: '🔥 ' + e.streak }),
+						h('span', { class: 'mahan-lb-level', text: '◆ ' + e.level }),
+						h('span', { class: 'mahan-lb-xp', text: '⚡ ' + e.xp })
+					]));
+				});
+				wrap.appendChild(list);
+			}
+			mount(wrap);
+		}).catch(function () { mount(errorBox(renderLeaderboard)); });
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Certificate (printable)                                             */
+	/* ------------------------------------------------------------------ */
+
+	function showCertificate(course) {
+		var name = (state.me && state.me.user && state.me.user.display_name) || (D.user && D.user.name) || '';
+		var date = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+		var cert = h('div', { class: 'mahan-cert' }, [
+			h('div', { class: 'mahan-cert-inner' }, [
+				h('div', { class: 'mahan-cert-badge', text: '🎓' }),
+				h('div', { class: 'mahan-cert-brand', text: D.siteName || 'Mahan Academy' }),
+				h('div', { class: 'mahan-cert-line', text: t('certAwarded', 'This certifies that') }),
+				h('div', { class: 'mahan-cert-name', text: name }),
+				h('div', { class: 'mahan-cert-line', text: t('certCompleted', 'has successfully completed') }),
+				h('div', { class: 'mahan-cert-course', text: course.title }),
+				h('div', { class: 'mahan-cert-date', text: date })
+			])
+		]);
+		var overlay = h('div', { class: 'mahan-modal-overlay' }, [
+			h('div', { class: 'mahan-modal mahan-cert-modal' }, [
+				cert,
+				h('div', { class: 'mahan-modal-actions' }, [
+					h('button', { class: 'mahan-btn mahan-btn-ghost', text: t('notNow', 'Close'), onClick: function () { overlay.remove(); } }),
+					h('button', { class: 'mahan-btn mahan-btn-primary', text: t('print', 'Print / Save as PDF'), onClick: function () { window.print(); } })
+				])
+			])
+		]);
+		overlay.addEventListener('click', function (e) { if (e.target === overlay) { overlay.remove(); } });
+		document.body.appendChild(overlay);
 	}
 
 	function statBig(icon, value, label) {
@@ -867,6 +977,7 @@
 			case 'course': return renderCourse();
 			case 'lesson': return D.loggedIn ? renderLesson() : mount(loginGate());
 			case 'dashboard': return renderDashboard();
+			case 'leaderboard': return D.leaderboard ? renderLeaderboard() : renderCatalog();
 			case 'catalog':
 			default: return renderCatalog();
 		}

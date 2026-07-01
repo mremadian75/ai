@@ -86,7 +86,7 @@ class Mahan_Admin {
 		$key    = preg_replace( '/^sanitize_option_' . preg_quote( Mahan_Settings::PREFIX, '/' ) . '/', '', $filter );
 
 		$int_keys  = array( 'max_tokens', 'xp_per_lesson', 'xp_per_exercise', 'level_curve', 'hearts_max', 'ai_cache_ttl', 'app_page_id' );
-		$bool_keys = array( 'gate_enabled', 'streak_enabled', 'hearts_enabled', 'debug' );
+		$bool_keys = array( 'gate_enabled', 'streak_enabled', 'hearts_enabled', 'debug', 'badges_enabled', 'leaderboard_enabled', 'certificate_enabled' );
 
 		if ( in_array( $key, $int_keys, true ) ) {
 			return absint( $value );
@@ -112,6 +112,7 @@ class Mahan_Admin {
 			case 'custom_css':
 				return self::sanitize_css( (string) $value );
 			case 'tutor_system_prompt':
+			case 'level_titles':
 				return sanitize_textarea_field( wp_unslash( $value ) );
 			default:
 				// API keys, model ids, etc.
@@ -454,6 +455,34 @@ class Mahan_Admin {
 							<td>
 								<input type="hidden" name="mahan_streak_enabled" value="0" />
 								<label><input type="checkbox" name="mahan_streak_enabled" value="1" <?php checked( (int) $g( 'streak_enabled' ), 1 ); ?> /> <?php esc_html_e( 'Track daily learning streaks', 'mahan-academy' ); ?></label>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><?php esc_html_e( 'Achievements', 'mahan-academy' ); ?></th>
+							<td>
+								<input type="hidden" name="mahan_badges_enabled" value="0" />
+								<label><input type="checkbox" name="mahan_badges_enabled" value="1" <?php checked( (int) $g( 'badges_enabled' ), 1 ); ?> /> <?php esc_html_e( 'Award badges for milestones (lessons, courses, streaks, levels)', 'mahan-academy' ); ?></label>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><?php esc_html_e( 'Leaderboard', 'mahan-academy' ); ?></th>
+							<td>
+								<input type="hidden" name="mahan_leaderboard_enabled" value="0" />
+								<label><input type="checkbox" name="mahan_leaderboard_enabled" value="1" <?php checked( (int) $g( 'leaderboard_enabled' ), 1 ); ?> /> <?php esc_html_e( 'Show a public XP leaderboard (top 20 learners)', 'mahan-academy' ); ?></label>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><?php esc_html_e( 'Certificates', 'mahan-academy' ); ?></th>
+							<td>
+								<input type="hidden" name="mahan_certificate_enabled" value="0" />
+								<label><input type="checkbox" name="mahan_certificate_enabled" value="1" <?php checked( (int) $g( 'certificate_enabled' ), 1 ); ?> /> <?php esc_html_e( 'Enable completion certificates (per-course toggle in the course editor)', 'mahan-academy' ); ?></label>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><label for="mahan_level_titles"><?php esc_html_e( 'Level titles', 'mahan-academy' ); ?></label></th>
+							<td>
+								<textarea id="mahan_level_titles" name="mahan_level_titles" rows="5" class="large-text code" placeholder="Novice&#10;Explorer&#10;Practitioner&#10;Specialist&#10;Expert"><?php echo esc_textarea( $g( 'level_titles' ) ); ?></textarea>
+								<p class="description"><?php esc_html_e( 'Optional. One title per line, mapped to levels 1, 2, 3… The last title is reused for higher levels. Leave empty to show "Level N".', 'mahan-academy' ); ?></p>
 							</td>
 						</tr>
 					</table>

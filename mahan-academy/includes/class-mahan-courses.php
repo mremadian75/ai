@@ -14,10 +14,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Mahan_Courses {
 
 	// Course meta.
-	const M_SUBTITLE  = '_mahan_subtitle';
-	const M_LEVEL     = '_mahan_level';
-	const M_EST_HOURS = '_mahan_est_hours';
-	const M_OUTCOMES  = '_mahan_outcomes';
+	const M_SUBTITLE    = '_mahan_subtitle';
+	const M_LEVEL       = '_mahan_level';
+	const M_EST_HOURS   = '_mahan_est_hours';
+	const M_OUTCOMES    = '_mahan_outcomes';
+	const M_FEATURED    = '_mahan_featured';
+	const M_PROMO_VIDEO = '_mahan_promo_video';
+	const M_PREREQ      = '_mahan_prereq';
+	const M_CERTIFICATE = '_mahan_certificate';
 
 	// Lesson meta.
 	const M_COURSE_ID  = '_mahan_course_id';
@@ -74,8 +78,48 @@ class Mahan_Courses {
 			'categories'   => is_wp_error( $terms ) ? array() : array_values( $terms ),
 			'image'        => get_the_post_thumbnail_url( $id, 'large' ) ?: '',
 			'lesson_count' => count( self::get_course_lessons( $id ) ),
+			'featured'     => (bool) Mahan_Utils::meta_int( $id, self::M_FEATURED, 0 ),
+			'certificate'  => (bool) Mahan_Utils::meta_int( $id, self::M_CERTIFICATE, 0 ),
 			'permalink'    => get_permalink( $id ),
 		);
+	}
+
+	/**
+	 * Normalize a promo-video URL into an embeddable form for the SPA.
+	 *
+	 * @param int $course_id Course id.
+	 * @return array { type: 'youtube'|'vimeo'|'file'|'', src: string }
+	 */
+	public static function promo_video( $course_id ) {
+		$url = Mahan_Utils::meta_str( $course_id, self::M_PROMO_VIDEO, '' );
+		$url = trim( $url );
+		if ( '' === $url ) {
+			return array( 'type' => '', 'src' => '' );
+		}
+		if ( preg_match( '~(?:youtube\.com/watch\?v=|youtu\.be/|youtube\.com/embed/)([A-Za-z0-9_-]{6,})~', $url, $m ) ) {
+			return array( 'type' => 'youtube', 'src' => 'https://www.youtube.com/embed/' . $m[1] );
+		}
+		if ( preg_match( '~vimeo\.com/(?:video/)?(\d+)~', $url, $m ) ) {
+			return array( 'type' => 'vimeo', 'src' => 'https://player.vimeo.com/video/' . $m[1] );
+		}
+		if ( preg_match( '~\.(mp4|webm|ogg)(\?.*)?$~i', $url ) ) {
+			return array( 'type' => 'file', 'src' => esc_url_raw( $url ) );
+		}
+		return array( 'type' => '', 'src' => '' );
+	}
+
+	/**
+	 * Prerequisite course reference, if any.
+	 *
+	 * @param int $course_id Course id.
+	 * @return array|null { id, title }
+	 */
+	public static function prerequisite( $course_id ) {
+		$prereq = Mahan_Utils::meta_int( $course_id, self::M_PREREQ, 0 );
+		if ( ! $prereq || Mahan_CPT::COURSE !== get_post_type( $prereq ) || 'publish' !== get_post_status( $prereq ) ) {
+			return null;
+		}
+		return array( 'id' => $prereq, 'title' => get_the_title( $prereq ) );
 	}
 
 	/**

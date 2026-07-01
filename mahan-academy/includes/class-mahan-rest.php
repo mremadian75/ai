@@ -75,6 +75,12 @@ class Mahan_REST {
 			'permission_callback' => $logged_in,
 		) );
 
+		register_rest_route( self::NS, '/leaderboard', array(
+			'methods'             => WP_REST_Server::READABLE,
+			'callback'            => array( __CLASS__, 'leaderboard' ),
+			'permission_callback' => $public,
+		) );
+
 		register_rest_route( self::NS, '/profile', array(
 			array(
 				'methods'             => WP_REST_Server::READABLE,
@@ -128,6 +134,13 @@ class Mahan_REST {
 			}
 			$items[] = $summary;
 		}
+		// Featured courses first (stable for the rest).
+		usort(
+			$items,
+			function ( $a, $b ) {
+				return ( ! empty( $b['featured'] ) ? 1 : 0 ) <=> ( ! empty( $a['featured'] ) ? 1 : 0 );
+			}
+		);
 		return rest_ensure_response( array(
 			'ok'        => true,
 			'courses'   => $items,
@@ -178,8 +191,12 @@ class Mahan_REST {
 			'course'       => $summary,
 			'outcomes'     => Mahan_Courses::course_outcomes( $course_id ),
 			'description'  => apply_filters( 'the_content', get_post_field( 'post_content', $course_id ) ),
+			'promo_video'  => Mahan_Courses::promo_video( $course_id ),
+			'prerequisite' => Mahan_Courses::prerequisite( $course_id ),
+			'certificate'  => (bool) $summary['certificate'] && (bool) Mahan_Settings::get( 'certificate_enabled', 1 ),
 			'enrolled'     => $enrolled,
 			'progress_pct' => $progress_pct,
+			'completed'    => ( 100 === (int) $progress_pct ),
 			'units'        => $units,
 			'logged_in'    => (bool) $user_id,
 		) );
@@ -357,9 +374,46 @@ class Mahan_REST {
 				'display_name' => $user ? $user->display_name : '',
 				'avatar'       => get_avatar_url( $user_id, array( 'size' => 96 ) ),
 			),
-			'stats'   => Mahan_Gamification::hud( $user_id ),
-			'courses' => Mahan_Enrollment::get_user_courses( $user_id ),
+			'stats'       => Mahan_Gamification::hud( $user_id ),
+			'courses'     => Mahan_Enrollment::get_user_courses( $user_id ),
+			'badges'      => Mahan_Badges::for_user( $user_id ),
+			'leaderboard' => (bool) Mahan_Settings::get( 'leaderboard_enabled', 0 ),
 		) );
+	}
+
+	/**
+	 * Public (opt-in) XP leaderboard — top learners by XP.
+	 */
+	public static function leaderboard( WP_REST_Request $request ) {
+		if ( ! Mahan_Settings::get( 'leaderboard_enabled', 0 ) ) {
+			return new WP_REST_Response( array( 'ok' => false, 'error' => 'disabled' ), 403 );
+		}
+		global $wpdb;
+		$table = Mahan_DB::stats();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$rows = $wpdb->get_results( "SELECT user_id, xp, level, streak FROM {$table} WHERE xp > 0 ORDER BY xp DESC LIMIT 20", ARRAY_A );
+
+		$me      = get_current_user_id();
+		$entries = array();
+		$rank    = 0;
+		foreach ( (array) $rows as $r ) {
+			$rank++;
+			$uid  = (int) $r['user_id'];
+			$user = get_userdata( $uid );
+			if ( ! $user ) {
+				continue;
+			}
+			$entries[] = array(
+				'rank'   => $rank,
+				'name'   => $user->display_name,
+				'avatar' => get_avatar_url( $uid, array( 'size' => 48 ) ),
+				'xp'     => (int) $r['xp'],
+				'level'  => (int) $r['level'],
+				'streak' => (int) $r['streak'],
+				'is_me'  => ( $uid === $me ),
+			);
+		}
+		return rest_ensure_response( array( 'ok' => true, 'entries' => $entries ) );
 	}
 
 	public static function get_profile( WP_REST_Request $request ) {

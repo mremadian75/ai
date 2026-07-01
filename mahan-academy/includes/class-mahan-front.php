@@ -86,6 +86,8 @@ class Mahan_Front {
 				'theme'        => $theme,
 				'gateEnabled'  => (int) Mahan_Settings::get( 'gate_enabled', 1 ),
 				'aiReady'      => Mahan_Settings::ai_ready(),
+				'leaderboard'  => (bool) Mahan_Settings::get( 'leaderboard_enabled', 0 ),
+				'siteName'     => get_bloginfo( 'name' ),
 				'i18n'         => self::strings(),
 			)
 		);
@@ -180,6 +182,21 @@ class Mahan_Front {
 			'practice'         => __( 'Practice', 'mahan-academy' ),
 			'reading'          => __( 'Reading', 'mahan-academy' ),
 			'locked'           => __( 'Complete the previous lesson to unlock', 'mahan-academy' ),
+			'featured'         => __( 'Featured', 'mahan-academy' ),
+			'leaderboard'      => __( 'Leaderboard', 'mahan-academy' ),
+			'achievements'     => __( 'Achievements', 'mahan-academy' ),
+			'noBadges'         => __( 'Earn badges by completing lessons and courses, keeping streaks, and leveling up.', 'mahan-academy' ),
+			'prereqNote'       => __( 'Recommended first:', 'mahan-academy' ),
+			'certificate'      => __( 'Certificate of completion', 'mahan-academy' ),
+			'viewCertificate'  => __( 'View certificate', 'mahan-academy' ),
+			'completed'        => __( 'Completed', 'mahan-academy' ),
+			'certAwarded'      => __( 'This certifies that', 'mahan-academy' ),
+			'certCompleted'    => __( 'has successfully completed', 'mahan-academy' ),
+			'print'            => __( 'Print / Save as PDF', 'mahan-academy' ),
+			'rank'             => __( 'Rank', 'mahan-academy' ),
+			'learner'          => __( 'Learner', 'mahan-academy' ),
+			'you'              => __( 'You', 'mahan-academy' ),
+			'emptyLeaderboard' => __( 'No ranked learners yet — earn some XP!', 'mahan-academy' ),
 		);
 	}
 }

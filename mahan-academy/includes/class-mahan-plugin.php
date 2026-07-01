@@ -78,6 +78,7 @@ class Mahan_Plugin {
 		Mahan_Settings::install_defaults();
 
 		Mahan_CPT::init();
+		Mahan_Badges::init();
 		Mahan_REST::init();
 		Mahan_AI_Stream::init();
 		Mahan_Front::init();

@@ -48,6 +48,10 @@ class Mahan_Settings {
 			'hearts_enabled'      => 0,
 			'hearts_max'          => 5,
 			'level_curve'         => 100,
+			'badges_enabled'      => 1,
+			'leaderboard_enabled' => 0,
+			'level_titles'        => '',
+			'certificate_enabled' => 1,
 
 			// Appearance.
 			'primary_color'       => '#4f46e5',

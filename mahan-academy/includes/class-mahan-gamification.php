@@ -182,7 +182,27 @@ class Mahan_Gamification {
 		$row['streak']           = $streak;
 		$row['longest_streak']   = $longest;
 		$row['last_active_date'] = $today;
+		do_action( 'mahan_streak_updated', $user_id, $streak );
 		return $row;
+	}
+
+	/**
+	 * Configurable title for a level (e.g. "Explorer"). Falls back to "Level N".
+	 *
+	 * @param int $level Level number.
+	 * @return string
+	 */
+	public static function level_title( $level ) {
+		$level = max( 1, (int) $level );
+		$raw   = (string) Mahan_Settings::get( 'level_titles', '' );
+		$names = array_values( array_filter( array_map( 'trim', preg_split( '/\r\n|\r|\n/', $raw ) ) ) );
+		if ( empty( $names ) ) {
+			/* translators: %d: level number */
+			return sprintf( __( 'Level %d', 'mahan-academy' ), $level );
+		}
+		// Map levels onto the provided names, holding the last for higher levels.
+		$idx = min( count( $names ) - 1, $level - 1 );
+		return $names[ $idx ];
 	}
 
 	/**
@@ -203,6 +223,7 @@ class Mahan_Gamification {
 			'hearts'         => (int) $row['hearts'],
 			'xp_per_level'   => $per,
 			'xp_into_level'  => $into,
+			'level_title'    => self::level_title( (int) $row['level'] ),
 		);
 	}
 }

@@ -19,6 +19,8 @@ class Mahan_Admin {
 
 		Mahan_Course_Meta::init();
 		Mahan_Lesson_Meta::init();
+		Mahan_Course_Builder::init();
+		Mahan_AI_Author::init();
 	}
 
 	/* ------------------------------------------------------------------ */
@@ -151,6 +153,67 @@ class Mahan_Admin {
 
 		wp_enqueue_style( 'mahan-admin', MAHAN_URL . 'assets/css/admin.css', array(), MAHAN_VERSION );
 		wp_enqueue_script( 'mahan-admin', MAHAN_URL . 'assets/js/admin.js', array( 'jquery' ), MAHAN_VERSION, true );
+
+		// Course Builder — only on the Course edit screen.
+		if ( $screen && Mahan_CPT::COURSE === $screen->post_type && 'post' === $screen->base ) {
+			wp_enqueue_style( 'mahan-course-builder', MAHAN_URL . 'assets/css/course-builder.css', array(), MAHAN_VERSION );
+			wp_enqueue_script( 'mahan-course-builder', MAHAN_URL . 'assets/js/course-builder.js', array( 'jquery', 'jquery-ui-sortable' ), MAHAN_VERSION, true );
+			wp_localize_script(
+				'mahan-course-builder',
+				'MahanCB',
+				array(
+					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+					'nonce'   => wp_create_nonce( Mahan_Course_Builder::NONCE ),
+					'i18n'    => array(
+						'addUnit'      => __( 'Add unit', 'mahan-academy' ),
+						'addLesson'    => __( 'Add lesson', 'mahan-academy' ),
+						'newUnit'      => __( 'New unit', 'mahan-academy' ),
+						'unitName'     => __( 'Unit name', 'mahan-academy' ),
+						'lessonTitle'  => __( 'Lesson title', 'mahan-academy' ),
+						'lessons'      => __( 'lessons', 'mahan-academy' ),
+						'exercises'    => __( 'exercises', 'mahan-academy' ),
+						'type'         => __( 'Type', 'mahan-academy' ),
+						'minutes'      => __( 'Min', 'mahan-academy' ),
+						'reading'      => __( 'Reading', 'mahan-academy' ),
+						'practice'     => __( 'Practice', 'mahan-academy' ),
+						'video'        => __( 'Video', 'mahan-academy' ),
+						'editContent'  => __( 'Edit content', 'mahan-academy' ),
+						'duplicate'    => __( 'Duplicate', 'mahan-academy' ),
+						'delete'       => __( 'Delete', 'mahan-academy' ),
+						'dragUnit'     => __( 'Drag to reorder unit', 'mahan-academy' ),
+						'dragLesson'   => __( 'Drag to reorder', 'mahan-academy' ),
+						'deleteUnit'   => __( 'Delete empty unit', 'mahan-academy' ),
+						'unitNotEmpty' => __( 'Move or delete its lessons first.', 'mahan-academy' ),
+						'confirmDelete'=> __( 'Delete this lesson? It will be moved to Trash.', 'mahan-academy' ),
+						'saved'        => __( 'Saved', 'mahan-academy' ),
+						'deleted'      => __( 'Deleted', 'mahan-academy' ),
+						'duplicated'   => __( 'Duplicated', 'mahan-academy' ),
+						'lessonAdded'  => __( 'Lesson added', 'mahan-academy' ),
+					),
+				)
+			);
+		}
+
+		// AI authoring assistant — on both Course and Lesson edit screens.
+		if ( $screen && in_array( $screen->post_type, array( Mahan_CPT::COURSE, Mahan_CPT::LESSON ), true ) && 'post' === $screen->base ) {
+			wp_enqueue_script( 'mahan-ai-author', MAHAN_URL . 'assets/js/ai-author.js', array( 'jquery', 'mahan-admin' ), MAHAN_VERSION, true );
+			wp_localize_script(
+				'mahan-ai-author',
+				'MahanAIAuthor',
+				array(
+					'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+					'nonce'   => Mahan_Settings::ai_ready() ? wp_create_nonce( Mahan_AI_Author::NONCE ) : '',
+					'i18n'    => array(
+						'genOutcomes'   => __( 'Generate with AI', 'mahan-academy' ),
+						'genExercises'  => __( 'Generate exercises with AI', 'mahan-academy' ),
+						'exercisesHint' => __( "from this lesson's content", 'mahan-academy' ),
+						'copy'          => __( 'Copy', 'mahan-academy' ),
+						'copied'        => __( 'Copied!', 'mahan-academy' ),
+					),
+				)
+			);
+		}
+
 		wp_localize_script(
 			'mahan-admin',
 			'MahanAdmin',
@@ -170,9 +233,18 @@ class Mahan_Admin {
 					'hint'            => __( 'Hint (optional)', 'mahan-academy' ),
 					'xp'              => __( 'XP', 'mahan-academy' ),
 					'multiple_choice' => __( 'Multiple choice', 'mahan-academy' ),
+					'true_false'      => __( 'True / False', 'mahan-academy' ),
+					'fill_blank'      => __( 'Fill in the blank', 'mahan-academy' ),
 					'short_answer'    => __( 'Short answer (AI graded)', 'mahan-academy' ),
 					'reflection'      => __( 'Reflection (AI graded)', 'mahan-academy' ),
 					'prompt_task'     => __( 'Prompt-writing task (AI graded)', 'mahan-academy' ),
+					'true_'           => __( 'True', 'mahan-academy' ),
+					'false_'          => __( 'False', 'mahan-academy' ),
+					'answer'          => __( 'Answer', 'mahan-academy' ),
+					'answerText'      => __( 'The exact word/phrase for the blank', 'mahan-academy' ),
+					'alsoAccept'      => __( 'Also accept (comma separated)', 'mahan-academy' ),
+					'caseSensitive'   => __( 'Case sensitive', 'mahan-academy' ),
+					'blankHint'       => __( 'Tip: use ___ (three underscores) in the question to mark the blank.', 'mahan-academy' ),
 					'noExercises'     => __( 'No exercises yet. Add one to make this lesson interactive.', 'mahan-academy' ),
 					'testing'         => __( 'Testing…', 'mahan-academy' ),
 				),

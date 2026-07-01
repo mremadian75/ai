@@ -1,0 +1,51 @@
+/* Mahan Academy — Course Builder (curriculum meta box) */
+.mahan-cb { --cb-accent: #4f46e5; margin: -6px -12px -12px; }
+.mahan-cb-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #e2e4e9; background: #fbfbfc; flex-wrap: wrap; }
+.mahan-cb-stats { color: #50575e; font-size: 13px; }
+.mahan-cb-stat { font-weight: 700; color: #1d2327; }
+
+.mahan-cb-units { padding: 12px 16px; display: flex; flex-direction: column; gap: 14px; }
+.mahan-cb-empty { padding: 24px 16px; color: #787c82; font-style: italic; margin: 0; }
+
+.mahan-cb-unit { border: 1px solid #dcdde1; border-radius: 8px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+.mahan-cb-unit-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #f6f7f9; border-bottom: 1px solid #e2e4e9; border-radius: 8px 8px 0 0; }
+.mahan-cb-unit-title { flex: 1; font-weight: 700; font-size: 14px; border: 1px solid transparent; background: transparent; padding: 4px 6px; border-radius: 5px; }
+.mahan-cb-unit-title:hover { background: #fff; border-color: #dcdde1; }
+.mahan-cb-unit-title:focus { background: #fff; border-color: var(--cb-accent); outline: none; }
+.mahan-cb-unit-count { color: #787c82; font-size: 12px; white-space: nowrap; }
+.mahan-cb-unit-del { color: #b32d2e !important; display: inline-flex; align-items: center; }
+
+.mahan-cb-drag { cursor: grab; color: #a7aaad; }
+.mahan-cb-drag:active { cursor: grabbing; }
+
+.mahan-cb-lessons { padding: 8px; display: flex; flex-direction: column; gap: 6px; min-height: 12px; }
+.mahan-cb-lesson { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #e6e7ea; border-radius: 6px; background: #fff; flex-wrap: wrap; }
+.mahan-cb-lesson:hover { border-color: #c9cbd0; }
+.mahan-cb-lesson-icon { color: var(--cb-accent); }
+.mahan-cb-lesson-title { flex: 1 1 200px; min-width: 160px; border: 1px solid transparent; background: transparent; padding: 4px 6px; border-radius: 5px; font-size: 13.5px; font-weight: 600; }
+.mahan-cb-lesson-title:hover { background: #f6f7f9; border-color: #dcdde1; }
+.mahan-cb-lesson-title:focus { background: #fff; border-color: var(--cb-accent); outline: none; }
+
+.mahan-cb-lesson-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mahan-cb-field { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #787c82; }
+.mahan-cb-field span { text-transform: uppercase; letter-spacing: .03em; }
+.mahan-cb-field select { font-size: 12px; }
+.mahan-cb-lesson-xp, .mahan-cb-lesson-min { width: 58px !important; }
+.mahan-cb-badge { font-size: 11px; font-weight: 700; color: var(--cb-accent); background: color-mix(in srgb, var(--cb-accent) 10%, transparent); padding: 2px 8px; border-radius: 999px; }
+
+.mahan-cb-lesson-actions { display: inline-flex; gap: 4px; margin-left: auto; }
+.mahan-cb-lesson-actions .button-small { display: inline-flex; align-items: center; }
+.mahan-cb-lesson-actions .dashicons { font-size: 16px; width: 16px; height: 16px; }
+.mahan-cb-lesson-del { color: #b32d2e !important; }
+
+.mahan-cb-unit-foot { padding: 4px 8px 10px; }
+.mahan-cb-placeholder { border: 2px dashed var(--cb-accent); border-radius: 6px; background: color-mix(in srgb, var(--cb-accent) 5%, transparent); height: 40px; margin: 2px 0; }
+
+.mahan-cb-saving { position: sticky; bottom: 0; text-align: right; font-size: 12px; color: #2271b1; padding: 6px 16px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+.mahan-cb-saving.is-show { opacity: 1; }
+.mahan-cb-saving.is-error { color: #b32d2e; }
+
+@media (max-width: 782px) {
+	.mahan-cb-lesson { align-items: flex-start; }
+	.mahan-cb-lesson-actions { margin-left: 0; }
+}

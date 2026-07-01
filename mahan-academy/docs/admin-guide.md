@@ -57,6 +57,9 @@ assemble units and lessons visually.
 - **Edit content** opens the lesson in the full block editor (for rich text,
   images, embeds, and exercises).
 - **Duplicate** or **Delete** a lesson from its row.
+- **Quiz** (per unit): the "Quiz" button on a unit header opens a quiz editor —
+  add multiple-choice / true-false / fill-blank questions, set a passing score
+  and XP. Learners see a quiz card at the end of that unit.
 
 Everything saves automatically as you edit — watch the "Saved" indicator.
 
@@ -104,7 +107,42 @@ XP is awarded the first time a learner gets an exercise right.
 
 ---
 
-## 6. Appearance & profile
+## 6. Learning paths
+
+**Mahan Academy → Learning Paths → Add Path.** A path is a guided program that
+groups several courses in a recommended order.
+
+- Give the path a title, description, image, and subtitle.
+- In **Path courses**, pick courses from the dropdown and drag to order them.
+- Learners get a **Paths** tab in the app: each path shows its courses in order
+  with their progress, plus the path's overall completion. Paths are a guide —
+  they don't lock courses.
+
+## 7. Email notifications
+
+**Settings → Emails.**
+
+- Master toggle + **From name / email**.
+- Per-email toggles and editable **subject + body**:
+  - *Enrollment / welcome* — when a learner enrolls.
+  - *Course completed* — when they finish a course.
+  - *New achievement* — when they earn a badge.
+  - *Daily streak reminder* — a wp-cron nudge for learners with an active streak
+    who haven't studied today.
+- Placeholders: `{{name}}`, `{{course}}`, `{{badge}}`, `{{streak}}`, `{{site}}`,
+  `{{academy_url}}`, `{{login_url}}`. Basic HTML is allowed in the body.
+
+## 8. Reports & analytics
+
+**Mahan Academy → Reports.** A read-only dashboard:
+
+- KPI cards: learners, enrollments, completions, active today / this week, total
+  XP, lessons completed, exercise accuracy, and quiz pass rate.
+- A per-course table (enrolled / completed / completion % / average progress)
+  with an **Export CSV** button.
+- Top learners and a recent-completions feed.
+
+## 9. Appearance & profile
 
 - **Settings → Appearance**: primary/accent colors, light/dark theme, custom CSS.
 - **Settings → Profile Form**: a JSON schema of the questions asked on a
@@ -113,7 +151,7 @@ XP is awarded the first time a learner gets an exercise right.
 
 ---
 
-## 7. Go live
+## 10. Go live
 
 Share the **Academy** page (Settings → Advanced shows which page it is). Learners
 sign in with normal WordPress accounts, enroll for free, and progress through

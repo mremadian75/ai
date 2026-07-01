@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.1.0
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -24,6 +24,10 @@ Mahan Academy is a self-contained learning plugin built to teach people how to u
 * Five exercise types: multiple choice, true/false, fill-in-the-blank, short answer, and prompt-writing (open answers graded by AI)
 * Schema-driven learner profile that personalizes the tutor and grading prompts
 * Gamification: XP, configurable levels & titles, daily streaks, achievements/badges, and an opt-in leaderboard
+* End-of-unit quizzes with instant grading and a passing score
+* Learning paths — group courses into a guided, ordered program
+* Email notifications (welcome, completion, achievement, streak reminder)
+* Admin reports & analytics with CSV export
 * Featured courses, promo videos, prerequisites, and printable completion certificates
 * English UI, fully translatable
 * Lightweight: vanilla JS, no build step, no external runtime dependencies
@@ -48,6 +52,12 @@ No. Everything happens inside WordPress.
 Yes — *Settings → Profile Form* takes a JSON schema. The placeholders you define there flow into the tutor's system prompt automatically.
 
 == Changelog ==
+
+= 1.2.0 =
+* New: End-of-unit quizzes — edit per-unit quizzes in the Course Builder; instant grading with a passing score and XP reward; a quiz card and taking flow in the app.
+* New: Learning paths — a `mahan_path` type that groups courses into an ordered program with aggregate progress; a Paths catalog and detail view.
+* New: Email notifications — welcome/enrollment, course completion, new achievement, and an optional daily streak reminder; editable templates with placeholders.
+* New: Admin Reports page — KPIs, per-course completion table, top learners, recent activity, and CSV export.
 
 = 1.1.0 =
 * New: Visual drag-and-drop Course Builder on the course editor (units + lessons in one place; inline add/rename/duplicate/delete; per-lesson type/XP/duration).

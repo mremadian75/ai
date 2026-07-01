@@ -21,21 +21,26 @@ mahan-academy/
 │   ├── class-mahan-courses.php           # course/lesson structure + meta keys
 │   ├── class-mahan-gamification.php      # XP, levels, streaks, level titles
 │   ├── class-mahan-badges.php            # achievements
+│   ├── class-mahan-emails.php            # notification emails + daily cron
 │   ├── class-mahan-enrollment.php        # enrollments
 │   ├── class-mahan-progress.php          # lesson/course progress
 │   ├── class-mahan-ai.php                # provider-agnostic completions
 │   ├── class-mahan-exercises.php         # grading (instant + AI)
+│   ├── class-mahan-quizzes.php           # end-of-unit quizzes
+│   ├── class-mahan-paths.php             # learning paths
 │   ├── class-mahan-ai-stream.php         # SSE tutor + non-streaming fallback
 │   ├── class-mahan-rest.php              # mahan/v1 REST API
 │   ├── class-mahan-front.php             # [mahan_academy] SPA mount + assets
-│   ├── class-mahan-course-builder.php    # admin: curriculum builder + AJAX
+│   ├── class-mahan-course-builder.php    # admin: curriculum builder + quiz editor + AJAX
 │   ├── class-mahan-ai-author.php         # admin: AI authoring + AJAX
+│   ├── class-mahan-reports.php           # admin: analytics + CSV export
 │   ├── class-mahan-meta-boxes-course.php # admin: course fields
 │   ├── class-mahan-meta-boxes-lesson.php # admin: lesson fields + exercise builder
-│   ├── class-mahan-admin.php             # admin: menu, settings, assets
+│   ├── class-mahan-meta-boxes-path.php   # admin: path course picker
+│   ├── class-mahan-admin.php             # admin: menu, settings, reports, assets
 │   └── class-mahan-plugin.php            # orchestrator (activate/deactivate/init)
 └── assets/
-    ├── js/{app.js, admin.js, course-builder.js, ai-author.js}
+    ├── js/{app.js, admin.js, course-builder.js, ai-author.js, path-admin.js}
     └── css/{app.css, admin.css, course-builder.css}
 ```
 
@@ -43,14 +48,17 @@ mahan-academy/
 
 ## Data model
 
-**Content** lives in two CPTs:
+**Content** lives in three CPTs:
 
 - `mahan_course` — the course. Meta keys (constants on `Mahan_Courses`):
   `M_SUBTITLE`, `M_LEVEL`, `M_EST_HOURS`, `M_OUTCOMES`, `M_FEATURED`,
-  `M_PROMO_VIDEO`, `M_PREREQ`, `M_CERTIFICATE`.
+  `M_PROMO_VIDEO`, `M_PREREQ`, `M_CERTIFICATE`, `M_UNIT_QUIZZES` (per-unit
+  quizzes keyed by unit title).
 - `mahan_lesson` — a lesson, linked to its course by meta.
   Keys: `M_COURSE_ID`, `M_UNIT`, `M_UNIT_ORDER`, `M_ORDER`, `M_XP`, `M_EST_MIN`,
   `M_TYPE`, `M_EXERCISES` (JSON array of exercise definitions).
+- `mahan_path` — a learning path. Meta (on `Mahan_Paths`): `M_COURSES` (ordered
+  course IDs), `M_SUBTITLE`.
 
 **Dynamic per-user data** lives in six custom tables (see `Mahan_DB`):
 `enrollments`, `progress`, `attempts`, `stats`, `chat`, `ai_cache`.
@@ -83,10 +91,14 @@ cURL relay, with a non-streaming `reply()` used by the REST fallback.
 | `POST /enroll` | logged-in | Enroll in a course. |
 | `POST /progress` | logged-in | Mark a lesson complete (awards XP, recomputes course %). |
 | `POST /exercise` | logged-in | Grade a submitted answer. |
+| `GET /quiz` | logged-in | Fetch a unit quiz (answers stripped) + best attempt. |
+| `POST /quiz` | logged-in | Submit a unit quiz; graded, awards XP on first pass. |
 | `POST /tutor` | logged-in | Non-streaming tutor reply (SSE fallback). |
 | `GET /chat` | logged-in | Tutor chat history for a lesson. |
 | `GET /me` | logged-in | User, stats, enrolled courses, badges, leaderboard flag. |
 | `GET /leaderboard` | public* | Top-20 by XP (*only when enabled). |
+| `GET /paths` | public | Learning paths with aggregate progress. |
+| `GET /path/{id}` | public | One path with its ordered courses + progress. |
 | `GET/POST /profile` | logged-in | Read/save the learner profile. |
 
 The streaming tutor runs over admin-ajax (`action=mahan_tutor_stream`) as SSE,
@@ -109,6 +121,7 @@ Actions fired by the plugin (use for integrations):
 | `mahan_level_up` | `$user_id, $new_level` | Level increases. |
 | `mahan_streak_updated` | `$user_id, $streak` | Daily streak changes. |
 | `mahan_badge_awarded` | `$user_id, $badge_key` | A badge is earned. |
+| `mahan_quiz_passed` | `$user_id, $course_id, $unit, $score` | A unit quiz is passed. |
 
 Filters:
 
@@ -145,10 +158,14 @@ add_action( 'mahan_course_completed', function ( $user_id, $course_id ) {
 ## Front-end (SPA)
 
 `assets/js/app.js` is a dependency-free single-page app mounted on
-`#mahan-app`. Views: catalog, course, lesson (with the tutor panel and
-exercises), dashboard, and leaderboard. Config + i18n are injected via
-`wp_localize_script` as `window.MahanData`. Theme colors are CSS variables
-(`--mahan-primary`, `--mahan-accent`) set inline from settings.
+`#mahan-app`. Views: catalog, course (with unit quiz cards), lesson (tutor panel
++ exercises), dashboard (with badges), leaderboard, paths, and path detail.
+Config + i18n are injected via `wp_localize_script` as `window.MahanData`. Theme
+colors are CSS variables (`--mahan-primary`, `--mahan-accent`) set inline from
+settings.
+
+Quiz attempts reuse the `attempts` table (`type = 'quiz'`, `lesson_id = 0`,
+`exercise_key = 'quiz:<md5(unit)>'`), so v1.2.0 still adds no tables.
 
 ---
 

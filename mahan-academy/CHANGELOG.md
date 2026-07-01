@@ -4,6 +4,40 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.2.0]
+
+### Added
+
+- **End-of-unit quizzes** (`class-mahan-quizzes.php`). Each course unit can carry
+  a quiz, edited in the Course Builder (a "Quiz" button per unit opens a modal
+  editor). Questions reuse the deterministic types (multiple choice, true/false,
+  fill-in-the-blank) and are graded instantly against a configurable passing
+  score; passing awards XP once. In the app a quiz card appears at the end of a
+  unit and opens a taking flow with per-question results and retry. Quizzes are
+  stored on the course keyed by unit title and travel with the unit in the
+  builder, so renaming a unit keeps its quiz. Attempts reuse the existing table
+  (no schema change).
+- **Learning paths** (`mahan_path` CPT, `class-mahan-paths.php`). Group courses
+  into an ordered program. An admin course picker (drag-sortable) sets the order;
+  the app shows a Paths catalog and a path detail with each course's progress
+  and the path's overall completion. Non-gating.
+- **Email notifications** (`class-mahan-emails.php`). Templated HTML emails on
+  enrollment, course completion, and new achievement, plus an optional daily
+  streak reminder via wp-cron. Editable subject/body per type with
+  `{{placeholders}}`, configurable From name/email, and a Settings → Emails tab.
+- **Admin Reports** (`class-mahan-reports.php`). A Reports page with overview
+  KPIs (learners, enrollments, completions, active today/week, XP, lessons,
+  exercise accuracy, quiz pass rate), a per-course table, top learners, recent
+  activity, and CSV export.
+
+### Changed
+
+- Course REST units carry a learner-facing quiz summary; new `GET/POST
+  mahan/v1/quiz`, `GET mahan/v1/paths`, `GET mahan/v1/path/{id}`.
+- `uninstall.php` cleans up the new options, `mahan_badges` user meta, the daily
+  cron, and the `mahan_path` CPT.
+- Fires `mahan_quiz_passed` (user, course, unit, score).
+
 ## [1.1.0]
 
 ### Added — Authoring

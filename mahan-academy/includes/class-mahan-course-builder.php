@@ -85,15 +85,18 @@ class Mahan_Course_Builder {
 	 * @return array list of [ 'title' => string, 'lessons' => node[] ]
 	 */
 	public static function tree( $course_id ) {
-		$units = Mahan_Courses::get_course_units( $course_id );
-		$out   = array();
+		$units   = Mahan_Courses::get_course_units( $course_id );
+		$quizzes = Mahan_Quizzes::all( $course_id );
+		$out     = array();
 		foreach ( $units as $unit ) {
 			$lessons = array();
 			foreach ( $unit['lessons'] as $lesson ) {
 				$lessons[] = self::node( $lesson->ID );
 			}
+			$quiz = isset( $quizzes[ $unit['title'] ] ) ? Mahan_Quizzes::sanitize( $quizzes[ $unit['title'] ] ) : null;
 			$out[] = array(
 				'title'   => $unit['title'],
+				'quiz'    => $quiz,
 				'lessons' => $lessons,
 			);
 		}
@@ -283,6 +286,7 @@ class Mahan_Course_Builder {
 			wp_send_json_error( array( 'message' => __( 'Bad structure.', 'mahan-academy' ) ), 400 );
 		}
 
+		$quiz_map = array();
 		foreach ( $structure as $unit_index => $unit ) {
 			$unit_title = isset( $unit['title'] ) ? sanitize_text_field( (string) $unit['title'] ) : '';
 			$lessons    = isset( $unit['lessons'] ) && is_array( $unit['lessons'] ) ? $unit['lessons'] : array();
@@ -297,7 +301,12 @@ class Mahan_Course_Builder {
 				update_post_meta( $lesson_id, Mahan_Courses::M_ORDER, (int) $order );
 				wp_update_post( array( 'ID' => $lesson_id, 'menu_order' => (int) $order ) );
 			}
+			// Quiz travels with the unit object, so renames stay attached.
+			if ( '' !== $unit_title && isset( $unit['quiz'] ) && is_array( $unit['quiz'] ) ) {
+				$quiz_map[ $unit_title ] = $unit['quiz'];
+			}
 		}
+		Mahan_Quizzes::save_all( $course_id, $quiz_map );
 
 		wp_send_json_success();
 	}

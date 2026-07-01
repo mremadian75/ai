@@ -57,6 +57,19 @@ class Mahan_REST {
 			'permission_callback' => $logged_in,
 		) );
 
+		register_rest_route( self::NS, '/quiz', array(
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( __CLASS__, 'get_quiz' ),
+				'permission_callback' => $logged_in,
+			),
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'submit_quiz' ),
+				'permission_callback' => $logged_in,
+			),
+		) );
+
 		register_rest_route( self::NS, '/tutor', array(
 			'methods'             => WP_REST_Server::CREATABLE,
 			'callback'            => array( __CLASS__, 'tutor' ),
@@ -180,9 +193,25 @@ class Mahan_REST {
 				);
 				$prev_done = ( 'completed' === $status );
 			}
+
+			// Unit quiz summary (learner-facing, no answers).
+			$quiz_def = Mahan_Quizzes::get( $course_id, $unit['title'] );
+			$quiz     = null;
+			if ( $quiz_def ) {
+				$best = $user_id ? Mahan_Quizzes::best( $user_id, $course_id, $unit['title'] ) : null;
+				$quiz = array(
+					'title'   => '' !== $quiz_def['title'] ? $quiz_def['title'] : __( 'Unit quiz', 'mahan-academy' ),
+					'count'   => count( $quiz_def['questions'] ),
+					'passing' => (int) $quiz_def['passing'],
+					'passed'  => $best ? (bool) $best['is_correct'] : false,
+					'score'   => $best ? (int) $best['score'] : null,
+				);
+			}
+
 			$units[] = array(
 				'title'   => $unit['title'],
 				'lessons' => $lessons,
+				'quiz'    => $quiz,
 			);
 		}
 
@@ -318,6 +347,57 @@ class Mahan_REST {
 		}
 
 		$res = Mahan_Exercises::grade( $user_id, $lesson_id, $key, $answer );
+		if ( empty( $res['ok'] ) ) {
+			return new WP_REST_Response( $res, 400 );
+		}
+		return rest_ensure_response( $res );
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Quizzes                                                             */
+	/* ------------------------------------------------------------------ */
+
+	public static function get_quiz( WP_REST_Request $request ) {
+		$user_id   = get_current_user_id();
+		$course_id = absint( $request->get_param( 'course_id' ) );
+		$unit      = (string) $request->get_param( 'unit' );
+
+		$def = Mahan_Quizzes::get( $course_id, $unit );
+		if ( ! $def ) {
+			return new WP_REST_Response( array( 'ok' => false, 'error' => 'no_quiz' ), 404 );
+		}
+		$best = Mahan_Quizzes::best( $user_id, $course_id, $unit );
+		return rest_ensure_response( array(
+			'ok'       => true,
+			'quiz'     => Mahan_Quizzes::public_quiz( $def ),
+			'enrolled' => Mahan_Enrollment::is_enrolled( $user_id, $course_id ),
+			'best'     => $best ? array( 'score' => (int) $best['score'], 'passed' => (bool) $best['is_correct'] ) : null,
+		) );
+	}
+
+	public static function submit_quiz( WP_REST_Request $request ) {
+		$user_id   = get_current_user_id();
+		$body      = $request->get_json_params();
+		$course_id = isset( $body['course_id'] ) ? absint( $body['course_id'] ) : 0;
+		$unit      = isset( $body['unit'] ) ? (string) $body['unit'] : '';
+		$answers   = isset( $body['answers'] ) && is_array( $body['answers'] ) ? $body['answers'] : array();
+
+		if ( ! Mahan_Enrollment::is_enrolled( $user_id, $course_id ) ) {
+			return new WP_REST_Response( array( 'ok' => false, 'error' => 'not_enrolled' ), 403 );
+		}
+
+		// Normalize each answer: int index for choice types, string otherwise.
+		$clean = array();
+		foreach ( $answers as $k => $v ) {
+			$key = sanitize_key( (string) $k );
+			if ( is_numeric( $v ) ) {
+				$clean[ $key ] = (int) $v;
+			} else {
+				$clean[ $key ] = sanitize_text_field( (string) $v );
+			}
+		}
+
+		$res = Mahan_Quizzes::grade( $user_id, $course_id, $unit, $clean );
 		if ( empty( $res['ok'] ) ) {
 			return new WP_REST_Response( $res, 400 );
 		}

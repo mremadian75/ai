@@ -18,10 +18,11 @@ class Mahan_Courses {
 	const M_LEVEL       = '_mahan_level';
 	const M_EST_HOURS   = '_mahan_est_hours';
 	const M_OUTCOMES    = '_mahan_outcomes';
-	const M_FEATURED    = '_mahan_featured';
-	const M_PROMO_VIDEO = '_mahan_promo_video';
-	const M_PREREQ      = '_mahan_prereq';
-	const M_CERTIFICATE = '_mahan_certificate';
+	const M_FEATURED     = '_mahan_featured';
+	const M_PROMO_VIDEO  = '_mahan_promo_video';
+	const M_PREREQ       = '_mahan_prereq';
+	const M_CERTIFICATE  = '_mahan_certificate';
+	const M_UNIT_QUIZZES = '_mahan_unit_quizzes';
 
 	// Lesson meta.
 	const M_COURSE_ID  = '_mahan_course_id';

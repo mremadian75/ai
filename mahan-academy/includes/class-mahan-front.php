@@ -197,6 +197,15 @@ class Mahan_Front {
 			'learner'          => __( 'Learner', 'mahan-academy' ),
 			'you'              => __( 'You', 'mahan-academy' ),
 			'emptyLeaderboard' => __( 'No ranked learners yet — earn some XP!', 'mahan-academy' ),
+			'quiz'             => __( 'Quiz', 'mahan-academy' ),
+			'questions'        => __( 'questions', 'mahan-academy' ),
+			'passMark'         => __( 'pass', 'mahan-academy' ),
+			'submitQuiz'       => __( 'Submit quiz', 'mahan-academy' ),
+			'quizPassed'       => __( 'Passed!', 'mahan-academy' ),
+			'quizFailed'       => __( 'Keep going', 'mahan-academy' ),
+			'correctCount'     => __( 'correct', 'mahan-academy' ),
+			'done'             => __( 'Done', 'mahan-academy' ),
+			'retry'            => __( 'Try again', 'mahan-academy' ),
 		);
 	}
 }

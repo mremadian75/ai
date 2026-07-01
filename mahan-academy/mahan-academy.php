@@ -36,6 +36,7 @@ require_once MAHAN_DIR . 'includes/class-mahan-enrollment.php';
 require_once MAHAN_DIR . 'includes/class-mahan-progress.php';
 require_once MAHAN_DIR . 'includes/class-mahan-ai.php';
 require_once MAHAN_DIR . 'includes/class-mahan-exercises.php';
+require_once MAHAN_DIR . 'includes/class-mahan-quizzes.php';
 require_once MAHAN_DIR . 'includes/class-mahan-ai-stream.php';
 require_once MAHAN_DIR . 'includes/class-mahan-rest.php';
 require_once MAHAN_DIR . 'includes/class-mahan-front.php';

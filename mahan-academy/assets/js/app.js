@@ -351,6 +351,9 @@
 				unit.lessons.forEach(function (ls) {
 					list.appendChild(lessonRow(ls, j.enrolled));
 				});
+				if (unit.quiz) {
+					list.appendChild(quizRow(unit, j));
+				}
 				content.appendChild(list);
 			});
 			wrap.appendChild(content);
@@ -411,6 +414,127 @@
 				h('span', { class: 'mahan-lesson-xp', text: '⚡' + ls.xp })
 			])
 		]);
+	}
+
+	function quizRow(unit, j) {
+		var q = unit.quiz;
+		var clickable = j.enrolled && D.loggedIn;
+		var cls = 'mahan-lesson-row mahan-quiz-row' + (q.passed ? ' is-done' : '');
+		return h(clickable ? 'button' : 'div', {
+			class: cls,
+			type: clickable ? 'button' : null,
+			onClick: clickable ? function () { openQuiz(j.course.id, unit.title); } : null
+		}, [
+			h('span', { class: 'mahan-lesson-icon', text: q.passed ? '✓' : '❓' }),
+			h('span', { class: 'mahan-lesson-name' }, [
+				document.createTextNode(q.title + '  '),
+				h('span', { class: 'mahan-quiz-tag', text: t('quiz', 'Quiz') })
+			]),
+			h('span', { class: 'mahan-lesson-meta' }, [
+				q.passed ? h('span', { class: 'mahan-quiz-score', text: '✓ ' + q.score + '%' })
+					: (q.score !== null ? h('span', { class: 'mahan-quiz-score-fail', text: q.score + '%' }) : null),
+				h('span', { class: 'mahan-lesson-min', text: q.count + ' Q' })
+			])
+		]);
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Unit quiz (modal)                                                   */
+	/* ------------------------------------------------------------------ */
+
+	function openQuiz(courseId, unit) {
+		api('/quiz?course_id=' + courseId + '&unit=' + encodeURIComponent(unit)).then(function (j) {
+			if (!j.ok) { toast(t('error', 'Something went wrong.'), 'error'); return; }
+			renderQuizModal(courseId, unit, j.quiz);
+		}).catch(function () { toast(t('error', 'Something went wrong.'), 'error'); });
+	}
+
+	function renderQuizModal(courseId, unit, quiz) {
+		var answers = {};
+		var form = h('div', { class: 'mahan-quiz-form' });
+		quiz.questions.forEach(function (q, i) {
+			var block = h('div', { class: 'mahan-quiz-q' });
+			block.appendChild(h('div', { class: 'mahan-quiz-q-title', html: (i + 1) + '. ' + mdToHtml(q.question) }));
+			if ((q.type === 'multiple_choice' || q.type === 'true_false') && q.options) {
+				var opts = h('div', { class: 'mahan-quiz-opts' }, q.options.map(function (o, oi) {
+					return h('button', { class: 'mahan-ex-option', type: 'button', text: o,
+						onClick: function (e) {
+							opts.querySelectorAll('.mahan-ex-option').forEach(function (b) { b.classList.remove('is-chosen'); });
+							e.currentTarget.classList.add('is-chosen');
+							answers[q.key] = oi;
+						} });
+				}));
+				block.appendChild(opts);
+			} else {
+				var inp = h('input', { class: 'mahan-ex-input', type: 'text', placeholder: t('typeAnswer', 'Type your answer…') });
+				inp.addEventListener('input', function () { answers[q.key] = inp.value; });
+				block.appendChild(inp);
+			}
+			block.setAttribute('data-key', q.key);
+			form.appendChild(block);
+		});
+
+		var msg = h('div', { class: 'mahan-quiz-msg' });
+		var submitBtn = h('button', { class: 'mahan-btn mahan-btn-primary', text: t('submitQuiz', 'Submit quiz'),
+			onClick: function (e) {
+				var btn = e.currentTarget;
+				btn.disabled = true; btn.textContent = '…';
+				api('/quiz', 'POST', { course_id: courseId, unit: unit, answers: answers }).then(function (r) {
+					showQuizResult(overlay, form, unit, r);
+				}).catch(function () { btn.disabled = false; btn.textContent = t('submitQuiz', 'Submit quiz'); msg.textContent = t('error', 'Something went wrong.'); });
+			} });
+
+		var overlay = h('div', { class: 'mahan-modal-overlay' }, [
+			h('div', { class: 'mahan-modal mahan-quiz-modal' }, [
+				h('h2', { text: quiz.title }),
+				h('p', { class: 'mahan-modal-sub', text: quiz.count + ' ' + t('questions', 'questions') + ' · ' + t('passMark', 'pass') + ' ' + quiz.passing + '%' }),
+				form,
+				msg,
+				h('div', { class: 'mahan-modal-actions' }, [
+					h('button', { class: 'mahan-btn mahan-btn-ghost', text: t('notNow', 'Close'), onClick: function () { overlay.remove(); } }),
+					submitBtn
+				])
+			])
+		]);
+		document.body.appendChild(overlay);
+	}
+
+	function showQuizResult(overlay, form, unit, r) {
+		// Mark each question right/wrong.
+		var byKey = {};
+		(r.results || []).forEach(function (res) { byKey[res.key] = res; });
+		form.querySelectorAll('.mahan-quiz-q').forEach(function (block) {
+			var key = block.getAttribute('data-key');
+			var res = byKey[key];
+			if (!res) { return; }
+			block.classList.add(res.correct ? 'is-correct' : 'is-incorrect');
+			var opts = block.querySelectorAll('.mahan-ex-option');
+			if (opts.length && typeof res.correct_index === 'number' && opts[res.correct_index]) {
+				opts[res.correct_index].classList.add('is-correct');
+			}
+			block.querySelectorAll('.mahan-ex-option, .mahan-ex-input').forEach(function (el) { el.disabled = true; });
+		});
+		refreshHud(r.stats);
+		if (r.xp_awarded > 0) { toast('⚡ +' + r.xp_awarded + ' XP', 'xp'); }
+
+		var head = overlay.querySelector('h2');
+		var banner = h('div', { class: 'mahan-quiz-result ' + (r.passed ? 'is-pass' : 'is-fail') }, [
+			h('span', { class: 'mahan-quiz-result-icon', text: r.passed ? '🎉' : '💪' }),
+			h('div', {}, [
+				h('strong', { text: (r.passed ? t('quizPassed', 'Passed!') : t('quizFailed', 'Keep going')) + ' — ' + r.score + '%' }),
+				h('div', { class: 'mahan-quiz-result-sub', text: r.correct + ' / ' + r.total + ' ' + t('correctCount', 'correct') })
+			])
+		]);
+		head.parentNode.insertBefore(banner, head.nextSibling);
+
+		var actions = overlay.querySelector('.mahan-modal-actions');
+		actions.innerHTML = '';
+		actions.appendChild(h('button', { class: 'mahan-btn mahan-btn-primary', text: t('done', 'Done'),
+			onClick: function () { overlay.remove(); if (state.view === 'course') { renderCourse(); } } }));
+		if (!r.passed) {
+			actions.appendChild(h('button', { class: 'mahan-btn mahan-btn-ghost', text: t('retry', 'Try again'),
+				onClick: function () { overlay.remove(); openQuiz(state.courseId, unit); } }));
+		}
 	}
 
 	/* ------------------------------------------------------------------ */

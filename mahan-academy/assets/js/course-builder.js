@@ -69,6 +69,7 @@
 	Builder.prototype.renderUnit = function (unit, ui) {
 		var self = this;
 		var $u = $('<div class="mahan-cb-unit" />').attr('data-unit', ui);
+		$u.data('quiz', unit.quiz || null);
 		var $head = $('<div class="mahan-cb-unit-head" />');
 		$head.append('<span class="mahan-cb-drag dashicons dashicons-move" title="' + esc(t('dragUnit', 'Drag to reorder unit')) + '"></span>');
 		var $title = $('<input type="text" class="mahan-cb-unit-title" />').val(unit.title || '');
@@ -76,6 +77,12 @@
 		$title.on('change blur', function () { unit.title = $(this).val(); self.saveStructure(); });
 		$head.append($title);
 		$head.append('<span class="mahan-cb-unit-count">' + (unit.lessons ? unit.lessons.length : 0) + ' ' + esc(t('lessons', 'lessons')) + '</span>');
+		var qn = (unit.quiz && unit.quiz.questions) ? unit.quiz.questions.length : 0;
+		var $quiz = $('<button type="button" class="button button-small mahan-cb-quiz-btn"></button>')
+			.html('<span class="dashicons dashicons-forms"></span> ' + esc(t('quiz', 'Quiz')) + (qn ? ' (' + qn + ')' : ''));
+		if (qn) { $quiz.addClass('has-quiz'); }
+		$quiz.on('click', function () { self.editQuiz(unit, $u, $quiz); });
+		$head.append($quiz);
 		var $del = $('<button type="button" class="button-link mahan-cb-unit-del" title="' + esc(t('deleteUnit', 'Delete empty unit')) + '"><span class="dashicons dashicons-trash"></span></button>');
 		$del.on('click', function () { self.deleteUnit(ui); });
 		$head.append($del);
@@ -209,7 +216,7 @@
 			$u.find('.mahan-cb-lesson').each(function () {
 				lessons.push($(this).data('node'));
 			});
-			model.push({ title: title, lessons: lessons });
+			model.push({ title: title, quiz: $u.data('quiz') || null, lessons: lessons });
 		});
 		this.model = model;
 		// Re-attach unit indices + counts without a full re-render (keeps focus).
@@ -301,12 +308,129 @@
 	};
 
 	/* ---------------------------------------------------------------- */
+	/* Unit quiz editor (modal)                                          */
+	/* ---------------------------------------------------------------- */
+
+	Builder.prototype.editQuiz = function (unit, $u, $quizBtn) {
+		var self = this;
+		// Deep clone the working quiz so Cancel discards changes.
+		var quiz = unit.quiz ? JSON.parse(JSON.stringify(unit.quiz)) : { title: '', passing: 70, xp: 0, questions: [] };
+		if (!Array.isArray(quiz.questions)) { quiz.questions = []; }
+
+		var $body = $('<div class="mahan-cb-quiz-body" />');
+
+		function renderQuestions() {
+			$body.empty();
+			if (!quiz.questions.length) {
+				$body.append('<p class="description">' + esc(t('noQuestions', 'No questions yet. Add one below.')) + '</p>');
+			}
+			quiz.questions.forEach(function (q, idx) { $body.append(renderQ(q, idx)); });
+		}
+
+		function renderQ(q, idx) {
+			var $q = $('<div class="mahan-cb-q" />');
+			$q.append('<div class="mahan-cb-q-head"><strong>#' + (idx + 1) + '</strong> <button type="button" class="button-link mahan-cb-q-del">' + esc(t('remove', 'Remove')) + '</button></div>');
+
+			var $type = $('<select />');
+			[['multiple_choice', t('multiple_choice', 'Multiple choice')], ['true_false', t('true_false', 'True / False')], ['fill_blank', t('fill_blank', 'Fill in the blank')]].forEach(function (o) {
+				var $o = $('<option/>').val(o[0]).text(o[1]);
+				if (o[0] === q.type) { $o.prop('selected', true); }
+				$type.append($o);
+			});
+			$type.on('change', function () { q.type = $(this).val(); renderQuestions(); });
+			$q.append(row(t('type', 'Type'), $type));
+
+			var $ques = $('<textarea rows="2" />').val(q.question || '');
+			$ques.on('input', function () { q.question = $(this).val(); });
+			$q.append(row(t('question', 'Question'), $ques));
+
+			if (q.type === 'multiple_choice') {
+				if (!Array.isArray(q.options)) { q.options = ['', '']; }
+				if (typeof q.answer !== 'number') { q.answer = 0; }
+				var $opts = $('<div class="mahan-cb-q-opts" />');
+				function renderOpts() {
+					$opts.empty();
+					q.options.forEach(function (text, i) {
+						var $r = $('<div class="mahan-cb-q-opt" />');
+						var $radio = $('<input type="radio" name="qa_' + idx + '" />').prop('checked', q.answer === i).on('change', function () { q.answer = i; });
+						var $inp = $('<input type="text" />').val(text).attr('placeholder', t('option', 'Option') + ' ' + (i + 1)).on('input', function () { q.options[i] = $(this).val(); });
+						var $rm = $('<button type="button" class="button-link">×</button>').on('click', function () {
+							q.options.splice(i, 1);
+							if (q.answer >= q.options.length) { q.answer = Math.max(0, q.options.length - 1); }
+							renderOpts();
+						});
+						$r.append($radio).append($inp).append($rm);
+						$opts.append($r);
+					});
+					$opts.append($('<button type="button" class="button button-secondary" />').text('+ ' + t('addOption', 'Add option')).on('click', function () { q.options.push(''); renderOpts(); }));
+				}
+				renderOpts();
+				$q.append(row(t('correct', 'Correct') + ' / ' + t('option', 'Option'), $opts));
+			} else if (q.type === 'true_false') {
+				if (typeof q.answer !== 'number') { q.answer = 0; }
+				var $tf = $('<div class="mahan-cb-q-opts" />');
+				[[0, t('true_', 'True')], [1, t('false_', 'False')]].forEach(function (o) {
+					var $l = $('<label style="margin-right:14px" />');
+					$l.append($('<input type="radio" name="tf_' + idx + '" />').prop('checked', q.answer === o[0]).on('change', function () { q.answer = o[0]; })).append(' ' + o[1]);
+					$tf.append($l);
+				});
+				$q.append(row(t('correct', 'Correct'), $tf));
+			} else {
+				var $ans = $('<input type="text" />').val(q.answer_text || '').attr('placeholder', t('answerText', 'Expected answer')).on('input', function () { q.answer_text = $(this).val(); });
+				$q.append(row(t('answer', 'Answer'), $ans));
+				var $acc = $('<input type="text" />').val((q.accept || []).join(', ')).attr('placeholder', 'synonym1, synonym2').on('input', function () { q.accept = $(this).val().split(',').map(function (s) { return s.trim(); }).filter(Boolean); });
+				$q.append(row(t('alsoAccept', 'Also accept'), $acc));
+			}
+
+			$q.on('click', '.mahan-cb-q-del', function () { quiz.questions.splice(idx, 1); renderQuestions(); });
+			return $q;
+		}
+
+		function row(label, $input) {
+			return $('<div class="mahan-cb-q-row" />').append('<label>' + esc(label) + '</label>').append($input);
+		}
+
+		var $pass = $('<input type="number" min="0" max="100" class="small-text" />').val(quiz.passing != null ? quiz.passing : 70).on('input', function () { quiz.passing = parseInt($(this).val(), 10) || 0; });
+		var $xp = $('<input type="number" min="0" class="small-text" />').val(quiz.xp || 0).on('input', function () { quiz.xp = parseInt($(this).val(), 10) || 0; });
+		var $addQ = $('<button type="button" class="button button-secondary" />').text('+ ' + t('addQuestion', 'Add question')).on('click', function () {
+			quiz.questions.push({ type: 'multiple_choice', question: '', options: ['', ''], answer: 0 });
+			renderQuestions();
+		});
+
+		var $meta = $('<div class="mahan-cb-quiz-meta" />')
+			.append(row(t('passingScore', 'Passing score (%)'), $pass))
+			.append(row(t('quizXp', 'XP on pass (0 = auto)'), $xp));
+
+		var $save = $('<button type="button" class="button button-primary" />').text(t('save', 'Save quiz')).on('click', function () {
+			quiz.questions = quiz.questions.filter(function (q) { return (q.question || '').trim() !== ''; });
+			unit.quiz = quiz.questions.length ? quiz : null;
+			$u.data('quiz', unit.quiz);
+			var n = unit.quiz ? unit.quiz.questions.length : 0;
+			$quizBtn.html('<span class="dashicons dashicons-forms"></span> ' + esc(t('quiz', 'Quiz')) + (n ? ' (' + n + ')' : '')).toggleClass('has-quiz', !!n);
+			self.saveStructure();
+			$overlay.remove();
+		});
+		var $cancel = $('<button type="button" class="button" />').text(t('cancel', 'Cancel')).on('click', function () { $overlay.remove(); });
+
+		var $modal = $('<div class="mahan-cb-modal" />')
+			.append('<h2>' + esc(t('unitQuiz', 'Unit quiz')) + ' — ' + esc(unit.title || '') + '</h2>')
+			.append($meta)
+			.append($body)
+			.append($('<p />').append($addQ))
+			.append($('<div class="mahan-cb-modal-actions" />').append($cancel).append(' ').append($save));
+
+		var $overlay = $('<div class="mahan-cb-overlay" />').append($modal).on('click', function (e) { if (e.target === this) { $overlay.remove(); } });
+		renderQuestions();
+		$('body').append($overlay);
+	};
+
+	/* ---------------------------------------------------------------- */
 	/* Persistence + stats                                               */
 	/* ---------------------------------------------------------------- */
 
 	Builder.prototype.serialize = function () {
 		return this.model.map(function (u) {
-			return { title: u.title || '', lessons: (u.lessons || []).map(function (n) { return n.id; }) };
+			return { title: u.title || '', quiz: u.quiz || null, lessons: (u.lessons || []).map(function (n) { return n.id; }) };
 		});
 	};
 

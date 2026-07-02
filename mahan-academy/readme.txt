@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.3.0
+Stable tag: 1.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -52,6 +52,16 @@ No. Everything happens inside WordPress.
 Yes — *Settings → Profile Form* takes a JSON schema. The placeholders you define there flow into the tutor's system prompt automatically.
 
 == Changelog ==
+
+= 1.4.0 =
+* New: Mobile bottom navigation — app-style tabs (Explore / My Learning / Paths / Leaderboard) replace the hidden menu on phones.
+* New: On phones and tablets the AI tutor opens as a bottom sheet from a floating button, instead of pushing the lesson down.
+* New: Skeleton loading screens that mirror each view's layout (no more bare spinner).
+* Improved: Modals — Escape or tapping outside closes them, focus is trapped and restored, and on phones they slide up as bottom sheets with full-width actions.
+* Improved: Touch targets meet the 44px guideline on touch devices; lesson footer buttons reflow on small screens.
+* Improved: Keyboard focus outlines (:focus-visible), screen-reader labels on icon-only buttons, live-region toasts, and reduced-motion support.
+* Fixed: Modals and toasts now pick up the theme colors (including dark mode) — they previously rendered with transparent backgrounds.
+* Fixed: The profile form's Save button re-enables correctly after a failed save.
 
 = 1.3.0 =
 * New: XP log — every award recorded with a reason; powers exact weekly leaderboards and reports.

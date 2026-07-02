@@ -223,6 +223,10 @@ class Mahan_Front {
 			'freezes'          => __( 'streak freezes', 'mahan-academy' ),
 			'thisWeek'         => __( 'This week', 'mahan-academy' ),
 			'allTime'          => __( 'All time', 'mahan-academy' ),
+			'close'            => __( 'Close', 'mahan-academy' ),
+			'loading'          => __( 'Loading…', 'mahan-academy' ),
+			'menu'             => __( 'Menu', 'mahan-academy' ),
+			'askTutor'         => __( 'Ask the AI tutor', 'mahan-academy' ),
 		);
 	}
 }

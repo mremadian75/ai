@@ -173,3 +173,7 @@ groups several courses in a recommended order.
 Share the **Academy** page (Settings → Advanced shows which page it is). Learners
 sign in with normal WordPress accounts, enroll for free, and progress through
 courses with the AI tutor alongside every lesson.
+
+The app is fully responsive: on phones learners get an app-style bottom
+navigation bar, and the AI tutor opens as a slide-up panel from a floating
+button — no setup required.

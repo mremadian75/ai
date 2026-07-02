@@ -125,21 +125,47 @@
 	/* HUD (top bar)                                                       */
 	/* ------------------------------------------------------------------ */
 
+	// Primary destinations, shared by the top nav (desktop) and bottom nav (mobile).
+	function navItems() {
+		return [
+			{ view: 'catalog', icon: '🧭', label: t('catalog', 'Explore'),
+				active: state.view === 'catalog' || state.view === 'course' },
+			D.loggedIn ? { view: 'dashboard', icon: '📚', label: t('dashboard', 'My Learning'),
+				active: state.view === 'dashboard' || state.view === 'lesson' } : null,
+			D.hasPaths ? { view: 'paths', icon: '🗺️', label: t('paths', 'Paths'),
+				active: state.view === 'paths' || state.view === 'path' } : null,
+			D.leaderboard ? { view: 'leaderboard', icon: '🏆', label: t('leaderboard', 'Leaderboard'),
+				active: state.view === 'leaderboard' } : null
+		].filter(Boolean);
+	}
+
+	function bottomNav() {
+		var items = navItems();
+		if (items.length < 2) { return null; }
+		return h('nav', { class: 'mahan-bottomnav', 'aria-label': t('menu', 'Menu') }, items.map(function (it) {
+			return h('a', {
+				class: 'mahan-bottomnav-item' + (it.active ? ' is-active' : ''), href: urlFor(it.view),
+				'aria-current': it.active ? 'page' : null,
+				onClick: function (e) { e.preventDefault(); go(it.view); }
+			}, [
+				h('span', { class: 'mahan-bottomnav-icon', text: it.icon, 'aria-hidden': 'true' }),
+				h('span', { class: 'mahan-bottomnav-label', text: it.label })
+			]);
+		}));
+	}
+
 	function hud() {
 		var bar = h('header', { class: 'mahan-topbar' });
 		var brand = h('a', { class: 'mahan-brand', href: urlFor('catalog'),
 			onClick: function (e) { e.preventDefault(); go('catalog'); } }, ['Mahan ', h('span', { text: 'Academy' })]);
 
-		var nav = h('nav', { class: 'mahan-nav' }, [
-			h('a', { class: 'mahan-nav-link' + (state.view === 'catalog' ? ' is-active' : ''), href: urlFor('catalog'),
-				onClick: function (e) { e.preventDefault(); go('catalog'); }, text: t('catalog', 'Explore') }),
-			D.loggedIn ? h('a', { class: 'mahan-nav-link' + (state.view === 'dashboard' ? ' is-active' : ''), href: urlFor('dashboard'),
-				onClick: function (e) { e.preventDefault(); go('dashboard'); }, text: t('dashboard', 'My Learning') }) : null,
-			D.hasPaths ? h('a', { class: 'mahan-nav-link' + (state.view === 'paths' || state.view === 'path' ? ' is-active' : ''), href: urlFor('paths'),
-				onClick: function (e) { e.preventDefault(); go('paths'); }, text: t('paths', 'Paths') }) : null,
-			D.leaderboard ? h('a', { class: 'mahan-nav-link' + (state.view === 'leaderboard' ? ' is-active' : ''), href: urlFor('leaderboard'),
-				onClick: function (e) { e.preventDefault(); go('leaderboard'); }, text: t('leaderboard', 'Leaderboard') }) : null
-		]);
+		var nav = h('nav', { class: 'mahan-nav', 'aria-label': t('menu', 'Menu') }, navItems().map(function (it) {
+			return h('a', {
+				class: 'mahan-nav-link' + (it.active ? ' is-active' : ''), href: urlFor(it.view),
+				'aria-current': it.active ? 'page' : null,
+				onClick: function (e) { e.preventDefault(); go(it.view); }, text: it.label
+			});
+		}));
 
 		var right;
 		if (D.loggedIn && state.me && state.me.stats) {
@@ -193,7 +219,7 @@
 
 	function toast(msg, kind) {
 		var box = el('mahan-toasts');
-		if (!box) { box = h('div', { id: 'mahan-toasts', class: 'mahan-toasts' }); document.body.appendChild(box); }
+		if (!box) { box = h('div', { id: 'mahan-toasts', class: 'mahan-toasts', role: 'status', 'aria-live': 'polite' }); document.body.appendChild(box); }
 		var node = h('div', { class: 'mahan-toast mahan-toast-' + (kind || 'info'), html: msg });
 		box.appendChild(node);
 		setTimeout(function () { node.classList.add('is-out'); setTimeout(function () { node.remove(); }, 400); }, 2600);
@@ -224,10 +250,109 @@
 		root.appendChild(hud());
 		var main = h('main', { class: 'mahan-main' }, [content]);
 		root.appendChild(main);
+		var bnav = bottomNav();
+		if (bnav) { root.appendChild(bnav); }
 	}
 
-	function loadingShell() {
-		return h('div', { class: 'mahan-loading' }, [h('div', { class: 'mahan-boot-spinner' }), h('p', { text: '…' })]);
+	/* Skeleton loading — mirrors each view's real layout instead of a spinner. */
+
+	function skLine(w) { return h('div', { class: 'mahan-sk mahan-sk-line' + (w ? ' mahan-sk-' + w : '') }); }
+
+	function skCard() {
+		return h('div', { class: 'mahan-card mahan-sk-card' }, [
+			h('div', { class: 'mahan-sk mahan-sk-media' }),
+			h('div', { class: 'mahan-card-body' }, [skLine('w40'), skLine('w90'), skLine('w70')])
+		]);
+	}
+
+	function skRow() {
+		return h('div', { class: 'mahan-lesson-row mahan-sk-row' }, [
+			h('div', { class: 'mahan-sk mahan-sk-circle' }),
+			skLine('grow')
+		]);
+	}
+
+	function loadingShell(kind) {
+		var wrap = h('div', { class: 'mahan-skeleton', role: 'status', 'aria-label': t('loading', 'Loading…') });
+		var i, list, grid;
+		if (kind === 'article') {
+			var layout = h('div', { class: 'mahan-lesson-layout' });
+			layout.appendChild(h('div', { class: 'mahan-lesson-col' }, [
+				h('div', { class: 'mahan-sk mahan-sk-h1' }),
+				skLine('w90'), skLine('w80'), skLine('w90'), skLine('w60'), skLine('w90'), skLine('w70')
+			]));
+			layout.appendChild(h('div', { class: 'mahan-tutor mahan-sk-panel' }, [skLine('w60'), skLine('w90'), skLine('w80')]));
+			wrap.appendChild(layout);
+		} else if (kind === 'detail') {
+			wrap.appendChild(h('div', { class: 'mahan-course-hero' }, [
+				h('div', {}, [skLine('w30'), h('div', { class: 'mahan-sk mahan-sk-h1' }), skLine('w60'), skLine('w40')])
+			]));
+			list = h('div', { class: 'mahan-lesson-list' });
+			for (i = 0; i < 5; i++) { list.appendChild(skRow()); }
+			wrap.appendChild(h('div', { class: 'mahan-section' }, [list]));
+		} else if (kind === 'rows') {
+			list = h('div', { class: 'mahan-lb-list' });
+			for (i = 0; i < 8; i++) { list.appendChild(skRow()); }
+			wrap.appendChild(list);
+		} else if (kind === 'dash') {
+			wrap.appendChild(h('div', { class: 'mahan-dash-hero' }, [
+				h('div', { class: 'mahan-sk mahan-sk-h1' }),
+				h('div', { class: 'mahan-dash-stats' }, [0, 1, 2].map(function () {
+					return h('div', { class: 'mahan-stat-big' }, [h('div', { class: 'mahan-sk mahan-sk-circle' }), skLine('w60')]);
+				}))
+			]));
+			grid = h('div', { class: 'mahan-grid' });
+			for (i = 0; i < 3; i++) { grid.appendChild(skCard()); }
+			wrap.appendChild(grid);
+		} else {
+			wrap.appendChild(h('div', { class: 'mahan-hero mahan-sk-hero' }, [h('div', { class: 'mahan-sk mahan-sk-h1' }), skLine('w40')]));
+			grid = h('div', { class: 'mahan-grid' });
+			for (i = 0; i < 6; i++) { grid.appendChild(skCard()); }
+			wrap.appendChild(grid);
+		}
+		return wrap;
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Modal helper (a11y: focus trap, Escape / overlay close)            */
+	/* ------------------------------------------------------------------ */
+
+	function openModal(dialog, opts) {
+		opts = opts || {};
+		var overlay = h('div', { class: 'mahan-modal-overlay' }, [dialog]);
+		dialog.setAttribute('role', 'dialog');
+		dialog.setAttribute('aria-modal', 'true');
+		if (opts.label) { dialog.setAttribute('aria-label', opts.label); }
+		dialog.setAttribute('tabindex', '-1');
+		var prevFocus = document.activeElement;
+		var closed = false;
+
+		function close() {
+			if (closed) { return; }
+			closed = true;
+			document.removeEventListener('keydown', onKey, true);
+			overlay.remove();
+			if (prevFocus && typeof prevFocus.focus === 'function') { try { prevFocus.focus(); } catch (e) { /* gone */ } }
+			if (opts.onClose) { opts.onClose(); }
+		}
+
+		function onKey(e) {
+			if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); return; }
+			if (e.key !== 'Tab') { return; }
+			var f = dialog.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])');
+			if (!f.length) { e.preventDefault(); dialog.focus(); return; }
+			var first = f[0], last = f[f.length - 1];
+			if (e.shiftKey && (document.activeElement === first || document.activeElement === dialog)) { e.preventDefault(); last.focus(); }
+			else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+		}
+
+		overlay.addEventListener('click', function (e) { if (e.target === overlay) { close(); } });
+		document.addEventListener('keydown', onKey, true);
+		// Inside the app root so theme CSS variables (incl. dark mode) apply.
+		(root || document.body).appendChild(overlay);
+		dialog.focus();
+
+		return { overlay: overlay, dialog: dialog, close: close };
 	}
 
 	/* ------------------------------------------------------------------ */
@@ -235,7 +360,7 @@
 	/* ------------------------------------------------------------------ */
 
 	function renderCatalog() {
-		mount(loadingShell());
+		mount(loadingShell('cards'));
 		api('/catalog').then(function (j) {
 			var courses = j.courses || [];
 			var wrap = h('div', { class: 'mahan-catalog' });
@@ -304,7 +429,7 @@
 	/* ------------------------------------------------------------------ */
 
 	function renderCourse() {
-		mount(loadingShell());
+		mount(loadingShell('detail'));
 		api('/course/' + state.courseId).then(function (j) {
 			if (!j.ok) { mount(errorBox(renderCourse)); return; }
 			var c = j.course;
@@ -503,31 +628,34 @@
 		});
 
 		var msg = h('div', { class: 'mahan-quiz-msg' });
+		var modal;
 		var submitBtn = h('button', { class: 'mahan-btn mahan-btn-primary', text: t('submitQuiz', 'Submit quiz'),
 			onClick: function (e) {
 				var btn = e.currentTarget;
 				btn.disabled = true; btn.textContent = '…';
 				api('/quiz', 'POST', { course_id: courseId, unit: unit, answers: answers }).then(function (r) {
-					showQuizResult(overlay, form, unit, r);
+					modal.submitted = true;
+					showQuizResult(modal, form, unit, r);
 				}).catch(function () { btn.disabled = false; btn.textContent = t('submitQuiz', 'Submit quiz'); msg.textContent = t('error', 'Something went wrong.'); });
 			} });
 
-		var overlay = h('div', { class: 'mahan-modal-overlay' }, [
-			h('div', { class: 'mahan-modal mahan-quiz-modal' }, [
-				h('h2', { text: quiz.title }),
-				h('p', { class: 'mahan-modal-sub', text: quiz.count + ' ' + t('questions', 'questions') + ' · ' + t('passMark', 'pass') + ' ' + quiz.passing + '%' }),
-				form,
-				msg,
-				h('div', { class: 'mahan-modal-actions' }, [
-					h('button', { class: 'mahan-btn mahan-btn-ghost', text: t('notNow', 'Close'), onClick: function () { overlay.remove(); } }),
-					submitBtn
-				])
+		var dialog = h('div', { class: 'mahan-modal mahan-quiz-modal' }, [
+			h('h2', { text: quiz.title }),
+			h('p', { class: 'mahan-modal-sub', text: quiz.count + ' ' + t('questions', 'questions') + ' · ' + t('passMark', 'pass') + ' ' + quiz.passing + '%' }),
+			form,
+			msg,
+			h('div', { class: 'mahan-modal-actions' }, [
+				h('button', { class: 'mahan-btn mahan-btn-ghost', text: t('notNow', 'Close'), onClick: function () { modal.close(); } }),
+				submitBtn
 			])
 		]);
-		document.body.appendChild(overlay);
+		modal = openModal(dialog, { label: quiz.title, onClose: function () {
+			// Reflect a graded attempt (score / passed) back on the course view.
+			if (modal.submitted && state.view === 'course') { renderCourse(); }
+		} });
 	}
 
-	function showQuizResult(overlay, form, unit, r) {
+	function showQuizResult(modal, form, unit, r) {
 		// Mark each question right/wrong.
 		var byKey = {};
 		(r.results || []).forEach(function (res) { byKey[res.key] = res; });
@@ -544,7 +672,7 @@
 		});
 		celebrateXp(r);
 
-		var head = overlay.querySelector('h2');
+		var head = modal.dialog.querySelector('h2');
 		var banner = h('div', { class: 'mahan-quiz-result ' + (r.passed ? 'is-pass' : 'is-fail') }, [
 			h('span', { class: 'mahan-quiz-result-icon', text: r.passed ? '🎉' : '💪' }),
 			h('div', {}, [
@@ -554,13 +682,13 @@
 		]);
 		head.parentNode.insertBefore(banner, head.nextSibling);
 
-		var actions = overlay.querySelector('.mahan-modal-actions');
+		var actions = modal.dialog.querySelector('.mahan-modal-actions');
 		actions.innerHTML = '';
 		actions.appendChild(h('button', { class: 'mahan-btn mahan-btn-primary', text: t('done', 'Done'),
-			onClick: function () { overlay.remove(); if (state.view === 'course') { renderCourse(); } } }));
+			onClick: function () { modal.close(); } }));
 		if (!r.passed) {
 			actions.appendChild(h('button', { class: 'mahan-btn mahan-btn-ghost', text: t('retry', 'Try again'),
-				onClick: function () { overlay.remove(); openQuiz(state.courseId, unit); } }));
+				onClick: function () { modal.submitted = false; modal.close(); openQuiz(state.courseId, unit); } }));
 		}
 	}
 
@@ -569,7 +697,7 @@
 	/* ------------------------------------------------------------------ */
 
 	function renderLesson() {
-		mount(loadingShell());
+		mount(loadingShell('article'));
 		ensureProfile().then(function () {
 			return api('/lesson/' + state.lessonId);
 		}).then(function (L) {
@@ -602,10 +730,17 @@
 			col.appendChild(lessonFooter(L));
 			layout.appendChild(col);
 
-			// Tutor side panel.
+			// Tutor side panel (desktop) / bottom sheet (mobile).
 			layout.appendChild(tutorPanel(L));
 
 			wrap.appendChild(layout);
+			// Mobile-only affordances: scrim behind the sheet + a FAB to open it.
+			wrap.appendChild(h('div', { class: 'mahan-tutor-scrim', onClick: function () { toggleTutor(false); } }));
+			wrap.appendChild(h('button', {
+				class: 'mahan-tutor-fab', type: 'button',
+				'aria-label': t('askTutor', 'Ask the AI tutor'), 'aria-expanded': 'false',
+				onClick: function () { toggleTutor(true); }
+			}, [h('span', { 'aria-hidden': 'true', text: '🤖' })]));
 			mount(wrap);
 			loadChat(L.id);
 		}).catch(function (e) {
@@ -744,12 +879,37 @@
 
 	var tutorBusy = false;
 
+	// On narrow screens the tutor lives in a bottom sheet opened by a FAB.
+	function toggleTutor(open) {
+		var panel = document.querySelector('.mahan-tutor');
+		var fab = document.querySelector('.mahan-tutor-fab');
+		var scrim = document.querySelector('.mahan-tutor-scrim');
+		if (!panel) { return; }
+		var isOpen = typeof open === 'boolean' ? open : !panel.classList.contains('is-open');
+		panel.classList.toggle('is-open', isOpen);
+		if (scrim) { scrim.classList.toggle('is-open', isOpen); }
+		if (fab) { fab.setAttribute('aria-expanded', isOpen ? 'true' : 'false'); fab.classList.toggle('is-hidden', isOpen); }
+		if (isOpen) {
+			var log = panel.querySelector('.mahan-tutor-log');
+			if (log) { log.scrollTop = log.scrollHeight; }
+			var inp = panel.querySelector('.mahan-tutor-input');
+			if (inp) { inp.focus(); }
+		} else if (fab) {
+			fab.focus();
+		}
+	}
+
 	function tutorPanel(L) {
-		var panel = h('aside', { class: 'mahan-tutor' });
+		var panel = h('aside', { class: 'mahan-tutor', 'aria-label': t('tutorTitle', 'AI Tutor') });
 		panel.appendChild(h('div', { class: 'mahan-tutor-head' }, [
 			h('span', { class: 'mahan-tutor-avatar', text: '🤖' }),
-			h('div', {}, [h('strong', { text: t('tutorTitle', 'AI Tutor') }), h('span', { class: 'mahan-tutor-status', text: 'online' })])
+			h('div', {}, [h('strong', { text: t('tutorTitle', 'AI Tutor') }), h('span', { class: 'mahan-tutor-status', text: 'online' })]),
+			h('button', { class: 'mahan-tutor-close', type: 'button', 'aria-label': t('close', 'Close'), text: '✕',
+				onClick: function () { toggleTutor(false); } })
 		]));
+		panel.addEventListener('keydown', function (e) {
+			if (e.key === 'Escape' && panel.classList.contains('is-open')) { toggleTutor(false); }
+		});
 		var log = h('div', { class: 'mahan-tutor-log', id: 'mahan-tutor-log' });
 		if (!D.aiReady || !L.tutor_ready) {
 			log.appendChild(tutorBubble('assistant', t('tutorOffline', 'The AI tutor is not configured yet.')));
@@ -761,7 +921,7 @@
 		input.addEventListener('keydown', function (e) {
 			if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendToTutor(L.id, input); }
 		});
-		var send = h('button', { class: 'mahan-tutor-send', text: '➤', onClick: function () { sendToTutor(L.id, input); } });
+		var send = h('button', { class: 'mahan-tutor-send', text: '➤', 'aria-label': t('send', 'Send'), onClick: function () { sendToTutor(L.id, input); } });
 		panel.appendChild(h('div', { class: 'mahan-tutor-bar' }, [input, send]));
 		return panel;
 	}
@@ -867,7 +1027,7 @@
 
 	function renderDashboard() {
 		if (!D.loggedIn) { mount(loginGate()); return; }
-		mount(loadingShell());
+		mount(loadingShell('dash'));
 		api('/me').then(function (j) {
 			state.me = j;
 			var s = j.stats || {};
@@ -926,7 +1086,7 @@
 
 	function renderLeaderboard() {
 		var period = state.lbPeriod || 'week';
-		mount(loadingShell());
+		mount(loadingShell('rows'));
 		api('/leaderboard?period=' + period).then(function (j) {
 			var wrap = h('div', { class: 'mahan-leaderboard' });
 			wrap.appendChild(h('div', { class: 'mahan-dash-hero' }, [h('h1', { text: '🏆 ' + t('leaderboard', 'Leaderboard') })]));
@@ -974,7 +1134,7 @@
 	/* ------------------------------------------------------------------ */
 
 	function renderPaths() {
-		mount(loadingShell());
+		mount(loadingShell('cards'));
 		api('/paths').then(function (j) {
 			var wrap = h('div', { class: 'mahan-paths' });
 			wrap.appendChild(h('div', { class: 'mahan-hero' }, [
@@ -1018,7 +1178,7 @@
 	}
 
 	function renderPath() {
-		mount(loadingShell());
+		mount(loadingShell('detail'));
 		api('/path/' + state.pathId).then(function (j) {
 			if (!j.ok) { mount(errorBox(renderPath)); return; }
 			var p = j.path;
@@ -1086,17 +1246,15 @@
 				h('div', { class: 'mahan-cert-date', text: date })
 			])
 		]);
-		var overlay = h('div', { class: 'mahan-modal-overlay' }, [
-			h('div', { class: 'mahan-modal mahan-cert-modal' }, [
-				cert,
-				h('div', { class: 'mahan-modal-actions' }, [
-					h('button', { class: 'mahan-btn mahan-btn-ghost', text: t('notNow', 'Close'), onClick: function () { overlay.remove(); } }),
-					h('button', { class: 'mahan-btn mahan-btn-primary', text: t('print', 'Print / Save as PDF'), onClick: function () { window.print(); } })
-				])
+		var modal;
+		var dialog = h('div', { class: 'mahan-modal mahan-cert-modal' }, [
+			cert,
+			h('div', { class: 'mahan-modal-actions' }, [
+				h('button', { class: 'mahan-btn mahan-btn-ghost', text: t('close', 'Close'), onClick: function () { modal.close(); } }),
+				h('button', { class: 'mahan-btn mahan-btn-primary', text: t('print', 'Print / Save as PDF'), onClick: function () { window.print(); } })
 			])
 		]);
-		overlay.addEventListener('click', function (e) { if (e.target === overlay) { overlay.remove(); } });
-		document.body.appendChild(overlay);
+		modal = openModal(dialog, { label: t('certificate', 'Certificate of completion') });
 	}
 
 	function statBig(icon, value, label) {
@@ -1177,35 +1335,36 @@
 			fields.forEach(function (f) { form.appendChild(profileField(f, profile[f.key])); });
 			var msg = h('div', { class: 'mahan-profile-msg' });
 
-			var overlay = h('div', { class: 'mahan-modal-overlay' }, [
-				h('div', { class: 'mahan-modal' }, [
-					h('h2', { text: t('profileTitle', 'Tell us about you') }),
-					h('p', { class: 'mahan-modal-sub', text: t('profileIntro', 'This personalizes your lessons and AI tutor.') }),
-					form,
-					msg,
-					h('div', { class: 'mahan-modal-actions' }, [
-						h('button', { class: 'mahan-btn mahan-btn-ghost', type: 'button', text: t('notNow', 'Not now'),
-							onClick: function () { overlay.remove(); resolve(); } }),
-						h('button', { class: 'mahan-btn mahan-btn-primary', type: 'button', text: t('save', 'Save & continue'),
-							onClick: function (e) {
-								var out = collectProfile(form, fields);
-								for (var i = 0; i < fields.length; i++) {
-									var f = fields[i];
-									if (f.required && (!out[f.key] || (Array.isArray(out[f.key]) && !out[f.key].length))) {
-										msg.textContent = t('required', 'Please fill in the required fields.');
-										return;
-									}
+			var modal;
+			var dialog = h('div', { class: 'mahan-modal' }, [
+				h('h2', { text: t('profileTitle', 'Tell us about you') }),
+				h('p', { class: 'mahan-modal-sub', text: t('profileIntro', 'This personalizes your lessons and AI tutor.') }),
+				form,
+				msg,
+				h('div', { class: 'mahan-modal-actions' }, [
+					h('button', { class: 'mahan-btn mahan-btn-ghost', type: 'button', text: t('notNow', 'Not now'),
+						onClick: function () { modal.close(); } }),
+					h('button', { class: 'mahan-btn mahan-btn-primary', type: 'button', text: t('save', 'Save & continue'),
+						onClick: function (e) {
+							var btn = e.currentTarget;
+							var out = collectProfile(form, fields);
+							for (var i = 0; i < fields.length; i++) {
+								var f = fields[i];
+								if (f.required && (!out[f.key] || (Array.isArray(out[f.key]) && !out[f.key].length))) {
+									msg.textContent = t('required', 'Please fill in the required fields.');
+									return;
 								}
-								e.currentTarget.disabled = true;
-								api('/profile', 'POST', { profile: out }).then(function (r) {
-									state.profile = { complete: r.complete, profile: r.profile, schema: schema };
-									overlay.remove(); resolve();
-								}).catch(function () { e.currentTarget.disabled = false; msg.textContent = t('error', 'Something went wrong.'); });
-							} })
-					])
+							}
+							btn.disabled = true;
+							api('/profile', 'POST', { profile: out }).then(function (r) {
+								state.profile = { complete: r.complete, profile: r.profile, schema: schema };
+								modal.close();
+							}).catch(function () { btn.disabled = false; msg.textContent = t('error', 'Something went wrong.'); });
+						} })
 				])
 			]);
-			document.body.appendChild(overlay);
+			// Dismissing the gate (Escape / outside click) is the same as "Not now".
+			modal = openModal(dialog, { label: t('profileTitle', 'Tell us about you'), onClose: resolve });
 		});
 	}
 
@@ -1276,7 +1435,7 @@
 	function errorBox(retry) {
 		return h('div', { class: 'mahan-empty' }, [
 			h('p', { text: t('error', 'Something went wrong.') }),
-			h('button', { class: 'mahan-btn mahan-btn-ghost', text: '↻', onClick: retry })
+			h('button', { class: 'mahan-btn mahan-btn-ghost', text: '↻ ' + t('retry', 'Try again'), onClick: retry })
 		]);
 	}
 

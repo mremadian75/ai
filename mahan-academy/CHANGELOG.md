@@ -4,6 +4,55 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.4.0]
+
+UI/UX and responsive overhaul of the learner app, following mobile-first best
+practices (app-style bottom navigation, bottom sheets, skeleton screens,
+WCAG-oriented accessibility). Front-end only — no data-model or API changes.
+
+### Added
+
+- **Mobile bottom navigation.** Under 640px the top menu used to be hidden
+  entirely; it's now replaced by a fixed, thumb-reachable tab bar (Explore /
+  My Learning / Paths / Leaderboard) with icons, active state,
+  `aria-current`, and safe-area padding for notched devices.
+- **Tutor FAB + bottom sheet.** On screens below 980px the AI tutor no longer
+  pushes the lesson content down — a floating action button opens it as a
+  slide-up bottom sheet with a scrim, a close button, and Escape support.
+- **Skeleton loading.** Every view now shows a shimmer skeleton that mirrors
+  its real layout (card grid, course detail, lesson + tutor panel, dashboard
+  stats, leaderboard rows) instead of a generic spinner, announced to screen
+  readers via `role="status"`.
+- **Shared accessible modal helper.** All dialogs (unit quiz, certificate,
+  profile gate) now get `role="dialog"` / `aria-modal`, a focus trap,
+  Escape-to-close, click-outside-to-close, and focus restoration to the
+  triggering element. On phones modals present as bottom sheets with
+  full-width actions.
+
+### Improved
+
+- Touch targets meet the 44px guideline on coarse pointers (buttons, chips,
+  answer options, tutor input/send); the lesson footer reflows with a
+  full-width primary action on small screens.
+- Keyboard focus is visible everywhere via `:focus-visible` outlines.
+- Icon-only controls (tutor send, tutor close, FAB) carry `aria-label`s;
+  toasts are a polite live region; nav landmarks are labeled.
+- `prefers-reduced-motion` disables shimmer, pop, slide, and hover-lift
+  animations.
+- Compact HUD, hero, section, and stat spacing on small screens.
+
+### Fixed
+
+- Modals and toasts rendered with transparent backgrounds: the theme's CSS
+  variables were defined on the app container, but overlays were appended to
+  `<body>` where the variables don't resolve. Overlays now mount inside the
+  app root (dark mode included) and toast colors read the `:root`-level vars.
+- The profile form's Save button could stay disabled after a failed save
+  (the handler read `e.currentTarget` inside an async callback, where it is
+  already `null`).
+- Closing a graded quiz with Escape / outside click now refreshes the course
+  view so the new best score shows, same as the Done button.
+
 ## [1.3.0]
 
 Gamification overhaul, modeled on the patterns proven by mature open-source

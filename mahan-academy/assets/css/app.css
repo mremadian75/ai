@@ -233,15 +233,32 @@ a.mahan-lesson-row:hover { border-color: var(--m-primary); background: color-mix
 .mahan-toasts { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 100001; display: flex; flex-direction: column; gap: 10px; align-items: center; pointer-events: none; }
 .mahan-toast { background: #111827; color: #fff; padding: 12px 20px; border-radius: 999px; font-weight: 700; font-size: 15px; box-shadow: 0 10px 30px rgba(0, 0, 0, .25); animation: m-pop .3s ease; }
 .mahan-toast.is-out { opacity: 0; transform: translateY(10px); transition: all .4s ease; }
-.mahan-toast-xp { background: var(--m-primary); }
-.mahan-toast-level { background: linear-gradient(90deg, var(--m-primary), var(--m-accent)); }
+/* Toasts live on <body>, outside .mahan-app — use the :root-level vars. */
+.mahan-toast-xp { background: var(--mahan-primary, #4f46e5); }
+.mahan-toast-level { background: linear-gradient(90deg, var(--mahan-primary, #4f46e5), var(--mahan-accent, #22c55e)); }
 .mahan-toast-error { background: #b91c1c; }
 @keyframes m-pop { from { opacity: 0; transform: translateY(14px) scale(.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
 @media (max-width: 640px) {
 	.mahan-topbar { gap: 10px; padding: 10px 16px; }
-	.mahan-nav { display: none; }
+	.mahan-nav { display: none; } /* replaced by the fixed bottom nav */
+	.mahan-hud { gap: 10px; }
+	.mahan-hud-item { font-size: 14px; }
+	.mahan-hud-avatar { width: 30px; height: 30px; }
+	.mahan-hero { padding: 10px 0 20px; }
+	.mahan-hero-sub { font-size: 16px; }
+	.mahan-course-hero, .mahan-dash-hero { padding: 20px; }
+	.mahan-section { padding: 18px 16px; }
+	.mahan-stat-big { min-width: 90px; padding: 14px 10px; }
+	.mahan-stat-value { font-size: 24px; }
 	.mahan-lesson-foot { flex-wrap: wrap; }
+	.mahan-lesson-foot .mahan-btn-primary { order: -1; width: 100%; }
+	.mahan-lesson-foot .mahan-btn-ghost { flex: 1; }
+	/* Clear the fixed bottom nav (+ device safe area). */
+	.mahan-main { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (max-width: 400px) {
+	.mahan-hud-goal { display: none; }
 }
 
 /* True/False + fill-in-the-blank exercises */
@@ -355,3 +372,139 @@ button.mahan-quiz-row:hover { border-color: var(--m-primary); background: color-
 .mahan-goal-done-msg { margin: 10px 0 0; color: color-mix(in srgb, var(--m-accent) 75%, #000); font-size: 13.5px; font-weight: 600; }
 
 .mahan-lb-gap { text-align: center; color: var(--m-muted); font-weight: 800; letter-spacing: 4px; padding: 2px 0; }
+
+/* ==================================================================== */
+/* v1.4.0 — responsive & accessibility layer                            */
+/* ==================================================================== */
+
+/* Keyboard focus (only for :focus-visible, so mouse clicks stay clean) */
+.mahan-app :focus-visible,
+.mahan-modal-overlay :focus-visible,
+.mahan-toasts :focus-visible {
+	outline: 3px solid color-mix(in srgb, var(--mahan-primary, #4f46e5) 70%, transparent);
+	outline-offset: 2px;
+}
+.mahan-modal:focus-visible, .mahan-tutor:focus-visible { outline: none; }
+
+/* Skeleton loading */
+.mahan-sk {
+	background: linear-gradient(90deg,
+		var(--m-border) 25%,
+		color-mix(in srgb, var(--m-border) 40%, var(--m-surface)) 50%,
+		var(--m-border) 75%);
+	background-size: 200% 100%;
+	animation: m-shimmer 1.4s ease-in-out infinite;
+	border-radius: 8px;
+}
+@keyframes m-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.mahan-sk-line { height: 13px; margin: 8px 0; }
+.mahan-sk-h1 { height: 26px; width: 55%; margin: 10px 0 14px; }
+.mahan-sk-media { height: 140px; border-radius: 0; }
+.mahan-sk-circle { width: 32px; height: 32px; flex: none; border-radius: 50%; }
+.mahan-sk-w30 { width: 30%; } .mahan-sk-w40 { width: 40%; } .mahan-sk-w60 { width: 60%; }
+.mahan-sk-w70 { width: 70%; } .mahan-sk-w80 { width: 80%; } .mahan-sk-w90 { width: 90%; }
+.mahan-sk-grow { flex: 1; }
+.mahan-sk-row { gap: 14px; }
+.mahan-sk-hero .mahan-sk { margin-left: auto; margin-right: auto; }
+.mahan-sk-panel { padding: 18px; min-height: 260px; }
+.mahan-skeleton .mahan-stat-big { gap: 10px; }
+
+/* Bottom navigation (mobile) */
+.mahan-bottomnav { display: none; }
+@media (max-width: 640px) {
+	.mahan-bottomnav {
+		position: fixed; bottom: 0; left: 0; right: 0; z-index: 95;
+		display: flex; gap: 2px;
+		background: var(--m-surface);
+		border-top: 1px solid var(--m-border);
+		padding: 6px max(8px, env(safe-area-inset-right, 0px)) max(6px, env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px));
+		box-shadow: 0 -4px 18px rgba(20, 23, 40, .08);
+	}
+	.mahan-bottomnav-item {
+		flex: 1; min-width: 0; min-height: 48px;
+		display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+		padding: 4px 2px; border-radius: 10px;
+		color: var(--m-muted); text-decoration: none;
+		font-size: 11px; font-weight: 700;
+	}
+	.mahan-bottomnav-item.is-active { color: var(--m-primary); background: color-mix(in srgb, var(--m-primary) 8%, transparent); }
+	.mahan-bottomnav-icon { font-size: 20px; line-height: 1; }
+	.mahan-bottomnav-label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+/* Tutor: side panel on desktop → FAB + bottom sheet on smaller screens */
+.mahan-tutor-close { display: none; margin-left: auto; width: 36px; height: 36px; border: none; border-radius: 50%; background: transparent; color: var(--m-muted); font-size: 16px; cursor: pointer; align-items: center; justify-content: center; }
+.mahan-tutor-close:hover { background: var(--m-bg); color: var(--m-text); }
+.mahan-tutor-fab { display: none; }
+.mahan-tutor-scrim { display: none; }
+
+@media (max-width: 979px) {
+	.mahan-tutor {
+		position: fixed; left: 0; right: 0; bottom: 0; top: auto; z-index: 99996;
+		height: min(76vh, 640px); max-height: none;
+		border-radius: 20px 20px 0 0; border-bottom: none;
+		box-shadow: 0 -14px 44px rgba(0, 0, 0, .28);
+		transform: translateY(105%); visibility: hidden;
+		transition: transform .28s ease, visibility .28s;
+	}
+	.mahan-tutor.is-open { transform: translateY(0); visibility: visible; }
+	.mahan-tutor-close { display: inline-flex; }
+	.mahan-tutor-scrim { position: fixed; inset: 0; z-index: 99995; background: rgba(15, 18, 30, .5); opacity: 0; pointer-events: none; transition: opacity .25s ease; }
+	.mahan-tutor-scrim.is-open { display: block; opacity: 1; pointer-events: auto; }
+	.mahan-tutor-fab {
+		position: fixed; right: 16px; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 94;
+		display: flex; align-items: center; justify-content: center;
+		width: 58px; height: 58px; border: none; border-radius: 50%;
+		background: var(--m-primary); color: #fff; font-size: 26px; cursor: pointer;
+		box-shadow: 0 10px 26px rgba(20, 23, 40, .35);
+		transition: transform .12s ease;
+	}
+	.mahan-tutor-fab:active { transform: scale(.94); }
+	.mahan-tutor-fab.is-hidden { display: none; }
+	/* Skeleton keeps the two-column ghost only on desktop. */
+	.mahan-skeleton .mahan-tutor { display: none; }
+}
+@media (max-width: 640px) {
+	.mahan-tutor-fab { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
+	.mahan-tutor { height: min(82vh, 640px); }
+}
+
+/* Modals become bottom sheets on small screens */
+@media (max-width: 640px) {
+	.mahan-modal-overlay { align-items: flex-end; padding: 0; }
+	.mahan-modal {
+		max-width: none; max-height: 92vh;
+		border-radius: 20px 20px 0 0;
+		padding: 22px 18px calc(22px + env(safe-area-inset-bottom, 0px));
+		animation: m-sheet .25s ease;
+	}
+	.mahan-modal-actions { flex-wrap: wrap; }
+	.mahan-modal-actions .mahan-btn { flex: 1; min-width: 40%; }
+}
+@keyframes m-sheet { from { transform: translateY(48px); opacity: .6; } to { transform: none; opacity: 1; } }
+
+/* Comfortable touch targets on coarse pointers */
+@media (pointer: coarse) {
+	.mahan-btn { min-height: 44px; }
+	.mahan-btn-sm { min-height: 40px; }
+	.mahan-chip { min-height: 40px; padding: 8px 18px; }
+	.mahan-nav-link { padding: 10px 16px; }
+	.mahan-ex-option { min-height: 48px; }
+	.mahan-tutor-send { width: 48px; min-height: 44px; }
+	.mahan-tutor-input { min-height: 44px; }
+	.mahan-goal-select { min-height: 40px; }
+	.mahan-lesson-row { padding: 15px 16px; }
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+	.mahan-app *, .mahan-app *::before, .mahan-app *::after,
+	.mahan-modal-overlay, .mahan-modal, .mahan-toast, .mahan-toasts * {
+		animation-duration: .01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: .01ms !important;
+		scroll-behavior: auto !important;
+	}
+	.mahan-sk { animation: none; }
+	.mahan-card:hover { transform: none; }
+}

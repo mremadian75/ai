@@ -173,6 +173,25 @@ Config + i18n are injected via `wp_localize_script` as `window.MahanData`. Theme
 colors are CSS variables (`--mahan-primary`, `--mahan-accent`) set inline from
 settings.
 
+Responsive & accessibility behaviors (1.4.0):
+
+- **Navigation** — the desktop pill nav collapses below 640px into a fixed
+  bottom tab bar (`bottomNav()`); both are built from the same `navItems()`
+  list and carry `aria-current` on the active item.
+- **Tutor** — a sidebar ≥980px; below that it becomes a bottom sheet toggled
+  by a floating button (`toggleTutor()`), with scrim, close button, and
+  Escape support.
+- **Loading** — `loadingShell(kind)` renders per-view skeletons
+  (`cards | detail | article | rows | dash`) with `role="status"`.
+- **Modals** — all dialogs go through `openModal(dialog, opts)`, which
+  provides `role="dialog"`, `aria-modal`, a focus trap, Escape/overlay
+  close, focus restoration, and an `onClose` hook. Overlays mount inside
+  `#mahan-app` so the theme's CSS variables (including dark mode) resolve.
+- **CSS** — `:focus-visible` outlines, ≥44px touch targets under
+  `(pointer: coarse)`, bottom-sheet modals under 640px, and a
+  `prefers-reduced-motion` block live in the "v1.4.0" layer at the end of
+  `app.css`.
+
 Quiz attempts reuse the `attempts` table (`type = 'quiz'`, `lesson_id = 0`,
 `exercise_key = 'quiz:<md5(unit)>'`), so v1.2.0 still adds no tables.
 

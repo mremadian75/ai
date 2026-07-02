@@ -98,12 +98,29 @@ XP is awarded the first time a learner gets an exercise right.
 **Settings → Gamification:**
 
 - **XP per lesson / exercise** and **XP per level** (the level curve).
-- **Daily streak** tracking.
-- **Achievements** — badges for milestones (first lesson, 10 lessons, first
-  course, streaks, levels, XP). Shown on the learner dashboard.
-- **Leaderboard** — an opt-in public top-20 by XP.
+- **Level curve mode** — *Linear* (every level costs the same) or *Progressive*
+  (RPG-style: level N costs N × "XP per level" — early levels come fast, later
+  ones are earned).
+- **Streak XP bonus** — extra % XP per full week of streak (capped at +50%).
+  Rewards consistency; set 0 to disable.
+- **Default daily XP goal** — learners see a 🎯 goal in the HUD and a progress
+  card on the dashboard, and can pick their own target (10–100 XP).
+- **Daily streak** tracking, plus **streak freezes**: learners earn a freeze
+  every N consecutive days (default 7, holding up to 2). If they miss a day,
+  a freeze is consumed automatically and the streak survives — shown as ❄️
+  next to the flame.
+- **Achievements** — 21 tiered badges across lessons, courses, streaks,
+  levels, XP, quizzes (including a perfect-score badge), exercises, and
+  learning paths. Unlocks pop up instantly as toasts and are showcased on the
+  dashboard.
+- **Leaderboard** — opt-in, with **This week** and **All time** tabs. Learners
+  outside the top 20 still see their exact rank.
 - **Level titles** — optional names per level (one per line: Novice, Explorer,
   Practitioner …). The last name is reused for higher levels.
+
+Every XP award is recorded in an audit log with its reason, which is what
+powers the weekly leaderboard and the "XP this week" report — the numbers are
+exact, not estimates.
 
 ---
 

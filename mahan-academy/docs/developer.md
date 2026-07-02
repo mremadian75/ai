@@ -60,8 +60,12 @@ mahan-academy/
 - `mahan_path` — a learning path. Meta (on `Mahan_Paths`): `M_COURSES` (ordered
   course IDs), `M_SUBTITLE`.
 
-**Dynamic per-user data** lives in six custom tables (see `Mahan_DB`):
-`enrollments`, `progress`, `attempts`, `stats`, `chat`, `ai_cache`.
+**Dynamic per-user data** lives in seven custom tables (see `Mahan_DB`):
+`enrollments`, `progress`, `attempts`, `stats`, `chat`, `ai_cache`, and
+`xp_log` (append-only: every XP award with `amount`, `reason`, `ref_id`,
+`created_at` — powers weekly leaderboards, daily goals, and reports). The
+`stats` table also carries `freezes` and `daily_goal` (added in DB v2 via
+`dbDelta`).
 
 **Learner profile** is stored in user meta `mahan_profile` (schema-driven; see
 `Mahan_Profile` and Settings → Profile Form). **Badges** are stored in user meta
@@ -96,7 +100,8 @@ cURL relay, with a non-streaming `reply()` used by the REST fallback.
 | `POST /tutor` | logged-in | Non-streaming tutor reply (SSE fallback). |
 | `GET /chat` | logged-in | Tutor chat history for a lesson. |
 | `GET /me` | logged-in | User, stats, enrolled courses, badges, leaderboard flag. |
-| `GET /leaderboard` | public* | Top-20 by XP (*only when enabled). |
+| `GET /leaderboard` | public* | Top-20 by XP; `?period=week\|all`; includes the caller's "me" rank (*only when enabled). |
+| `POST /goal` | logged-in | Save the learner's daily XP goal. |
 | `GET /paths` | public | Learning paths with aggregate progress. |
 | `GET /path/{id}` | public | One path with its ordered courses + progress. |
 | `GET/POST /profile` | logged-in | Read/save the learner profile. |
@@ -120,8 +125,10 @@ Actions fired by the plugin (use for integrations):
 | `mahan_course_completed` | `$user_id, $course_id` | Course reaches 100%. |
 | `mahan_level_up` | `$user_id, $new_level` | Level increases. |
 | `mahan_streak_updated` | `$user_id, $streak` | Daily streak changes. |
+| `mahan_streak_frozen` | `$user_id, $freezes_used` | Freezes covered missed day(s). |
 | `mahan_badge_awarded` | `$user_id, $badge_key` | A badge is earned. |
 | `mahan_quiz_passed` | `$user_id, $course_id, $unit, $score` | A unit quiz is passed. |
+| `mahan_exercise_correct` | `$user_id, $lesson_id, $key` | First correct answer to an exercise. |
 
 Filters:
 
@@ -134,12 +141,14 @@ Filters:
 ```php
 add_filter( 'mahan_badge_defs', function ( $defs ) {
     $defs[] = array(
-        'key'    => 'xp_5000',
-        'icon'   => '💎',
-        'metric' => 'xp',      // one of: lessons, courses, streak, level, xp
-        'need'   => 5000,
+        'key'    => 'xp_10000',
+        'icon'   => '🚀',
+        // one of: lessons, courses, streak, level, xp,
+        // quizzes_passed, perfect_quizzes, exercises_correct, paths_completed
+        'metric' => 'xp',
+        'need'   => 10000,
         'title'  => 'Legend',
-        'desc'   => 'Earn 5,000 XP',
+        'desc'   => 'Earn 10,000 XP',
     );
     return $defs;
 } );

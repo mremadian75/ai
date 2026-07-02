@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.2.0
+Stable tag: 1.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -23,7 +23,7 @@ Mahan Academy is a self-contained learning plugin built to teach people how to u
 * Real-time streaming AI tutor via Server-Sent Events (Anthropic / OpenAI / Google)
 * Five exercise types: multiple choice, true/false, fill-in-the-blank, short answer, and prompt-writing (open answers graded by AI)
 * Schema-driven learner profile that personalizes the tutor and grading prompts
-* Gamification: XP, configurable levels & titles, daily streaks, achievements/badges, and an opt-in leaderboard
+* Gamification: XP with a full audit log, streak XP multipliers, linear or RPG-style progressive levels & titles, daily XP goals, streaks with earned streak freezes, 21 tiered achievements with live unlock notifications, and weekly + all-time leaderboards
 * End-of-unit quizzes with instant grading and a passing score
 * Learning paths — group courses into a guided, ordered program
 * Email notifications (welcome, completion, achievement, streak reminder)
@@ -52,6 +52,16 @@ No. Everything happens inside WordPress.
 Yes — *Settings → Profile Form* takes a JSON schema. The placeholders you define there flow into the tutor's system prompt automatically.
 
 == Changelog ==
+
+= 1.3.0 =
+* New: XP log — every award recorded with a reason; powers exact weekly leaderboards and reports.
+* New: Daily XP goals (learner-adjustable) with HUD progress.
+* New: Streak freezes — earned automatically, consumed to protect streaks on missed days.
+* New: Streak XP multiplier (configurable % per week of streak, capped +50%).
+* New: Progressive (RPG-style) level curve option.
+* New: 12 more achievements (21 total) covering quizzes, perfect scores, exercises, and learning paths — with instant unlock notifications.
+* New: Weekly leaderboard tab + your exact rank even outside the top 20.
+* Fixed: level-up celebrations now actually fire (server never sent `leveled_up`).
 
 = 1.2.0 =
 * New: End-of-unit quizzes — edit per-unit quizzes in the Course Builder; instant grading with a passing score and XP reward; a quiz card and taking flow in the app.

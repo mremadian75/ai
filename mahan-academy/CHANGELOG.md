@@ -4,6 +4,46 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.3.0]
+
+Gamification overhaul, modeled on the patterns proven by mature open-source
+systems (GamiPress/myCred point logs, BadgeOS tiered achievements,
+Duolingo-style goals, freezes, and weekly boards). **DB version 2** — adds the
+`mahan_xp_log` table plus `freezes` / `daily_goal` columns on stats (migrated
+automatically via `dbDelta` on upgrade).
+
+### Added
+
+- **XP log** — every award is appended to `mahan_xp_log` with a reason
+  (`lesson` / `exercise` / `quiz`) and reference id. Weekly leaderboards, daily
+  goals, and the new "XP this week" report KPI are computed exactly from it.
+- **Daily XP goal** — site default (Settings) + per-learner override from a
+  dashboard card (`POST mahan/v1/goal`). The HUD shows 🎯 today's progress and
+  flips to ✅ on completion.
+- **Streak freezes** — earn 1 freeze per N consecutive days (default 7, max
+  held 2); missed days consume freezes automatically so the streak survives.
+  Fires `mahan_streak_frozen`. Configurable / can be disabled.
+- **Streak XP multiplier** — optional bonus per full week of streak (default
+  10%, capped +50%), applied inside `add_xp` and reflected in awarded amounts.
+- **Progressive level curve** — optional RPG-style mode where level N costs
+  N × "XP per level" (linear stays the default; boundaries unit-verified).
+- **12 new achievements** (21 total) with new metrics: quizzes passed, perfect
+  quizzes, exercises solved, learning paths completed, plus higher tiers for
+  lessons/courses/streaks/levels/XP. Existing badge keys unchanged, so earned
+  badges are preserved.
+- **Live achievement notifications** — grading/progress responses now carry
+  `new_badges`; the SPA toasts each unlock instead of waiting for the next
+  dashboard visit.
+- **Weekly leaderboard** — `GET mahan/v1/leaderboard?period=week|all` with
+  This week / All time tabs, and a "me" row with the caller's exact rank when
+  they're outside the top 20.
+
+### Fixed
+
+- Level-up celebrations now fire: the front-end always checked `leveled_up`
+  on grading responses but the server never sent it. `add_xp` now reports it
+  (with the level title in the toast).
+
 ## [1.2.0]
 
 ### Added

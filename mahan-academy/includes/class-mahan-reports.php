@@ -55,6 +55,13 @@ class Mahan_Reports {
 		$out['exercise_accuracy'] = $ex_total > 0 ? (int) round( ( $ex_correct / $ex_total ) * 100 ) : 0;
 		$out['quiz_attempts']     = $quiz_total;
 		$out['quiz_pass_rate']    = $quiz_total > 0 ? (int) round( ( $quiz_pass / $quiz_total ) * 100 ) : 0;
+
+		// XP awarded in the last 7 days (exact, from the XP log).
+		$xp_log = Mahan_DB::xp_log();
+		$since  = gmdate( 'Y-m-d 00:00:00', strtotime( $today . ' -6 days' ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$out['xp_week'] = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COALESCE(SUM(amount),0) FROM {$xp_log} WHERE created_at >= %s", $since ) );
+
 		return $out;
 	}
 

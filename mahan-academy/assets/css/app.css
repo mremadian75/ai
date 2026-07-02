@@ -340,3 +340,18 @@ button.mahan-quiz-row:hover { border-color: var(--m-primary); background: color-
 .mahan-path-course-title:hover { color: var(--m-primary); }
 .mahan-path-course-sub { color: var(--m-muted); font-size: 13px; }
 .mahan-path-course .mahan-progress { max-width: 260px; }
+
+/* Gamification v2: daily goal, freezes, weekly leaderboard */
+.mahan-hud-freeze { font-size: 12px; margin-left: 2px; color: #38bdf8; font-weight: 700; }
+.mahan-hud-goal { color: var(--m-muted); }
+.mahan-hud-goal.is-done { color: var(--m-accent); }
+
+.mahan-goal-card { margin-top: 18px; padding: 16px 18px; border: 1px solid var(--m-border); border-radius: 14px; background: var(--m-bg); }
+.mahan-goal-card.is-done { border-color: color-mix(in srgb, var(--m-accent) 45%, var(--m-border)); background: color-mix(in srgb, var(--m-accent) 7%, var(--m-bg)); }
+.mahan-goal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+.mahan-goal-title { font-weight: 800; }
+.mahan-goal-pick { display: inline-flex; align-items: center; gap: 6px; color: var(--m-muted); font-size: 13px; font-weight: 600; }
+.mahan-goal-select { border: 1px solid var(--m-border); border-radius: 8px; padding: 4px 8px; background: var(--m-surface); color: var(--m-text); font-weight: 700; }
+.mahan-goal-done-msg { margin: 10px 0 0; color: color-mix(in srgb, var(--m-accent) 75%, #000); font-size: 13.5px; font-weight: 600; }
+
+.mahan-lb-gap { text-align: center; color: var(--m-muted); font-weight: 800; letter-spacing: 4px; padding: 2px 0; }

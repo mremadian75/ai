@@ -216,6 +216,13 @@ class Mahan_Front {
 			'coursesInPath'    => __( 'Courses in this path', 'mahan-academy' ),
 			'pathComplete'     => __( 'completed', 'mahan-academy' ),
 			'openCourse'       => __( 'Open', 'mahan-academy' ),
+			'badgeEarned'      => __( 'Achievement unlocked:', 'mahan-academy' ),
+			'dailyGoal'        => __( 'Daily goal', 'mahan-academy' ),
+			'goalLabel'        => __( 'Goal:', 'mahan-academy' ),
+			'goalDone'         => __( 'Goal reached — nice work! Everything extra is a bonus.', 'mahan-academy' ),
+			'freezes'          => __( 'streak freezes', 'mahan-academy' ),
+			'thisWeek'         => __( 'This week', 'mahan-academy' ),
+			'allTime'          => __( 'All time', 'mahan-academy' ),
 		);
 	}
 }

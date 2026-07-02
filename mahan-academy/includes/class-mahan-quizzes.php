@@ -243,8 +243,12 @@ class Mahan_Quizzes {
 
 		self::store_attempt( $user_id, $course_id, $unit, $answers, $passed, $score, $xp_award, $results );
 
+		$awarded    = 0;
+		$leveled_up = false;
 		if ( $xp_award > 0 ) {
-			Mahan_Gamification::add_xp( $user_id, $xp_award );
+			$award      = Mahan_Gamification::add_xp( $user_id, $xp_award, 'quiz', $course_id );
+			$awarded    = (int) $award['awarded'];
+			$leveled_up = ! empty( $award['leveled_up'] );
 			Mahan_Gamification::record_activity( $user_id );
 			do_action( 'mahan_quiz_passed', $user_id, $course_id, $unit, $score );
 		}
@@ -257,7 +261,9 @@ class Mahan_Quizzes {
 			'correct'    => $correct,
 			'total'      => $total,
 			'results'    => $results,
-			'xp_awarded' => $xp_award,
+			'xp_awarded' => $awarded,
+			'leveled_up' => $leveled_up,
+			'new_badges' => Mahan_Badges::take_new( $user_id ),
 			'stats'      => Mahan_Gamification::hud( $user_id ),
 		);
 	}

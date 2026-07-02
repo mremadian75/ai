@@ -95,8 +95,8 @@ class Mahan_Admin {
 		$filter = current_filter(); // sanitize_option_mahan_xxx.
 		$key    = preg_replace( '/^sanitize_option_' . preg_quote( Mahan_Settings::PREFIX, '/' ) . '/', '', $filter );
 
-		$int_keys  = array( 'max_tokens', 'xp_per_lesson', 'xp_per_exercise', 'level_curve', 'hearts_max', 'ai_cache_ttl', 'app_page_id' );
-		$bool_keys = array( 'gate_enabled', 'streak_enabled', 'hearts_enabled', 'debug', 'badges_enabled', 'leaderboard_enabled', 'certificate_enabled', 'emails_enabled', 'email_welcome', 'email_complete', 'email_badge', 'email_streak' );
+		$int_keys  = array( 'max_tokens', 'xp_per_lesson', 'xp_per_exercise', 'level_curve', 'hearts_max', 'ai_cache_ttl', 'app_page_id', 'xp_streak_bonus', 'daily_goal_default', 'freeze_earn_days', 'freeze_max' );
+		$bool_keys = array( 'gate_enabled', 'streak_enabled', 'hearts_enabled', 'debug', 'badges_enabled', 'leaderboard_enabled', 'certificate_enabled', 'emails_enabled', 'email_welcome', 'email_complete', 'email_badge', 'email_streak', 'streak_freeze_enabled' );
 
 		if ( in_array( $key, $int_keys, true ) ) {
 			return absint( $value );
@@ -118,6 +118,8 @@ class Mahan_Admin {
 			case 'ai_provider':
 				$v = sanitize_key( $value );
 				return in_array( $v, array( 'anthropic', 'openai', 'google' ), true ) ? $v : 'anthropic';
+			case 'level_mode':
+				return 'progressive' === $value ? 'progressive' : 'linear';
 			case 'theme':
 				return 'dark' === $value ? 'dark' : 'light';
 			case 'primary_color':
@@ -406,6 +408,7 @@ class Mahan_Admin {
 			array( __( 'Active today', 'mahan-academy' ), number_format_i18n( $o['active_today'] ) ),
 			array( __( 'Active this week', 'mahan-academy' ), number_format_i18n( $o['active_week'] ) ),
 			array( __( 'Total XP', 'mahan-academy' ), number_format_i18n( $o['total_xp'] ) ),
+			array( __( 'XP this week', 'mahan-academy' ), number_format_i18n( $o['xp_week'] ) ),
 			array( __( 'Lessons completed', 'mahan-academy' ), number_format_i18n( $o['lessons_done'] ) ),
 			array( __( 'Exercise accuracy', 'mahan-academy' ), $o['exercise_accuracy'] . '%' ),
 			array( __( 'Quiz pass rate', 'mahan-academy' ), $o['quiz_pass_rate'] . '%' ),
@@ -619,10 +622,44 @@ class Mahan_Admin {
 							<p class="description"><?php esc_html_e( 'Learners gain a level for every this-many XP.', 'mahan-academy' ); ?></p></td>
 						</tr>
 						<tr>
+							<th scope="row"><label for="mahan_level_mode"><?php esc_html_e( 'Level curve', 'mahan-academy' ); ?></label></th>
+							<td>
+								<select id="mahan_level_mode" name="mahan_level_mode">
+									<option value="linear" <?php selected( $g( 'level_mode' ), 'linear' ); ?>><?php esc_html_e( 'Linear — every level costs the same', 'mahan-academy' ); ?></option>
+									<option value="progressive" <?php selected( $g( 'level_mode' ), 'progressive' ); ?>><?php esc_html_e( 'Progressive — each level costs more (RPG-style)', 'mahan-academy' ); ?></option>
+								</select>
+								<p class="description"><?php esc_html_e( 'Progressive: level N costs N × "XP per level". Early levels come fast, later ones are earned.', 'mahan-academy' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><label for="mahan_xp_streak_bonus"><?php esc_html_e( 'Streak XP bonus (%)', 'mahan-academy' ); ?></label></th>
+							<td><input type="number" min="0" max="50" class="small-text" id="mahan_xp_streak_bonus" name="mahan_xp_streak_bonus" value="<?php echo esc_attr( $g( 'xp_streak_bonus' ) ); ?>" />
+							<p class="description"><?php esc_html_e( 'Bonus XP per full week of streak (capped at +50%). 0 disables. Example: 10% → a 14-day streak earns +20% XP.', 'mahan-academy' ); ?></p></td>
+						</tr>
+						<tr>
+							<th scope="row"><label for="mahan_daily_goal_default"><?php esc_html_e( 'Default daily XP goal', 'mahan-academy' ); ?></label></th>
+							<td><input type="number" min="0" class="small-text" id="mahan_daily_goal_default" name="mahan_daily_goal_default" value="<?php echo esc_attr( $g( 'daily_goal_default' ) ); ?>" />
+							<p class="description"><?php esc_html_e( 'Learners can pick their own goal on the dashboard; this is the starting value. 0 hides the goal.', 'mahan-academy' ); ?></p></td>
+						</tr>
+						<tr>
 							<th scope="row"><?php esc_html_e( 'Daily streak', 'mahan-academy' ); ?></th>
 							<td>
 								<input type="hidden" name="mahan_streak_enabled" value="0" />
 								<label><input type="checkbox" name="mahan_streak_enabled" value="1" <?php checked( (int) $g( 'streak_enabled' ), 1 ); ?> /> <?php esc_html_e( 'Track daily learning streaks', 'mahan-academy' ); ?></label>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><?php esc_html_e( 'Streak freezes', 'mahan-academy' ); ?></th>
+							<td>
+								<input type="hidden" name="mahan_streak_freeze_enabled" value="0" />
+								<label><input type="checkbox" name="mahan_streak_freeze_enabled" value="1" <?php checked( (int) $g( 'streak_freeze_enabled' ), 1 ); ?> /> <?php esc_html_e( 'Earned freezes automatically cover missed days so the streak survives', 'mahan-academy' ); ?></label>
+								<p class="description">
+									<?php esc_html_e( 'Earn 1 freeze every', 'mahan-academy' ); ?>
+									<input type="number" min="1" class="small-text" name="mahan_freeze_earn_days" value="<?php echo esc_attr( $g( 'freeze_earn_days' ) ); ?>" style="width:60px" />
+									<?php esc_html_e( 'streak days, holding at most', 'mahan-academy' ); ?>
+									<input type="number" min="0" class="small-text" name="mahan_freeze_max" value="<?php echo esc_attr( $g( 'freeze_max' ) ); ?>" style="width:60px" />
+									<?php esc_html_e( 'freezes.', 'mahan-academy' ); ?>
+								</p>
 							</td>
 						</tr>
 						<tr>

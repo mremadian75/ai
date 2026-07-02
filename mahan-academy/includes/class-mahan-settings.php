@@ -52,6 +52,12 @@ class Mahan_Settings {
 			'leaderboard_enabled' => 0,
 			'level_titles'        => '',
 			'certificate_enabled' => 1,
+			'level_mode'          => 'linear',
+			'xp_streak_bonus'     => 10,
+			'daily_goal_default'  => 30,
+			'streak_freeze_enabled' => 1,
+			'freeze_earn_days'    => 7,
+			'freeze_max'          => 2,
 
 			// Appearance.
 			'primary_color'       => '#4f46e5',

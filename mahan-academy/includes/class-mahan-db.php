@@ -70,6 +70,11 @@ class Mahan_DB {
 		return $wpdb->prefix . 'mahan_ai_cache';
 	}
 
+	public static function xp_log() {
+		global $wpdb;
+		return $wpdb->prefix . 'mahan_xp_log';
+	}
+
 	/* ------------------------------------------------------------------ */
 	/* Schema                                                              */
 	/* ------------------------------------------------------------------ */
@@ -86,6 +91,7 @@ class Mahan_DB {
 		$stats       = self::stats();
 		$chat        = self::chat();
 		$ai_cache    = self::ai_cache();
+		$xp_log      = self::xp_log();
 
 		$sql = array();
 
@@ -145,8 +151,22 @@ class Mahan_DB {
 			hearts TINYINT NOT NULL DEFAULT 5,
 			hearts_updated_at DATETIME NULL DEFAULT NULL,
 			last_active_date DATE NULL DEFAULT NULL,
+			freezes TINYINT UNSIGNED NOT NULL DEFAULT 0,
+			daily_goal SMALLINT UNSIGNED NOT NULL DEFAULT 0,
 			updated_at DATETIME NOT NULL,
 			PRIMARY KEY  (user_id)
+		) {$charset};";
+
+		$sql[] = "CREATE TABLE {$xp_log} (
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			user_id BIGINT UNSIGNED NOT NULL,
+			amount INT NOT NULL DEFAULT 0,
+			reason VARCHAR(32) NOT NULL DEFAULT '',
+			ref_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
+			created_at DATETIME NOT NULL,
+			PRIMARY KEY  (id),
+			KEY user_time (user_id, created_at),
+			KEY created (created_at)
 		) {$charset};";
 
 		$sql[] = "CREATE TABLE {$chat} (
@@ -185,6 +205,7 @@ class Mahan_DB {
 			self::stats(),
 			self::chat(),
 			self::ai_cache(),
+			self::xp_log(),
 		);
 		foreach ( $tables as $table ) {
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery

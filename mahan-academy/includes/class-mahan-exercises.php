@@ -60,9 +60,14 @@ class Mahan_Exercises {
 
 		self::store_attempt( $user_id, $lesson_id, $course_id, $key, $type, $answer, $graded, $xp_award );
 
+		$awarded    = 0;
+		$leveled_up = false;
 		if ( $xp_award > 0 ) {
-			Mahan_Gamification::add_xp( $user_id, $xp_award );
+			$award      = Mahan_Gamification::add_xp( $user_id, $xp_award, 'exercise', $lesson_id );
+			$awarded    = (int) $award['awarded'];
+			$leveled_up = ! empty( $award['leveled_up'] );
 			Mahan_Gamification::record_activity( $user_id );
+			do_action( 'mahan_exercise_correct', $user_id, $lesson_id, $key );
 		}
 		$stats = Mahan_Gamification::hud( $user_id );
 
@@ -71,7 +76,9 @@ class Mahan_Exercises {
 			'is_correct'  => (bool) $graded['is_correct'],
 			'score'       => (int) $graded['score'],
 			'feedback'    => (string) $graded['feedback'],
-			'xp_awarded'  => $xp_award,
+			'xp_awarded'  => $awarded,
+			'leveled_up'  => $leveled_up,
+			'new_badges'  => Mahan_Badges::take_new( $user_id ),
 			'correct_index' => isset( $graded['correct_index'] ) ? $graded['correct_index'] : null,
 			'stats'       => $stats,
 		);

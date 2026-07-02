@@ -133,7 +133,7 @@ class Mahan_Progress {
 			);
 		}
 
-		Mahan_Gamification::add_xp( $user_id, $lesson_xp );
+		$award = Mahan_Gamification::add_xp( $user_id, $lesson_xp, 'lesson', $lesson_id );
 		Mahan_Gamification::record_activity( $user_id );
 
 		// Recompute course completion.
@@ -150,7 +150,9 @@ class Mahan_Progress {
 
 		return array(
 			'ok'               => true,
-			'xp_awarded'       => $lesson_xp,
+			'xp_awarded'       => (int) $award['awarded'],
+			'leveled_up'       => ! empty( $award['leveled_up'] ),
+			'new_badges'       => Mahan_Badges::take_new( $user_id ),
 			'already_done'     => $already_done,
 			'course_progress'  => $course_pct,
 			'course_completed' => $course_completed,

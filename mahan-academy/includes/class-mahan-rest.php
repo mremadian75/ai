@@ -94,6 +94,12 @@ class Mahan_REST {
 			'permission_callback' => $public,
 		) );
 
+		register_rest_route( self::NS, '/goal', array(
+			'methods'             => WP_REST_Server::CREATABLE,
+			'callback'            => array( __CLASS__, 'set_goal' ),
+			'permission_callback' => $logged_in,
+		) );
+
 		register_rest_route( self::NS, '/paths', array(
 			'methods'             => WP_REST_Server::READABLE,
 			'callback'            => array( __CLASS__, 'paths' ),
@@ -474,26 +480,54 @@ class Mahan_REST {
 	}
 
 	/**
-	 * Public (opt-in) XP leaderboard — top learners by XP.
+	 * Public (opt-in) XP leaderboard.
+	 *
+	 * ?period=all  — lifetime XP from the stats table (default).
+	 * ?period=week — XP earned in the last 7 days, from the XP log.
+	 *
+	 * When the caller is logged in but outside the top 20, a "me" entry with
+	 * their exact rank is included so everyone can see where they stand.
 	 */
 	public static function leaderboard( WP_REST_Request $request ) {
 		if ( ! Mahan_Settings::get( 'leaderboard_enabled', 0 ) ) {
 			return new WP_REST_Response( array( 'ok' => false, 'error' => 'disabled' ), 403 );
 		}
 		global $wpdb;
-		$table = Mahan_DB::stats();
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$rows = $wpdb->get_results( "SELECT user_id, xp, level, streak FROM {$table} WHERE xp > 0 ORDER BY xp DESC LIMIT 20", ARRAY_A );
+		$period = ( 'week' === $request->get_param( 'period' ) ) ? 'week' : 'all';
+		$stats  = Mahan_DB::stats();
+		$log    = Mahan_DB::xp_log();
+		$me     = get_current_user_id();
 
-		$me      = get_current_user_id();
+		if ( 'week' === $period ) {
+			$since = gmdate( 'Y-m-d 00:00:00', strtotime( Mahan_Utils::today() . ' -6 days' ) );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$rows = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT l.user_id, SUM(l.amount) AS xp, s.level, s.streak
+					 FROM {$log} l LEFT JOIN {$stats} s ON s.user_id = l.user_id
+					 WHERE l.created_at >= %s
+					 GROUP BY l.user_id HAVING xp > 0 ORDER BY xp DESC LIMIT 20",
+					$since
+				),
+				ARRAY_A
+			);
+		} else {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$rows = $wpdb->get_results( "SELECT user_id, xp, level, streak FROM {$stats} WHERE xp > 0 ORDER BY xp DESC LIMIT 20", ARRAY_A );
+		}
+
 		$entries = array();
 		$rank    = 0;
+		$me_seen = false;
 		foreach ( (array) $rows as $r ) {
 			$rank++;
 			$uid  = (int) $r['user_id'];
 			$user = get_userdata( $uid );
 			if ( ! $user ) {
 				continue;
+			}
+			if ( $uid === $me ) {
+				$me_seen = true;
 			}
 			$entries[] = array(
 				'rank'   => $rank,
@@ -505,7 +539,60 @@ class Mahan_REST {
 				'is_me'  => ( $uid === $me ),
 			);
 		}
-		return rest_ensure_response( array( 'ok' => true, 'entries' => $entries ) );
+
+		// Caller's own rank when they're outside the top list.
+		$me_entry = null;
+		if ( $me && ! $me_seen ) {
+			if ( 'week' === $period ) {
+				$my_xp = Mahan_Gamification::xp_since( $me, $since );
+				if ( $my_xp > 0 ) {
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+					$higher = (int) $wpdb->get_var(
+						$wpdb->prepare(
+							"SELECT COUNT(*) FROM ( SELECT user_id FROM {$log} WHERE created_at >= %s GROUP BY user_id HAVING SUM(amount) > %d ) t",
+							$since,
+							$my_xp
+						)
+					);
+				}
+			} else {
+				$my_stats = Mahan_Gamification::get_stats( $me );
+				$my_xp    = (int) $my_stats['xp'];
+				if ( $my_xp > 0 ) {
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+					$higher = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$stats} WHERE xp > %d", $my_xp ) );
+				}
+			}
+			if ( ! empty( $my_xp ) ) {
+				$user     = get_userdata( $me );
+				$my_row   = Mahan_Gamification::get_stats( $me );
+				$me_entry = array(
+					'rank'   => $higher + 1,
+					'name'   => $user ? $user->display_name : '',
+					'avatar' => get_avatar_url( $me, array( 'size' => 48 ) ),
+					'xp'     => (int) $my_xp,
+					'level'  => (int) $my_row['level'],
+					'streak' => (int) $my_row['streak'],
+					'is_me'  => true,
+				);
+			}
+		}
+
+		return rest_ensure_response( array( 'ok' => true, 'period' => $period, 'entries' => $entries, 'me' => $me_entry ) );
+	}
+
+	/**
+	 * Save the learner's daily XP goal.
+	 */
+	public static function set_goal( WP_REST_Request $request ) {
+		$user_id = get_current_user_id();
+		$body    = $request->get_json_params();
+		$goal    = isset( $body['daily_goal'] ) ? (int) $body['daily_goal'] : 0;
+		Mahan_Gamification::set_daily_goal( $user_id, $goal );
+		return rest_ensure_response( array(
+			'ok'    => true,
+			'stats' => Mahan_Gamification::hud( $user_id ),
+		) );
 	}
 
 	/* ------------------------------------------------------------------ */

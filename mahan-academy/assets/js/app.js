@@ -144,12 +144,17 @@
 		var right;
 		if (D.loggedIn && state.me && state.me.stats) {
 			var s = state.me.stats;
+			var goalDone = (s.daily_goal > 0 && (s.daily_xp || 0) >= s.daily_goal);
 			right = h('div', { class: 'mahan-hud' }, [
-				h('div', { class: 'mahan-hud-item mahan-hud-streak', title: t('streak', 'day streak') }, [
-					h('span', { class: 'mahan-hud-icon', text: '🔥' }), h('span', { id: 'hud-streak', text: String(s.streak || 0) })]),
+				h('div', { class: 'mahan-hud-item mahan-hud-streak', title: t('streak', 'day streak') + ((s.freezes || 0) > 0 ? ' · ' + s.freezes + ' ' + t('freezes', 'streak freezes') : '') }, [
+					h('span', { class: 'mahan-hud-icon', text: '🔥' }), h('span', { id: 'hud-streak', text: String(s.streak || 0) }),
+					h('span', { class: 'mahan-hud-freeze', id: 'hud-freeze', text: (s.freezes || 0) > 0 ? '❄️' + s.freezes : '' })]),
+				(s.daily_goal > 0) ? h('div', { class: 'mahan-hud-item mahan-hud-goal' + (goalDone ? ' is-done' : ''), id: 'hud-goal', title: t('dailyGoal', 'Daily goal') }, [
+					h('span', { class: 'mahan-hud-icon', text: goalDone ? '✅' : '🎯' }),
+					h('span', { id: 'hud-goal-text', text: (s.daily_xp || 0) + '/' + s.daily_goal })]) : null,
 				h('div', { class: 'mahan-hud-item mahan-hud-xp', title: 'XP' }, [
 					h('span', { class: 'mahan-hud-icon', text: '⚡' }), h('span', { id: 'hud-xp', text: String(s.xp || 0) })]),
-				h('div', { class: 'mahan-hud-item mahan-hud-level', title: t('level', 'Level') }, [
+				h('div', { class: 'mahan-hud-item mahan-hud-level', title: s.level_title || t('level', 'Level') }, [
 					h('span', { class: 'mahan-hud-icon', text: '◆' }), h('span', { id: 'hud-level', text: String(s.level || 1) })]),
 				state.me.user ? h('img', { class: 'mahan-hud-avatar', src: state.me.user.avatar, alt: state.me.user.name }) : null
 			]);
@@ -168,10 +173,18 @@
 	function refreshHud(stats) {
 		if (!stats) { return; }
 		if (state.me) { state.me.stats = stats; }
-		var x = el('hud-xp'), l = el('hud-level'), st = el('hud-streak');
+		var x = el('hud-xp'), l = el('hud-level'), st = el('hud-streak'), fz = el('hud-freeze'), g = el('hud-goal'), gt = el('hud-goal-text');
 		if (x) { x.textContent = stats.xp; }
 		if (l) { l.textContent = stats.level; }
 		if (st) { st.textContent = stats.streak; }
+		if (fz) { fz.textContent = (stats.freezes || 0) > 0 ? '❄️' + stats.freezes : ''; }
+		if (g && gt && stats.daily_goal > 0) {
+			var done = (stats.daily_xp || 0) >= stats.daily_goal;
+			gt.textContent = (stats.daily_xp || 0) + '/' + stats.daily_goal;
+			g.classList.toggle('is-done', done);
+			var icon = g.querySelector('.mahan-hud-icon');
+			if (icon) { icon.textContent = done ? '✅' : '🎯'; }
+		}
 	}
 
 	/* ------------------------------------------------------------------ */
@@ -187,9 +200,19 @@
 	}
 
 	function celebrateXp(res) {
-		if (res && res.xp_awarded > 0) { toast('⚡ +' + res.xp_awarded + ' XP', 'xp'); }
-		if (res && res.stats) { refreshHud(res.stats); }
-		if (res && res.leveled_up) { toast('◆ ' + t('levelUp', 'Level up!'), 'level'); }
+		if (!res) { return; }
+		if (res.xp_awarded > 0) { toast('⚡ +' + res.xp_awarded + ' XP', 'xp'); }
+		if (res.stats) { refreshHud(res.stats); }
+		if (res.leveled_up) {
+			var title = (res.stats && res.stats.level_title) ? ' — ' + res.stats.level_title : '';
+			setTimeout(function () { toast('◆ ' + t('levelUp', 'Level up!') + title, 'level'); }, 500);
+		}
+		// New achievements arrive with grading/progress responses — celebrate each.
+		(res.new_badges || []).forEach(function (b, i) {
+			setTimeout(function () {
+				toast(esc(b.icon) + ' ' + esc(t('badgeEarned', 'Achievement unlocked:')) + ' <strong>' + esc(b.title) + '</strong>', 'level');
+			}, 1000 + i * 900);
+		});
 	}
 
 	/* ------------------------------------------------------------------ */
@@ -519,8 +542,7 @@
 			}
 			block.querySelectorAll('.mahan-ex-option, .mahan-ex-input').forEach(function (el) { el.disabled = true; });
 		});
-		refreshHud(r.stats);
-		if (r.xp_awarded > 0) { toast('⚡ +' + r.xp_awarded + ' XP', 'xp'); }
+		celebrateXp(r);
 
 		var head = overlay.querySelector('h2');
 		var banner = h('div', { class: 'mahan-quiz-result ' + (r.passed ? 'is-pass' : 'is-fail') }, [
@@ -855,12 +877,14 @@
 				h('div', { class: 'mahan-dash-stats' }, [
 					statBig('🔥', s.streak || 0, t('streak', 'day streak')),
 					statBig('⚡', s.xp || 0, 'XP'),
-					statBig('◆', s.level || 1, s.level_title || t('level', 'Level'))
+					statBig('◆', s.level || 1, s.level_title || t('level', 'Level')),
+					(s.freezes || 0) > 0 ? statBig('❄️', s.freezes, t('freezes', 'streak freezes')) : null
 				]),
 				h('div', { class: 'mahan-level-bar' }, [
 					h('div', { class: 'mahan-level-bar-track' }, [h('span', { style: 'width:' + levelPct(s) + '%' })]),
 					h('span', { class: 'mahan-level-bar-label', text: (s.xp_into_level || 0) + ' / ' + (s.xp_per_level || 100) + ' XP → ' + t('level', 'Level') + ' ' + ((s.level || 1) + 1) })
-				])
+				]),
+				dailyGoalCard(s)
 			]));
 
 			var courses = j.courses || [];
@@ -901,25 +925,44 @@
 	/* ------------------------------------------------------------------ */
 
 	function renderLeaderboard() {
+		var period = state.lbPeriod || 'week';
 		mount(loadingShell());
-		api('/leaderboard').then(function (j) {
+		api('/leaderboard?period=' + period).then(function (j) {
 			var wrap = h('div', { class: 'mahan-leaderboard' });
 			wrap.appendChild(h('div', { class: 'mahan-dash-hero' }, [h('h1', { text: '🏆 ' + t('leaderboard', 'Leaderboard') })]));
+
+			// Period tabs.
+			wrap.appendChild(h('div', { class: 'mahan-chips' }, [
+				['week', t('thisWeek', 'This week')],
+				['all', t('allTime', 'All time')]
+			].map(function (p) {
+				return h('button', {
+					class: 'mahan-chip' + (period === p[0] ? ' is-active' : ''), text: p[1],
+					onClick: function () { state.lbPeriod = p[0]; renderLeaderboard(); }
+				});
+			})));
+
 			var entries = j.entries || [];
 			if (!entries.length) {
 				wrap.appendChild(h('div', { class: 'mahan-empty', text: t('emptyLeaderboard', 'No ranked learners yet — earn some XP!') }));
 			} else {
 				var list = h('div', { class: 'mahan-lb-list' });
-				entries.forEach(function (e) {
-					list.appendChild(h('div', { class: 'mahan-lb-row' + (e.is_me ? ' is-me' : '') + (e.rank <= 3 ? ' is-top' : '') }, [
+				function lbRow(e) {
+					return h('div', { class: 'mahan-lb-row' + (e.is_me ? ' is-me' : '') + (e.rank <= 3 ? ' is-top' : '') }, [
 						h('span', { class: 'mahan-lb-rank', text: e.rank <= 3 ? ['🥇', '🥈', '🥉'][e.rank - 1] : String(e.rank) }),
 						h('img', { class: 'mahan-lb-avatar', src: e.avatar, alt: e.name }),
 						h('span', { class: 'mahan-lb-name', text: e.name + (e.is_me ? ' (' + t('you', 'You') + ')' : '') }),
 						h('span', { class: 'mahan-lb-streak', text: '🔥 ' + e.streak }),
 						h('span', { class: 'mahan-lb-level', text: '◆ ' + e.level }),
 						h('span', { class: 'mahan-lb-xp', text: '⚡ ' + e.xp })
-					]));
-				});
+					]);
+				}
+				entries.forEach(function (e) { list.appendChild(lbRow(e)); });
+				// The caller's own rank when they're outside the top list.
+				if (j.me) {
+					list.appendChild(h('div', { class: 'mahan-lb-gap', text: '···' }));
+					list.appendChild(lbRow(j.me));
+				}
 				wrap.appendChild(list);
 			}
 			mount(wrap);
@@ -1061,6 +1104,47 @@
 			h('span', { class: 'mahan-stat-icon', text: icon }),
 			h('span', { class: 'mahan-stat-value', text: String(value) }),
 			h('span', { class: 'mahan-stat-label', text: label })
+		]);
+	}
+
+	// Duolingo-style daily goal: today's XP vs. a learner-chosen target.
+	function dailyGoalCard(s) {
+		var goal = s.daily_goal || 0;
+		var xpToday = s.daily_xp || 0;
+		var pct = goal > 0 ? Math.max(0, Math.min(100, Math.round((xpToday / goal) * 100))) : 0;
+		var done = goal > 0 && xpToday >= goal;
+
+		var select = h('select', { class: 'mahan-goal-select' });
+		[10, 20, 30, 50, 100].forEach(function (v) {
+			var opt = h('option', { value: String(v), text: v + ' XP' });
+			if (v === goal) { opt.selected = true; }
+			select.appendChild(opt);
+		});
+		if ([10, 20, 30, 50, 100].indexOf(goal) < 0 && goal > 0) {
+			var custom = h('option', { value: String(goal), text: goal + ' XP' });
+			custom.selected = true;
+			select.appendChild(custom);
+		}
+		select.addEventListener('change', function () {
+			api('/goal', 'POST', { daily_goal: parseInt(select.value, 10) }).then(function (r) {
+				refreshHud(r.stats);
+				renderDashboard();
+			}).catch(function () { toast(t('error', 'Something went wrong.'), 'error'); });
+		});
+
+		return h('div', { class: 'mahan-goal-card' + (done ? ' is-done' : '') }, [
+			h('div', { class: 'mahan-goal-head' }, [
+				h('span', { class: 'mahan-goal-title', text: (done ? '✅ ' : '🎯 ') + t('dailyGoal', 'Daily goal') }),
+				h('label', { class: 'mahan-goal-pick' }, [
+					h('span', { text: t('goalLabel', 'Goal:') + ' ' }),
+					select
+				])
+			]),
+			h('div', { class: 'mahan-progress' }, [
+				h('div', { class: 'mahan-progress-bar' }, [h('span', { style: 'width:' + pct + '%' })]),
+				h('span', { class: 'mahan-progress-label', text: xpToday + ' / ' + goal + ' XP' })
+			]),
+			done ? h('p', { class: 'mahan-goal-done-msg', text: t('goalDone', 'Goal reached — nice work! Everything extra is a bonus.') }) : null
 		]);
 	}
 

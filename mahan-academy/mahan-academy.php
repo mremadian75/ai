@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 define( 'MAHAN_VERSION', '1.2.0' );
-define( 'MAHAN_DB_VERSION', '1' );
+define( 'MAHAN_DB_VERSION', '2' );
 define( 'MAHAN_FILE', __FILE__ );
 define( 'MAHAN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'MAHAN_URL', plugin_dir_url( __FILE__ ) );

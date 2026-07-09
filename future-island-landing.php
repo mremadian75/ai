@@ -1,7 +1,8 @@
 <?php
 /**
  * ============================================================================
- * FUTURE ISLAND — Landing "Invitación de embarque" (WPCode / WP Code Pro)
+ * FUTURE ISLAND — Landing "Invitación de embarque" (edición clara / light)
+ * Para WPCode / WP Code Pro
  * ============================================================================
  *
  * CÓMO INSTALARLO (WPCode):
@@ -12,8 +13,14 @@
  *   4. Insert Method = "Auto Insert", Location = "Run Everywhere". Guardar + Activar.
  *   5. Crea una página con plantilla "Full width / En blanco / Canvas" y añade el
  *      shortcode:  [future_island_landing]  (en un bloque "Shortcode", no en un párrafo).
- *   6. Vacía la caché (WP Rocket / LiteSpeed / Cloudflare / host) y, si usas
- *      optimizador JS, EXCLUYE assets.calendly.com/widget.js de combine/defer/delay.
+ *   6. Vacía la caché (WP Rocket / LiteSpeed / Cloudflare / host).
+ *
+ * SI EL CALENDARIO DE CALENDLY SALE VACÍO:
+ *   Casi siempre es el optimizador de JS. En tu plugin de caché/optimización
+ *   EXCLUYE de "combine / defer / delay JavaScript" (y de "Remove Unused CSS"):
+ *      assets.calendly.com/assets/external/widget.js
+ *   Este código además reintenta cargar Calendly solo, así que en la mayoría de
+ *   los casos se recupera aunque el optimizador lo retrase.
  *
  * Para cambiar el enlace de Calendly:  [future_island_landing calendly="https://calendly.com/tu-usuario/30min"]
  * ============================================================================
@@ -28,7 +35,6 @@ if ( ! shortcode_exists( 'future_island_landing' ) ) {
 	add_shortcode( 'future_island_landing', 'fi_landing_shortcode' );
 }
 
-/* ¿La vista actual contiene el shortcode? (para no cargar assets en todo el sitio) */
 if ( ! function_exists( 'fi_landing_should_load' ) ) {
 	function fi_landing_should_load() {
 		if ( ! is_singular() ) {
@@ -47,7 +53,6 @@ add_action( 'wp_enqueue_scripts', function () {
 		return;
 	}
 
-	// Preconnect a Google Fonts (rendimiento).
 	add_filter( 'wp_resource_hints', function ( $hints, $relation ) {
 		if ( 'preconnect' === $relation ) {
 			$hints[] = 'https://fonts.googleapis.com';
@@ -56,7 +61,6 @@ add_action( 'wp_enqueue_scripts', function () {
 		return $hints;
 	}, 10, 2 );
 
-	// Tipografías de marca: Playfair Display (display) + Space Mono (mono/UI).
 	wp_enqueue_style(
 		'fi-google-fonts',
 		'https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap',
@@ -64,7 +68,6 @@ add_action( 'wp_enqueue_scripts', function () {
 		null
 	);
 
-	// Calendly (CSS en <head>, JS en el footer). Handles únicos "fi-*".
 	wp_enqueue_style(
 		'fi-calendly',
 		'https://assets.calendly.com/assets/external/widget.css',
@@ -79,8 +82,6 @@ add_action( 'wp_enqueue_scripts', function () {
 		true
 	);
 
-	// Comportamiento "en vivo" (split-flap, avión, reloj, estados de Calendly).
-	// Se adjunta a fi-calendly para ejecutarse DESPUÉS de que exista window.Calendly.
 	wp_add_inline_script( 'fi-calendly', fi_landing_inline_js() );
 
 }, 20 );
@@ -94,17 +95,43 @@ if ( ! function_exists( 'fi_landing_inline_js' ) ) {
   if(!root) return;
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var CAL = root.getAttribute('data-cal-url');
+  var CAL_JS = 'https://assets.calendly.com/assets/external/widget.js';
+  var CAL_CSS = 'https://assets.calendly.com/assets/external/widget.css';
 
-  root.querySelectorAll('[data-cal]').forEach(function(btn){
-    btn.addEventListener('click', function(e){
-      e.preventDefault();
-      if(window.Calendly && Calendly.initPopupWidget){
-        Calendly.initPopupWidget({ url: CAL, utm:{ utmSource:'landing', utmMedium:'cta', utmCampaign:'invitacion-de-embarque' } });
-      }else{
-        var t = document.getElementById('reservar');
-        if(t) t.scrollIntoView({behavior: reduce ? 'auto' : 'smooth'});
+  function ensureCalendly(cb){
+    if(!document.querySelector('link[href^="https://assets.calendly.com/assets/external/widget.css"]')){
+      var l=document.createElement('link'); l.rel='stylesheet'; l.href=CAL_CSS; document.head.appendChild(l);
+    }
+    if(window.Calendly && Calendly.initInlineWidget){ cb && cb(); return; }
+    if(!document.querySelector('script[src^="'+CAL_JS+'"]')){
+      var s=document.createElement('script'); s.src=CAL_JS; s.async=true; document.head.appendChild(s);
+    }
+    var n=0, iv=setInterval(function(){
+      if(window.Calendly && Calendly.initInlineWidget){ clearInterval(iv); cb && cb(); }
+      else if(++n>150){ clearInterval(iv); }
+    },200);
+  }
+
+  var host = root.querySelector('.calendly-inline-widget');
+  if(host){
+    ensureCalendly(function(){
+      if(!host.querySelector('iframe')){
+        Calendly.initInlineWidget({ url: host.getAttribute('data-url'), parentElement: host });
       }
     });
+  }
+
+  function openBooking(){
+    if(window.Calendly && Calendly.initPopupWidget){
+      Calendly.initPopupWidget({ url: CAL, utm:{ utmSource:'landing', utmMedium:'cta', utmCampaign:'invitacion-de-embarque' } });
+    }else{
+      var t = document.getElementById('reservar');
+      if(t) t.scrollIntoView({behavior: reduce ? 'auto' : 'smooth'});
+      ensureCalendly(function(){ if(window.Calendly && Calendly.initPopupWidget){ Calendly.initPopupWidget({ url: CAL }); } });
+    }
+  }
+  root.querySelectorAll('[data-cal]').forEach(function(btn){
+    btn.addEventListener('click', function(e){ e.preventDefault(); openBooking(); });
   });
 
   root.querySelectorAll('a[href^="#"]:not([data-cal])').forEach(function(a){
@@ -213,79 +240,83 @@ if ( ! function_exists( 'fi_landing_shortcode' ) ) {
 			'calendly' => 'https://calendly.com/mahan-future-island/30min',
 		), $atts, $tag );
 
-		// URL de Calendly tematizada con la paleta de marca (hex sin #).
-		$theme     = 'background_color=0E2A30&text_color=F1ECDF&primary_color=A8814C&hide_gdpr_banner=1&hide_event_type_details=1&utm_source=landing&utm_medium=cta&utm_campaign=invitacion-de-embarque';
-		$sep       = ( strpos( $atts['calendly'], '?' ) === false ) ? '?' : '&';
-		$cal_url   = esc_url( $atts['calendly'] . $sep . $theme );
+		// URL de Calendly tematizada (clara) + atribución UTM (hex sin #).
+		$theme   = 'background_color=FFFDF8&text_color=1B2A2D&primary_color=A8814C&hide_gdpr_banner=1&hide_event_type_details=1&utm_source=landing&utm_medium=cta&utm_campaign=invitacion-de-embarque';
+		$sep     = ( strpos( $atts['calendly'], '?' ) === false ) ? '?' : '&';
+		$cal_url = esc_url( $atts['calendly'] . $sep . $theme );
 
 		ob_start();
 		?>
 <div id="fi-boarding" data-cal-url="<?php echo $cal_url; ?>">
 	<style>
 		#fi-boarding{
-			--bg:#0B2126; --bg2:#0E2A30; --line:#1C3A40;
-			--cream:#F1ECDF; --cream2:#E7E0CE; --card-ink:#243133;
+			--bg:#F3EDE1; --panel:#FFFDF8; --panel-2:#F7F1E5;
+			--petrol:#0B2126; --petrol-2:#123239;
+			--ink:#1B2A2D; --ink-2:#3C4B4D; --muted:#645C46;
 			--gold:#A8814C; --gold-lt:#C79A5C; --gold-deep:#7E5F33;
-			--tan:#C9BFA8; --muted:#8F8770; --muted-ink:#5F5942; --sea:#11313A;
+			--tan:#B4A785; --line:#E1D7C2; --cream:#F1ECDF;
 			--serif:'Playfair Display', Georgia, 'Times New Roman', serif;
 			--mono:'Space Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
 			position:relative;
-			background:radial-gradient(1100px 620px at 50% -220px, #0f2f36 0%, rgba(15,47,54,0) 72%), var(--bg);
-			color:var(--cream); font-family:var(--mono); line-height:1.5;
-			-webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; overflow:hidden;
+			background:radial-gradient(1100px 620px at 50% -220px, #FBF7EE 0%, rgba(251,247,238,0) 72%), var(--bg);
+			color:var(--ink); font-family:var(--mono);
+			font-size:16px; line-height:1.5; font-weight:400; text-align:left; letter-spacing:normal;
+			-webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; overflow:hidden; max-width:none; width:auto;
 		}
-		#fi-boarding *{box-sizing:border-box;margin:0;padding:0}
+		#fi-boarding *,#fi-boarding *::before,#fi-boarding *::after{box-sizing:border-box;margin:0;padding:0}
 		#fi-boarding a{color:inherit;text-decoration:none}
-		#fi-boarding a:focus-visible,#fi-boarding .fi-btn:focus-visible{outline:2px solid var(--gold-lt);outline-offset:3px;border-radius:8px}
-		#fi-boarding::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;background-image:radial-gradient(rgba(200,180,120,.05) 1px,transparent 1px);background-size:22px 22px;opacity:.6}
+		#fi-boarding img,#fi-boarding svg{max-width:100%}
+		#fi-boarding button{font:inherit;color:inherit}
+		#fi-boarding a:focus-visible,#fi-boarding .fi-btn:focus-visible{outline:2px solid var(--gold-deep);outline-offset:3px;border-radius:8px}
+		#fi-boarding::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;background-image:radial-gradient(rgba(120,95,50,.06) 1px,transparent 1px);background-size:22px 22px;opacity:.5}
 		#fi-boarding .fi-wrap{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:clamp(20px,4vw,44px) clamp(16px,4vw,44px) clamp(48px,7vw,90px)}
 		#fi-boarding .fi-top{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap;padding-bottom:clamp(22px,4vw,40px)}
-		#fi-boarding .fi-kicker{font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold);line-height:2}
-		#fi-boarding .fi-kicker .star{color:var(--gold-lt)}
-		#fi-boarding .fi-kicker .dim{color:#6d7d76}
+		#fi-boarding .fi-kicker{font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold-deep);line-height:2}
+		#fi-boarding .fi-kicker .star{color:var(--gold)}
+		#fi-boarding .fi-kicker .dim{color:var(--tan)}
 		#fi-boarding .fi-top-right{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
-		#fi-boarding .fi-status{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:100px;padding:7px 14px;background:rgba(14,42,48,.6)}
-		#fi-boarding .fi-dot{position:relative;width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
+		#fi-boarding .fi-status{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:100px;padding:7px 14px;background:rgba(255,255,255,.55)}
+		#fi-boarding .fi-dot{position:relative;width:8px;height:8px;border-radius:50%;background:var(--tan);flex:none}
 		#fi-boarding .fi-dot::after{content:"";position:absolute;inset:0;border-radius:50%;background:inherit;opacity:.55}
-		#fi-boarding .fi-flap{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--tan);white-space:nowrap}
+		#fi-boarding .fi-flap{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-2);white-space:nowrap}
 		#fi-boarding .fi-flap-cell{display:inline-block;min-width:.62em;text-align:center}
 		#fi-boarding .fi-clock{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-variant-numeric:tabular-nums}
-		#fi-boarding .fi-clock b{color:var(--gold);font-weight:400}
+		#fi-boarding .fi-clock b{color:var(--gold-deep);font-weight:400}
 		#fi-boarding.is-selecting .fi-dot{background:var(--gold-lt)}
-		#fi-boarding.is-selecting .fi-flap{color:var(--gold-lt)}
+		#fi-boarding.is-selecting .fi-flap{color:var(--gold-deep)}
 		#fi-boarding.is-confirmed .fi-dot{background:var(--gold)}
-		#fi-boarding.is-confirmed .fi-flap{color:var(--gold)}
+		#fi-boarding.is-confirmed .fi-flap{color:var(--gold-deep)}
 		#fi-boarding .fi-hero{max-width:760px;padding:clamp(6px,2vw,14px) 0 clamp(30px,5vw,52px)}
-		#fi-boarding .fi-hero .fi-eyebrow{font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold);margin-bottom:18px}
-		#fi-boarding .fi-hero h1{font-family:var(--serif);font-weight:500;font-size:clamp(34px,6.2vw,66px);line-height:1.03;letter-spacing:-.01em;color:var(--cream)}
-		#fi-boarding .fi-hero h1 em{font-style:italic;color:var(--gold-lt)}
-		#fi-boarding .fi-hero p{margin-top:clamp(16px,2.6vw,26px);max-width:60ch;font-size:clamp(13px,1.5vw,15px);line-height:1.9;color:var(--cream2)}
+		#fi-boarding .fi-hero .fi-eyebrow{font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold-deep);margin-bottom:18px}
+		#fi-boarding .fi-hero h1{font-family:var(--serif);font-weight:500;font-size:clamp(34px,6.2vw,66px);line-height:1.03;letter-spacing:-.01em;color:var(--ink)}
+		#fi-boarding .fi-hero h1 em{font-style:italic;color:var(--gold)}
+		#fi-boarding .fi-hero p{margin-top:clamp(16px,2.6vw,26px);max-width:60ch;font-size:clamp(13px,1.5vw,15px);line-height:1.9;color:var(--ink-2)}
 		#fi-boarding .fi-cta-row{display:flex;flex-wrap:wrap;gap:14px;margin-top:clamp(24px,3vw,34px)}
 		#fi-boarding .fi-btn{position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:10px;cursor:pointer;font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;padding:15px 26px;border-radius:8px;border:1px solid transparent;transition:transform .18s ease,box-shadow .25s ease,background .25s ease,color .2s ease,border-color .2s ease}
-		#fi-boarding .fi-btn::after{content:"";position:absolute;inset:0;pointer-events:none;transform:translateX(-135%);background:linear-gradient(100deg,transparent 20%,rgba(255,255,255,.35) 50%,transparent 80%)}
+		#fi-boarding .fi-btn::after{content:"";position:absolute;inset:0;pointer-events:none;transform:translateX(-135%);background:linear-gradient(100deg,transparent 20%,rgba(255,255,255,.5) 50%,transparent 80%)}
 		#fi-boarding .fi-btn:hover::after{animation:fiSheen .7s ease}
-		#fi-boarding .fi-btn--gold{color:#20150a;font-weight:700;background:linear-gradient(180deg,var(--gold-lt),var(--gold) 60%,var(--gold-deep));box-shadow:0 12px 30px -12px rgba(168,129,76,.7),inset 0 1px 0 rgba(255,255,255,.25)}
-		#fi-boarding .fi-btn--gold:hover{transform:translateY(-2px);box-shadow:0 18px 40px -12px rgba(168,129,76,.85),inset 0 1px 0 rgba(255,255,255,.3)}
-		#fi-boarding .fi-btn--ghost{color:var(--cream);border-color:rgba(201,191,168,.35);background:rgba(255,255,255,.02)}
-		#fi-boarding .fi-btn--ghost:hover{border-color:var(--gold);color:var(--gold-lt);transform:translateY(-2px)}
-		#fi-boarding .fi-ticket{display:grid;grid-template-columns:1fr 340px;position:relative;border-radius:26px;overflow:hidden;background:var(--cream);color:var(--card-ink);box-shadow:0 40px 90px -40px rgba(0,0,0,.75),0 2px 0 rgba(255,255,255,.04);opacity:1}
-		#fi-boarding .fi-main,#fi-boarding .fi-stub{position:relative;background-image:repeating-linear-gradient(45deg,rgba(126,95,51,.045) 0 2px,transparent 2px 9px)}
+		#fi-boarding .fi-btn--gold{color:#20150a;font-weight:700;background:linear-gradient(180deg,var(--gold-lt),var(--gold) 60%,var(--gold-deep));box-shadow:0 12px 26px -12px rgba(126,95,51,.55),inset 0 1px 0 rgba(255,255,255,.35)}
+		#fi-boarding .fi-btn--gold:hover{transform:translateY(-2px);box-shadow:0 18px 36px -12px rgba(126,95,51,.6),inset 0 1px 0 rgba(255,255,255,.4)}
+		#fi-boarding .fi-btn--ghost{color:var(--ink);border-color:rgba(27,42,45,.25);background:rgba(255,255,255,.4)}
+		#fi-boarding .fi-btn--ghost:hover{border-color:var(--gold);color:var(--gold-deep);transform:translateY(-2px)}
+		#fi-boarding .fi-ticket{display:grid;grid-template-columns:1fr 340px;position:relative;border-radius:26px;overflow:hidden;background:var(--panel);color:var(--ink);box-shadow:0 30px 70px -34px rgba(31,43,46,.35),0 2px 0 rgba(255,255,255,.5);border:1px solid var(--line);opacity:1}
+		#fi-boarding .fi-main,#fi-boarding .fi-stub{position:relative;background-image:repeating-linear-gradient(45deg,rgba(126,95,51,.04) 0 2px,transparent 2px 9px)}
 		#fi-boarding .fi-main{padding:clamp(24px,3.4vw,42px)}
-		#fi-boarding .fi-stub{padding:clamp(24px,3vw,38px) clamp(22px,2.6vw,34px);background-color:#ECE4D1;border-left:2px dashed #c3b48f}
-		#fi-boarding .fi-ticket::before,#fi-boarding .fi-ticket::after{content:"";position:absolute;right:340px;width:34px;height:34px;border-radius:50%;background:var(--bg);transform:translateX(50%);z-index:3}
+		#fi-boarding .fi-stub{padding:clamp(24px,3vw,38px) clamp(22px,2.6vw,34px);background-color:var(--panel-2);border-left:2px dashed #d8ccaf}
+		#fi-boarding .fi-ticket::before,#fi-boarding .fi-ticket::after{content:"";position:absolute;right:340px;width:34px;height:34px;border-radius:50%;background:var(--bg);transform:translateX(50%);z-index:3;box-shadow:inset 0 0 0 1px var(--line)}
 		#fi-boarding .fi-ticket::before{top:-17px}
 		#fi-boarding .fi-ticket::after{bottom:-17px}
-		#fi-boarding .fi-brand{font-family:var(--serif);font-weight:700;font-size:clamp(18px,2.1vw,23px);letter-spacing:.02em;color:#1f2b2d}
+		#fi-boarding .fi-brand{font-family:var(--serif);font-weight:700;font-size:clamp(18px,2.1vw,23px);letter-spacing:.02em;color:var(--ink)}
 		#fi-boarding .fi-brand sup{font-size:.5em;vertical-align:super;color:var(--gold-deep)}
-		#fi-boarding .fi-mono-label{font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:var(--muted-ink)}
+		#fi-boarding .fi-mono-label{font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:var(--muted)}
 		#fi-boarding .fi-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
 		#fi-boarding .fi-chip{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-deep);border:1px solid rgba(126,95,51,.4);border-radius:6px;padding:8px 12px;white-space:nowrap}
 		#fi-boarding .fi-class{display:inline-block;margin-top:16px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#2c2110;font-weight:700;background:linear-gradient(180deg,#e3c079,#c99e57);border-radius:6px;padding:8px 14px}
 		#fi-boarding .fi-route-row{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-top:clamp(20px,2.6vw,30px)}
-		#fi-boarding .fi-place{font-family:var(--serif);font-weight:500;font-size:clamp(30px,4.6vw,50px);line-height:1;color:#1f2b2d}
+		#fi-boarding .fi-place{font-family:var(--serif);font-weight:500;font-size:clamp(30px,4.6vw,50px);line-height:1;color:var(--ink)}
 		#fi-boarding .fi-place.right{text-align:right}
-		#fi-boarding .fi-place small{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted-ink);margin-top:10px;font-weight:400}
-		#fi-boarding .fi-map{margin-top:clamp(18px,2.4vw,26px);border-radius:14px;overflow:hidden;position:relative;border:1px solid rgba(126,95,51,.25)}
+		#fi-boarding .fi-place small{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-top:10px;font-weight:400}
+		#fi-boarding .fi-map{margin-top:clamp(18px,2.4vw,26px);border-radius:14px;overflow:hidden;position:relative;border:1px solid rgba(126,95,51,.22)}
 		#fi-boarding .fi-map svg{display:block;width:100%;height:auto}
 		#fi-boarding .fi-map .fi-pill{position:absolute;top:12px;left:12px;display:inline-flex;align-items:center;gap:8px;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:#e9e2cf;background:rgba(9,26,30,.72);border:1px solid rgba(201,191,168,.2);padding:6px 10px;border-radius:20px}
 		#fi-boarding .fi-pill .dot{width:6px;height:6px;border-radius:50%;background:var(--gold-lt)}
@@ -299,45 +330,45 @@ if ( ! function_exists( 'fi_landing_shortcode' ) ) {
 		#fi-boarding .fi-ping{transform-box:fill-box;transform-origin:center;transform:scale(0);opacity:0}
 		#fi-boarding.is-confirmed .fi-ping{animation:fiPing 1.4s ease-out}
 		#fi-boarding .fi-quote{margin-top:clamp(20px,2.6vw,28px);font-family:var(--serif);font-style:italic;font-weight:400;font-size:clamp(16px,2vw,21px);line-height:1.5;color:#33403f}
-		#fi-boarding .fi-includes{margin-top:clamp(18px,2.4vw,26px);border:1px solid rgba(126,95,51,.28);border-radius:12px;padding:clamp(16px,2vw,22px)}
+		#fi-boarding .fi-includes{margin-top:clamp(18px,2.4vw,26px);border:1px solid rgba(126,95,51,.24);border-radius:12px;padding:clamp(16px,2vw,22px)}
 		#fi-boarding .fi-includes ul{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:10px 24px;margin:12px 0 0}
 		#fi-boarding .fi-includes li{position:relative;padding-left:20px;font-size:12.5px;letter-spacing:.02em;color:#2e3a39}
 		#fi-boarding .fi-includes li::before{content:"\2726";position:absolute;left:0;top:0;color:var(--gold-deep);font-size:10px}
 		#fi-boarding .fi-includes .fi-note-line{margin-top:16px;font-family:var(--serif);font-style:italic;font-size:14px;color:var(--gold-deep)}
-		#fi-boarding .fi-main-foot{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-top:clamp(20px,2.6vw,28px);padding-top:16px;border-top:1px dashed #cbbd97}
+		#fi-boarding .fi-main-foot{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-top:clamp(20px,2.6vw,28px);padding-top:16px;border-top:1px dashed #ddd0b4}
 		#fi-boarding .fi-stub-inner{position:relative;z-index:1}
 		#fi-boarding .fi-field{margin-top:16px}
-		#fi-boarding .fi-field .v{font-family:var(--serif);font-size:19px;color:#20302f;margin-top:5px}
+		#fi-boarding .fi-field .v{font-family:var(--serif);font-size:19px;color:var(--ink);margin-top:5px}
 		#fi-boarding .fi-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-		#fi-boarding .fi-barcode{position:relative;height:56px;margin-top:22px;border-radius:4px;overflow:hidden;background:repeating-linear-gradient(90deg,#22302f 0 2px,transparent 2px 4px,#22302f 4px 7px,transparent 7px 9px,#22302f 9px 10px,transparent 10px 13px,#22302f 13px 16px,transparent 16px 17px,#22302f 17px 21px,transparent 21px 23px)}
-		#fi-boarding .fi-barcode::after{content:"";position:absolute;top:0;bottom:0;width:40%;transform:translateX(-160%);background:linear-gradient(90deg,transparent,rgba(241,236,223,.85),transparent);pointer-events:none}
+		#fi-boarding .fi-barcode{position:relative;height:56px;margin-top:22px;border-radius:4px;overflow:hidden;background:repeating-linear-gradient(90deg,#233231 0 2px,transparent 2px 4px,#233231 4px 7px,transparent 7px 9px,#233231 9px 10px,transparent 10px 13px,#233231 13px 16px,transparent 16px 17px,#233231 17px 21px,transparent 21px 23px)}
+		#fi-boarding .fi-barcode::after{content:"";position:absolute;top:0;bottom:0;width:40%;transform:translateX(-160%);background:linear-gradient(90deg,transparent,rgba(168,129,76,.55),transparent);pointer-events:none}
 		#fi-boarding.is-confirmed .fi-barcode::after{animation:fiScan .9s ease}
 		#fi-boarding .fi-confirm{width:100%;justify-content:center;margin-top:18px}
-		#fi-boarding .fi-stamp{position:absolute;top:34%;left:50%;z-index:4;pointer-events:none;transform:translate(-50%,-50%) rotate(-11deg) scale(1.35);opacity:0;border:3px solid var(--gold-deep);color:var(--gold-deep);border-radius:10px;padding:10px 18px;font-size:15px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;background:rgba(236,228,209,.35)}
+		#fi-boarding .fi-stamp{position:absolute;top:34%;left:50%;z-index:4;pointer-events:none;transform:translate(-50%,-50%) rotate(-11deg) scale(1.35);opacity:0;border:3px solid var(--gold-deep);color:var(--gold-deep);border-radius:10px;padding:10px 18px;font-size:15px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;background:rgba(255,253,248,.55)}
 		#fi-boarding.is-confirmed .fi-stamp{animation:fiStamp .5s cubic-bezier(.2,.9,.3,1.2) forwards}
 		#fi-boarding .fi-itin{margin-top:26px;position:relative}
-		#fi-boarding .fi-itin::before{content:"";position:absolute;left:5px;top:12px;bottom:12px;width:2px;background:#d6c9a6}
+		#fi-boarding .fi-itin::before{content:"";position:absolute;left:5px;top:12px;bottom:12px;width:2px;background:#e0d4b8}
 		#fi-boarding .fi-stop{position:relative;padding:0 0 20px 26px}
 		#fi-boarding .fi-stop:last-child{padding-bottom:0}
-		#fi-boarding .fi-stop::before{content:"";position:absolute;left:0;top:2px;width:12px;height:12px;border-radius:50%;background:var(--gold-deep);box-shadow:0 0 0 3px #ECE4D1}
+		#fi-boarding .fi-stop::before{content:"";position:absolute;left:0;top:2px;width:12px;height:12px;border-radius:50%;background:var(--gold-deep);box-shadow:0 0 0 3px var(--panel-2)}
 		#fi-boarding .fi-stop.diamond::before{border-radius:2px;transform:rotate(45deg)}
-		#fi-boarding .fi-stop .t{font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted-ink)}
+		#fi-boarding .fi-stop .t{font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
 		#fi-boarding .fi-stop .d{font-size:14px;color:#26332f;margin-top:4px}
-		#fi-boarding .fi-embark{display:flex;justify-content:space-between;align-items:center;margin-top:22px;padding-top:16px;border-top:1px dashed #cbbd97}
+		#fi-boarding .fi-embark{display:flex;justify-content:space-between;align-items:center;margin-top:22px;padding-top:16px;border-top:1px dashed #ddd0b4}
 		#fi-boarding .fi-book{margin-top:clamp(48px,7vw,86px);text-align:center}
-		#fi-boarding .fi-book .fi-eyebrow{font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold)}
-		#fi-boarding .fi-book h2{font-family:var(--serif);font-weight:500;font-size:clamp(28px,4.6vw,46px);line-height:1.08;margin-top:14px;color:var(--cream)}
-		#fi-boarding .fi-book h2 em{font-style:italic;color:var(--gold-lt)}
-		#fi-boarding .fi-book p{margin:14px auto 0;max-width:52ch;font-size:13px;line-height:1.8;color:var(--cream2)}
-		#fi-boarding .fi-cal-frame{margin-top:clamp(26px,4vw,42px);border-radius:20px;overflow:hidden;border:1px solid rgba(201,191,168,.18);background:var(--bg2);box-shadow:0 40px 90px -50px rgba(0,0,0,.8)}
+		#fi-boarding .fi-book .fi-eyebrow{font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold-deep)}
+		#fi-boarding .fi-book h2{font-family:var(--serif);font-weight:500;font-size:clamp(28px,4.6vw,46px);line-height:1.08;margin-top:14px;color:var(--ink)}
+		#fi-boarding .fi-book h2 em{font-style:italic;color:var(--gold)}
+		#fi-boarding .fi-book p{margin:14px auto 0;max-width:52ch;font-size:13px;line-height:1.8;color:var(--ink-2)}
+		#fi-boarding .fi-cal-frame{margin-top:clamp(26px,4vw,42px);border-radius:20px;overflow:hidden;border:1px solid var(--line);background:var(--panel);box-shadow:0 30px 70px -40px rgba(31,43,46,.3)}
 		#fi-boarding .calendly-inline-widget{min-width:320px;height:720px}
 		#fi-boarding .fi-note{margin-top:clamp(40px,6vw,72px);padding-top:26px;border-top:1px solid var(--line);font-size:12px;line-height:1.9;color:var(--muted);max-width:900px}
-		#fi-boarding .fi-note b{color:var(--gold)}
+		#fi-boarding .fi-note b{color:var(--gold-deep)}
 		@keyframes fiSheen{to{transform:translateX(135%)}}
 		@keyframes fiFly{from{offset-distance:0%}to{offset-distance:100%}}
 		@keyframes fiPing{0%{transform:scale(.2);opacity:.7}100%{transform:scale(3.4);opacity:0}}
 		@keyframes fiScan{0%{transform:translateX(-160%)}100%{transform:translateX(320%)}}
-		@keyframes fiStamp{from{transform:translate(-50%,-50%) rotate(-11deg) scale(1.5);opacity:0}to{transform:translate(-50%,-50%) rotate(-11deg) scale(1);opacity:.9}}
+		@keyframes fiStamp{from{transform:translate(-50%,-50%) rotate(-11deg) scale(1.5);opacity:0}to{transform:translate(-50%,-50%) rotate(-11deg) scale(1);opacity:.92}}
 		@keyframes fiReveal{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
 		@keyframes fiRevealStub{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:none}}
 		@keyframes fiPulse{0%{transform:scale(1);opacity:.55}100%{transform:scale(2.6);opacity:0}}
@@ -354,12 +385,12 @@ if ( ! function_exists( 'fi_landing_shortcode' ) ) {
 				#fi-boarding .fi-plane{offset-distance:100%;opacity:1;animation:none}
 			}
 			#fi-boarding.is-confirmed .fi-ping,#fi-boarding.is-confirmed .fi-barcode::after,#fi-boarding.is-confirmed .fi-stamp{animation:none}
-			#fi-boarding.is-confirmed .fi-stamp{opacity:.9}
+			#fi-boarding.is-confirmed .fi-stamp{opacity:.92}
 		}
 		@media (max-width:860px){
 			#fi-boarding .fi-ticket{grid-template-columns:1fr}
 			#fi-boarding .fi-ticket::before,#fi-boarding .fi-ticket::after{display:none}
-			#fi-boarding .fi-stub{border-left:0;border-top:2px dashed #c3b48f}
+			#fi-boarding .fi-stub{border-left:0;border-top:2px dashed #d8ccaf}
 			#fi-boarding .fi-includes ul{grid-template-columns:1fr}
 			#fi-boarding .fi-top-right{align-items:flex-start}
 		}

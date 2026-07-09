@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Future Island · Invitación de embarque</title>
+
+<!-- ===== Fuentes + estilos de Calendly (se pueden pegar tal cual en WP Code Pro) ===== -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link href="https://assets.calendly.com/assets/external/widget.css" rel="stylesheet">
+
+<style>
+/* ============================================================
+   FUTURE ISLAND — Landing "Boarding Pass"
+   Todo el CSS está limitado a #fi-boarding para no romper el
+   tema de WordPress. Cambia los textos que quieras libremente.
+   ============================================================ */
+#fi-boarding{
+  --bg:#0B2126;
+  --bg2:#0E2A30;
+  --line:#1c3a40;
+  --cream:#F1ECDF;
+  --cream2:#E7E0CE;
+  --card-ink:#243133;
+  --card-soft:#5c6a63;
+  --gold:#A8814C;
+  --gold-lt:#C79A5C;
+  --gold-deep:#7E5F33;
+  --tan:#C9BFA8;
+  --muted:#8f8770;
+  --sea:#11313a;
+
+  --serif:'Playfair Display', Georgia, 'Times New Roman', serif;
+  --mono:'Space Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  position:relative;
+  background:
+    radial-gradient(1100px 620px at 50% -220px, #0f2f36 0%, rgba(15,47,54,0) 72%),
+    var(--bg);
+  color:var(--cream);
+  font-family:var(--mono);
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  overflow:hidden;
+}
+#fi-boarding *{box-sizing:border-box;margin:0;padding:0}
+#fi-boarding a{color:inherit;text-decoration:none}
+
+/* grano/textura sutil del fondo */
+#fi-boarding::before{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
+  background-image:radial-gradient(rgba(200,180,120,.05) 1px, transparent 1px);
+  background-size:22px 22px;opacity:.6;
+}
+
+#fi-boarding .fi-wrap{
+  position:relative;z-index:1;
+  max-width:1180px;margin:0 auto;
+  padding:clamp(20px,4vw,44px) clamp(16px,4vw,44px) clamp(48px,7vw,90px);
+}
+
+/* ---------- barra superior ---------- */
+#fi-boarding .fi-top{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  gap:18px;flex-wrap:wrap;
+  padding-bottom:clamp(22px,4vw,40px);
+}
+#fi-boarding .fi-kicker{
+  font-size:11px;letter-spacing:.34em;text-transform:uppercase;
+  color:var(--gold);line-height:1.9;
+}
+#fi-boarding .fi-kicker .dim{color:#6d7d76}
+#fi-boarding .fi-top-right{text-align:right}
+#fi-boarding .fi-top-right .fi-serif{
+  font-family:var(--serif);font-size:clamp(18px,2.4vw,24px);
+  color:var(--cream);letter-spacing:.01em;
+}
+#fi-boarding .fi-top-right .fi-sub{
+  font-size:10px;letter-spacing:.28em;text-transform:uppercase;
+  color:var(--gold);margin-top:6px;
+}
+
+/* ---------- hero ---------- */
+#fi-boarding .fi-hero{max-width:760px;padding:clamp(6px,2vw,14px) 0 clamp(30px,5vw,52px)}
+#fi-boarding .fi-hero h1{
+  font-family:var(--serif);font-weight:500;
+  font-size:clamp(34px,6.2vw,66px);line-height:1.03;letter-spacing:-.01em;
+  color:var(--cream);
+}
+#fi-boarding .fi-hero h1 em{font-style:italic;color:var(--gold-lt)}
+#fi-boarding .fi-hero p{
+  margin-top:clamp(16px,2.6vw,26px);max-width:560px;
+  font-size:clamp(13px,1.5vw,15px);line-height:1.9;color:#bfc4bb;
+}
+#fi-boarding .fi-cta-row{display:flex;flex-wrap:wrap;gap:14px;margin-top:clamp(24px,3vw,34px)}
+
+/* botones */
+#fi-boarding .fi-btn{
+  display:inline-flex;align-items:center;gap:10px;cursor:pointer;
+  font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;
+  padding:15px 26px;border-radius:8px;border:1px solid transparent;
+  transition:transform .18s ease, box-shadow .25s ease, background .25s ease, color .2s ease;
+}
+#fi-boarding .fi-btn--gold{
+  color:#20150a;font-weight:700;
+  background:linear-gradient(180deg,var(--gold-lt),var(--gold) 60%,var(--gold-deep));
+  box-shadow:0 12px 30px -12px rgba(168,129,76,.7), inset 0 1px 0 rgba(255,255,255,.25);
+}
+#fi-boarding .fi-btn--gold:hover{transform:translateY(-2px);box-shadow:0 18px 40px -12px rgba(168,129,76,.85), inset 0 1px 0 rgba(255,255,255,.3)}
+#fi-boarding .fi-btn--ghost{color:var(--cream);border-color:rgba(201,191,168,.35);background:rgba(255,255,255,.02)}
+#fi-boarding .fi-btn--ghost:hover{border-color:var(--gold);color:var(--gold-lt);transform:translateY(-2px)}
+
+/* ============================================================
+   BILLETE (boarding pass)
+   ============================================================ */
+#fi-boarding .fi-ticket{
+  display:grid;grid-template-columns:1fr 340px;
+  position:relative;border-radius:26px;overflow:hidden;
+  background:var(--cream);color:var(--card-ink);
+  box-shadow:0 40px 90px -40px rgba(0,0,0,.75), 0 2px 0 rgba(255,255,255,.04);
+  opacity:0;transform:translateY(26px);
+}
+#fi-boarding .fi-ticket.fi-in{animation:fiReveal .9s cubic-bezier(.2,.7,.2,1) forwards}
+@keyframes fiReveal{to{opacity:1;transform:none}}
+
+/* textura diagonal del papel */
+#fi-boarding .fi-main,#fi-boarding .fi-stub{
+  position:relative;
+  background-image:repeating-linear-gradient(45deg, rgba(126,95,51,.045) 0 2px, transparent 2px 9px);
+}
+#fi-boarding .fi-main{padding:clamp(24px,3.4vw,42px)}
+#fi-boarding .fi-stub{
+  padding:clamp(24px,3vw,38px) clamp(22px,2.6vw,34px);
+  background-color:#ECE4D1;
+  border-left:2px dashed #c3b48f;
+}
+/* muescas troqueladas en la perforación */
+#fi-boarding .fi-ticket::before,
+#fi-boarding .fi-ticket::after{
+  content:"";position:absolute;right:340px;width:34px;height:34px;border-radius:50%;
+  background:var(--bg);transform:translateX(50%);z-index:3;
+}
+#fi-boarding .fi-ticket::before{top:-17px}
+#fi-boarding .fi-ticket::after{bottom:-17px}
+
+/* logo / cabeceras dentro del billete */
+#fi-boarding .fi-brand{
+  font-family:var(--serif);font-weight:700;font-size:clamp(18px,2.1vw,23px);
+  letter-spacing:.02em;color:#1f2b2d;
+}
+#fi-boarding .fi-brand sup{font-size:.5em;vertical-align:super;color:var(--gold-deep)}
+#fi-boarding .fi-mono-label{
+  font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:var(--muted);
+}
+#fi-boarding .fi-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+#fi-boarding .fi-chip{
+  font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-deep);
+  border:1px solid rgba(126,95,51,.4);border-radius:6px;padding:8px 12px;white-space:nowrap;
+}
+#fi-boarding .fi-class{
+  display:inline-block;margin-top:16px;
+  font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#2c2110;font-weight:700;
+  background:linear-gradient(180deg,#e3c079,#c99e57);
+  border-radius:6px;padding:8px 14px;
+}
+
+/* origen / destino */
+#fi-boarding .fi-route-row{
+  display:flex;align-items:flex-end;justify-content:space-between;gap:20px;
+  margin-top:clamp(20px,2.6vw,30px);
+}
+#fi-boarding .fi-place{font-family:var(--serif);font-weight:500;font-size:clamp(30px,4.6vw,50px);line-height:1;color:#1f2b2d}
+#fi-boarding .fi-place.right{text-align:right}
+#fi-boarding .fi-place small,#fi-boarding .fi-metaline{
+  display:block;font-family:var(--mono);font-size:10px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--muted);margin-top:10px;font-weight:400;
+}
+
+/* mapa */
+#fi-boarding .fi-map{margin-top:clamp(18px,2.4vw,26px);border-radius:14px;overflow:hidden;position:relative;border:1px solid rgba(126,95,51,.25)}
+#fi-boarding .fi-map svg{display:block;width:100%;height:auto}
+#fi-boarding .fi-map .fi-pill{
+  position:absolute;top:12px;left:12px;display:inline-flex;align-items:center;gap:8px;
+  font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:#e9e2cf;
+  background:rgba(9,26,30,.72);border:1px solid rgba(201,191,168,.2);
+  padding:6px 10px;border-radius:20px;backdrop-filter:blur(2px);
+}
+#fi-boarding .fi-pill .dot{width:6px;height:6px;border-radius:50%;background:var(--gold-lt)}
+#fi-boarding .fi-route{stroke-dasharray:4 16;animation:fiDash 22s linear infinite}
+@keyframes fiDash{to{stroke-dashoffset:-400}}
+#fi-boarding .fi-plane{transform-box:fill-box;transform-origin:center;animation:fiFloat 5s ease-in-out infinite}
+@keyframes fiFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+
+/* cita */
+#fi-boarding .fi-quote{
+  margin-top:clamp(20px,2.6vw,28px);
+  font-family:var(--serif);font-style:italic;font-weight:400;
+  font-size:clamp(16px,2vw,21px);line-height:1.5;color:#33403f;
+}
+
+/* incluye */
+#fi-boarding .fi-includes{
+  margin-top:clamp(18px,2.4vw,26px);border:1px solid rgba(126,95,51,.28);
+  border-radius:12px;padding:clamp(16px,2vw,22px);
+}
+#fi-boarding .fi-includes ul{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:10px 24px;margin:12px 0 0}
+#fi-boarding .fi-includes li{position:relative;padding-left:20px;font-size:12.5px;letter-spacing:.02em;color:#2e3a39}
+#fi-boarding .fi-includes li::before{content:"◆";position:absolute;left:0;top:0;color:var(--gold-deep);font-size:10px}
+#fi-boarding .fi-includes .fi-note-line{
+  margin-top:16px;font-family:var(--serif);font-style:italic;font-size:14px;color:var(--gold-deep);
+}
+
+/* pie del billete principal */
+#fi-boarding .fi-main-foot{
+  display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;
+  margin-top:clamp(20px,2.6vw,28px);padding-top:16px;border-top:1px dashed #cbbd97;
+}
+
+/* ---------- talón (stub) ---------- */
+#fi-boarding .fi-field{margin-top:16px}
+#fi-boarding .fi-field .v{font-family:var(--serif);font-size:19px;color:#20302f;margin-top:5px}
+#fi-boarding .fi-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+#fi-boarding .fi-barcode{
+  height:56px;margin-top:22px;border-radius:4px;
+  background:
+    repeating-linear-gradient(90deg,
+      #22302f 0 2px, transparent 2px 4px, #22302f 4px 7px, transparent 7px 9px,
+      #22302f 9px 10px, transparent 10px 13px, #22302f 13px 16px, transparent 16px 17px,
+      #22302f 17px 21px, transparent 21px 23px);
+}
+#fi-boarding .fi-confirm{
+  width:100%;justify-content:center;margin-top:18px;
+}
+#fi-boarding .fi-itin{margin-top:26px;position:relative}
+#fi-boarding .fi-itin::before{content:"";position:absolute;left:5px;top:12px;bottom:12px;width:2px;background:#d6c9a6}
+#fi-boarding .fi-stop{position:relative;padding:0 0 20px 26px}
+#fi-boarding .fi-stop:last-child{padding-bottom:0}
+#fi-boarding .fi-stop::before{content:"";position:absolute;left:0;top:2px;width:12px;height:12px;border-radius:50%;background:var(--gold-deep);box-shadow:0 0 0 3px #ECE4D1}
+#fi-boarding .fi-stop.diamond::before{border-radius:2px;transform:rotate(45deg);background:var(--gold-deep)}
+#fi-boarding .fi-stop .t{font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+#fi-boarding .fi-stop .d{font-size:14px;color:#26332f;margin-top:4px}
+#fi-boarding .fi-embark{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-top:22px;padding-top:16px;border-top:1px dashed #cbbd97;
+}
+
+/* ============================================================
+   RESERVA (Calendly)
+   ============================================================ */
+#fi-boarding .fi-book{margin-top:clamp(48px,7vw,86px);text-align:center}
+#fi-boarding .fi-book .fi-eyebrow{font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:var(--gold)}
+#fi-boarding .fi-book h2{
+  font-family:var(--serif);font-weight:500;font-size:clamp(28px,4.6vw,46px);
+  line-height:1.08;margin-top:14px;color:var(--cream);
+}
+#fi-boarding .fi-book h2 em{font-style:italic;color:var(--gold-lt)}
+#fi-boarding .fi-book p{margin:14px auto 0;max-width:460px;font-size:13px;line-height:1.8;color:#b7bcb3}
+#fi-boarding .fi-cal-frame{
+  margin-top:clamp(26px,4vw,42px);border-radius:20px;overflow:hidden;
+  border:1px solid rgba(201,191,168,.18);background:var(--bg2);
+  box-shadow:0 40px 90px -50px rgba(0,0,0,.8);
+}
+#fi-boarding .calendly-inline-widget{min-width:320px;height:720px}
+
+/* ---------- nota final ---------- */
+#fi-boarding .fi-note{
+  margin-top:clamp(40px,6vw,72px);padding-top:26px;border-top:1px solid var(--line);
+  font-size:12px;line-height:1.9;color:#7f8a82;max-width:900px;
+}
+#fi-boarding .fi-note b{color:var(--gold)}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width:860px){
+  #fi-boarding .fi-ticket{grid-template-columns:1fr}
+  #fi-boarding .fi-ticket::before,#fi-boarding .fi-ticket::after{display:none}
+  #fi-boarding .fi-stub{border-left:0;border-top:2px dashed #c3b48f}
+  #fi-boarding .fi-includes ul{grid-template-columns:1fr}
+  #fi-boarding .fi-top-right{text-align:left}
+}
+@media (max-width:520px){
+  #fi-boarding .fi-btn{width:100%;justify-content:center}
+  #fi-boarding .fi-route-row{flex-direction:column;align-items:flex-start;gap:14px}
+  #fi-boarding .fi-place.right{text-align:left}
+  #fi-boarding .calendly-inline-widget{height:1000px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  #fi-boarding .fi-route,#fi-boarding .fi-plane{animation:none}
+  #fi-boarding .fi-ticket{opacity:1;transform:none}
+  #fi-boarding .fi-ticket.fi-in{animation:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== INICIO DEL BLOQUE PARA WP CODE PRO ==================== -->
+<div id="fi-boarding">
+  <div class="fi-wrap">
+
+    <!-- Barra superior -->
+    <header class="fi-top">
+      <div class="fi-kicker">
+        FUTURE ISLAND <span class="dim">·</span> VÍDEO VERTICAL<br>
+        FUTURE ISLAND <span class="dim">·</span> EMBARQUE DE VERANO 2026
+      </div>
+      <div class="fi-top-right">
+        <div class="fi-serif">Tu sesión de verano</div>
+        <div class="fi-sub">30 min · sin coste · Future Island</div>
+      </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="fi-hero">
+      <h1>El vídeo vertical ya no es una tendencia. <em>Es el canal.</em></h1>
+      <p>Las mini-series verticales en TikTok e Instagram son hoy la vía más rápida
+         para que una marca conquiste a la próxima generación. Esta es tu invitación
+         a descubrir la ruta de la tuya — a bordo de Future Island.</p>
+      <div class="fi-cta-row">
+        <a class="fi-btn fi-btn--gold" data-cal href="#reservar">Reservar mi sesión &rarr;</a>
+        <a class="fi-btn fi-btn--ghost" href="#billete">Ver el billete &darr;</a>
+      </div>
+    </section>
+
+    <!-- ============ BILLETE ============ -->
+    <section class="fi-ticket" id="billete">
+
+      <!-- Principal -->
+      <div class="fi-main">
+        <div class="fi-head">
+          <div>
+            <div class="fi-brand">FUTURE ISLAND<sup>™</sup></div>
+            <div class="fi-mono-label" style="margin-top:6px">Invitación de embarque · Verano 2026</div>
+          </div>
+          <div class="fi-chip">Primera clase</div>
+        </div>
+
+        <span class="fi-class">+ Primera clase · First</span>
+
+        <div class="fi-route-row">
+          <div class="fi-place">
+            Tu marca
+            <small>Salida · hoy mismo</small>
+          </div>
+          <div class="fi-place right">
+            F.I
+            <small>Future Island · Territorio libre</small>
+          </div>
+        </div>
+
+        <!-- Mapa -->
+        <div class="fi-map">
+          <span class="fi-pill"><span class="dot"></span> Vista satélite · Mediterráneo</span>
+          <svg viewBox="0 0 800 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ruta de vuelo">
+            <defs>
+              <linearGradient id="fiSea" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#173e46"/><stop offset="1" stop-color="#0d2a30"/>
+              </linearGradient>
+              <linearGradient id="fiLand" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#6f6a45"/><stop offset="1" stop-color="#4a4a34"/>
+              </linearGradient>
+            </defs>
+            <rect width="800" height="380" fill="url(#fiSea)"/>
+            <g stroke="rgba(201,191,168,.12)" stroke-width="1">
+              <line x1="0" y1="95" x2="800" y2="95"/><line x1="0" y1="190" x2="800" y2="190"/><line x1="0" y1="285" x2="800" y2="285"/>
+              <line x1="160" y1="0" x2="160" y2="380"/><line x1="320" y1="0" x2="320" y2="380"/><line x1="480" y1="0" x2="480" y2="380"/><line x1="640" y1="0" x2="640" y2="380"/>
+            </g>
+            <path d="M-20 110 C60 88,150 96,196 150 C226 184,214 244,258 262 C206 302,120 322,44 344 L-20 380 Z" fill="url(#fiLand)" opacity=".92"/>
+            <ellipse cx="430" cy="150" rx="15" ry="9" fill="url(#fiLand)" opacity=".9"/>
+            <ellipse cx="474" cy="196" rx="10" ry="6" fill="url(#fiLand)" opacity=".9"/>
+            <ellipse cx="520" cy="162" rx="7" ry="5" fill="url(#fiLand)" opacity=".9"/>
+            <path d="M618 118 C660 106,704 120,712 152 C720 184,690 208,652 202 C614 196,600 158,618 118 Z" fill="url(#fiLand)"/>
+            <path class="fi-route" d="M168 250 Q 420 78, 656 160" fill="none" stroke="#F1ECDF" stroke-width="2.5" stroke-linecap="round"/>
+            <g class="fi-plane" transform="translate(432 150) rotate(-16)">
+              <path d="M-16 0 Q-16 -3 -8 -3 L14 -4 Q22 -3 24 0 Q22 3 14 4 L-8 3 Q-16 3 -16 0 Z M-11 -2 L-20 -12 L-13 -12 L-4 -2 Z M3 2 L-8 13 L-1 13 L10 2 Z" fill="#F1ECDF"/>
+            </g>
+            <circle cx="168" cy="250" r="7" fill="none" stroke="#F1ECDF" stroke-width="3"/>
+            <circle cx="168" cy="250" r="2.5" fill="#F1ECDF"/>
+            <rect x="648" y="152" width="16" height="16" transform="rotate(45 656 160)" fill="none" stroke="#C79A5C" stroke-width="3"/>
+            <text x="168" y="278" fill="#dfd8c6" font-family="'Space Mono',monospace" font-size="12" letter-spacing="2" text-anchor="middle">AQUÍ</text>
+            <text x="656" y="132" fill="#e7c98d" font-family="'Space Mono',monospace" font-size="12" letter-spacing="2" text-anchor="middle">ISLA FUTURA</text>
+            <text x="470" y="330" fill="#a7b0a0" font-family="'Playfair Display',serif" font-style="italic" font-size="16" text-anchor="middle">Mar Mediterráneo</text>
+          </svg>
+        </div>
+
+        <div class="fi-mono-label" style="margin-top:22px">Lo que vemos contigo</div>
+        <p class="fi-quote">En el lineal, la diferencia ya no se juega en el packaging: se juega en un
+           feed vertical. Una mini-serie propia convierte una categoría saturada en algo que la
+           Generación Z sigue episodio a episodio.</p>
+
+        <div class="fi-includes">
+          <div class="fi-mono-label">El billete incluye</div>
+          <ul>
+            <li>Ruta de crecimiento en vertical</li>
+            <li>Casos de estudio reales</li>
+            <li>Recomendaciones ejecutivas</li>
+            <li>Ideas de mini-serie para tu marca</li>
+          </ul>
+          <div class="fi-note-line">Sesión de verano en Future Island · 30 min · sin coste</div>
+        </div>
+
+        <div class="fi-main-foot">
+          <div class="fi-mono-label">A bordo · un anticipo</div>
+          <div class="fi-mono-label">Vuelo FI-001 · Primera · Cortesía</div>
+        </div>
+      </div>
+
+      <!-- Talón -->
+      <div class="fi-stub">
+        <div class="fi-brand" style="font-size:19px">FUTURE ISLAND<sup>™</sup></div>
+        <div class="fi-mono-label" style="margin-top:6px">Primera clase · Cortesía</div>
+
+        <div class="fi-field">
+          <div class="fi-mono-label">Pasajero</div>
+          <div class="v">Tu marca</div>
+        </div>
+        <div class="fi-field">
+          <div class="fi-mono-label">Vuelo</div>
+          <div class="v">FI-001 · Verano 2026</div>
+        </div>
+        <div class="fi-grid2">
+          <div class="fi-field">
+            <div class="fi-mono-label">Asiento</div>
+            <div class="v">1A</div>
+          </div>
+          <div class="fi-field">
+            <div class="fi-mono-label">Localizador</div>
+            <div class="v">FI-2026</div>
+          </div>
+        </div>
+
+        <div class="fi-barcode" aria-hidden="true"></div>
+
+        <a class="fi-btn fi-btn--gold fi-confirm" data-cal href="#reservar">Confirmar asiento</a>
+
+        <div class="fi-itin">
+          <div class="fi-mono-label" style="margin-bottom:14px">Itinerario</div>
+          <div class="fi-stop">
+            <div class="t">Salida</div><div class="d">Tu marca hoy</div>
+          </div>
+          <div class="fi-stop">
+            <div class="t">Vuelo</div><div class="d">FI-001 · Sesión 30′</div>
+          </div>
+          <div class="fi-stop">
+            <div class="t">Llegada</div><div class="d">Isla Futura</div>
+          </div>
+          <div class="fi-stop diamond">
+            <div class="t">En destino</div><div class="d">Ruta de crecimiento</div>
+          </div>
+        </div>
+
+        <div class="fi-embark">
+          <div>
+            <div class="fi-mono-label">Embarque hasta</div>
+            <div class="v" style="font-size:16px">31 JUL 2026</div>
+          </div>
+          <div style="color:var(--gold-deep);font-size:18px">✦</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ RESERVA / CALENDLY ============ -->
+    <section class="fi-book" id="reservar">
+      <div class="fi-eyebrow">Confirmar asiento</div>
+      <h2>Elige tu hora y <em>reserva tu plaza</em></h2>
+      <p>30 minutos en los que trazamos la ruta de crecimiento de tu marca en vídeo
+         vertical. Sin coste y sin compromiso — escoge el momento que mejor te venga.</p>
+
+      <div class="fi-cal-frame">
+        <!-- Calendly inline widget (tematizado con los colores del billete) -->
+        <div class="calendly-inline-widget"
+             data-url="https://calendly.com/mahan-future-island/30min?hide_gdpr_banner=1&hide_landing_page_details=1&background_color=0e2a30&text_color=f1ecdf&primary_color=a8814c"
+             data-fi-cal></div>
+      </div>
+    </section>
+
+    <!-- ============ NOTA FINAL ============ -->
+    <footer class="fi-note">
+      <b>Invitación personal.</b> La sesión de verano en Future Island es una cortesía:
+      30 minutos en los que trazamos la ruta de crecimiento de tu marca en vídeo vertical —
+      con casos de estudio reales y recomendaciones ejecutivas, sin coste. Pulsa
+      <b>Confirmar asiento</b> para reservar tu plaza antes del 31 de julio de 2026.
+    </footer>
+
+  </div>
+</div>
+
+<!-- Script de Calendly + interacciones -->
+<script src="https://assets.calendly.com/assets/external/widget.js" async></script>
+<script>
+(function(){
+  var root = document.getElementById('fi-boarding');
+  if(!root) return;
+  var CAL_URL = 'https://calendly.com/mahan-future-island/30min?hide_gdpr_banner=1&hide_landing_page_details=1&background_color=0e2a30&text_color=f1ecdf&primary_color=a8814c';
+
+  // Los botones "Confirmar asiento" abren el popup de Calendly;
+  // si el script aún no cargó, hacen scroll suave al widget inline.
+  root.querySelectorAll('[data-cal]').forEach(function(btn){
+    btn.addEventListener('click', function(e){
+      e.preventDefault();
+      if(window.Calendly && Calendly.initPopupWidget){
+        Calendly.initPopupWidget({url: CAL_URL});
+      }else{
+        var t = document.getElementById('reservar');
+        if(t) t.scrollIntoView({behavior:'smooth'});
+      }
+    });
+  });
+
+  // Scroll suave para "Ver el billete"
+  root.querySelectorAll('a[href^="#"]:not([data-cal])').forEach(function(a){
+    a.addEventListener('click', function(e){
+      var el = document.querySelector(a.getAttribute('href'));
+      if(el){ e.preventDefault(); el.scrollIntoView({behavior:'smooth'}); }
+    });
+  });
+
+  // Revelar el billete al entrar en pantalla
+  var ticket = root.querySelector('.fi-ticket');
+  if(ticket){
+    if('IntersectionObserver' in window){
+      var io = new IntersectionObserver(function(entries){
+        entries.forEach(function(en){ if(en.isIntersecting){ en.target.classList.add('fi-in'); io.unobserve(en.target); } });
+      },{threshold:.15});
+      io.observe(ticket);
+    }else{ ticket.classList.add('fi-in'); }
+  }
+})();
+</script>
+<!-- ==================== FIN DEL BLOQUE PARA WP CODE PRO ==================== -->
+
+</body>
+</html>

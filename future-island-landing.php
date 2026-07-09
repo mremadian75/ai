@@ -19,6 +19,10 @@
  * ============================================================================
  */
 
+/* ---- 0. Evitar doble carga si el snippet se evalúa dos veces -------------- */
+if ( defined( 'FI_LANDING_LOADED' ) ) { return; }
+define( 'FI_LANDING_LOADED', true );
+
 /* ---- 1. Registrar el shortcode (antes de wp_enqueue_scripts) ------------- */
 if ( ! shortcode_exists( 'future_island_landing' ) ) {
 	add_shortcode( 'future_island_landing', 'fi_landing_shortcode' );
@@ -46,7 +50,8 @@ add_action( 'wp_enqueue_scripts', function () {
 	// Preconnect a Google Fonts (rendimiento).
 	add_filter( 'wp_resource_hints', function ( $hints, $relation ) {
 		if ( 'preconnect' === $relation ) {
-			$hints[] = 'https://fonts.gstatic.com';
+			$hints[] = 'https://fonts.googleapis.com';
+			$hints[] = array( 'href' => 'https://fonts.gstatic.com', 'crossorigin' );
 		}
 		return $hints;
 	}, 10, 2 );
@@ -197,12 +202,19 @@ JS;
 if ( ! function_exists( 'fi_landing_shortcode' ) ) {
 	function fi_landing_shortcode( $atts = array(), $content = null, $tag = '' ) {
 
+		// Solo una instancia por página (los IDs del marcado son fijos).
+		static $rendered = false;
+		if ( $rendered ) {
+			return '<!-- future_island_landing: solo se admite una instancia por página -->';
+		}
+		$rendered = true;
+
 		$atts = shortcode_atts( array(
 			'calendly' => 'https://calendly.com/mahan-future-island/30min',
 		), $atts, $tag );
 
 		// URL de Calendly tematizada con la paleta de marca (hex sin #).
-		$theme     = 'background_color=0E2A30&text_color=F1ECDF&primary_color=A8814C&hide_gdpr_banner=1&hide_event_type_details=1';
+		$theme     = 'background_color=0E2A30&text_color=F1ECDF&primary_color=A8814C&hide_gdpr_banner=1&hide_event_type_details=1&utm_source=landing&utm_medium=cta&utm_campaign=invitacion-de-embarque';
 		$sep       = ( strpos( $atts['calendly'], '?' ) === false ) ? '?' : '&';
 		$cal_url   = esc_url( $atts['calendly'] . $sep . $theme );
 
@@ -214,7 +226,7 @@ if ( ! function_exists( 'fi_landing_shortcode' ) ) {
 			--bg:#0B2126; --bg2:#0E2A30; --line:#1C3A40;
 			--cream:#F1ECDF; --cream2:#E7E0CE; --card-ink:#243133;
 			--gold:#A8814C; --gold-lt:#C79A5C; --gold-deep:#7E5F33;
-			--tan:#C9BFA8; --muted:#8F8770; --sea:#11313A;
+			--tan:#C9BFA8; --muted:#8F8770; --muted-ink:#5F5942; --sea:#11313A;
 			--serif:'Playfair Display', Georgia, 'Times New Roman', serif;
 			--mono:'Space Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
 			position:relative;
@@ -224,6 +236,7 @@ if ( ! function_exists( 'fi_landing_shortcode' ) ) {
 		}
 		#fi-boarding *{box-sizing:border-box;margin:0;padding:0}
 		#fi-boarding a{color:inherit;text-decoration:none}
+		#fi-boarding a:focus-visible,#fi-boarding .fi-btn:focus-visible{outline:2px solid var(--gold-lt);outline-offset:3px;border-radius:8px}
 		#fi-boarding::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;background-image:radial-gradient(rgba(200,180,120,.05) 1px,transparent 1px);background-size:22px 22px;opacity:.6}
 		#fi-boarding .fi-wrap{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:clamp(20px,4vw,44px) clamp(16px,4vw,44px) clamp(48px,7vw,90px)}
 		#fi-boarding .fi-top{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap;padding-bottom:clamp(22px,4vw,40px)}
@@ -264,22 +277,25 @@ if ( ! function_exists( 'fi_landing_shortcode' ) ) {
 		#fi-boarding .fi-ticket::after{bottom:-17px}
 		#fi-boarding .fi-brand{font-family:var(--serif);font-weight:700;font-size:clamp(18px,2.1vw,23px);letter-spacing:.02em;color:#1f2b2d}
 		#fi-boarding .fi-brand sup{font-size:.5em;vertical-align:super;color:var(--gold-deep)}
-		#fi-boarding .fi-mono-label{font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:var(--muted)}
+		#fi-boarding .fi-mono-label{font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:var(--muted-ink)}
 		#fi-boarding .fi-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
 		#fi-boarding .fi-chip{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-deep);border:1px solid rgba(126,95,51,.4);border-radius:6px;padding:8px 12px;white-space:nowrap}
 		#fi-boarding .fi-class{display:inline-block;margin-top:16px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#2c2110;font-weight:700;background:linear-gradient(180deg,#e3c079,#c99e57);border-radius:6px;padding:8px 14px}
 		#fi-boarding .fi-route-row{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-top:clamp(20px,2.6vw,30px)}
 		#fi-boarding .fi-place{font-family:var(--serif);font-weight:500;font-size:clamp(30px,4.6vw,50px);line-height:1;color:#1f2b2d}
 		#fi-boarding .fi-place.right{text-align:right}
-		#fi-boarding .fi-place small{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-top:10px;font-weight:400}
+		#fi-boarding .fi-place small{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted-ink);margin-top:10px;font-weight:400}
 		#fi-boarding .fi-map{margin-top:clamp(18px,2.4vw,26px);border-radius:14px;overflow:hidden;position:relative;border:1px solid rgba(126,95,51,.25)}
 		#fi-boarding .fi-map svg{display:block;width:100%;height:auto}
 		#fi-boarding .fi-map .fi-pill{position:absolute;top:12px;left:12px;display:inline-flex;align-items:center;gap:8px;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:#e9e2cf;background:rgba(9,26,30,.72);border:1px solid rgba(201,191,168,.2);padding:6px 10px;border-radius:20px}
 		#fi-boarding .fi-pill .dot{width:6px;height:6px;border-radius:50%;background:var(--gold-lt)}
 		#fi-boarding .fi-route{stroke-dasharray:520;stroke-dashoffset:520}
 		#fi-boarding .fi-ticket.fi-in .fi-route{transition:stroke-dashoffset 1.5s cubic-bezier(.16,1,.3,1) .1s;stroke-dashoffset:0}
-		#fi-boarding .fi-plane{offset-path:path('M168 250 Q 420 78 656 160');offset-rotate:auto;offset-distance:0%;opacity:0}
-		#fi-boarding .fi-ticket.fi-in .fi-plane{opacity:1;animation:fiFly 1.8s cubic-bezier(.16,1,.3,1) .1s forwards}
+		#fi-boarding .fi-plane{opacity:0}
+		@supports (offset-path: path('M0 0')){
+			#fi-boarding .fi-plane{offset-path:path('M168 250 Q 420 78 656 160');offset-rotate:auto;offset-distance:0%}
+			#fi-boarding .fi-ticket.fi-in .fi-plane{opacity:1;animation:fiFly 1.8s cubic-bezier(.16,1,.3,1) .1s forwards}
+		}
 		#fi-boarding .fi-ping{transform-box:fill-box;transform-origin:center;transform:scale(0);opacity:0}
 		#fi-boarding.is-confirmed .fi-ping{animation:fiPing 1.4s ease-out}
 		#fi-boarding .fi-quote{margin-top:clamp(20px,2.6vw,28px);font-family:var(--serif);font-style:italic;font-weight:400;font-size:clamp(16px,2vw,21px);line-height:1.5;color:#33403f}
@@ -305,7 +321,7 @@ if ( ! function_exists( 'fi_landing_shortcode' ) ) {
 		#fi-boarding .fi-stop:last-child{padding-bottom:0}
 		#fi-boarding .fi-stop::before{content:"";position:absolute;left:0;top:2px;width:12px;height:12px;border-radius:50%;background:var(--gold-deep);box-shadow:0 0 0 3px #ECE4D1}
 		#fi-boarding .fi-stop.diamond::before{border-radius:2px;transform:rotate(45deg)}
-		#fi-boarding .fi-stop .t{font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
+		#fi-boarding .fi-stop .t{font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted-ink)}
 		#fi-boarding .fi-stop .d{font-size:14px;color:#26332f;margin-top:4px}
 		#fi-boarding .fi-embark{display:flex;justify-content:space-between;align-items:center;margin-top:22px;padding-top:16px;border-top:1px dashed #cbbd97}
 		#fi-boarding .fi-book{margin-top:clamp(48px,7vw,86px);text-align:center}
@@ -333,8 +349,12 @@ if ( ! function_exists( 'fi_landing_shortcode' ) ) {
 		}
 		@media (prefers-reduced-motion: reduce){
 			#fi-boarding .fi-route{stroke-dashoffset:0}
-			#fi-boarding .fi-plane{offset-distance:100%;opacity:1;animation:none}
 			#fi-boarding .fi-btn:hover::after{animation:none}
+			@supports (offset-path: path('M0 0')){
+				#fi-boarding .fi-plane{offset-distance:100%;opacity:1;animation:none}
+			}
+			#fi-boarding.is-confirmed .fi-ping,#fi-boarding.is-confirmed .fi-barcode::after,#fi-boarding.is-confirmed .fi-stamp{animation:none}
+			#fi-boarding.is-confirmed .fi-stamp{opacity:.9}
 		}
 		@media (max-width:860px){
 			#fi-boarding .fi-ticket{grid-template-columns:1fr}
@@ -386,7 +406,7 @@ if ( ! function_exists( 'fi_landing_shortcode' ) ) {
 					<div class="fi-chip">Primera clase</div>
 				</div>
 
-				<span class="fi-class">&#10022; Primera clase · First</span>
+				<span class="fi-class">&#10022; Primera clase · Cortesía</span>
 
 				<div class="fi-route-row">
 					<div class="fi-place">Su marca<small>Salida · hoy mismo</small></div>

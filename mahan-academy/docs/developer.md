@@ -91,7 +91,7 @@ cURL relay, with a non-streaming `reply()` used by the REST fallback.
 | --- | --- | --- |
 | `GET /catalog` | public | Course cards (featured first). |
 | `GET /course/{id}` | public | Course detail: outcomes, description, units, promo video, prerequisite, certificate, progress. |
-| `GET /lesson/{id}` | logged-in | Lesson content, exercises (answers stripped), siblings, stats. |
+| `GET /lesson/{id}` | logged-in | Lesson content, exercises (answers stripped), siblings, stats, `position` (index/total/unit), `course_pct`, and `unit_quiz` (when the lesson closes a unit that has a quiz). |
 | `POST /enroll` | logged-in | Enroll in a course. |
 | `POST /progress` | logged-in | Mark a lesson complete (awards XP, recomputes course %). |
 | `POST /exercise` | logged-in | Grade a submitted answer. |
@@ -99,7 +99,7 @@ cURL relay, with a non-streaming `reply()` used by the REST fallback.
 | `POST /quiz` | logged-in | Submit a unit quiz; graded, awards XP on first pass. |
 | `POST /tutor` | logged-in | Non-streaming tutor reply (SSE fallback). |
 | `GET /chat` | logged-in | Tutor chat history for a lesson. |
-| `GET /me` | logged-in | User, stats, enrolled courses, badges, leaderboard flag. |
+| `GET /me` | logged-in | User, stats (incl. `week` — last-7-days activity from the XP log), enrolled courses (incl. `next_lesson_id`/`next_lesson_title` for in-progress ones), badges (incl. `need`/`progress`), leaderboard flag. |
 | `GET /leaderboard` | public* | Top-20 by XP; `?period=week\|all`; includes the caller's "me" rank (*only when enabled). |
 | `POST /goal` | logged-in | Save the learner's daily XP goal. |
 | `GET /paths` | public | Learning paths with aggregate progress. |
@@ -185,12 +185,31 @@ Responsive & accessibility behaviors (1.4.0):
   (`cards | detail | article | rows | dash`) with `role="status"`.
 - **Modals** — all dialogs go through `openModal(dialog, opts)`, which
   provides `role="dialog"`, `aria-modal`, a focus trap, Escape/overlay
-  close, focus restoration, and an `onClose` hook. Overlays mount inside
+  close, focus restoration, an `onClose` hook, and a `beforeClose` veto
+  (used by the quiz to guard in-progress answers). Overlays mount inside
   `#mahan-app` so the theme's CSS variables (including dark mode) resolve.
 - **CSS** — `:focus-visible` outlines, ≥44px touch targets under
   `(pointer: coarse)`, bottom-sheet modals under 640px, and a
   `prefers-reduced-motion` block live in the "v1.4.0" layer at the end of
   `app.css`.
+
+UX behaviors (1.5.0):
+
+- **Session cache** — `cachedApi(path, skeleton, paint, retry)` paints
+  cached GET responses instantly and repaints only when the fresh response
+  differs (`JSON.stringify` compare); any non-GET `api()` call clears the
+  whole cache.
+- **Browser integration** — every view sets `document.title`; `go()` stamps
+  the outgoing history entry with its scroll offset and `popstate` restores
+  it once non-skeleton content mounts; `history.scrollRestoration` is
+  `manual`.
+- **Deep-link-safe login** — `loginHref()` builds a `redirect_to` back to
+  the current SPA URL from `MahanData.loginBase`.
+- **Flow** — enrolling jumps straight into lesson 1; completing the last
+  lesson of a unit opens its quiz; finishing a course opens a confetti
+  celebration modal; a completed course's CTA becomes "Review course".
+- **Errors** — `errorBox(retry, err)` distinguishes offline (with an
+  auto-retry on the `online` event) and 404 (offers "Back to catalog").
 
 Quiz attempts reuse the `attempts` table (`type = 'quiz'`, `lesson_id = 0`,
 `exercise_key = 'quiz:<md5(unit)>'`), so v1.2.0 still adds no tables.

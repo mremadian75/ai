@@ -283,6 +283,28 @@ class Mahan_REST {
 		}
 
 		$siblings = Mahan_Courses::lesson_siblings( $lesson_id );
+		$position = Mahan_Courses::lesson_position( $lesson_id );
+
+		// When this is the last lesson of a unit that has a quiz, tell the app
+		// so the complete-lesson flow can route the learner into the quiz.
+		$unit_quiz = null;
+		if ( $course_id && '' !== $position['unit'] ) {
+			$units = Mahan_Courses::get_course_units( $course_id );
+			foreach ( $units as $unit ) {
+				if ( $unit['title'] !== $position['unit'] || empty( $unit['lessons'] ) ) {
+					continue;
+				}
+				$last = end( $unit['lessons'] );
+				if ( (int) $last->ID === $lesson_id && Mahan_Quizzes::get( $course_id, $unit['title'] ) ) {
+					$best      = $user_id ? Mahan_Quizzes::best( $user_id, $course_id, $unit['title'] ) : null;
+					$unit_quiz = array(
+						'unit'   => $unit['title'],
+						'passed' => $best ? (bool) $best['is_correct'] : false,
+					);
+				}
+				break;
+			}
+		}
 
 		return rest_ensure_response( array(
 			'ok'           => true,
@@ -290,6 +312,9 @@ class Mahan_REST {
 			'title'        => get_the_title( $lesson_id ),
 			'course_id'    => $course_id,
 			'course_title' => $course_id ? get_the_title( $course_id ) : '',
+			'position'     => $position,
+			'course_pct'   => $enrolled ? Mahan_Progress::course_progress_pct( $user_id, $course_id ) : 0,
+			'unit_quiz'    => $unit_quiz,
 			'content'      => apply_filters( 'the_content', $lesson->post_content ),
 			'type'         => Mahan_Utils::meta_str( $lesson_id, Mahan_Courses::M_TYPE, 'reading' ),
 			'xp'           => Mahan_Courses::lesson_xp( $lesson_id ),
@@ -465,6 +490,24 @@ class Mahan_REST {
 	public static function me( WP_REST_Request $request ) {
 		$user_id = get_current_user_id();
 		$user    = wp_get_current_user();
+
+		$stats         = Mahan_Gamification::hud( $user_id );
+		$stats['week'] = Mahan_Gamification::week_activity( $user_id );
+
+		// "Jump back in": give each in-progress course its next lesson so the
+		// dashboard can deep-link straight into the lesson player.
+		$courses = Mahan_Enrollment::get_user_courses( $user_id );
+		foreach ( $courses as &$c ) {
+			if ( (int) $c['progress_pct'] < 100 ) {
+				$next = Mahan_Courses::next_lesson( $user_id, $c['id'] );
+				if ( $next ) {
+					$c['next_lesson_id']    = $next;
+					$c['next_lesson_title'] = get_the_title( $next );
+				}
+			}
+		}
+		unset( $c );
+
 		return rest_ensure_response( array(
 			'ok'      => true,
 			'user'    => array(
@@ -472,8 +515,8 @@ class Mahan_REST {
 				'display_name' => $user ? $user->display_name : '',
 				'avatar'       => get_avatar_url( $user_id, array( 'size' => 96 ) ),
 			),
-			'stats'       => Mahan_Gamification::hud( $user_id ),
-			'courses'     => Mahan_Enrollment::get_user_courses( $user_id ),
+			'stats'       => $stats,
+			'courses'     => $courses,
 			'badges'      => Mahan_Badges::for_user( $user_id ),
 			'leaderboard' => (bool) Mahan_Settings::get( 'leaderboard_enabled', 0 ),
 		) );

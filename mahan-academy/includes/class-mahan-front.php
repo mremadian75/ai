@@ -77,6 +77,9 @@ class Mahan_Front {
 				'appUrl'       => self::app_url(),
 				'loggedIn'     => (bool) $user_id,
 				'loginUrl'     => wp_login_url( self::app_url() ),
+				// Base login URL so the SPA can send learners back to the
+				// exact course/lesson they were viewing (deep-link safe).
+				'loginBase'    => wp_login_url(),
 				'registerUrl'  => wp_registration_url(),
 				'canRegister'  => (bool) get_option( 'users_can_register' ),
 				'user'         => $user ? array(
@@ -227,6 +230,31 @@ class Mahan_Front {
 			'loading'          => __( 'Loading…', 'mahan-academy' ),
 			'menu'             => __( 'Menu', 'mahan-academy' ),
 			'askTutor'         => __( 'Ask the AI tutor', 'mahan-academy' ),
+			'searchCourses'    => __( 'Search courses…', 'mahan-academy' ),
+			'noResults'        => __( 'No courses match your search.', 'mahan-academy' ),
+			'clearFilters'     => __( 'Clear filters', 'mahan-academy' ),
+			'jumpBackIn'       => __( 'Jump back in', 'mahan-academy' ),
+			'nextUp'           => __( 'Next up:', 'mahan-academy' ),
+			'continueLearning' => __( 'Continue learning', 'mahan-academy' ),
+			'lesson'           => __( 'Lesson', 'mahan-academy' ),
+			'of'               => __( 'of', 'mahan-academy' ),
+			'answered'         => __( 'answered', 'mahan-academy' ),
+			'unansweredWarn'   => __( 'Some questions are unanswered — tap Submit again to send anyway.', 'mahan-academy' ),
+			'courseCompleteTitle' => __( 'Course complete!', 'mahan-academy' ),
+			'courseCompleteMsg'   => __( 'You finished', 'mahan-academy' ),
+			'offline'          => __( 'You appear to be offline. Check your connection and try again.', 'mahan-academy' ),
+			'backOnline'       => __( 'Back online!', 'mahan-academy' ),
+			'thisWeekActivity' => __( 'This week', 'mahan-academy' ),
+			'enterToSend'      => __( 'Enter to send · Shift+Enter for a new line', 'mahan-academy' ),
+			'keepLearning'     => __( 'Keep learning', 'mahan-academy' ),
+			'reviewCourse'     => __( 'Review course', 'mahan-academy' ),
+			'notFound'         => __( 'This content is no longer available.', 'mahan-academy' ),
+			'backToCatalog'    => __( 'Back to catalog', 'mahan-academy' ),
+			'unitQuizNext'     => __( 'Unit quiz unlocked!', 'mahan-academy' ),
+			'takeQuiz'         => __( 'Take the quiz', 'mahan-academy' ),
+			'goalHit'          => __( 'Daily goal reached!', 'mahan-academy' ),
+			'pickGoal'         => __( 'Set a daily XP goal to build a habit.', 'mahan-academy' ),
+			'closeQuizWarn'    => __( 'Your answers will be lost — close again to confirm.', 'mahan-academy' ),
 		);
 	}
 }

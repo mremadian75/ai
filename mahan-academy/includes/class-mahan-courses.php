@@ -284,6 +284,58 @@ class Mahan_Courses {
 	}
 
 	/**
+	 * The learner's next lesson in a course: the first not-yet-completed
+	 * lesson in curriculum order (falls back to the first lesson).
+	 *
+	 * @param int $user_id   User id.
+	 * @param int $course_id Course id.
+	 * @return int Lesson id, or 0 when the course has no lessons.
+	 */
+	public static function next_lesson( $user_id, $course_id ) {
+		$status = Mahan_Progress::course_lesson_status( (int) $user_id, (int) $course_id );
+		$first  = 0;
+		foreach ( self::get_course_lessons( $course_id ) as $lesson ) {
+			$lid = (int) $lesson->ID;
+			if ( ! $first ) {
+				$first = $lid;
+			}
+			$st = isset( $status[ $lid ] ) ? $status[ $lid ] : 'not_started';
+			if ( 'completed' !== $st ) {
+				return $lid;
+			}
+		}
+		return $first;
+	}
+
+	/**
+	 * A lesson's position within its course curriculum.
+	 *
+	 * @param int $lesson_id Lesson id.
+	 * @return array [ 'index' => 1-based position, 'total' => lesson count, 'unit' => unit title ]
+	 */
+	public static function lesson_position( $lesson_id ) {
+		$lesson_id = (int) $lesson_id;
+		$course_id = self::get_lesson_course_id( $lesson_id );
+		$position  = array(
+			'index' => 0,
+			'total' => 0,
+			'unit'  => '',
+		);
+		$i = 0;
+		foreach ( self::get_course_units( $course_id ) as $unit ) {
+			foreach ( $unit['lessons'] as $lesson ) {
+				$i++;
+				if ( (int) $lesson->ID === $lesson_id ) {
+					$position['index'] = $i;
+					$position['unit']  = $unit['title'];
+				}
+			}
+		}
+		$position['total'] = $i;
+		return $position;
+	}
+
+	/**
 	 * Strip answer/rubric data from an exercise before sending to the browser.
 	 *
 	 * @param array $ex Exercise definition.

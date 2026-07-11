@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.4.0
+Stable tag: 1.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -23,7 +23,8 @@ Mahan Academy is a self-contained learning plugin built to teach people how to u
 * Real-time streaming AI tutor via Server-Sent Events (Anthropic / OpenAI / Google)
 * Five exercise types: multiple choice, true/false, fill-in-the-blank, short answer, and prompt-writing (open answers graded by AI)
 * Schema-driven learner profile that personalizes the tutor and grading prompts
-* Gamification: XP with a full audit log, streak XP multipliers, linear or RPG-style progressive levels & titles, daily XP goals, streaks with earned streak freezes, 21 tiered achievements with live unlock notifications, and weekly + all-time leaderboards
+* Gamification: XP with a full audit log, streak XP multipliers, linear or RPG-style progressive levels & titles, daily XP goals, streaks with earned streak freezes, weekly activity dots, 21 tiered achievements with live unlock notifications and progress bars, and weekly + all-time leaderboards
+* Polished learner UX: instant catalog search, "Jump back in" resume, lesson wayfinding (unit · lesson X of Y), confetti course-completion celebrations, offline-aware errors, and instant back/forward navigation
 * End-of-unit quizzes with instant grading and a passing score
 * Learning paths — group courses into a guided, ordered program
 * Email notifications (welcome, completion, achievement, streak reminder)
@@ -52,6 +53,24 @@ No. Everything happens inside WordPress.
 Yes — *Settings → Profile Form* takes a JSON schema. The placeholders you define there flow into the tutor's system prompt automatically.
 
 == Changelog ==
+
+= 1.5.0 =
+* New: Catalog search — find courses instantly by title, subtitle, or category (combined with the level filter, no page reloads).
+* New: "Jump back in" card on the dashboard — one tap straight into the next lesson of your in-progress course.
+* New: Lesson wayfinding — every lesson shows its unit, "Lesson X of Y", and a course progress bar.
+* New: Weekly activity dots (Duolingo-style) on the dashboard, with goal-met checkmarks, powered by the XP log.
+* New: Course completion now opens a real celebration (confetti!) instead of a 2.6-second toast.
+* New: Completing the last lesson of a unit routes you into the unit quiz instead of silently skipping it.
+* New: Locked achievements show progress toward earning them (e.g. "3/10").
+* New: Streak extensions and daily-goal completion are celebrated the moment they happen.
+* Improved: Quizzes show an answered counter, warn before submitting with unanswered questions, and confirm before closing with answers in progress.
+* Improved: Instant back/forward — API responses are cached per session, scroll position is restored, and each view sets the browser tab title.
+* Improved: Enrolling drops you straight into lesson 1; a completed course offers "Review course" instead of a misleading "Resume".
+* Improved: Log-in links return you to the exact course/lesson you were viewing.
+* Improved: Offline-aware errors with auto-recovery, 404s offer a way back instead of a retry loop, and enrollment failures show a message.
+* Improved: Tutor input auto-grows, failed messages are restored for retry, the status label is honest, hints expand inline, and toasts are tap-to-dismiss.
+* Fixed: Profile form could trigger a native page reload on Enter; missing required fields are now highlighted individually.
+* Fixed: An unset daily goal no longer displays as "10 XP" with a "0 / 0" bar.
 
 = 1.4.0 =
 * New: Mobile bottom navigation — app-style tabs (Explore / My Learning / Paths / Leaderboard) replace the hidden menu on phones.

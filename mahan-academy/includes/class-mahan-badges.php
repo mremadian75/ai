@@ -242,9 +242,11 @@ class Mahan_Badges {
 		if ( ! self::enabled() ) {
 			return array();
 		}
-		$earned = self::earned_map( $user_id );
-		$out    = array();
+		$earned  = self::earned_map( $user_id );
+		$metrics = self::metrics( $user_id );
+		$out     = array();
 		foreach ( self::defs() as $def ) {
+			$have  = isset( $metrics[ $def['metric'] ] ) ? (int) $metrics[ $def['metric'] ] : 0;
 			$out[] = array(
 				'key'       => $def['key'],
 				'icon'      => $def['icon'],
@@ -252,6 +254,10 @@ class Mahan_Badges {
 				'desc'      => $def['desc'],
 				'earned'    => isset( $earned[ $def['key'] ] ),
 				'earned_at' => isset( $earned[ $def['key'] ] ) ? $earned[ $def['key'] ] : null,
+				// Progress toward locked badges ("3/10") keeps them
+				// motivating instead of opaque.
+				'need'      => (int) $def['need'],
+				'progress'  => min( (int) $def['need'], $have ),
 			);
 		}
 		return $out;

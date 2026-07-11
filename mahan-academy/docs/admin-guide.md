@@ -119,8 +119,12 @@ XP is awarded the first time a learner gets an exercise right.
   Practitioner …). The last name is reused for higher levels.
 
 Every XP award is recorded in an audit log with its reason, which is what
-powers the weekly leaderboard and the "XP this week" report — the numbers are
-exact, not estimates.
+powers the weekly leaderboard, the dashboard's last-7-days activity dots, and
+the "XP this week" report — the numbers are exact, not estimates.
+
+Learners also see live celebrations for streak extensions and daily-goal
+completion, progress bars toward locked achievements, and a confetti moment
+when they finish a course.
 
 ---
 

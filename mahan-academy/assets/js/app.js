@@ -44,6 +44,10 @@
 
 	function t(key, fallback) { return I[key] || fallback || key; }
 
+	// In-memory session cache for GET responses: repeat visits paint
+	// instantly (stale-while-revalidate). Any mutation clears it.
+	var apiCache = {};
+
 	function api(path, method, data) {
 		var opt = {
 			method: method || 'GET',
@@ -51,12 +55,44 @@
 			headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': D.nonce || '' }
 		};
 		if (data) { opt.body = JSON.stringify(data); }
+		if (method && method !== 'GET') { apiCache = {}; }
 		return fetch(REST + path, opt).then(function (r) {
 			return r.json().then(function (j) {
 				if (!r.ok) { throw Object.assign(new Error('API'), { status: r.status, payload: j }); }
 				return j;
 			});
 		});
+	}
+
+	// Fetch-and-paint with the session cache: paint cached data immediately
+	// (no skeleton), then repaint only if the fresh response differs.
+	function cachedApi(path, skeletonKind, paint, retry) {
+		var hit = apiCache[path];
+		if (hit) { paint(hit); } else { mount(loadingShell(skeletonKind)); }
+		api(path).then(function (j) {
+			var same = hit && JSON.stringify(hit) === JSON.stringify(j);
+			apiCache[path] = j;
+			if (same) { return; }
+			// Don't rip focus out from under the user mid-keystroke — keep
+			// the (slightly) stale view; the cache is fresh for next paint.
+			var ae = document.activeElement;
+			if (hit && ae && root.contains(ae) && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) { return; }
+			paint(j);
+		}).catch(function (e) {
+			if (!hit) { mount(errorBox(retry, e)); }
+		});
+	}
+
+	// Login link that returns the learner to the exact view they were on.
+	function loginHref() {
+		if (!D.loginBase) { return D.loginUrl; }
+		var sep = D.loginBase.indexOf('?') >= 0 ? '&' : '?';
+		return D.loginBase + sep + 'redirect_to=' + encodeURIComponent(window.location.href);
+	}
+
+	function setTitle(view) {
+		var site = D.siteName || 'Academy';
+		document.title = view ? view + ' – ' + site : site;
 	}
 
 	// Minimal, safe markdown for tutor/AI text.
@@ -109,17 +145,42 @@
 		return u.pathname + u.search;
 	}
 
+	// Scroll restoration: remember where the learner was before navigating
+	// away, and put them back there on browser back/forward.
+	var pendingScroll = null;
+
 	function go(view, params) {
+		var url = urlFor(view, params);
+		// Re-tapping the current destination must not stack history entries
+		// (which would make Back appear broken) — just refresh in place.
+		var samePlace = (url === window.location.pathname + window.location.search);
+		// Stamp the current entry with its scroll position before leaving it.
+		try {
+			window.history.replaceState(
+				Object.assign({}, window.history.state || {}, { scroll: window.scrollY || window.pageYOffset || 0 }),
+				''
+			);
+		} catch (e) { /* ignore */ }
 		state.view = view;
 		state.courseId = (params && params.course) || 0;
 		state.lessonId = (params && params.lesson) || 0;
 		state.pathId = (params && params.path) || 0;
-		window.history.pushState({ view: view, params: params }, '', urlFor(view, params));
+		pendingScroll = null;
+		if (!samePlace) { window.history.pushState({ view: view, params: params }, '', url); }
 		window.scrollTo(0, 0);
 		render();
 	}
 
-	window.addEventListener('popstate', function () { parseUrl(); render(); });
+	window.addEventListener('popstate', function (e) {
+		// Back/forward closes any open dialog cleanly (teardown + listener
+		// removal) instead of leaving it stranded over the previous view.
+		modalStack.slice().forEach(function (m) { m.close(true); });
+		parseUrl();
+		pendingScroll = (e.state && typeof e.state.scroll === 'number') ? e.state.scroll : 0;
+		render();
+	});
+
+	if ('scrollRestoration' in window.history) { window.history.scrollRestoration = 'manual'; }
 
 	/* ------------------------------------------------------------------ */
 	/* HUD (top bar)                                                       */
@@ -184,9 +245,13 @@
 					h('span', { class: 'mahan-hud-icon', text: '◆' }), h('span', { id: 'hud-level', text: String(s.level || 1) })]),
 				state.me.user ? h('img', { class: 'mahan-hud-avatar', src: state.me.user.avatar, alt: state.me.user.name }) : null
 			]);
+		} else if (D.loggedIn) {
+			// Logged in but /me hasn't resolved yet — placeholder, not a
+			// misleading "Log in" button.
+			right = h('div', { class: 'mahan-hud' }, [h('div', { class: 'mahan-sk mahan-sk-circle' })]);
 		} else {
 			right = h('div', { class: 'mahan-hud' }, [
-				h('a', { class: 'mahan-btn mahan-btn-sm mahan-btn-primary', href: D.loginUrl, text: t('login', 'Log in') })
+				h('a', { class: 'mahan-btn mahan-btn-sm mahan-btn-primary', href: loginHref(), text: t('login', 'Log in') })
 			]);
 		}
 
@@ -221,17 +286,32 @@
 		var box = el('mahan-toasts');
 		if (!box) { box = h('div', { id: 'mahan-toasts', class: 'mahan-toasts', role: 'status', 'aria-live': 'polite' }); document.body.appendChild(box); }
 		var node = h('div', { class: 'mahan-toast mahan-toast-' + (kind || 'info'), html: msg });
+		// Dismiss on tap; celebrations linger a bit longer than info blips.
+		var life = (kind === 'level') ? 4000 : 2600;
+		function out() { node.classList.add('is-out'); setTimeout(function () { node.remove(); }, 400); }
+		node.addEventListener('click', out);
 		box.appendChild(node);
-		setTimeout(function () { node.classList.add('is-out'); setTimeout(function () { node.remove(); }, 400); }, 2600);
+		setTimeout(out, life);
 	}
 
 	function celebrateXp(res) {
 		if (!res) { return; }
+		// Celebrate crossing the daily goal and extending the streak — the
+		// two core-loop moments — by comparing stats before/after.
+		var old = state.me && state.me.stats;
 		if (res.xp_awarded > 0) { toast('⚡ +' + res.xp_awarded + ' XP', 'xp'); }
+		if (old && res.stats) {
+			if (res.stats.streak > (old.streak || 0)) {
+				setTimeout(function () { toast('🔥 ' + res.stats.streak + ' ' + esc(t('streak', 'day streak')) + '!', 'level'); }, 250);
+			}
+			if ((res.stats.daily_goal || 0) > 0 && (old.daily_xp || 0) < (old.daily_goal || 0) && (res.stats.daily_xp || 0) >= res.stats.daily_goal) {
+				setTimeout(function () { toast('🎯 ' + esc(t('goalHit', 'Daily goal reached!')), 'level'); }, 450);
+			}
+		}
 		if (res.stats) { refreshHud(res.stats); }
 		if (res.leveled_up) {
 			var title = (res.stats && res.stats.level_title) ? ' — ' + res.stats.level_title : '';
-			setTimeout(function () { toast('◆ ' + t('levelUp', 'Level up!') + title, 'level'); }, 500);
+			setTimeout(function () { toast('◆ ' + t('levelUp', 'Level up!') + title, 'level'); }, 650);
 		}
 		// New achievements arrive with grading/progress responses — celebrate each.
 		(res.new_badges || []).forEach(function (b, i) {
@@ -246,12 +326,29 @@
 	/* ------------------------------------------------------------------ */
 
 	function mount(content) {
+		// Keep any open dialog alive across repaints (e.g. a quiz opened
+		// while a stale-while-revalidate refresh was still in flight).
+		var overlays = Array.prototype.slice.call(root.querySelectorAll('.mahan-modal-overlay'));
+		overlays.forEach(function (o) { o.remove(); });
 		root.innerHTML = '';
 		root.appendChild(hud());
 		var main = h('main', { class: 'mahan-main' }, [content]);
 		root.appendChild(main);
 		var bnav = bottomNav();
 		if (bnav) { root.appendChild(bnav); }
+		overlays.forEach(function (o) { root.appendChild(o); });
+		// Restore the saved scroll position once real content (not a
+		// skeleton) is on screen — back/forward lands where the user was.
+		if (pendingScroll !== null && !main.querySelector('.mahan-skeleton')) {
+			window.scrollTo(0, pendingScroll);
+			pendingScroll = null;
+		}
+	}
+
+	// Swap just the top bar in place (used when /me resolves after boot).
+	function refreshTopbar() {
+		var old = root.querySelector('.mahan-topbar');
+		if (old) { old.parentNode.replaceChild(hud(), old); }
 	}
 
 	/* Skeleton loading — mirrors each view's real layout instead of a spinner. */
@@ -317,6 +414,9 @@
 	/* Modal helper (a11y: focus trap, Escape / overlay close)            */
 	/* ------------------------------------------------------------------ */
 
+	// Open dialogs, so navigation (popstate) can tear them down cleanly.
+	var modalStack = [];
+
 	function openModal(dialog, opts) {
 		opts = opts || {};
 		var overlay = h('div', { class: 'mahan-modal-overlay' }, [dialog]);
@@ -327,9 +427,14 @@
 		var prevFocus = document.activeElement;
 		var closed = false;
 
-		function close() {
+		function close(force) {
 			if (closed) { return; }
+			// Let the dialog veto an accidental dismissal (e.g. a quiz with
+			// answers in progress). Explicit buttons pass force=true.
+			if (!force && opts.beforeClose && !opts.beforeClose()) { return; }
 			closed = true;
+			var idx = modalStack.indexOf(handle);
+			if (idx >= 0) { modalStack.splice(idx, 1); }
 			document.removeEventListener('keydown', onKey, true);
 			overlay.remove();
 			if (prevFocus && typeof prevFocus.focus === 'function') { try { prevFocus.focus(); } catch (e) { /* gone */ } }
@@ -352,7 +457,9 @@
 		(root || document.body).appendChild(overlay);
 		dialog.focus();
 
-		return { overlay: overlay, dialog: dialog, close: close };
+		var handle = { overlay: overlay, dialog: dialog, close: close };
+		modalStack.push(handle);
+		return handle;
 	}
 
 	/* ------------------------------------------------------------------ */
@@ -360,8 +467,8 @@
 	/* ------------------------------------------------------------------ */
 
 	function renderCatalog() {
-		mount(loadingShell('cards'));
-		api('/catalog').then(function (j) {
+		setTitle(t('catalog', 'Explore'));
+		cachedApi('/catalog', 'cards', function (j) {
 			var courses = j.courses || [];
 			var wrap = h('div', { class: 'mahan-catalog' });
 			wrap.appendChild(h('div', { class: 'mahan-hero' }, [
@@ -369,27 +476,69 @@
 				h('p', { class: 'mahan-hero-sub', text: 'Structured courses. Hands-on practice. A tutor that answers in real time.' })
 			]));
 
-			// Level filter chips.
-			var levels = [['', t('allLevels', 'All levels')], ['beginner', t('beginner', 'Beginner')], ['intermediate', t('intermediate', 'Intermediate')], ['advanced', t('advanced', 'Advanced')]];
-			var chips = h('div', { class: 'mahan-chips' }, levels.map(function (lv) {
-				return h('button', {
-					class: 'mahan-chip' + (state.levelFilter === lv[0] ? ' is-active' : ''),
-					text: lv[1],
-					onClick: function () { state.levelFilter = lv[0]; renderCatalog(); }
-				});
-			}));
-			wrap.appendChild(chips);
+			// Search + level filter — both client-side and instant.
+			var search = h('input', {
+				class: 'mahan-search-input', type: 'search',
+				placeholder: t('searchCourses', 'Search courses…'),
+				'aria-label': t('searchCourses', 'Search courses…')
+			});
+			search.value = state.q || '';
+			wrap.appendChild(h('div', { class: 'mahan-search' }, [
+				h('span', { class: 'mahan-search-icon', text: '🔍', 'aria-hidden': 'true' }),
+				search
+			]));
 
-			var filtered = courses.filter(function (c) { return !state.levelFilter || c.level === state.levelFilter; });
-			if (!filtered.length) {
-				wrap.appendChild(h('div', { class: 'mahan-empty', text: t('emptyCatalog', 'No courses available yet.') }));
-			} else {
+			var levels = [['', t('allLevels', 'All levels')], ['beginner', t('beginner', 'Beginner')], ['intermediate', t('intermediate', 'Intermediate')], ['advanced', t('advanced', 'Advanced')]];
+			var chipsArea = h('div', { class: 'mahan-chips' });
+			var listArea = h('div', { class: 'mahan-catalog-list' });
+			wrap.appendChild(chipsArea);
+			wrap.appendChild(listArea);
+
+			function matches(c) {
+				if (state.levelFilter && c.level !== state.levelFilter) { return false; }
+				var q = (state.q || '').toLowerCase().trim();
+				if (!q) { return true; }
+				var hay = [c.title, c.subtitle, c.excerpt, (c.categories || []).join(' ')].join(' ').toLowerCase();
+				return hay.indexOf(q) >= 0;
+			}
+
+			function paintChips() {
+				chipsArea.innerHTML = '';
+				levels.forEach(function (lv) {
+					chipsArea.appendChild(h('button', {
+						class: 'mahan-chip' + (state.levelFilter === lv[0] ? ' is-active' : ''),
+						text: lv[1], 'aria-pressed': state.levelFilter === lv[0] ? 'true' : 'false',
+						onClick: function () { state.levelFilter = lv[0]; paintChips(); paintList(); }
+					}));
+				});
+			}
+
+			function paintList() {
+				listArea.innerHTML = '';
+				if (!courses.length) {
+					listArea.appendChild(h('div', { class: 'mahan-empty', text: t('emptyCatalog', 'No courses available yet.') }));
+					return;
+				}
+				var filtered = courses.filter(matches);
+				if (!filtered.length) {
+					listArea.appendChild(h('div', { class: 'mahan-empty' }, [
+						h('p', { text: t('noResults', 'No courses match your search.') }),
+						h('button', { class: 'mahan-btn mahan-btn-ghost', text: t('clearFilters', 'Clear filters'),
+							onClick: function () { state.q = ''; state.levelFilter = ''; search.value = ''; paintChips(); paintList(); } })
+					]));
+					return;
+				}
 				var grid = h('div', { class: 'mahan-grid' });
 				filtered.forEach(function (c) { grid.appendChild(courseCard(c)); });
-				wrap.appendChild(grid);
+				listArea.appendChild(grid);
 			}
+
+			search.addEventListener('input', function () { state.q = search.value; paintList(); });
+
+			paintChips();
+			paintList();
 			mount(wrap);
-		}).catch(function () { mount(errorBox(renderCatalog)); });
+		}, renderCatalog);
 	}
 
 	function courseCard(c) {
@@ -429,10 +578,10 @@
 	/* ------------------------------------------------------------------ */
 
 	function renderCourse() {
-		mount(loadingShell('detail'));
-		api('/course/' + state.courseId).then(function (j) {
+		cachedApi('/course/' + state.courseId, 'detail', function (j) {
 			if (!j.ok) { mount(errorBox(renderCourse)); return; }
 			var c = j.course;
+			setTitle(c.title);
 			var wrap = h('div', { class: 'mahan-course' });
 
 			// Hero.
@@ -512,23 +661,36 @@
 			wrap.appendChild(content);
 
 			mount(wrap);
-		}).catch(function () { mount(errorBox(renderCourse)); });
+		}, renderCourse);
 	}
 
 	function courseCta(j) {
 		if (!D.loggedIn) {
-			return h('a', { class: 'mahan-btn mahan-btn-primary mahan-btn-lg', href: D.loginUrl, text: t('loginToLearn', 'Log in to start learning') });
+			return h('a', { class: 'mahan-btn mahan-btn-primary mahan-btn-lg', href: loginHref(), text: t('loginToLearn', 'Log in to start learning') });
 		}
 		if (!j.enrolled) {
 			return h('button', { class: 'mahan-btn mahan-btn-primary mahan-btn-lg', text: t('enroll', 'Enroll — free'),
 				onClick: function (e) {
-					var btn = e.currentTarget; btn.disabled = true; btn.textContent = '…';
+					var btn = e.currentTarget; btn.disabled = true; btn.textContent = t('loading', 'Loading…');
 					api('/enroll', 'POST', { course_id: j.course.id }).then(function (r) {
 						if (r.stats) { refreshHud(r.stats); }
-						D._enrolled = true;
-						renderCourse();
-					}).catch(function () { btn.disabled = false; btn.textContent = t('enroll', 'Enroll — free'); });
+						// Enrolling means "start learning" — go straight to lesson 1.
+						var first = firstActionableLesson(j);
+						if (first) { go('lesson', { course: j.course.id, lesson: first }); }
+						else { renderCourse(); }
+					}).catch(function (err) {
+						btn.disabled = false; btn.textContent = t('enroll', 'Enroll — free');
+						var reason = err && err.payload && err.payload.error;
+						toast(esc(reason || t('error', 'Something went wrong.')), 'error');
+					});
 				} });
+		}
+		if ((j.progress_pct || 0) >= 100) {
+			// Completed: don't relabel it "Resume" — offer a review pass.
+			var firstLesson = firstActionableLesson(j);
+			return h('button', { class: 'mahan-btn mahan-btn-primary mahan-btn-lg is-done',
+				text: '✓ ' + t('reviewCourse', 'Review course'),
+				onClick: function () { if (firstLesson) { go('lesson', { course: j.course.id, lesson: firstLesson }); } } });
 		}
 		// Enrolled: continue to first incomplete lesson.
 		var next = firstActionableLesson(j);
@@ -604,6 +766,21 @@
 
 	function renderQuizModal(courseId, unit, quiz) {
 		var answers = {};
+		var total = quiz.questions.length;
+		var counter = h('span', { class: 'mahan-quiz-count', 'aria-live': 'polite' });
+
+		function answeredCount() {
+			var n = 0;
+			Object.keys(answers).forEach(function (k) {
+				var v = answers[k];
+				if (v !== '' && v !== null && v !== undefined) { n++; }
+			});
+			return n;
+		}
+		function updateCounter() {
+			counter.textContent = answeredCount() + '/' + total + ' ' + t('answered', 'answered');
+		}
+
 		var form = h('div', { class: 'mahan-quiz-form' });
 		quiz.questions.forEach(function (q, i) {
 			var block = h('div', { class: 'mahan-quiz-q' });
@@ -615,24 +792,38 @@
 							opts.querySelectorAll('.mahan-ex-option').forEach(function (b) { b.classList.remove('is-chosen'); });
 							e.currentTarget.classList.add('is-chosen');
 							answers[q.key] = oi;
+							updateCounter();
 						} });
 				}));
 				block.appendChild(opts);
 			} else {
 				var inp = h('input', { class: 'mahan-ex-input', type: 'text', placeholder: t('typeAnswer', 'Type your answer…') });
-				inp.addEventListener('input', function () { answers[q.key] = inp.value; });
+				inp.addEventListener('input', function () {
+					answers[q.key] = inp.value.trim() === '' ? '' : inp.value;
+					updateCounter();
+				});
 				block.appendChild(inp);
 			}
 			block.setAttribute('data-key', q.key);
 			form.appendChild(block);
 		});
+		updateCounter();
 
 		var msg = h('div', { class: 'mahan-quiz-msg' });
 		var modal;
+		var armed = false;
 		var submitBtn = h('button', { class: 'mahan-btn mahan-btn-primary', text: t('submitQuiz', 'Submit quiz'),
 			onClick: function (e) {
 				var btn = e.currentTarget;
-				btn.disabled = true; btn.textContent = '…';
+				// Unanswered questions are graded as wrong — make that a
+				// deliberate choice, not a silent surprise.
+				if (answeredCount() < total && !armed) {
+					armed = true;
+					msg.textContent = t('unansweredWarn', 'Some questions are unanswered — tap Submit again to send anyway.');
+					return;
+				}
+				btn.disabled = true; btn.textContent = t('loading', 'Loading…');
+				msg.textContent = '';
 				api('/quiz', 'POST', { course_id: courseId, unit: unit, answers: answers }).then(function (r) {
 					modal.submitted = true;
 					showQuizResult(modal, form, unit, r);
@@ -644,15 +835,27 @@
 			h('p', { class: 'mahan-modal-sub', text: quiz.count + ' ' + t('questions', 'questions') + ' · ' + t('passMark', 'pass') + ' ' + quiz.passing + '%' }),
 			form,
 			msg,
-			h('div', { class: 'mahan-modal-actions' }, [
+			h('div', { class: 'mahan-modal-actions mahan-quiz-actions' }, [
+				counter,
 				h('button', { class: 'mahan-btn mahan-btn-ghost', text: t('notNow', 'Close'), onClick: function () { modal.close(); } }),
 				submitBtn
 			])
 		]);
-		modal = openModal(dialog, { label: quiz.title, onClose: function () {
-			// Reflect a graded attempt (score / passed) back on the course view.
-			if (modal.submitted && state.view === 'course') { renderCourse(); }
-		} });
+		var closeArmed = false;
+		modal = openModal(dialog, {
+			label: quiz.title,
+			// A stray Escape / overlay tap must not silently destroy answers.
+			beforeClose: function () {
+				if (modal.submitted || answeredCount() === 0 || closeArmed) { return true; }
+				closeArmed = true;
+				msg.textContent = t('closeQuizWarn', 'Your answers will be lost — close again to confirm.');
+				return false;
+			},
+			onClose: function () {
+				// Reflect a graded attempt (score / passed) back on the course view.
+				if (modal.submitted && state.view === 'course') { renderCourse(); }
+			}
+		});
 	}
 
 	function showQuizResult(modal, form, unit, r) {
@@ -702,14 +905,29 @@
 			return api('/lesson/' + state.lessonId);
 		}).then(function (L) {
 			if (!L.ok) { mount(errorBox(renderLesson)); return; }
-			if (L.stats) { refreshHud(L.stats); }
+			setTitle(L.title);
+			if (L.stats) {
+				if (!state.me && D.loggedIn) { state.me = { stats: L.stats, user: D.user || null }; }
+				else { refreshHud(L.stats); }
+			}
 			var wrap = h('div', { class: 'mahan-lesson' });
 
-			// Top: back to course + progress.
+			// Top: back link + "Unit · Lesson X of Y" + course progress bar,
+			// so the learner always knows where they are in the course.
+			var pos = L.position || {};
 			wrap.appendChild(h('div', { class: 'mahan-lesson-top' }, [
-				h('a', { class: 'mahan-back', href: urlFor('course', { course: L.course_id }),
-					onClick: function (e) { e.preventDefault(); go('course', { course: L.course_id }); },
-					text: '← ' + (L.course_title || t('backToCourse', 'Back to course')) })
+				h('div', { class: 'mahan-lesson-topline' }, [
+					h('a', { class: 'mahan-back', href: urlFor('course', { course: L.course_id }),
+						onClick: function (e) { e.preventDefault(); go('course', { course: L.course_id }); },
+						text: '← ' + (L.course_title || t('backToCourse', 'Back to course')) }),
+					(pos.total > 0 && pos.index > 0) ? h('span', { class: 'mahan-lesson-pos' }, [
+						pos.unit ? h('span', { class: 'mahan-lesson-pos-unit', text: pos.unit + ' · ' }) : null,
+						h('span', { text: t('lesson', 'Lesson') + ' ' + pos.index + ' ' + t('of', 'of') + ' ' + pos.total })
+					]) : null
+				]),
+				(L.enrolled && pos.total > 0) ? h('div', { class: 'mahan-lesson-course-bar', title: (L.course_pct || 0) + '%' }, [
+					h('span', { style: 'width:' + (L.course_pct || 0) + '%' })
+				]) : null
 			]));
 
 			var layout = h('div', { class: 'mahan-lesson-layout' });
@@ -745,7 +963,36 @@
 			loadChat(L.id);
 		}).catch(function (e) {
 			if (e && e.status === 401) { mount(loginGate()); return; }
-			mount(errorBox(renderLesson));
+			mount(errorBox(renderLesson, e));
+		});
+	}
+
+	// Course-completion celebration: a real moment, not a 2.6s toast.
+	function showCourseComplete(courseId, courseTitle) {
+		var modal;
+		var confetti = h('div', { class: 'mahan-confetti', 'aria-hidden': 'true' });
+		var colors = ['#f59e0b', '#22c55e', '#4f46e5', '#ec4899', '#06b6d4'];
+		for (var i = 0; i < 28; i++) {
+			var piece = h('i');
+			piece.style.left = (Math.random() * 100) + '%';
+			piece.style.animationDelay = (Math.random() * 0.9) + 's';
+			piece.style.animationDuration = (2.2 + Math.random() * 1.6) + 's';
+			piece.style.background = colors[i % colors.length];
+			confetti.appendChild(piece);
+		}
+		var dialog = h('div', { class: 'mahan-modal mahan-complete-modal' }, [
+			confetti,
+			h('div', { class: 'mahan-complete-icon', text: '🎓' }),
+			h('h2', { text: '🎉 ' + t('courseCompleteTitle', 'Course complete!') }),
+			h('p', { class: 'mahan-modal-sub', text: t('courseCompleteMsg', 'You finished') + ' “' + (courseTitle || '') + '”' }),
+			h('div', { class: 'mahan-modal-actions mahan-center' }, [
+				h('button', { class: 'mahan-btn mahan-btn-primary mahan-btn-lg', text: t('keepLearning', 'Keep learning'),
+					onClick: function () { modal.close(); } })
+			])
+		]);
+		modal = openModal(dialog, {
+			label: t('courseCompleteTitle', 'Course complete!'),
+			onClose: function () { go('course', { course: courseId }); }
 		});
 	}
 
@@ -753,6 +1000,7 @@
 		var foot = h('div', { class: 'mahan-lesson-foot' });
 		foot.appendChild(L.siblings && L.siblings.prev
 			? h('button', { class: 'mahan-btn mahan-btn-ghost', text: '← ' + t('prevLesson', 'Previous'),
+				title: L.siblings.prev.title || null,
 				onClick: function () { go('lesson', { course: L.course_id, lesson: L.siblings.prev.id }); } })
 			: h('span', {}));
 
@@ -765,10 +1013,16 @@
 				if (!L.enrolled) { go('course', { course: L.course_id }); return; }
 				btn.disabled = true;
 				api('/progress', 'POST', { lesson_id: L.id }).then(function (r) {
-					celebrateXp({ xp_awarded: r.xp_awarded, stats: r.stats });
+					celebrateXp(r);
+					btn.classList.add('is-done');
+					btn.textContent = '✓ ' + t('lessonComplete', 'Completed');
 					if (r.course_completed) {
-						toast('🎉 ' + t('courseComplete', 'Course complete!'), 'level');
-						setTimeout(function () { go('course', { course: L.course_id }); }, 900);
+						setTimeout(function () { showCourseComplete(L.course_id, L.course_title); }, 600);
+					} else if (L.unit_quiz && !L.unit_quiz.passed) {
+						// Last lesson of a unit with a quiz: bring the quiz into
+						// the flow instead of silently skipping past it.
+						toast('❓ ' + esc(t('unitQuizNext', 'Unit quiz unlocked!')), 'level');
+						setTimeout(function () { openQuiz(L.course_id, L.unit_quiz.unit); }, 900);
 					} else if (L.siblings && L.siblings.next) {
 						setTimeout(function () { go('lesson', { course: L.course_id, lesson: L.siblings.next.id }); }, 700);
 					} else {
@@ -781,6 +1035,7 @@
 
 		foot.appendChild(L.siblings && L.siblings.next
 			? h('button', { class: 'mahan-btn mahan-btn-ghost', text: t('nextLesson', 'Next lesson') + ' →',
+				title: L.siblings.next.title || null,
 				onClick: function () { go('lesson', { course: L.course_id, lesson: L.siblings.next.id }); } })
 			: h('span', {}));
 		return foot;
@@ -829,11 +1084,20 @@
 				onClick: function () { submitExercise(L.id, ex, ta.value, card, feedback, checkBtn, null); } });
 		}
 
+		// Hint expands inline (persistent + re-readable), not a vanishing toast.
+		var hintBox = ex.hint ? h('div', { class: 'mahan-ex-hint', style: 'display:none' }, [
+			h('span', { 'aria-hidden': 'true', text: '💡 ' }), document.createTextNode(ex.hint)
+		]) : null;
 		var bar = h('div', { class: 'mahan-ex-bar' }, [
-			ex.hint ? h('button', { class: 'mahan-ex-hint-btn', type: 'button', text: '💡 ' + t('hint', 'Hint'),
-				onClick: function () { toast(esc(ex.hint), 'info'); } }) : h('span', {}),
+			ex.hint ? h('button', { class: 'mahan-ex-hint-btn', type: 'button', text: '💡 ' + t('hint', 'Hint'), 'aria-expanded': 'false',
+				onClick: function (e) {
+					var open = hintBox.style.display !== 'none';
+					hintBox.style.display = open ? 'none' : 'block';
+					e.currentTarget.setAttribute('aria-expanded', open ? 'false' : 'true');
+				} }) : h('span', {}),
 			checkBtn
 		]);
+		if (hintBox) { card.appendChild(hintBox); }
 		card.appendChild(bar);
 		card.appendChild(feedback);
 
@@ -901,9 +1165,10 @@
 
 	function tutorPanel(L) {
 		var panel = h('aside', { class: 'mahan-tutor', 'aria-label': t('tutorTitle', 'AI Tutor') });
+		var ready = D.aiReady && L.tutor_ready;
 		panel.appendChild(h('div', { class: 'mahan-tutor-head' }, [
 			h('span', { class: 'mahan-tutor-avatar', text: '🤖' }),
-			h('div', {}, [h('strong', { text: t('tutorTitle', 'AI Tutor') }), h('span', { class: 'mahan-tutor-status', text: 'online' })]),
+			h('div', {}, [h('strong', { text: t('tutorTitle', 'AI Tutor') }), h('span', { class: 'mahan-tutor-status' + (ready ? '' : ' is-off'), text: ready ? 'online' : 'offline' })]),
 			h('button', { class: 'mahan-tutor-close', type: 'button', 'aria-label': t('close', 'Close'), text: '✕',
 				onClick: function () { toggleTutor(false); } })
 		]));
@@ -921,8 +1186,14 @@
 		input.addEventListener('keydown', function (e) {
 			if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendToTutor(L.id, input); }
 		});
-		var send = h('button', { class: 'mahan-tutor-send', text: '➤', 'aria-label': t('send', 'Send'), onClick: function () { sendToTutor(L.id, input); } });
+		// Auto-grow with the message (up to the CSS max-height).
+		input.addEventListener('input', function () {
+			input.style.height = 'auto';
+			input.style.height = Math.min(input.scrollHeight, 120) + 'px';
+		});
+		var send = h('button', { class: 'mahan-tutor-send', text: '➤', 'aria-label': t('send', 'Send'), title: t('send', 'Send'), onClick: function () { sendToTutor(L.id, input); } });
 		panel.appendChild(h('div', { class: 'mahan-tutor-bar' }, [input, send]));
+		panel.appendChild(h('div', { class: 'mahan-tutor-hint', text: t('enterToSend', 'Enter to send · Shift+Enter for a new line') }));
 		return panel;
 	}
 
@@ -947,6 +1218,7 @@
 		if (!msg || tutorBusy) { return; }
 		if (!D.aiReady) { toast(t('tutorOffline', 'The AI tutor is not configured yet.'), 'error'); return; }
 		input.value = '';
+		input.style.height = '';
 		var log = el('mahan-tutor-log');
 		log.appendChild(tutorBubble('user', msg));
 		var bubble = tutorBubble('assistant', '');
@@ -964,10 +1236,11 @@
 		}, function (err) {
 			tutorBusy = false;
 			bubble.classList.remove('is-streaming');
-			if (err) {
-				bubble.innerHTML = '<em>' + esc(err) + '</em>';
-			} else if (!bubble._raw) {
-				bubble.innerHTML = '<em>' + esc(t('error', 'Something went wrong.')) + '</em>';
+			if (err || !bubble._raw) {
+				bubble.innerHTML = '<em>' + esc(err || t('error', 'Something went wrong.')) + '</em>';
+				// Don't swallow the learner's message — put it back so they
+				// can retry without retyping.
+				if (!input.value) { input.value = msg; }
 			}
 			log.scrollTop = log.scrollHeight;
 		});
@@ -1025,10 +1298,25 @@
 	/* View: Dashboard                                                     */
 	/* ------------------------------------------------------------------ */
 
+	// Duolingo-style last-7-days activity strip (from the server's XP log).
+	function weekDots(week) {
+		if (!week || !week.length) { return null; }
+		return h('div', { class: 'mahan-week' }, [
+			h('span', { class: 'mahan-week-label', text: t('thisWeekActivity', 'This week') }),
+			h('div', { class: 'mahan-week-days' }, week.map(function (d) {
+				var cls = 'mahan-week-day' + (d.goal_met ? ' is-goal' : (d.active ? ' is-active' : '')) + (d.today ? ' is-today' : '');
+				return h('div', { class: cls, title: d.label }, [
+					h('span', { class: 'mahan-week-dot', text: d.goal_met ? '✓' : '' }),
+					h('span', { class: 'mahan-week-name', text: d.label })
+				]);
+			}))
+		]);
+	}
+
 	function renderDashboard() {
 		if (!D.loggedIn) { mount(loginGate()); return; }
-		mount(loadingShell('dash'));
-		api('/me').then(function (j) {
+		setTitle(t('dashboard', 'My Learning'));
+		cachedApi('/me', 'dash', function (j) {
 			state.me = j;
 			var s = j.stats || {};
 			var wrap = h('div', { class: 'mahan-dash' });
@@ -1040,6 +1328,7 @@
 					statBig('◆', s.level || 1, s.level_title || t('level', 'Level')),
 					(s.freezes || 0) > 0 ? statBig('❄️', s.freezes, t('freezes', 'streak freezes')) : null
 				]),
+				weekDots(s.week),
 				h('div', { class: 'mahan-level-bar' }, [
 					h('div', { class: 'mahan-level-bar-track' }, [h('span', { style: 'width:' + levelPct(s) + '%' })]),
 					h('span', { class: 'mahan-level-bar-label', text: (s.xp_into_level || 0) + ' / ' + (s.xp_per_level || 100) + ' XP → ' + t('level', 'Level') + ' ' + ((s.level || 1) + 1) })
@@ -1048,6 +1337,27 @@
 			]));
 
 			var courses = j.courses || [];
+
+			// "Jump back in": one tap straight into the next lesson of the
+			// most recent in-progress course (no course-page detour).
+			var inProgress = courses.filter(function (c) { return c.next_lesson_id && (c.progress_pct || 0) < 100; });
+			if (inProgress.length) {
+				var jb = inProgress[0];
+				wrap.appendChild(h('div', { class: 'mahan-jump' }, [
+					h('div', { class: 'mahan-jump-body' }, [
+						h('span', { class: 'mahan-jump-kicker', text: '▶ ' + t('jumpBackIn', 'Jump back in') }),
+						h('h2', { class: 'mahan-jump-title', text: jb.title }),
+						jb.next_lesson_title ? h('p', { class: 'mahan-jump-next', text: t('nextUp', 'Next up:') + ' ' + jb.next_lesson_title }) : null,
+						h('div', { class: 'mahan-progress' }, [
+							h('div', { class: 'mahan-progress-bar' }, [h('span', { style: 'width:' + (jb.progress_pct || 0) + '%' })]),
+							h('span', { class: 'mahan-progress-label', text: (jb.progress_pct || 0) + '%' })
+						])
+					]),
+					h('button', { class: 'mahan-btn mahan-btn-primary mahan-btn-lg', text: t('continueLearning', 'Continue learning'),
+						onClick: function () { go('lesson', { course: jb.id, lesson: jb.next_lesson_id }); } })
+				]));
+			}
+
 			if (!courses.length) {
 				wrap.appendChild(h('div', { class: 'mahan-empty' }, [
 					h('p', { text: t('emptyDashboard', "You haven't enrolled in any courses yet.") }),
@@ -1067,17 +1377,24 @@
 				wrap.appendChild(h('p', { class: 'mahan-badges-sub', text: earned + ' / ' + j.badges.length }));
 				var bgrid = h('div', { class: 'mahan-badges' });
 				j.badges.forEach(function (b) {
+					var showProgress = !b.earned && (b.need || 0) > 1 && (b.progress || 0) > 0;
 					bgrid.appendChild(h('div', { class: 'mahan-badge' + (b.earned ? ' is-earned' : ' is-locked'), title: b.desc }, [
 						h('span', { class: 'mahan-badge-icon', text: b.icon }),
 						h('span', { class: 'mahan-badge-title', text: b.title }),
-						h('span', { class: 'mahan-badge-desc', text: b.desc })
+						h('span', { class: 'mahan-badge-desc', text: b.desc }),
+						showProgress ? h('div', { class: 'mahan-badge-progress' }, [
+							h('div', { class: 'mahan-badge-progress-bar' }, [
+								h('span', { style: 'width:' + Math.round((b.progress / b.need) * 100) + '%' })
+							]),
+							h('span', { class: 'mahan-badge-progress-label', text: b.progress + '/' + b.need })
+						]) : null
 					]));
 				});
 				wrap.appendChild(bgrid);
 			}
 
 			mount(wrap);
-		}).catch(function () { mount(errorBox(renderDashboard)); });
+		}, renderDashboard);
 	}
 
 	/* ------------------------------------------------------------------ */
@@ -1086,8 +1403,8 @@
 
 	function renderLeaderboard() {
 		var period = state.lbPeriod || 'week';
-		mount(loadingShell('rows'));
-		api('/leaderboard?period=' + period).then(function (j) {
+		setTitle(t('leaderboard', 'Leaderboard'));
+		cachedApi('/leaderboard?period=' + period, 'rows', function (j) {
 			var wrap = h('div', { class: 'mahan-leaderboard' });
 			wrap.appendChild(h('div', { class: 'mahan-dash-hero' }, [h('h1', { text: '🏆 ' + t('leaderboard', 'Leaderboard') })]));
 
@@ -1104,7 +1421,10 @@
 
 			var entries = j.entries || [];
 			if (!entries.length) {
-				wrap.appendChild(h('div', { class: 'mahan-empty', text: t('emptyLeaderboard', 'No ranked learners yet — earn some XP!') }));
+				wrap.appendChild(h('div', { class: 'mahan-empty' }, [
+					h('p', { text: t('emptyLeaderboard', 'No ranked learners yet — earn some XP!') }),
+					h('button', { class: 'mahan-btn mahan-btn-primary', text: t('browseCourses', 'Browse courses'), onClick: function () { go('catalog'); } })
+				]));
 			} else {
 				var list = h('div', { class: 'mahan-lb-list' });
 				function lbRow(e) {
@@ -1126,7 +1446,7 @@
 				wrap.appendChild(list);
 			}
 			mount(wrap);
-		}).catch(function () { mount(errorBox(renderLeaderboard)); });
+		}, renderLeaderboard);
 	}
 
 	/* ------------------------------------------------------------------ */
@@ -1134,8 +1454,8 @@
 	/* ------------------------------------------------------------------ */
 
 	function renderPaths() {
-		mount(loadingShell('cards'));
-		api('/paths').then(function (j) {
+		setTitle(t('learningPaths', 'Learning paths'));
+		cachedApi('/paths', 'cards', function (j) {
 			var wrap = h('div', { class: 'mahan-paths' });
 			wrap.appendChild(h('div', { class: 'mahan-hero' }, [
 				h('h1', { text: t('learningPaths', 'Learning paths') }),
@@ -1143,14 +1463,17 @@
 			]));
 			var paths = j.paths || [];
 			if (!paths.length) {
-				wrap.appendChild(h('div', { class: 'mahan-empty', text: t('emptyPaths', 'No learning paths yet.') }));
+				wrap.appendChild(h('div', { class: 'mahan-empty' }, [
+					h('p', { text: t('emptyPaths', 'No learning paths yet.') }),
+					h('button', { class: 'mahan-btn mahan-btn-primary', text: t('browseCourses', 'Browse courses'), onClick: function () { go('catalog'); } })
+				]));
 			} else {
 				var grid = h('div', { class: 'mahan-grid' });
 				paths.forEach(function (p) { grid.appendChild(pathCard(p)); });
 				wrap.appendChild(grid);
 			}
 			mount(wrap);
-		}).catch(function () { mount(errorBox(renderPaths)); });
+		}, renderPaths);
 	}
 
 	function pathCard(p) {
@@ -1178,10 +1501,10 @@
 	}
 
 	function renderPath() {
-		mount(loadingShell('detail'));
-		api('/path/' + state.pathId).then(function (j) {
+		cachedApi('/path/' + state.pathId, 'detail', function (j) {
 			if (!j.ok) { mount(errorBox(renderPath)); return; }
 			var p = j.path;
+			setTitle(p.title);
 			var wrap = h('div', { class: 'mahan-path' });
 			wrap.appendChild(h('div', { class: 'mahan-course-hero' }, [
 				h('div', { class: 'mahan-course-hero-text' }, [
@@ -1225,7 +1548,7 @@
 			sec.appendChild(list);
 			wrap.appendChild(sec);
 			mount(wrap);
-		}).catch(function () { mount(errorBox(renderPath)); });
+		}, renderPath);
 	}
 
 	/* ------------------------------------------------------------------ */
@@ -1272,7 +1595,13 @@
 		var pct = goal > 0 ? Math.max(0, Math.min(100, Math.round((xpToday / goal) * 100))) : 0;
 		var done = goal > 0 && xpToday >= goal;
 
-		var select = h('select', { class: 'mahan-goal-select' });
+		var select = h('select', { class: 'mahan-goal-select', 'aria-label': t('dailyGoal', 'Daily goal') });
+		if (!goal) {
+			// No goal set yet — say so instead of pretending it's 10 XP.
+			var ph = h('option', { value: '', text: '—' });
+			ph.selected = true;
+			select.appendChild(ph);
+		}
 		[10, 20, 30, 50, 100].forEach(function (v) {
 			var opt = h('option', { value: String(v), text: v + ' XP' });
 			if (v === goal) { opt.selected = true; }
@@ -1284,7 +1613,9 @@
 			select.appendChild(custom);
 		}
 		select.addEventListener('change', function () {
-			api('/goal', 'POST', { daily_goal: parseInt(select.value, 10) }).then(function (r) {
+			var v = parseInt(select.value, 10);
+			if (!v) { return; }
+			api('/goal', 'POST', { daily_goal: v }).then(function (r) {
 				refreshHud(r.stats);
 				renderDashboard();
 			}).catch(function () { toast(t('error', 'Something went wrong.'), 'error'); });
@@ -1298,10 +1629,10 @@
 					select
 				])
 			]),
-			h('div', { class: 'mahan-progress' }, [
+			goal > 0 ? h('div', { class: 'mahan-progress' }, [
 				h('div', { class: 'mahan-progress-bar' }, [h('span', { style: 'width:' + pct + '%' })]),
 				h('span', { class: 'mahan-progress-label', text: xpToday + ' / ' + goal + ' XP' })
-			]),
+			]) : h('p', { class: 'mahan-goal-pick-msg', text: t('pickGoal', 'Set a daily XP goal to build a habit.') }),
 			done ? h('p', { class: 'mahan-goal-done-msg', text: t('goalDone', 'Goal reached — nice work! Everything extra is a bonus.') }) : null
 		]);
 	}
@@ -1332,6 +1663,8 @@
 			var profile = j.profile || {};
 
 			var form = h('form', { class: 'mahan-profile-form' });
+			// Enter in a text field must never trigger a native page reload.
+			form.addEventListener('submit', function (e) { e.preventDefault(); });
 			fields.forEach(function (f) { form.appendChild(profileField(f, profile[f.key])); });
 			var msg = h('div', { class: 'mahan-profile-msg' });
 
@@ -1348,12 +1681,19 @@
 						onClick: function (e) {
 							var btn = e.currentTarget;
 							var out = collectProfile(form, fields);
-							for (var i = 0; i < fields.length; i++) {
-								var f = fields[i];
-								if (f.required && (!out[f.key] || (Array.isArray(out[f.key]) && !out[f.key].length))) {
-									msg.textContent = t('required', 'Please fill in the required fields.');
-									return;
-								}
+							// Point at the exact missing fields, not just a generic line.
+							form.querySelectorAll('.mahan-field.is-invalid').forEach(function (n) { n.classList.remove('is-invalid'); });
+							var missing = fields.filter(function (f) {
+								return f.required && (!out[f.key] || (Array.isArray(out[f.key]) && !out[f.key].length));
+							});
+							if (missing.length) {
+								missing.forEach(function (f) {
+									var n = form.querySelector('[data-key="' + f.key + '"]');
+									var wrapEl = n && n.closest ? n.closest('.mahan-field') : null;
+									if (wrapEl) { wrapEl.classList.add('is-invalid'); }
+								});
+								msg.textContent = t('required', 'Please fill in the required fields.');
+								return;
 							}
 							btn.disabled = true;
 							api('/profile', 'POST', { profile: out }).then(function (r) {
@@ -1371,13 +1711,14 @@
 	function profileField(f, value) {
 		var wrap = h('div', { class: 'mahan-field' });
 		var req = f.required ? ' *' : '';
-		wrap.appendChild(h('label', { text: (f.label || f.key) + req }));
+		var fid = 'mahan-pf-' + String(f.key).replace(/[^a-z0-9_-]/gi, '');
+		wrap.appendChild(h('label', { text: (f.label || f.key) + req, for: fid }));
 		var input;
 		if (f.type === 'textarea') {
-			input = h('textarea', { rows: 3, 'data-key': f.key });
+			input = h('textarea', { rows: 3, 'data-key': f.key, id: fid });
 			input.value = value || '';
 		} else if (f.type === 'select') {
-			input = h('select', { 'data-key': f.key });
+			input = h('select', { 'data-key': f.key, id: fid });
 			input.appendChild(h('option', { value: '', text: '—' }));
 			(f.options || []).forEach(function (o) {
 				var ov = typeof o === 'string' ? o : o.value;
@@ -1387,7 +1728,7 @@
 				input.appendChild(opt);
 			});
 		} else if (f.type === 'multiselect') {
-			input = h('div', { class: 'mahan-checks', 'data-key': f.key });
+			input = h('div', { class: 'mahan-checks', 'data-key': f.key, role: 'group', 'aria-label': f.label || f.key });
 			var vals = Array.isArray(value) ? value.map(String) : [];
 			(f.options || []).forEach(function (o) {
 				var ov = typeof o === 'string' ? o : o.value;
@@ -1397,7 +1738,7 @@
 				input.appendChild(h('label', { class: 'mahan-check-item' }, [cb, document.createTextNode(' ' + ol)]));
 			});
 		} else {
-			input = h('input', { type: 'text', 'data-key': f.key });
+			input = h('input', { type: 'text', 'data-key': f.key, id: fid });
 			input.value = value || '';
 		}
 		wrap.appendChild(input);
@@ -1426,18 +1767,37 @@
 		return h('div', { class: 'mahan-empty mahan-login-gate' }, [
 			h('h2', { text: t('loginToLearn', 'Log in to start learning') }),
 			h('div', { class: 'mahan-modal-actions mahan-center' }, [
-				h('a', { class: 'mahan-btn mahan-btn-primary', href: D.loginUrl, text: t('login', 'Log in') }),
+				h('a', { class: 'mahan-btn mahan-btn-primary', href: loginHref(), text: t('login', 'Log in') }),
 				D.canRegister ? h('a', { class: 'mahan-btn mahan-btn-ghost', href: D.registerUrl, text: t('register', 'Create account') }) : null
 			])
 		]);
 	}
 
-	function errorBox(retry) {
-		return h('div', { class: 'mahan-empty' }, [
-			h('p', { text: t('error', 'Something went wrong.') }),
+	function errorBox(retry, err) {
+		var status = err && err.status;
+		// A missing resource can't be fixed by retrying — offer a way out.
+		if (status === 404) {
+			return h('div', { class: 'mahan-empty mahan-error-box' }, [
+				h('p', { text: t('notFound', 'This content is no longer available.') }),
+				h('button', { class: 'mahan-btn mahan-btn-primary', text: t('backToCatalog', 'Back to catalog'), onClick: function () { go('catalog'); } })
+			]);
+		}
+		var offline = (typeof navigator !== 'undefined') && navigator.onLine === false;
+		return h('div', { class: 'mahan-empty mahan-error-box' }, [
+			h('p', { text: offline ? t('offline', 'You appear to be offline. Check your connection and try again.') : t('error', 'Something went wrong.') }),
+			offline ? h('p', { class: 'mahan-error-hint', text: '📡' }) : null,
 			h('button', { class: 'mahan-btn mahan-btn-ghost', text: '↻ ' + t('retry', 'Try again'), onClick: retry })
 		]);
 	}
+
+	// When the connection returns, recover automatically instead of leaving
+	// the learner staring at an error.
+	window.addEventListener('online', function () {
+		if (root && root.querySelector('.mahan-error-box')) {
+			toast('📡 ' + t('backOnline', 'Back online!'), 'info');
+			render();
+		}
+	});
 
 	/* ------------------------------------------------------------------ */
 	/* Render dispatcher                                                   */
@@ -1458,10 +1818,15 @@
 
 	function boot() {
 		parseUrl();
-		if (D.loggedIn) {
-			api('/me').then(function (j) { state.me = j; render(); }).catch(function () { render(); });
-		} else {
-			render();
+		// Paint the view immediately; hydrate the HUD in parallel instead of
+		// serializing two round-trips before first paint.
+		render();
+		if (D.loggedIn && state.view !== 'dashboard') {
+			api('/me').then(function (j) {
+				apiCache['/me'] = j;
+				state.me = j;
+				refreshTopbar();
+			}).catch(function () { /* HUD stays in placeholder state */ });
 		}
 	}
 

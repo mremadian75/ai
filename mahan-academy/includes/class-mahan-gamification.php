@@ -258,6 +258,56 @@ class Mahan_Gamification {
 		return self::xp_since( $user_id, Mahan_Utils::today() . ' 00:00:00' );
 	}
 
+	/**
+	 * Duolingo-style activity for the last 7 days (oldest first, site tz).
+	 *
+	 * Each day: [ 'label' => localized weekday initial, 'active' => earned any
+	 * XP, 'goal_met' => reached the daily goal, 'today' => bool ].
+	 *
+	 * @param int $user_id User id.
+	 * @return array[]
+	 */
+	public static function week_activity( $user_id ) {
+		$user_id = (int) $user_id;
+		if ( ! $user_id ) {
+			return array();
+		}
+		global $wpdb;
+		$tz    = function_exists( 'wp_timezone' ) ? wp_timezone() : new DateTimeZone( 'UTC' );
+		$today = new DateTimeImmutable( 'now', $tz );
+		$table = Mahan_DB::xp_log();
+		$since = $today->modify( '-6 days' )->format( 'Y-m-d' ) . ' 00:00:00';
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT DATE(created_at) AS d, SUM(amount) AS s FROM {$table} WHERE user_id = %d AND created_at >= %s GROUP BY DATE(created_at)",
+				$user_id,
+				$since
+			),
+			ARRAY_A
+		);
+		$per_day = array();
+		foreach ( (array) $rows as $r ) {
+			$per_day[ $r['d'] ] = (int) $r['s'];
+		}
+
+		$goal = self::daily_goal( $user_id );
+		$out  = array();
+		for ( $i = 6; $i >= 0; $i-- ) {
+			$day = $today->modify( '-' . $i . ' days' );
+			$key = $day->format( 'Y-m-d' );
+			$xp  = isset( $per_day[ $key ] ) ? $per_day[ $key ] : 0;
+			$out[] = array(
+				'label'    => wp_date( 'D', $day->getTimestamp(), $tz ),
+				'active'   => $xp > 0,
+				'goal_met' => $goal > 0 ? ( $xp >= $goal ) : ( $xp > 0 ),
+				'today'    => 0 === $i,
+			);
+		}
+		return $out;
+	}
+
 	/* ------------------------------------------------------------------ */
 	/* Streaks + freezes                                                   */
 	/* ------------------------------------------------------------------ */

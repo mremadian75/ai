@@ -4,6 +4,71 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.5.0]
+
+UX overhaul driven by a five-lens best-practice audit of the learner app
+(journey friction, system-status feedback, forms & input, motivation loops,
+navigation & wayfinding). Front-end + additive REST fields; no schema changes.
+
+### Added
+
+- **Catalog search** — instant client-side search over title/subtitle/
+  category, combined with the level chips (which no longer refetch and flash
+  a skeleton). Empty results offer a one-tap "Clear filters".
+- **"Jump back in"** — the dashboard's hero card deep-links straight into
+  the next lesson of the most recent in-progress course (`/me` now returns
+  `next_lesson_id`/`next_lesson_title` per course). Enrolling also drops the
+  learner directly into lesson 1 instead of re-rendering the course page.
+- **Lesson wayfinding** — the lesson player shows the unit name,
+  "Lesson X of Y", and a slim course-progress bar (`/lesson` now returns
+  `position` + `course_pct`).
+- **Weekly activity dots** — Duolingo-style last-7-days strip on the
+  dashboard (label, active, goal-met, today) computed from the XP log
+  (`stats.week` on `/me`).
+- **Course-completion celebration** — a confetti modal replaces the
+  2.6-second toast + forced redirect; closing it returns to the course.
+- **Unit quiz in the flow** — completing the last lesson of a unit with a
+  quiz opens that quiz (`/lesson` returns `unit_quiz`), instead of the
+  happy path silently skipping every quiz.
+- **Badge progress** — locked achievements show "3/10"-style progress bars
+  (`for_user` now returns `need` + `progress`).
+- **Micro-celebrations** — extending a streak and reaching the daily goal
+  now toast at the moment they happen (before/after stats comparison).
+- **Session cache + stale-while-revalidate** — GET responses are cached in
+  memory and repainted only when fresh data differs; any POST clears the
+  cache. Back navigation is instant, chips/filters no longer flash.
+- **Browser integration** — per-view `document.title`, scroll-position
+  restoration on back/forward, and login links that redirect back to the
+  exact deep link (`loginBase` in `MahanData`).
+
+### Improved
+
+- Quiz taking: an "N/M answered" counter, a two-tap guard before submitting
+  with unanswered questions (they're graded wrong), and a confirm-on-close
+  guard so a stray Escape can't destroy answers in progress.
+- Errors: offline is detected and labeled (with auto-retry when the
+  connection returns), 404s offer "Back to catalog" instead of an infinite
+  retry loop, and failed enrollments show a toast instead of failing silently.
+- Tutor: the input auto-grows up to 120px, a failed send restores the typed
+  message, the status label reflects real availability instead of a
+  hardcoded "online", and an "Enter to send" hint shows on keyboard devices.
+- Exercise hints expand inline (persistent, re-readable) instead of a
+  vanishing toast; toasts are tap-to-dismiss and celebrations linger longer.
+- Boot no longer serializes two round-trips: the view renders immediately
+  while `/me` hydrates the HUD in parallel (with a skeleton placeholder
+  instead of a misleading "Log in" button).
+- A completed course's CTA is "✓ Review course" instead of "Resume" (which
+  reopened lesson 1); lesson completion also fires previously-dropped
+  `leveled_up`/`new_badges` payloads.
+
+### Fixed
+
+- The profile gate form could trigger a native page reload when pressing
+  Enter in a text field; required-field errors now highlight the exact
+  missing fields and labels are associated with their inputs (`for`/`id`).
+- An unset daily goal rendered as "10 XP" with a "0 / 0 XP" bar; it now
+  shows a placeholder and invites the learner to pick a goal.
+
 ## [1.4.0]
 
 UI/UX and responsive overhaul of the learner app, following mobile-first best

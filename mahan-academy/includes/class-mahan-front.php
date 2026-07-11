@@ -255,6 +255,11 @@ class Mahan_Front {
 			'goalHit'          => __( 'Daily goal reached!', 'mahan-academy' ),
 			'pickGoal'         => __( 'Set a daily XP goal to build a habit.', 'mahan-academy' ),
 			'closeQuizWarn'    => __( 'Your answers will be lost — close again to confirm.', 'mahan-academy' ),
+			'goalSaved'        => __( 'Daily goal updated', 'mahan-academy' ),
+			'tutorTimeout'     => __( 'The tutor took too long to respond. Please try again.', 'mahan-academy' ),
+			'notEnrolled'      => __( 'Enroll in this course to access its lessons.', 'mahan-academy' ),
+			'longestStreak'    => __( 'Longest', 'mahan-academy' ),
+			'streakAtRisk'     => __( 'Study today to keep it!', 'mahan-academy' ),
 		);
 	}
 }

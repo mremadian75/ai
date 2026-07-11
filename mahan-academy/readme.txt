@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.5.0
+Stable tag: 1.6.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,6 +53,18 @@ No. Everything happens inside WordPress.
 Yes — *Settings → Profile Form* takes a JSON schema. The placeholders you define there flow into the tutor's system prompt automatically.
 
 == Changelog ==
+
+= 1.6.0 =
+* New: Real busy states on every action button — a spinner + disabled state while enrolling, submitting a quiz, checking an answer, or completing a lesson (no more bare "…").
+* New: Previous / Next lesson buttons show the actual sibling lesson titles.
+* New: Leaderboard shows "+X XP → #N" (how much XP to pass the next person) and scrolls your own row into view.
+* New: The course back link points where you came from — Explore, a learning path, or My Learning.
+* New: Streak stat shows your longest streak, and the flame goes "cold" when today hasn't counted yet.
+* New: Search, level filter, and leaderboard period are saved in the URL, so filtered views can be shared or bookmarked.
+* Improved: The AI tutor's Send button is clearly disabled while a reply streams, and a 25-second watchdog stops it from hanging forever.
+* Improved: Changing your daily goal updates the card in place with a confirmation, instead of reloading the whole dashboard.
+* Improved: Session-expired (401) errors go straight to the login screen; "not enrolled" (403) sends you to the course page.
+* Improved: The un-enrolled lesson footer button now reads "Back to course" instead of a misleading "Complete lesson".
 
 = 1.5.0 =
 * New: Catalog search — find courses instantly by title, subtitle, or category (combined with the level filter, no page reloads).

@@ -208,8 +208,26 @@ UX behaviors (1.5.0):
 - **Flow** — enrolling jumps straight into lesson 1; completing the last
   lesson of a unit opens its quiz; finishing a course opens a confetti
   celebration modal; a completed course's CTA becomes "Review course".
-- **Errors** — `errorBox(retry, err)` distinguishes offline (with an
-  auto-retry on the `online` event) and 404 (offers "Back to catalog").
+- **Errors** — `errorBox(retry, err)` distinguishes 401 (→ login gate),
+  403 `not_enrolled` (→ course page), 404 (→ "Back to catalog"), and
+  offline (with an auto-retry on the `online` event).
+
+UX behaviors (1.6.0):
+
+- **`setBusy(btn, label)`** — puts a spinner + `aria-busy` on any async
+  button and returns a `restore(html?)` fn; used by enroll, quiz submit,
+  exercise check, and complete-lesson.
+- **Origin-aware navigation** — `go()`/`urlFor()` carry a `from` param
+  (`dashboard`, `paths`, or `path:<id>`); `courseBackLink()` resolves it to
+  the right back destination and label.
+- **`syncUrl()`** — mirrors transient view state (catalog `q`/`level`,
+  leaderboard `period`) into the URL via `replaceState` (no history entry);
+  `parseUrl()` restores them, so filtered views are shareable.
+- **Tutor** — `sendToTutor()` disables the Send button while streaming and
+  arms a 25s watchdog that `AbortController`-aborts a stalled stream;
+  `streamTutor()` takes an optional `signal` and ignores `AbortError`.
+- **Leaderboard** — rows show a "+X XP → #N" gap to the next rank; the
+  caller's row is scrolled into view only when off-screen.
 
 Quiz attempts reuse the `attempts` table (`type = 'quiz'`, `lesson_id = 0`,
 `exercise_key = 'quiz:<md5(unit)>'`), so v1.2.0 still adds no tables.

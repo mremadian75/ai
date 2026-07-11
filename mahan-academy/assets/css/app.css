@@ -591,3 +591,39 @@ button.mahan-quiz-row:hover { border-color: var(--m-primary); background: color-
 @media (prefers-reduced-motion: reduce) {
 	.mahan-confetti { display: none; }
 }
+
+/* ==================================================================== */
+/* v1.6.0 — UX polish: busy states, wayfinding, leaderboard targets     */
+/* ==================================================================== */
+
+/* Button in-flight spinner (setBusy) */
+.mahan-btn-spinner { display: inline-block; width: 15px; height: 15px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; opacity: .85; animation: m-spin .6s linear infinite; vertical-align: -2px; }
+.mahan-btn[aria-busy="true"] { cursor: progress; opacity: 1; }
+
+/* Prev/Next lesson buttons with sibling titles */
+.mahan-lesson-nav { flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; max-width: 46%; padding-top: 8px; padding-bottom: 8px; }
+.mahan-lesson-nav-next { align-items: flex-end; text-align: right; }
+.mahan-lesson-nav-kicker { font-size: 12px; font-weight: 700; color: var(--m-muted); }
+.mahan-lesson-nav-title { font-size: 14px; font-weight: 700; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mahan-lesson-nav-spacer { display: inline-block; }
+@media (max-width: 640px) {
+	.mahan-lesson-nav { max-width: none; flex: 1; }
+	.mahan-lesson-nav-title { display: none; }
+}
+
+/* Leaderboard "XP to next rank" target */
+.mahan-lb-gap-note { display: block; font-size: 12px; font-weight: 700; color: var(--m-primary); margin-top: 2px; }
+
+/* Tutor send button busy state */
+.mahan-tutor-send.is-busy { position: relative; color: transparent; }
+.mahan-tutor-send.is-busy::after { content: ""; position: absolute; inset: 0; margin: auto; width: 16px; height: 16px; border-radius: 50%; border: 2px solid #fff; border-right-color: transparent; animation: m-spin .6s linear infinite; }
+.mahan-tutor-send[disabled] { opacity: .8; cursor: progress; }
+
+/* Cold-flame streak stat (today not yet counted) */
+.mahan-stat-big.is-cold { background: color-mix(in srgb, #f59e0b 8%, var(--m-bg)); }
+.mahan-stat-big.is-cold .mahan-stat-icon { filter: grayscale(.3); opacity: .85; }
+.mahan-stat-big.is-cold .mahan-stat-label { color: #b45309; }
+
+@media (prefers-reduced-motion: reduce) {
+	.mahan-btn-spinner, .mahan-tutor-send.is-busy::after { animation-duration: .01ms; }
+}

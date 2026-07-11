@@ -4,6 +4,46 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.6.0]
+
+Second UX pass, clearing the remaining items from the v1.5.0 best-practice
+audit backlog. Front-end only — no schema or REST changes.
+
+### Added
+
+- **Real in-flight button states** — a shared `setBusy()` helper puts a
+  spinner + `aria-busy` on any async action (enroll, quiz submit, exercise
+  check, complete lesson) and keeps the button width so nothing jumps,
+  instead of a bare "…" or no feedback at all.
+- **Sibling titles in the lesson footer** — Previous / Next buttons show the
+  actual adjacent lesson titles, not just generic labels.
+- **Leaderboard rank targets** — each visible "you" row shows "+X XP → #N"
+  (the gap to the next rank up), and the caller's row scrolls into view when
+  it would otherwise be off-screen.
+- **Origin-aware course back link** — the course hero back link points at
+  wherever the learner arrived from (Explore, a learning path, or My
+  Learning) via a `from` navigation param.
+- **Streak polish** — the dashboard streak stat shows the longest streak and
+  switches to a "cold" candle with a "study today to keep it" nudge when
+  today hasn't counted yet.
+- **Shareable filtered views** — catalog search + level filter and the
+  leaderboard period are persisted to the URL via `replaceState`, and
+  restored on load, so a filtered view can be bookmarked or shared.
+
+### Improved
+
+- The AI tutor's Send button shows a busy spinner and is disabled while a
+  reply streams (no more silently-swallowed clicks), and a 25-second
+  watchdog aborts a stalled stream so the tutor can't deadlock.
+- Changing the daily goal updates the card in place with a confirmation
+  toast instead of re-rendering (and refetching) the whole dashboard.
+- `errorBox` routes a 401 straight to the login gate and a 403
+  `not_enrolled` to the course page, instead of a generic retry.
+- The un-enrolled lesson footer's primary button reads "Back to course"
+  (which is what it does) instead of "Complete lesson".
+- Stale-while-revalidate repaints no longer steal focus from an active
+  input (the fresh paint is deferred while the learner is typing).
+
 ## [1.5.0]
 
 UX overhaul driven by a five-lens best-practice audit of the learner app

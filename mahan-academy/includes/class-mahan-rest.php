@@ -362,6 +362,12 @@ class Mahan_REST {
 			return new WP_REST_Response( array( 'ok' => false, 'error' => 'not_enrolled' ), 403 );
 		}
 		$res = Mahan_Progress::complete_lesson( $user_id, $lesson_id );
+		// On course completion, tell the app whether a certificate is
+		// available so the celebration can offer it directly.
+		if ( ! empty( $res['course_completed'] ) ) {
+			$res['certificate'] = (bool) Mahan_Utils::meta_int( $course_id, Mahan_Courses::M_CERTIFICATE, 0 )
+				&& (bool) Mahan_Settings::get( 'certificate_enabled', 1 );
+		}
 		return rest_ensure_response( $res );
 	}
 

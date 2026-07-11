@@ -968,7 +968,7 @@
 	}
 
 	// Course-completion celebration: a real moment, not a 2.6s toast.
-	function showCourseComplete(courseId, courseTitle) {
+	function showCourseComplete(courseId, courseTitle, hasCert) {
 		var modal;
 		var confetti = h('div', { class: 'mahan-confetti', 'aria-hidden': 'true' });
 		var colors = ['#f59e0b', '#22c55e', '#4f46e5', '#ec4899', '#06b6d4'];
@@ -986,6 +986,11 @@
 			h('h2', { text: '🎉 ' + t('courseCompleteTitle', 'Course complete!') }),
 			h('p', { class: 'mahan-modal-sub', text: t('courseCompleteMsg', 'You finished') + ' “' + (courseTitle || '') + '”' }),
 			h('div', { class: 'mahan-modal-actions mahan-center' }, [
+				hasCert ? h('button', { class: 'mahan-btn mahan-btn-ghost mahan-btn-lg', text: '🎓 ' + t('viewCertificate', 'View certificate'),
+					onClick: function () {
+						modal.close(true);
+						showCertificate({ title: courseTitle || '' });
+					} }) : null,
 				h('button', { class: 'mahan-btn mahan-btn-primary mahan-btn-lg', text: t('keepLearning', 'Keep learning'),
 					onClick: function () { modal.close(); } })
 			])
@@ -1017,7 +1022,7 @@
 					btn.classList.add('is-done');
 					btn.textContent = '✓ ' + t('lessonComplete', 'Completed');
 					if (r.course_completed) {
-						setTimeout(function () { showCourseComplete(L.course_id, L.course_title); }, 600);
+						setTimeout(function () { showCourseComplete(L.course_id, L.course_title, r.certificate); }, 600);
 					} else if (L.unit_quiz && !L.unit_quiz.passed) {
 						// Last lesson of a unit with a quiz: bring the quiz into
 						// the flow instead of silently skipping past it.

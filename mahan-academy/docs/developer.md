@@ -66,9 +66,13 @@ mahan-academy/
 `xp_log` (append-only: every XP award with `amount`, `reason`, `ref_id`,
 `created_at` — powers weekly leaderboards, daily goals, and reports), and
 `reviews` (the adaptive-review queue: one row per missed question with a
-Leitner `box`, `due_at`, `reps`/`lapses`, and a JSON `snapshot` of the
-question — added in DB v3). The `stats` table also carries `freezes` and
-`daily_goal` (added in DB v2 via `dbDelta`).
+Leitner `box`, `due_at`, `reps`/`lapses`, a JSON `snapshot` of the question,
+and `last_xp_date` — added in DB v3, `last_xp_date` in DB v4). The `stats`
+table also carries `freezes` and `daily_goal` (added in DB v2 via `dbDelta`).
+
+> Review XP is capped at once per item per day (`last_xp_date`): a wrong
+> answer makes an item immediately due again (so the end-of-lesson re-drill
+> still rewards a correct answer), but a wrong→correct loop can't farm XP.
 
 **Learner profile** is stored in user meta `mahan_profile` (schema-driven; see
 `Mahan_Profile` and Settings → Profile Form). **Badges** are stored in user meta

@@ -1049,6 +1049,9 @@
 				'aria-label': t('askTutor', 'Ask the AI tutor'), 'aria-expanded': 'false',
 				onClick: function () { toggleTutor(true); }
 			}, [h('span', { 'aria-hidden': 'true', text: '🤖' })]));
+			// Fresh lesson → fresh tutor panel; clear any lingering busy flag
+			// from a previous lesson's stream so this lesson's history loads.
+			tutorBusy = false;
 			mount(wrap);
 			loadChat(L.id);
 		}).catch(function (e) {
@@ -2171,8 +2174,11 @@
 							? (r.mastered ? t('reviewMasteredMsg', 'Mastered! You won\'t see this one for a while.') : t('reviewAgainSoon', "We'll ask you again soon."))
 							: (r.correct_text ? t('answerWas', 'Answer:') + ' ' + esc(r.correct_text) : t('reviewAgainSoon', "We'll ask you again soon."));
 						feedback.innerHTML = '<strong>' + headTxt + '</strong><div>' + detail + '</div>';
-						// Wrong answers come back at the end of this same session.
-						if (!r.is_correct && !item._retried) {
+						// Wrong answers come back at the end of this same session —
+						// but never re-queue an AI variant (its one-time token is
+						// already spent, so it would be graded against the
+						// original question while still showing the variant).
+						if (!r.is_correct && !item._retried && !item.is_variant) {
 							item._retried = true;
 							queue.push(item);
 							total++;

@@ -124,7 +124,16 @@ class Mahan_AI_Stream {
 
 		if ( $lesson_id ) {
 			$lesson = get_post( $lesson_id );
-			if ( $lesson && Mahan_CPT::LESSON === $lesson->post_type ) {
+			// Only ever feed PUBLISHED lesson content the learner is enrolled
+			// in — never drafts/private posts (an IDOR leak of unpublished
+			// course material via the tutor prompt).
+			$course_id = $lesson ? Mahan_Courses::get_lesson_course_id( $lesson_id ) : 0;
+			$allowed   = $lesson
+				&& Mahan_CPT::LESSON === $lesson->post_type
+				&& 'publish' === $lesson->post_status
+				&& $course_id
+				&& Mahan_Enrollment::is_enrolled( $user_id, $course_id );
+			if ( $allowed ) {
 				$course_id    = Mahan_Courses::get_lesson_course_id( $lesson_id );
 				$course_title = $course_id ? get_the_title( $course_id ) : '';
 				$plain        = wp_strip_all_tags( (string) $lesson->post_content );
@@ -264,7 +273,13 @@ class Mahan_AI_Stream {
 		curl_setopt( $ch, CURLOPT_POSTFIELDS, wp_json_encode( $request['body'] ) );
 		curl_setopt( $ch, CURLOPT_HTTPHEADER, $request['headers'] );
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, false );
-		curl_setopt( $ch, CURLOPT_TIMEOUT, 120 );
+		// Bound the connect time and abort only on a genuine stall (no bytes
+		// for 60s) rather than a hard total cap that would truncate a long,
+		// healthy answer mid-stream.
+		curl_setopt( $ch, CURLOPT_CONNECTTIMEOUT, 15 );
+		curl_setopt( $ch, CURLOPT_TIMEOUT, 300 );
+		curl_setopt( $ch, CURLOPT_LOW_SPEED_LIMIT, 1 );
+		curl_setopt( $ch, CURLOPT_LOW_SPEED_TIME, 60 );
 		curl_setopt(
 			$ch,
 			CURLOPT_WRITEFUNCTION,
@@ -300,10 +315,15 @@ class Mahan_AI_Stream {
 			}
 		);
 
-		$ok = curl_exec( $ch );
-		if ( false === $ok && '' === $full ) {
+		$ok   = curl_exec( $ch );
+		$code = (int) curl_getinfo( $ch, CURLINFO_HTTP_CODE );
+		// With RETURNTRANSFER off, curl_exec returns true even for 4xx/5xx —
+		// whose body is an error JSON, not SSE, so no token is ever emitted.
+		// Surface a real error whenever nothing streamed and the transfer
+		// failed OR the provider returned a non-2xx status.
+		if ( '' === $full && ( false === $ok || $code < 200 || $code >= 300 ) ) {
 			$err = curl_error( $ch );
-			Mahan_Logger::error( 'stream curl error', array( 'msg' => $err ) );
+			Mahan_Logger::error( 'stream error', array( 'msg' => $err, 'http' => $code ) );
 			self::emit( array( 'error' => __( 'The tutor connection failed. Please try again.', 'mahan-academy' ) ) );
 		}
 		curl_close( $ch );

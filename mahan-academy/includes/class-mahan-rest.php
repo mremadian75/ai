@@ -214,14 +214,27 @@ class Mahan_REST {
 		$progress_pct = ( $user_id && $enrolled ) ? Mahan_Progress::course_progress_pct( $user_id, $course_id ) : 0;
 		$status_map   = $user_id ? Mahan_Progress::course_lesson_status( $user_id, $course_id ) : array();
 
-		$units     = array();
-		$prev_done = true; // First lesson is always unlocked.
+		// Compute lock state in the flat, canonical lesson order so the
+		// outline agrees exactly with the server-side gate (lesson_locked),
+		// even when unit grouping metadata is inconsistent.
+		$locked_map = array();
+		if ( $enrolled ) {
+			$flat_prev_done = true;
+			foreach ( Mahan_Courses::get_course_lessons( $course_id ) as $flat_lesson ) {
+				$flid    = (int) $flat_lesson->ID;
+				$fstatus = isset( $status_map[ $flid ] ) ? $status_map[ $flid ] : 'not_started';
+				$locked_map[ $flid ] = ( ! $flat_prev_done && 'completed' !== $fstatus && 'in_progress' !== $fstatus );
+				$flat_prev_done = ( 'completed' === $fstatus );
+			}
+		}
+
+		$units = array();
 		foreach ( Mahan_Courses::get_course_units( $course_id ) as $unit ) {
 			$lessons = array();
 			foreach ( $unit['lessons'] as $lesson ) {
 				$lid    = (int) $lesson->ID;
 				$status = isset( $status_map[ $lid ] ) ? $status_map[ $lid ] : 'not_started';
-				$locked = $enrolled ? ( ! $prev_done && 'completed' !== $status && 'in_progress' !== $status ) : false;
+				$locked = $enrolled && ! empty( $locked_map[ $lid ] );
 				$lessons[] = array(
 					'id'      => $lid,
 					'title'   => get_the_title( $lid ),
@@ -231,7 +244,6 @@ class Mahan_REST {
 					'status'  => $status,
 					'locked'  => $locked,
 				);
-				$prev_done = ( 'completed' === $status );
 			}
 
 			// Unit quiz summary (learner-facing, no answers).

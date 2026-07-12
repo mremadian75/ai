@@ -4,6 +4,62 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.7.2]
+
+Second audit pass — a regression review of the 1.7.1 fixes (all confirmed
+sound) plus a deep dive into the less-covered subsystems (AI streaming relay,
+profile, emails, utils, enrollment). **DB version 4** — adds a `last_xp_date`
+column to `mahan_reviews` (migrated automatically via `dbDelta`).
+
+### Fixed — regressions from 1.7.1
+
+- **`lesson_locked()` traversal** (committed in 9e84599): walked the grouped
+  `get_course_units()` order while `next_lesson()` uses the flat
+  `get_course_lessons()` order — on inconsistent unit metadata the gate could
+  403 the exact lesson the app auto-navigates to. Now walks the same flat
+  order (fail-open for the auto-nav target; proven over 2000 random states).
+- **Review XP farm reopened by box-0 `+0 seconds`.** Making a freshly-missed
+  item due immediately (needed for the end-of-lesson re-drill to award XP)
+  let a wrong→correct→wrong→correct loop farm XP, since the `was_due` gate
+  only blocks repeated *correct* answers. Review XP is now capped at **once
+  per item per day** (`last_xp_date`), which closes the loop while keeping the
+  end-of-lesson reward. Verified by a farm-simulation test.
+
+### Fixed — subsystems
+
+- **Streaming tutor swallowed provider errors.** With `CURLOPT_RETURNTRANSFER`
+  off, `curl_exec` returns `true` for 4xx/5xx, whose body isn't SSE, so no
+  token streamed and no error surfaced (learner saw an empty reply). Now
+  checks `CURLINFO_HTTP_CODE` and emits an error when nothing streamed and the
+  status is non-2xx. Also swapped the hard 120s total timeout for a connect
+  timeout + 60s stall timeout so a long healthy answer isn't truncated.
+- **Tutor IDOR.** `build_messages` fed lesson content with only a
+  `post_type` check — draft/private lesson bodies could be extracted via the
+  tutor prompt. Now requires a `publish`ed lesson the user is enrolled in.
+- **`extract_json` brace matcher** ignored string literals, so valid JSON with
+  a `}`/`{` inside a string value failed to parse — and the exercise grader's
+  "API failure" fallback then auto-passed the answer. The scanner is now
+  string- and escape-aware and skips a failed candidate to the next `{`.
+  (8-case unit test.)
+- **Duplicate `mahan_enrolled`.** A concurrent double-enroll lost the
+  UNIQUE race but still fired the hook twice (two welcome emails). The hook
+  now fires only when the row was actually inserted.
+- **`update_progress` wiped `completed_at`.** Recomputing a completed course's
+  progress below 100 reset its status to active and nulled the completion
+  timestamp. A finished course now keeps its completion state and original
+  date.
+- **Quiz badges under-counted** across courses sharing a unit title
+  (`quiz:md5(unit)` key had no course scope) — now `COUNT(DISTINCT
+  course_id:key)`. **Review clears** now also run badge evaluation
+  (`mahan_review_cleared` → `evaluate`) so XP-threshold badges unlock promptly.
+- **Re-queued AI variant** was displayed as the variant but graded against the
+  original (its one-time token was already spent) — variants are no longer
+  re-queued within a session.
+- **Course-outline lock flag** now computed in the same flat order as the
+  gate, so the outline and the server agree even on inconsistent unit data.
+- **`loadChat`** clears a stale `tutorBusy` flag on a fresh lesson so its
+  history always loads.
+
 ## [1.7.1]
 
 Hardening & bug-fix release following a full-codebase audit (four parallel

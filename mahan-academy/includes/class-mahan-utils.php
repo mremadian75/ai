@@ -83,26 +83,40 @@ class Mahan_Utils {
 		if ( is_array( $decoded ) ) {
 			return $decoded;
 		}
-		// Try to find the first {...} block.
-		$start = strpos( $text, '{' );
-		if ( false === $start ) {
-			return null;
-		}
-		$depth = 0;
-		$len   = strlen( $text );
-		for ( $i = $start; $i < $len; $i++ ) {
-			$c = $text[ $i ];
-			if ( '{' === $c ) {
-				$depth++;
-			} elseif ( '}' === $c ) {
-				$depth--;
-				if ( 0 === $depth ) {
-					$candidate = substr( $text, $start, $i - $start + 1 );
-					$decoded   = json_decode( $candidate, true );
-					if ( is_array( $decoded ) ) {
-						return $decoded;
+		// Try to find the first balanced {...} block. The scanner is
+		// string-aware: braces inside JSON string values (and escaped quotes)
+		// are ignored, so a value like "close with }" doesn't end the object
+		// early. It keeps scanning past a candidate that fails to decode.
+		$len = strlen( $text );
+		for ( $start = strpos( $text, '{' ); false !== $start; $start = strpos( $text, '{', $start + 1 ) ) {
+			$depth     = 0;
+			$in_string = false;
+			$escaped   = false;
+			for ( $i = $start; $i < $len; $i++ ) {
+				$c = $text[ $i ];
+				if ( $in_string ) {
+					if ( $escaped ) {
+						$escaped = false;
+					} elseif ( '\\' === $c ) {
+						$escaped = true;
+					} elseif ( '"' === $c ) {
+						$in_string = false;
 					}
-					return null;
+					continue;
+				}
+				if ( '"' === $c ) {
+					$in_string = true;
+				} elseif ( '{' === $c ) {
+					$depth++;
+				} elseif ( '}' === $c ) {
+					$depth--;
+					if ( 0 === $depth ) {
+						$decoded = json_decode( substr( $text, $start, $i - $start + 1 ), true );
+						if ( is_array( $decoded ) ) {
+							return $decoded;
+						}
+						break; // This candidate failed; try the next '{'.
+					}
 				}
 			}
 		}

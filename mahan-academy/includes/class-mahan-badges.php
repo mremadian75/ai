@@ -35,6 +35,9 @@ class Mahan_Badges {
 		add_action( 'mahan_streak_updated', array( __CLASS__, 'evaluate' ), 20 );
 		add_action( 'mahan_quiz_passed', array( __CLASS__, 'evaluate' ), 20 );
 		add_action( 'mahan_exercise_correct', array( __CLASS__, 'evaluate' ), 20 );
+		// Review clears award XP too — evaluate so XP-threshold badges unlock
+		// promptly even on a day with no lesson/level/streak event.
+		add_action( 'mahan_review_cleared', array( __CLASS__, 'evaluate' ), 20 );
 	}
 
 	private static function enabled() {
@@ -182,9 +185,11 @@ class Mahan_Badges {
 	private static function quizzes_passed( $user_id ) {
 		global $wpdb;
 		$table = Mahan_DB::attempts();
+		// Scope by course too — the quiz key is md5(unit_title), so two
+		// courses with a same-named unit would otherwise collapse into one.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		return (int) $wpdb->get_var(
-			$wpdb->prepare( "SELECT COUNT(DISTINCT exercise_key) FROM {$table} WHERE user_id = %d AND type = 'quiz' AND is_correct = 1", (int) $user_id )
+			$wpdb->prepare( "SELECT COUNT(DISTINCT CONCAT(course_id, ':', exercise_key)) FROM {$table} WHERE user_id = %d AND type = 'quiz' AND is_correct = 1", (int) $user_id )
 		);
 	}
 
@@ -193,7 +198,7 @@ class Mahan_Badges {
 		$table = Mahan_DB::attempts();
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		return (int) $wpdb->get_var(
-			$wpdb->prepare( "SELECT COUNT(DISTINCT exercise_key) FROM {$table} WHERE user_id = %d AND type = 'quiz' AND score = 100", (int) $user_id )
+			$wpdb->prepare( "SELECT COUNT(DISTINCT CONCAT(course_id, ':', exercise_key)) FROM {$table} WHERE user_id = %d AND type = 'quiz' AND score = 100", (int) $user_id )
 		);
 	}
 

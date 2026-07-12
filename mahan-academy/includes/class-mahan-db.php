@@ -209,6 +209,7 @@ class Mahan_DB {
 			reps INT UNSIGNED NOT NULL DEFAULT 0,
 			lapses INT UNSIGNED NOT NULL DEFAULT 0,
 			last_result TINYINT(1) NOT NULL DEFAULT 0,
+			last_xp_date DATE NULL DEFAULT NULL,
 			due_at DATETIME NOT NULL,
 			created_at DATETIME NOT NULL,
 			updated_at DATETIME NOT NULL,

@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.7.1
+Stable tag: 1.7.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -54,6 +54,17 @@ No. Everything happens inside WordPress.
 Yes — *Settings → Profile Form* takes a JSON schema. The placeholders you define there flow into the tutor's system prompt automatically.
 
 == Changelog ==
+
+= 1.7.2 =
+Second audit pass — regression checks on the 1.7.1 fixes plus deeper subsystem review. **DB v4** (adds one column to the reviews table, migrated automatically).
+* Fixed: a wrong→right loop could still farm review XP — review XP is now capped at once per item per day (the end-of-lesson re-drill still rewards you normally).
+* Fixed: the AI tutor now surfaces provider errors (expired key, rate limit) instead of silently showing an empty reply; long answers are no longer cut off by a hard timeout.
+* Fixed: the tutor can no longer be used to read unpublished/draft lesson content (it now requires a published lesson you're enrolled in).
+* Fixed: a double-click on Enroll no longer sends two welcome emails.
+* Fixed: a finished course keeps its completion date/status even if its progress is later recomputed.
+* Fixed: quiz achievements now count correctly across courses that share a unit name; clearing reviews can unlock XP achievements immediately.
+* Fixed: an AI reply whose JSON contains a brace inside a text value is now parsed correctly (previously it could make a wrong answer count as correct).
+* Fixed: the lesson lock shown in the course outline now always matches what the server enforces; a slow/late fix ensures the next lesson is never wrongly locked.
 
 = 1.7.1 =
 Hardening & bug-fix release after a full-codebase audit.

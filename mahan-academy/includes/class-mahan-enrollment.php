@@ -59,7 +59,7 @@ class Mahan_Enrollment {
 		global $wpdb;
 		$now = Mahan_Utils::now_mysql();
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$wpdb->insert(
+		$inserted = $wpdb->insert(
 			Mahan_DB::enrollments(),
 			array(
 				'user_id'      => $user_id,
@@ -70,7 +70,12 @@ class Mahan_Enrollment {
 			),
 			array( '%d', '%d', '%s', '%d', '%s' )
 		);
-		do_action( 'mahan_enrolled', $user_id, $course_id );
+		// Only fire the enrolled hook (welcome email, etc.) when THIS call
+		// actually created the row — a concurrent double-enroll loses the
+		// UNIQUE (user_id, course_id) race and must not re-notify.
+		if ( $inserted ) {
+			do_action( 'mahan_enrolled', $user_id, $course_id );
+		}
 		return self::get( $user_id, $course_id );
 	}
 
@@ -84,7 +89,21 @@ class Mahan_Enrollment {
 		if ( ! $user_id || ! $course_id ) {
 			return;
 		}
-		$completed = ( 100 === $pct ) ? Mahan_Utils::now_mysql() : null;
+		// Preserve a course's completion: once finished it stays 'completed'
+		// with its original timestamp, even if progress is later recomputed
+		// below 100 (e.g. a lesson is added). Never wipe completed_at.
+		$existing     = self::get( $user_id, $course_id );
+		$prior_at     = ( $existing && ! empty( $existing['completed_at'] ) ) ? $existing['completed_at'] : '';
+		if ( 100 === $pct ) {
+			$status       = 'completed';
+			$completed_at = '' !== $prior_at ? $prior_at : Mahan_Utils::now_mysql();
+		} elseif ( '' !== $prior_at ) {
+			$status       = 'completed';
+			$completed_at = $prior_at;
+		} else {
+			$status       = 'active';
+			$completed_at = null;
+		}
 
 		global $wpdb;
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
@@ -92,8 +111,8 @@ class Mahan_Enrollment {
 			Mahan_DB::enrollments(),
 			array(
 				'progress_pct' => $pct,
-				'status'       => $completed ? 'completed' : 'active',
-				'completed_at' => $completed,
+				'status'       => $status,
+				'completed_at' => $completed_at,
 			),
 			array(
 				'user_id'   => $user_id,

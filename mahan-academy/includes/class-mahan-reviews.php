@@ -400,38 +400,49 @@ class Mahan_Reviews {
 			delete_transient( 'mahan_rev_' . $used_token );
 		}
 
-		// Was this item actually due before we grade it? XP is only awarded
-		// for genuinely-due reviews, so scripting repeated correct answers to
-		// the same item (which pushes due_at into the future) can't farm XP.
-		$now      = Mahan_Utils::now_mysql();
-		$was_due  = ( (string) $row['due_at'] <= $now );
+		// XP is capped at once per item per day. This is what stops farming:
+		// a wrong answer makes the item due again immediately (so the
+		// end-of-lesson re-drill can still earn XP), but a wrong→correct→
+		// wrong→correct loop can't repeatedly award because today's award is
+		// already recorded in last_xp_date.
+		$now       = Mahan_Utils::now_mysql();
+		$today     = Mahan_Utils::today();
+		$was_due   = ( (string) $row['due_at'] <= $now );
+		$paid_today = ( (string) $row['last_xp_date'] === $today );
 
 		$graded  = self::grade_question( $q, $answer );
 		$correct = (bool) $graded['correct'];
 
+		$eligible = ( $correct && $was_due && ! $paid_today );
+
 		// Reschedule using the same box logic as record().
-		$box = $correct ? min( self::MAX_BOX, (int) $row['box'] + 1 ) : 0;
+		$box    = $correct ? min( self::MAX_BOX, (int) $row['box'] + 1 ) : 0;
+		$fields = array(
+			'box'         => $box,
+			'reps'        => (int) $row['reps'] + 1,
+			'lapses'      => (int) $row['lapses'] + ( $correct ? 0 : 1 ),
+			'last_result' => $correct ? 1 : 0,
+			'due_at'      => self::due_for_box( $box ),
+			'updated_at'  => $now,
+		);
+		$formats = array( '%d', '%d', '%d', '%d', '%s', '%s' );
+		if ( $eligible ) {
+			$fields['last_xp_date'] = $today;
+			$formats[]              = '%s';
+		}
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$wpdb->update(
 			$table,
-			array(
-				'box'         => $box,
-				'reps'        => (int) $row['reps'] + 1,
-				'lapses'      => (int) $row['lapses'] + ( $correct ? 0 : 1 ),
-				'last_result' => $correct ? 1 : 0,
-				'due_at'      => self::due_for_box( $box ),
-				'updated_at'  => $now,
-			),
+			$fields,
 			array( 'id' => (int) $row['id'] ),
-			array( '%d', '%d', '%d', '%d', '%s', '%s' ),
+			$formats,
 			array( '%d' )
 		);
 
-		// A little XP for clearing a review (keeps the streak/goal loop alive)
-		// — but only when the item was actually due, so it can't be farmed.
+		// A little XP for clearing a review (keeps the streak/goal loop alive).
 		$awarded    = 0;
 		$leveled_up = false;
-		if ( $correct && $was_due ) {
+		if ( $eligible ) {
 			$xp = max( 1, (int) Mahan_Settings::get( 'review_xp', 5 ) );
 			// record_activity() first so the streak is current when add_xp()
 			// computes its streak bonus (and a lapsed streak is reset first).

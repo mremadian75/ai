@@ -106,7 +106,7 @@
 			$spin.addClass('is-active');
 			$btn.prop('disabled', true);
 			ajax('mahan_ai_exercises', {
-				lesson_id: $builder.data('lessonId') || getLessonId(),
+				lesson_id: $builder.data('lesson') || getLessonId(),
 				count: $count.val(),
 				content: postContent()
 			})

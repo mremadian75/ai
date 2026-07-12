@@ -153,9 +153,12 @@ class Mahan_REST {
 		if ( ! is_user_logged_in() ) {
 			return new WP_Error( 'rest_forbidden', __( 'You must be logged in.', 'mahan-academy' ), array( 'status' => 401 ) );
 		}
+		// Require a valid REST nonce on every logged-in (state-changing or
+		// personal) route — don't rely on core's cookie check as the only
+		// CSRF guard.
 		$nonce = $request->get_header( 'X-WP-Nonce' );
-		if ( $nonce && ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
-			return new WP_Error( 'rest_forbidden', __( 'Invalid nonce.', 'mahan-academy' ), array( 'status' => 403 ) );
+		if ( ! wp_verify_nonce( $nonce, 'wp_rest' ) ) {
+			return new WP_Error( 'rest_forbidden', __( 'Invalid or missing nonce.', 'mahan-academy' ), array( 'status' => 403 ) );
 		}
 		return true;
 	}
@@ -280,6 +283,12 @@ class Mahan_REST {
 		$course_id = Mahan_Courses::get_lesson_course_id( $lesson_id );
 		$enrolled  = Mahan_Enrollment::is_enrolled( $user_id, $course_id );
 
+		// Enforce sequential gating server-side: don't serve (or start) a
+		// lesson whose predecessor isn't complete.
+		if ( $enrolled && Mahan_Courses::lesson_locked( $user_id, $lesson_id ) ) {
+			return new WP_REST_Response( array( 'ok' => false, 'error' => 'locked' ), 403 );
+		}
+
 		// Mark started (only counts once).
 		if ( $enrolled ) {
 			Mahan_Progress::start_lesson( $user_id, $lesson_id, $course_id );
@@ -380,6 +389,9 @@ class Mahan_REST {
 		if ( ! Mahan_Enrollment::is_enrolled( $user_id, $course_id ) ) {
 			return new WP_REST_Response( array( 'ok' => false, 'error' => 'not_enrolled' ), 403 );
 		}
+		if ( Mahan_Courses::lesson_locked( $user_id, $lesson_id ) ) {
+			return new WP_REST_Response( array( 'ok' => false, 'error' => 'locked' ), 403 );
+		}
 		$res = Mahan_Progress::complete_lesson( $user_id, $lesson_id );
 		// On course completion, tell the app whether a certificate is
 		// available so the celebration can offer it directly.
@@ -406,6 +418,9 @@ class Mahan_REST {
 		$course_id = Mahan_Courses::get_lesson_course_id( $lesson_id );
 		if ( ! Mahan_Enrollment::is_enrolled( $user_id, $course_id ) ) {
 			return new WP_REST_Response( array( 'ok' => false, 'error' => 'not_enrolled' ), 403 );
+		}
+		if ( Mahan_Courses::lesson_locked( $user_id, $lesson_id ) ) {
+			return new WP_REST_Response( array( 'ok' => false, 'error' => 'locked' ), 403 );
 		}
 
 		// Normalize answer: int index for MC, string otherwise.
@@ -541,6 +556,9 @@ class Mahan_REST {
 			'ok'      => true,
 			'user'    => array(
 				'id'           => $user_id,
+				// Both keys so the HUD (reads `name`) and certificate (reads
+				// `display_name`) work regardless of which shape they got.
+				'name'         => $user ? $user->display_name : '',
 				'display_name' => $user ? $user->display_name : '',
 				'avatar'       => get_avatar_url( $user_id, array( 'size' => 96 ) ),
 			),

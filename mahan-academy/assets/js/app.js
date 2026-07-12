@@ -48,6 +48,10 @@
 	// instantly (stale-while-revalidate). Any mutation clears it.
 	var apiCache = {};
 
+	// Bumped on every render(); a deferred async paint checks it so a slow
+	// response can't clobber a view the learner has already navigated away from.
+	var navSeq = 0;
+
 	function api(path, method, data) {
 		var opt = {
 			method: method || 'GET',
@@ -68,8 +72,11 @@
 	// (no skeleton), then repaint only if the fresh response differs.
 	function cachedApi(path, skeletonKind, paint, retry) {
 		var hit = apiCache[path];
+		var seq = navSeq;
 		if (hit) { paint(hit); } else { mount(loadingShell(skeletonKind)); }
 		api(path).then(function (j) {
+			// Bail if the learner navigated away while this was in flight.
+			if (seq !== navSeq) { apiCache[path] = j; return; }
 			var same = hit && JSON.stringify(hit) === JSON.stringify(j);
 			apiCache[path] = j;
 			if (same) { return; }
@@ -79,7 +86,7 @@
 			if (hit && ae && root.contains(ae) && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) { return; }
 			paint(j);
 		}).catch(function (e) {
-			if (!hit) { mount(errorBox(retry, e)); }
+			if (seq === navSeq && !hit) { mount(errorBox(retry, e)); }
 		});
 	}
 
@@ -212,8 +219,9 @@
 
 	window.addEventListener('popstate', function (e) {
 		// Back/forward closes any open dialog cleanly (teardown + listener
-		// removal) instead of leaving it stranded over the previous view.
-		modalStack.slice().forEach(function (m) { m.close(true); });
+		// removal) — silently, so a modal's onClose can't navigate on top of
+		// the render() below (which already paints the destination view).
+		modalStack.slice().forEach(function (m) { m.close(true, true); });
 		parseUrl();
 		pendingScroll = (e.state && typeof e.state.scroll === 'number') ? e.state.scroll : 0;
 		render();
@@ -347,7 +355,17 @@
 				setTimeout(function () { toast('🎯 ' + esc(t('goalHit', 'Daily goal reached!')), 'level'); }, 450);
 			}
 		}
-		if (res.stats) { refreshHud(res.stats); }
+		if (res.stats) {
+			if (!state.me) {
+				// /me hasn't resolved yet (e.g. a deep-linked review). Seed it
+				// so the HUD can render, and rebuild the top bar (which is a
+				// placeholder skeleton with no live nodes to update).
+				state.me = { stats: res.stats, user: D.user ? { name: D.user.name, display_name: D.user.name, avatar: D.user.avatar } : null };
+				refreshTopbar();
+			} else {
+				refreshHud(res.stats);
+			}
+		}
 		if (res.leveled_up) {
 			var title = (res.stats && res.stats.level_title) ? ' — ' + res.stats.level_title : '';
 			setTimeout(function () { toast('◆ ' + t('levelUp', 'Level up!') + title, 'level'); }, 650);
@@ -466,7 +484,7 @@
 		var prevFocus = document.activeElement;
 		var closed = false;
 
-		function close(force) {
+		function close(force, silent) {
 			if (closed) { return; }
 			// Let the dialog veto an accidental dismissal (e.g. a quiz with
 			// answers in progress). Explicit buttons pass force=true.
@@ -477,7 +495,10 @@
 			document.removeEventListener('keydown', onKey, true);
 			overlay.remove();
 			if (prevFocus && typeof prevFocus.focus === 'function') { try { prevFocus.focus(); } catch (e) { /* gone */ } }
-			if (opts.onClose) { opts.onClose(); }
+			// `silent` suppresses onClose side effects — used when the browser
+			// Back button closes the dialog and render() will already repaint
+			// the destination view (so onClose must not also navigate).
+			if (opts.onClose && !silent) { opts.onClose(); }
 		}
 
 		function onKey(e) {
@@ -955,7 +976,9 @@
 			onClick: function () { modal.close(); } }));
 		if (!r.passed) {
 			actions.appendChild(h('button', { class: 'mahan-btn mahan-btn-ghost', text: t('retry', 'Try again'),
-				onClick: function () { modal.submitted = false; modal.close(); openQuiz(state.courseId, unit); } }));
+				// force-close (true) so the beforeClose "answers will be lost"
+				// guard doesn't veto it and leave two modals stacked.
+				onClick: function () { modal.submitted = false; modal.close(true); openQuiz(state.courseId, unit); } }));
 		}
 	}
 
@@ -964,10 +987,13 @@
 	/* ------------------------------------------------------------------ */
 
 	function renderLesson() {
+		var seq = navSeq;
 		mount(loadingShell('article'));
 		ensureProfile().then(function () {
 			return api('/lesson/' + state.lessonId);
 		}).then(function (L) {
+			// Ignore a slow lesson response once the learner has moved on.
+			if (seq !== navSeq) { return; }
 			if (!L.ok) { mount(errorBox(renderLesson)); return; }
 			setTitle(L.title);
 			if (L.stats) {
@@ -1026,6 +1052,7 @@
 			mount(wrap);
 			loadChat(L.id);
 		}).catch(function (e) {
+			if (seq !== navSeq) { return; }
 			if (e && e.status === 401) { mount(loginGate()); return; }
 			mount(errorBox(renderLesson, e));
 		});
@@ -1291,6 +1318,10 @@
 			if (!j.messages || !j.messages.length) { return; }
 			var log = el('mahan-tutor-log');
 			if (!log) { return; }
+			// Don't clobber a conversation the learner already started while
+			// this history request was in flight (they'd lose their question
+			// and the streaming reply).
+			if (tutorBusy || log.querySelector('.mahan-bubble-user')) { return; }
 			log.innerHTML = '';
 			j.messages.forEach(function (m) { log.appendChild(tutorBubble(m.role === 'assistant' ? 'assistant' : 'user', m.content)); });
 			log.scrollTop = log.scrollHeight;
@@ -1781,8 +1812,10 @@
 			if (!v) { return; }
 			select.disabled = true;
 			api('/goal', 'POST', { daily_goal: v }).then(function (r) {
-				refreshHud(r.stats);
 				if (state.me) { state.me.stats = r.stats; }
+				// Rebuild the top bar (not just refreshHud) so a first-ever
+				// goal creates its 🎯 HUD chip, which refreshHud can't add.
+				refreshTopbar();
 				// Swap the card in place — no full-dashboard re-render (which
 				// would reset scroll and refetch everything).
 				var fresh = dailyGoalCard(r.stats);
@@ -1958,6 +1991,13 @@
 				h('button', { class: 'mahan-btn mahan-btn-primary', text: t('backToCourse', 'Back to course'), onClick: function () { go('course', { course: state.courseId }); } })
 			]);
 		}
+		// Locked by sequential gating → send them back to the course outline.
+		if (status === 403 && code === 'locked' && state.courseId) {
+			return h('div', { class: 'mahan-empty mahan-error-box' }, [
+				h('p', { text: t('lockedLesson', 'Complete the previous lesson to unlock this one.') }),
+				h('button', { class: 'mahan-btn mahan-btn-primary', text: t('backToCourse', 'Back to course'), onClick: function () { go('course', { course: state.courseId }); } })
+			]);
+		}
 		// A missing resource can't be fixed by retrying — offer a way out.
 		if (status === 404) {
 			return h('div', { class: 'mahan-empty mahan-error-box' }, [
@@ -2057,12 +2097,14 @@
 		var lessonScope = state.lessonId > 0;
 		var courseId = state.courseId;
 		var path = lessonScope ? '/reviews?scope=lesson&lesson_id=' + state.lessonId : '/reviews';
+		var seq = navSeq;
 		mount(loadingShell('rows'));
 		api(path).then(function (j) {
+			if (seq !== navSeq) { return; }
 			var items = (j.items || []).slice();
 			if (!items.length) { mount(reviewEmpty(j.counts)); return; }
 			runReviewSession(items, j.counts || {}, !!j.ai_ready, lessonScope, courseId);
-		}).catch(function (e) { mount(errorBox(renderReview, e)); });
+		}).catch(function (e) { if (seq === navSeq) { mount(errorBox(renderReview, e)); } });
 	}
 
 	function runReviewSession(queue, counts, aiReady, lessonScope, courseId) {
@@ -2183,6 +2225,9 @@
 	/* ------------------------------------------------------------------ */
 
 	function render() {
+		// New navigation generation — invalidates any in-flight async paint
+		// from the previous view.
+		navSeq++;
 		switch (state.view) {
 			case 'course': return renderCourse();
 			case 'lesson': return D.loggedIn ? renderLesson() : mount(loginGate());

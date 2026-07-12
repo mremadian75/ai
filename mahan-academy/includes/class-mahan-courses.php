@@ -284,6 +284,41 @@ class Mahan_Courses {
 	}
 
 	/**
+	 * Whether a lesson is locked for a user (previous lesson not yet done).
+	 *
+	 * This is the single source of truth for sequential gating: it mirrors the
+	 * exact traversal the catalog/course view uses to render the lock icon, so
+	 * the write endpoints can enforce server-side what the UI shows. Fails open
+	 * (returns false) on anything ambiguous so legitimate learners are never
+	 * locked out.
+	 *
+	 * @param int $user_id   User id.
+	 * @param int $lesson_id Lesson id.
+	 * @return bool
+	 */
+	public static function lesson_locked( $user_id, $lesson_id ) {
+		$user_id   = (int) $user_id;
+		$lesson_id = (int) $lesson_id;
+		$course_id = self::get_lesson_course_id( $lesson_id );
+		if ( ! $user_id || ! $course_id ) {
+			return false;
+		}
+		$status_map = Mahan_Progress::course_lesson_status( $user_id, $course_id );
+		$prev_done  = true; // The first lesson is always unlocked.
+		foreach ( self::get_course_units( $course_id ) as $unit ) {
+			foreach ( $unit['lessons'] as $lesson ) {
+				$lid    = (int) $lesson->ID;
+				$status = isset( $status_map[ $lid ] ) ? $status_map[ $lid ] : 'not_started';
+				if ( $lid === $lesson_id ) {
+					return ( ! $prev_done && 'completed' !== $status && 'in_progress' !== $status );
+				}
+				$prev_done = ( 'completed' === $status );
+			}
+		}
+		return false;
+	}
+
+	/**
 	 * The learner's next lesson in a course: the first not-yet-completed
 	 * lesson in curriculum order (falls back to the first lesson).
 	 *

@@ -176,9 +176,25 @@ class Mahan_Reports {
 		$fh = fopen( 'php://output', 'w' );
 		fputcsv( $fh, array( 'Course ID', 'Course', 'Enrolled', 'Completed', 'Completion %', 'Avg progress %' ) );
 		foreach ( $rows as $r ) {
-			fputcsv( $fh, array( $r['id'], $r['title'], $r['enrolled'], $r['completed'], $r['completion'], $r['avg_progress'] ) );
+			fputcsv( $fh, array( $r['id'], self::csv_safe( $r['title'] ), $r['enrolled'], $r['completed'], $r['completion'], $r['avg_progress'] ) );
 		}
 		fclose( $fh );
 		exit;
+	}
+
+	/**
+	 * Neutralize spreadsheet formula injection: a leading =, +, -, @ (or a
+	 * tab/CR) in an author-controlled field would execute as a formula in
+	 * Excel/Sheets, so prefix it with an apostrophe.
+	 *
+	 * @param string $value Cell value.
+	 * @return string
+	 */
+	private static function csv_safe( $value ) {
+		$value = (string) $value;
+		if ( '' !== $value && in_array( $value[0], array( '=', '+', '-', '@', "\t", "\r" ), true ) ) {
+			return "'" . $value;
+		}
+		return $value;
 	}
 }

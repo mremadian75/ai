@@ -216,8 +216,13 @@ UX behaviors (1.5.0):
   lesson of a unit opens its quiz; finishing a course opens a confetti
   celebration modal; a completed course's CTA becomes "Review course".
 - **Errors** — `errorBox(retry, err)` distinguishes 401 (→ login gate),
-  403 `not_enrolled` (→ course page), 404 (→ "Back to catalog"), and
-  offline (with an auto-retry on the `online` event).
+  403 `not_enrolled` / `locked` (→ course page), 404 (→ "Back to catalog"),
+  and offline (with an auto-retry on the `online` event).
+
+Sequential gating is enforced server-side by `Mahan_Courses::lesson_locked()`
+(the single source of truth, mirroring the course view's lock rule): `GET
+/lesson`, `POST /progress`, and `POST /exercise` return `403 { error:
+'locked' }` for a lesson whose predecessor isn't complete.
 
 UX behaviors (1.6.0):
 

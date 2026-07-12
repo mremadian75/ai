@@ -33,10 +33,20 @@
 
 	Builder.prototype.ajax = function (action, data) {
 		var payload = $.extend({ action: action, nonce: CFG.nonce }, data);
-		return $.post(CFG.ajaxUrl, payload).then(function (r) {
-			if (r && r.success) { return r.data || {}; }
-			return $.Deferred().reject((r && r.data && r.data.message) || 'Error');
-		});
+		return $.post(CFG.ajaxUrl, payload).then(
+			function (r) {
+				if (r && r.success) { return r.data || {}; }
+				return $.Deferred().reject((r && r.data && r.data.message) || 'Error');
+			},
+			function (jqXHR) {
+				// Coded guard/validation errors arrive as non-2xx responses,
+				// so jQuery rejects with the jqXHR — pull the message out of it
+				// instead of letting .fail() render "[object Object]".
+				var msg = (jqXHR && jqXHR.responseJSON && jqXHR.responseJSON.data && jqXHR.responseJSON.data.message)
+					|| (jqXHR && jqXHR.statusText) || 'Error';
+				return $.Deferred().reject(msg);
+			}
+		);
 	};
 
 	Builder.prototype.flash = function (msg, isError) {

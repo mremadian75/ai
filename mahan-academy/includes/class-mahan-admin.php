@@ -95,6 +95,19 @@ class Mahan_Admin {
 		$filter = current_filter(); // sanitize_option_mahan_xxx.
 		$key    = preg_replace( '/^sanitize_option_' . preg_quote( Mahan_Settings::PREFIX, '/' ) . '/', '', $filter );
 
+		// core options.php calls update_option() for EVERY registered option
+		// in the group, including ones with no field on the submitted form
+		// (value === null). Preserve those (current value, else the default)
+		// instead of resetting them to 0/''.
+		if ( null === $value ) {
+			$defaults = Mahan_Settings::defaults();
+			$fallback = isset( $defaults[ $key ] ) ? $defaults[ $key ] : '';
+			return Mahan_Settings::get( $key, $fallback );
+		}
+
+		// core options.php already wp_unslash()es posted values before this
+		// filter runs, so we must NOT unslash again (it would strip
+		// backslashes the admin actually typed).
 		$int_keys  = array( 'max_tokens', 'xp_per_lesson', 'xp_per_exercise', 'level_curve', 'hearts_max', 'ai_cache_ttl', 'app_page_id', 'xp_streak_bonus', 'daily_goal_default', 'freeze_earn_days', 'freeze_max', 'review_xp' );
 		$bool_keys = array( 'gate_enabled', 'streak_enabled', 'hearts_enabled', 'debug', 'badges_enabled', 'leaderboard_enabled', 'certificate_enabled', 'emails_enabled', 'email_welcome', 'email_complete', 'email_badge', 'email_streak', 'streak_freeze_enabled', 'review_enabled' );
 
@@ -105,13 +118,13 @@ class Mahan_Admin {
 			return $value ? 1 : 0;
 		}
 		if ( '_body' === substr( $key, -5 ) ) {
-			return wp_kses_post( wp_unslash( (string) $value ) );
+			return wp_kses_post( (string) $value );
 		}
 		if ( '_subject' === substr( $key, -8 ) ) {
-			return sanitize_text_field( wp_unslash( (string) $value ) );
+			return sanitize_text_field( (string) $value );
 		}
 		if ( 'email_from_email' === $key ) {
-			return sanitize_email( wp_unslash( (string) $value ) );
+			return sanitize_email( (string) $value );
 		}
 
 		switch ( $key ) {
@@ -134,10 +147,10 @@ class Mahan_Admin {
 				return self::sanitize_css( (string) $value );
 			case 'tutor_system_prompt':
 			case 'level_titles':
-				return sanitize_textarea_field( wp_unslash( $value ) );
+				return sanitize_textarea_field( (string) $value );
 			default:
 				// API keys, model ids, etc.
-				return sanitize_text_field( wp_unslash( (string) $value ) );
+				return sanitize_text_field( (string) $value );
 		}
 	}
 
@@ -323,7 +336,10 @@ class Mahan_Admin {
 		$provider = isset( $_POST['provider'] ) ? sanitize_key( wp_unslash( $_POST['provider'] ) ) : Mahan_Settings::get( 'ai_provider' );
 		$res      = Mahan_AI::test_connection( $provider );
 		if ( $res['ok'] ) {
-			wp_send_json_success( array( 'message' => __( 'Connection successful!', 'mahan-academy' ) . ' (' . esc_html( trim( $res['text'] ) ) . ')' ) );
+			// admin.js renders this via .text(), so send plain text (stripped
+			// of any tags) — esc_html() here would double-encode entities.
+			$echo = wp_strip_all_tags( trim( (string) $res['text'] ) );
+			wp_send_json_success( array( 'message' => __( 'Connection successful!', 'mahan-academy' ) . ' (' . $echo . ')' ) );
 		}
 		wp_send_json_error( array( 'message' => $res['error'] ) );
 	}

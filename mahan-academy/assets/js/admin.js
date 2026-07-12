@@ -218,7 +218,7 @@
 					$opts.empty();
 					ex.options.forEach(function (text, i) {
 						var $row = $('<div class="mahan-ex-opt"></div>');
-						var $radio = $('<input type="radio" />').prop('checked', ex.answer === i)
+						var $radio = $('<input type="radio" />').attr('name', 'mahan_ans_' + ex.key).prop('checked', ex.answer === i)
 							.on('change', function () { ex.answer = i; persist(); });
 						var $input = $('<input type="text" />').val(text).attr('placeholder', (I.option || 'Option') + ' ' + (i + 1));
 						$input.on('input', function () { ex.options[i] = $(this).val(); persist(); });

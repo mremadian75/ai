@@ -4,6 +4,72 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.7.1]
+
+Hardening & bug-fix release following a full-codebase audit (four parallel
+review passes: PHP correctness/security, SPA JS, REST↔SPA contract, admin/
+assets). No schema change (DB version stays 3).
+
+### Security
+
+- **Server-side sequential gating** — `Mahan_Courses::lesson_locked()` is now
+  enforced in `GET /lesson`, `POST /progress`, and `POST /exercise` (403
+  `locked`). Previously locking was advisory (client-only), so an enrolled
+  learner could script requests to skip content, instantly complete a course,
+  and trigger the certificate / `first_course` badge.
+- **Course Builder AJAX authorization** — the shared guard now requires
+  `edit_post` on the *specific* course (not just the generic `edit_posts`),
+  `save_structure` checks `edit_post` per lesson before rewriting its meta,
+  and new/duplicated lessons are created as drafts for roles that can't
+  `publish_posts`. Stops a Contributor from publishing lessons or wiping
+  another author's unit quizzes.
+- **REST nonce always required** — `perm_logged_in` no longer treats the
+  `X-WP-Nonce` header as optional.
+- **CSV formula injection** — report export now prefixes leading `= + - @`
+  (and tab/CR) in author-controlled fields.
+
+### Fixed
+
+- **Review XP farming** — `Mahan_Reviews::grade()` awards XP only when the
+  item was actually due (a correct answer pushes `due_at` into the future, so
+  repeated submissions can't farm); box-0 items are due immediately so the
+  end-of-lesson re-drill still earns XP. AI variants are single-use (their
+  transient is deleted on grade). `due()` now shares the `box < MASTERED`
+  predicate with `counts()`, so the dashboard "due" figure and the served
+  session agree (and mastered items aren't re-served).
+- **Duplicate course-completion** — `mahan_course_completed` (and its email)
+  only fires on the transition to complete, not on every redundant
+  `complete_lesson` call.
+- **Premature 100%** — `course_progress_pct()` (and path progress) floor the
+  percentage and only return 100 when every lesson is done, so a 200-lesson
+  course no longer rounds up to "complete" (and offers the certificate) one
+  lesson early.
+- **Streak bonus ordering** — `record_activity()` now runs before `add_xp()`
+  on every earn path, so the streak bonus reflects today's streak and a
+  lapsed streak is reset before the bonus applies (no last inflated bonus on
+  a comeback).
+- **AI grading** — a model returning the JSON string `"false"` is parsed with
+  `FILTER_VALIDATE_BOOLEAN` instead of a bare `(bool)` cast (which was `true`).
+- **SPA:** quiz "Try again" force-closes the results dialog (no more stacked
+  modals); `loadChat` won't wipe an in-flight tutor exchange; a stale async
+  response can't paint over a view you've navigated away from (nav-sequence
+  guard); Back on the completion modal closes it silently instead of running
+  its navigating `onClose` inside the popstate handler; `celebrateXp` seeds
+  the HUD when `/me` hasn't resolved yet; setting a first daily goal rebuilds
+  the top bar so its chip appears; the `/me` user object carries `name` so the
+  HUD avatar keeps its alt text.
+- **Admin:** the multiple-choice correct-answer radios share a `name` (proper
+  radio group); field-less registered options (`hearts_max`, `ai_cache_ttl`,
+  `hearts_enabled`) are preserved on Settings save instead of resetting to 0;
+  the settings sanitizer no longer double-unslashes (backslashes survive); the
+  AI test message isn't double-encoded; Course Builder surfaces the real error
+  string instead of `[object Object]`; the AI-author lesson-id data attribute
+  is read correctly.
+
+### Improved
+
+- Dark-theme contrast for success / goal / correct-answer text.
+
 ## [1.7.0]
 
 Adaptive review — an intelligent spaced-repetition system that tracks which

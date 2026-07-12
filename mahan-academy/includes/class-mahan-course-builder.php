@@ -126,9 +126,24 @@ class Mahan_Course_Builder {
 		if ( ! current_user_can( 'edit_posts' ) ) {
 			wp_send_json_error( array( 'message' => __( 'Forbidden', 'mahan-academy' ) ), 403 );
 		}
-		if ( $course_id && Mahan_CPT::COURSE !== get_post_type( $course_id ) ) {
-			wp_send_json_error( array( 'message' => __( 'Course not found.', 'mahan-academy' ) ), 404 );
+		if ( $course_id ) {
+			if ( Mahan_CPT::COURSE !== get_post_type( $course_id ) ) {
+				wp_send_json_error( array( 'message' => __( 'Course not found.', 'mahan-academy' ) ), 404 );
+			}
+			// Must be allowed to edit THIS specific course — not just "a"
+			// course — so one author can't restructure another's curriculum.
+			if ( ! current_user_can( 'edit_post', $course_id ) ) {
+				wp_send_json_error( array( 'message' => __( 'Forbidden', 'mahan-academy' ) ), 403 );
+			}
 		}
+	}
+
+	/**
+	 * New lessons are published only when the user can actually publish;
+	 * lower-capability roles (e.g. Contributor) create drafts instead.
+	 */
+	private static function new_lesson_status() {
+		return current_user_can( 'publish_posts' ) ? 'publish' : 'draft';
 	}
 
 	private static function sanitize_type( $type ) {
@@ -155,7 +170,7 @@ class Mahan_Course_Builder {
 			array(
 				'post_title'  => $title,
 				'post_type'   => Mahan_CPT::LESSON,
-				'post_status' => 'publish',
+				'post_status' => self::new_lesson_status(),
 			),
 			true
 		);
@@ -246,7 +261,7 @@ class Mahan_Course_Builder {
 				'post_title'   => sprintf( __( '%s (copy)', 'mahan-academy' ), $src->post_title ),
 				'post_content' => $src->post_content,
 				'post_type'    => Mahan_CPT::LESSON,
-				'post_status'  => 'publish',
+				'post_status'  => self::new_lesson_status(),
 			),
 			true
 		);
@@ -293,6 +308,10 @@ class Mahan_Course_Builder {
 			foreach ( $lessons as $order => $lesson_id ) {
 				$lesson_id = absint( $lesson_id );
 				if ( ! $lesson_id || Mahan_CPT::LESSON !== get_post_type( $lesson_id ) ) {
+					continue;
+				}
+				// Only restructure lessons this user may actually edit.
+				if ( ! current_user_can( 'edit_post', $lesson_id ) ) {
 					continue;
 				}
 				update_post_meta( $lesson_id, Mahan_Courses::M_COURSE_ID, $course_id );

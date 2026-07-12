@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.7.0
+Stable tag: 1.7.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -54,6 +54,18 @@ No. Everything happens inside WordPress.
 Yes — *Settings → Profile Form* takes a JSON schema. The placeholders you define there flow into the tutor's system prompt automatically.
 
 == Changelog ==
+
+= 1.7.1 =
+Hardening & bug-fix release after a full-codebase audit.
+* Security: sequential lesson gating is now enforced server-side (you can no longer skip ahead or instantly "complete" a course by scripting requests); Course Builder AJAX now checks per-object permissions and no longer lets low-privilege roles publish or tamper with other authors' curricula; the REST API always requires a valid nonce; the CSV export is protected against spreadsheet formula injection.
+* Fixed: review XP could be farmed by re-submitting the same answer — XP is now only granted for genuinely-due reviews, and AI "ask a different way" variants are single-use.
+* Fixed: finishing an already-complete course could send a duplicate "course completed" email.
+* Fixed: a very large course (200+ lessons) could round up to "100% complete" one lesson early, wrongly offering the certificate.
+* Fixed: the streak XP bonus is now calculated after today's streak is counted (a lapsed streak no longer grants one last inflated bonus).
+* Fixed: AI-graded answers returning a JSON string "false" are no longer marked correct.
+* Fixed (app): quiz "Try again" no longer stacks a second dialog; loading tutor history no longer wipes a reply you're in the middle of; a slow response can no longer paint over a screen you've navigated away from; pressing Back on the course-complete celebration no longer corrupts history; the daily-goal chip now appears in the top bar the first time you set it; XP/streak celebrations work even before your profile finishes loading.
+* Fixed (admin): the multiple-choice "correct answer" selector is now a proper radio group; saving Settings no longer resets hidden numeric options to 0; backslashes typed in email/prompt fields are preserved; Course Builder shows the real error message instead of "[object Object]".
+* Improved: better dark-theme contrast for success/goal text.
 
 = 1.7.0 =
 * New: Adaptive review — the plugin now remembers every question a learner answers wrong and re-asks it: right at the end of the lesson, and again on later days using spaced repetition (a Leitner schedule) until they master it.

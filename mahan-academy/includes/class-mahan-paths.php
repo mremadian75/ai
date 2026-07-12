@@ -91,7 +91,7 @@ class Mahan_Paths {
 			'image'        => get_the_post_thumbnail_url( $id, 'large' ) ?: '',
 			'course_count' => $total,
 			'completed'    => $done,
-			'progress_pct' => $total > 0 ? (int) round( ( $done / $total ) * 100 ) : 0,
+			'progress_pct' => ( $total > 0 && $done >= $total ) ? 100 : ( $total > 0 ? (int) min( 99, floor( ( $done / $total ) * 100 ) ) : 0 ),
 		);
 	}
 

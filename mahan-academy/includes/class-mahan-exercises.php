@@ -81,10 +81,12 @@ class Mahan_Exercises {
 		$awarded    = 0;
 		$leveled_up = false;
 		if ( $xp_award > 0 ) {
+			// record_activity() first so add_xp()'s streak bonus reads today's
+			// streak (and a lapsed streak is reset before the bonus applies).
+			Mahan_Gamification::record_activity( $user_id );
 			$award      = Mahan_Gamification::add_xp( $user_id, $xp_award, 'exercise', $lesson_id );
 			$awarded    = (int) $award['awarded'];
 			$leveled_up = ! empty( $award['leveled_up'] );
-			Mahan_Gamification::record_activity( $user_id );
 			do_action( 'mahan_exercise_correct', $user_id, $lesson_id, $key );
 		}
 		$stats = Mahan_Gamification::hud( $user_id );
@@ -252,7 +254,11 @@ class Mahan_Exercises {
 		}
 
 		$score = isset( $data['score'] ) ? max( 0, min( 100, (int) $data['score'] ) ) : 0;
-		$is_ok = isset( $data['correct'] ) ? (bool) $data['correct'] : ( $score >= self::PASS_SCORE );
+		// Use FILTER_VALIDATE_BOOLEAN so a JSON string "false" (some models
+		// emit that) isn't type-juggled to true by a bare (bool) cast.
+		$is_ok = isset( $data['correct'] )
+			? filter_var( $data['correct'], FILTER_VALIDATE_BOOLEAN )
+			: ( $score >= self::PASS_SCORE );
 		return array(
 			'is_correct' => $is_ok,
 			'score'      => $score,

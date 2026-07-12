@@ -661,3 +661,10 @@ button.mahan-quiz-row:hover { border-color: var(--m-primary); background: color-
 	.mahan-review-bar .mahan-btn { flex: 1; }
 	.mahan-review-variant-btn { margin-right: 0; flex-basis: 100%; }
 }
+
+/* ==================================================================== */
+/* v1.7.1 — dark-theme contrast for success/goal text (audit D7)        */
+/* ==================================================================== */
+.mahan-app.mahan-theme-dark .mahan-ex-feedback.is-correct { color: color-mix(in srgb, var(--m-accent) 80%, #fff); }
+.mahan-app.mahan-theme-dark .mahan-goal-done-msg { color: color-mix(in srgb, var(--m-accent) 80%, #fff); }
+.mahan-app.mahan-theme-dark .mahan-quiz-q.is-correct .mahan-quiz-q-title { color: color-mix(in srgb, var(--m-accent) 80%, #fff); }

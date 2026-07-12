@@ -261,10 +261,12 @@ class Mahan_Quizzes {
 		$awarded    = 0;
 		$leveled_up = false;
 		if ( $xp_award > 0 ) {
+			// record_activity() first so add_xp()'s streak bonus reads today's
+			// streak (and a lapsed streak is reset before the bonus applies).
+			Mahan_Gamification::record_activity( $user_id );
 			$award      = Mahan_Gamification::add_xp( $user_id, $xp_award, 'quiz', $course_id );
 			$awarded    = (int) $award['awarded'];
 			$leveled_up = ! empty( $award['leveled_up'] );
-			Mahan_Gamification::record_activity( $user_id );
 			do_action( 'mahan_quiz_passed', $user_id, $course_id, $unit, $score );
 		}
 

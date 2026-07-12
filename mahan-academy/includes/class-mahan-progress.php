@@ -133,8 +133,15 @@ class Mahan_Progress {
 			);
 		}
 
-		$award = Mahan_Gamification::add_xp( $user_id, $lesson_xp, 'lesson', $lesson_id );
+		// record_activity() first so the streak reflects today before add_xp()
+		// computes its streak bonus (and a lapsed streak is reset first).
 		Mahan_Gamification::record_activity( $user_id );
+		$award = Mahan_Gamification::add_xp( $user_id, $lesson_xp, 'lesson', $lesson_id );
+
+		// Was the course already finished before this call? (so we don't
+		// re-fire completion — e.g. duplicate completion emails.)
+		$enr           = Mahan_Enrollment::get( $user_id, $course_id );
+		$was_completed = $enr && ( 'completed' === $enr['status'] || 100 === (int) $enr['progress_pct'] );
 
 		// Recompute course completion.
 		$course_pct       = self::course_progress_pct( $user_id, $course_id );
@@ -144,7 +151,7 @@ class Mahan_Progress {
 		}
 
 		do_action( 'mahan_lesson_completed', $user_id, $lesson_id, $course_id );
-		if ( $course_completed ) {
+		if ( $course_completed && ! $was_completed ) {
 			do_action( 'mahan_course_completed', $user_id, $course_id );
 		}
 
@@ -180,6 +187,11 @@ class Mahan_Progress {
 				$done++;
 			}
 		}
-		return (int) round( ( $done / $total ) * 100 );
+		// 100% only when every lesson is done — otherwise floor so a large
+		// course never rounds up to a false "complete" (and certificate).
+		if ( $done >= $total ) {
+			return 100;
+		}
+		return (int) min( 99, floor( ( $done / $total ) * 100 ) );
 	}
 }

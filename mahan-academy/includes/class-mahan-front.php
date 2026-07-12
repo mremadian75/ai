@@ -260,6 +260,7 @@ class Mahan_Front {
 			'notEnrolled'      => __( 'Enroll in this course to access its lessons.', 'mahan-academy' ),
 			'longestStreak'    => __( 'Longest', 'mahan-academy' ),
 			'streakAtRisk'     => __( 'Study today to keep it!', 'mahan-academy' ),
+			'lockedLesson'     => __( 'Complete the previous lesson to unlock this one.', 'mahan-academy' ),
 			// Adaptive review.
 			'review'           => __( 'Review', 'mahan-academy' ),
 			'reviewTitle'      => __( 'Practice your mistakes', 'mahan-academy' ),

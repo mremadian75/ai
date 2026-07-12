@@ -38,7 +38,7 @@ class Mahan_Reviews {
 	 * session); higher boxes push the item further into the future.
 	 */
 	const INTERVALS = array(
-		0 => '+10 minutes',
+		0 => '+0 seconds', // due immediately (end-of-lesson re-drill + due queue)
 		1 => '+1 day',
 		2 => '+3 days',
 		3 => '+7 days',
@@ -198,9 +198,10 @@ class Mahan_Reviews {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		return (array) $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM {$table} WHERE user_id = %d AND due_at <= %s ORDER BY box ASC, due_at ASC LIMIT %d",
+				"SELECT * FROM {$table} WHERE user_id = %d AND due_at <= %s AND box < %d ORDER BY box ASC, due_at ASC LIMIT %d",
 				(int) $user_id,
 				Mahan_Utils::now_mysql(),
+				self::MASTERED_BOX,
 				$limit
 			),
 			ARRAY_A
@@ -375,11 +376,14 @@ class Mahan_Reviews {
 
 		// Grade against the AI variant (if a valid token was supplied) or the
 		// original snapshot.
-		$q = null;
+		$q          = null;
+		$used_token = '';
 		if ( '' !== (string) $variant_token ) {
-			$stash = get_transient( 'mahan_rev_' . preg_replace( '/[^a-z0-9]/i', '', (string) $variant_token ) );
+			$safe  = preg_replace( '/[^a-z0-9]/i', '', (string) $variant_token );
+			$stash = get_transient( 'mahan_rev_' . $safe );
 			if ( is_array( $stash ) && (int) $stash['review_id'] === (int) $review_id && (int) $stash['user_id'] === $user_id ) {
-				$q = $stash['q'];
+				$q          = $stash['q'];
+				$used_token = $safe;
 			}
 		}
 		if ( null === $q ) {
@@ -390,12 +394,23 @@ class Mahan_Reviews {
 			$q['type'] = (string) $row['qtype'];
 		}
 
+		// A variant is single-use: consume it so the same token can't be
+		// replayed to farm XP for 30 minutes.
+		if ( '' !== $used_token ) {
+			delete_transient( 'mahan_rev_' . $used_token );
+		}
+
+		// Was this item actually due before we grade it? XP is only awarded
+		// for genuinely-due reviews, so scripting repeated correct answers to
+		// the same item (which pushes due_at into the future) can't farm XP.
+		$now      = Mahan_Utils::now_mysql();
+		$was_due  = ( (string) $row['due_at'] <= $now );
+
 		$graded  = self::grade_question( $q, $answer );
 		$correct = (bool) $graded['correct'];
 
 		// Reschedule using the same box logic as record().
 		$box = $correct ? min( self::MAX_BOX, (int) $row['box'] + 1 ) : 0;
-		$now = Mahan_Utils::now_mysql();
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$wpdb->update(
 			$table,
@@ -412,15 +427,18 @@ class Mahan_Reviews {
 			array( '%d' )
 		);
 
-		// A little XP for clearing a review (keeps the streak/goal loop alive).
+		// A little XP for clearing a review (keeps the streak/goal loop alive)
+		// — but only when the item was actually due, so it can't be farmed.
 		$awarded    = 0;
 		$leveled_up = false;
-		if ( $correct ) {
+		if ( $correct && $was_due ) {
 			$xp = max( 1, (int) Mahan_Settings::get( 'review_xp', 5 ) );
+			// record_activity() first so the streak is current when add_xp()
+			// computes its streak bonus (and a lapsed streak is reset first).
+			Mahan_Gamification::record_activity( $user_id );
 			$award      = Mahan_Gamification::add_xp( $user_id, $xp, 'review', (int) $row['lesson_id'] );
 			$awarded    = (int) $award['awarded'];
 			$leveled_up = ! empty( $award['leveled_up'] );
-			Mahan_Gamification::record_activity( $user_id );
 			do_action( 'mahan_review_cleared', $user_id, (int) $review_id, $box );
 		}
 

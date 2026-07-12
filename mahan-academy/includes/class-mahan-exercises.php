@@ -60,6 +60,24 @@ class Mahan_Exercises {
 
 		self::store_attempt( $user_id, $lesson_id, $course_id, $key, $type, $answer, $graded, $xp_award );
 
+		// Feed deterministic results into the adaptive review queue so wrong
+		// answers come back later (and correct ones graduate).
+		if ( in_array( $type, Mahan_Reviews::TYPES, true ) ) {
+			Mahan_Reviews::record(
+				$user_id,
+				array(
+					'source'    => 'exercise',
+					'course_id' => $course_id,
+					'lesson_id' => $lesson_id,
+					'item_key'  => Mahan_Reviews::key_exercise( $lesson_id, $key ),
+					'concept'   => isset( $ex['question'] ) ? (string) $ex['question'] : '',
+					'type'      => $type,
+					'snapshot'  => $ex,
+				),
+				(bool) $graded['is_correct']
+			);
+		}
+
 		$awarded    = 0;
 		$leveled_up = false;
 		if ( $xp_award > 0 ) {

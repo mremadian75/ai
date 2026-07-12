@@ -27,6 +27,7 @@ mahan-academy/
 │   ├── class-mahan-ai.php                # provider-agnostic completions
 │   ├── class-mahan-exercises.php         # grading (instant + AI)
 │   ├── class-mahan-quizzes.php           # end-of-unit quizzes
+│   ├── class-mahan-reviews.php           # adaptive review (spaced repetition + AI variants)
 │   ├── class-mahan-paths.php             # learning paths
 │   ├── class-mahan-ai-stream.php         # SSE tutor + non-streaming fallback
 │   ├── class-mahan-rest.php              # mahan/v1 REST API
@@ -60,12 +61,14 @@ mahan-academy/
 - `mahan_path` — a learning path. Meta (on `Mahan_Paths`): `M_COURSES` (ordered
   course IDs), `M_SUBTITLE`.
 
-**Dynamic per-user data** lives in seven custom tables (see `Mahan_DB`):
-`enrollments`, `progress`, `attempts`, `stats`, `chat`, `ai_cache`, and
+**Dynamic per-user data** lives in eight custom tables (see `Mahan_DB`):
+`enrollments`, `progress`, `attempts`, `stats`, `chat`, `ai_cache`,
 `xp_log` (append-only: every XP award with `amount`, `reason`, `ref_id`,
-`created_at` — powers weekly leaderboards, daily goals, and reports). The
-`stats` table also carries `freezes` and `daily_goal` (added in DB v2 via
-`dbDelta`).
+`created_at` — powers weekly leaderboards, daily goals, and reports), and
+`reviews` (the adaptive-review queue: one row per missed question with a
+Leitner `box`, `due_at`, `reps`/`lapses`, and a JSON `snapshot` of the
+question — added in DB v3). The `stats` table also carries `freezes` and
+`daily_goal` (added in DB v2 via `dbDelta`).
 
 **Learner profile** is stored in user meta `mahan_profile` (schema-driven; see
 `Mahan_Profile` and Settings → Profile Form). **Badges** are stored in user meta
@@ -105,6 +108,9 @@ cURL relay, with a non-streaming `reply()` used by the REST fallback.
 | `GET /paths` | public | Learning paths with aggregate progress. |
 | `GET /path/{id}` | public | One path with its ordered courses + progress. |
 | `GET/POST /profile` | logged-in | Read/save the learner profile. |
+| `GET /reviews` | logged-in | Due review items (answers stripped) + queue counts. `scope=lesson&lesson_id=N` returns that lesson's misses. |
+| `POST /review` | logged-in | Grade a review answer (against the snapshot or an AI variant `variant_token`); reschedules + awards XP. |
+| `POST /review/variant` | logged-in | AI re-poses a missed question a different way (from another provider/model when available); returns the variant + a `variant_token`. |
 
 The streaming tutor runs over admin-ajax (`action=mahan_tutor_stream`) as SSE,
 not REST.
@@ -129,6 +135,7 @@ Actions fired by the plugin (use for integrations):
 | `mahan_badge_awarded` | `$user_id, $badge_key` | A badge is earned. |
 | `mahan_quiz_passed` | `$user_id, $course_id, $unit, $score` | A unit quiz is passed. |
 | `mahan_exercise_correct` | `$user_id, $lesson_id, $key` | First correct answer to an exercise. |
+| `mahan_review_cleared` | `$user_id, $review_id, $box` | A due review item answered correctly (box advanced). |
 
 Filters:
 

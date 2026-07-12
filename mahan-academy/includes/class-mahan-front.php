@@ -260,6 +260,26 @@ class Mahan_Front {
 			'notEnrolled'      => __( 'Enroll in this course to access its lessons.', 'mahan-academy' ),
 			'longestStreak'    => __( 'Longest', 'mahan-academy' ),
 			'streakAtRisk'     => __( 'Study today to keep it!', 'mahan-academy' ),
+			// Adaptive review.
+			'review'           => __( 'Review', 'mahan-academy' ),
+			'reviewTitle'      => __( 'Practice your mistakes', 'mahan-academy' ),
+			'reviewSub'        => __( 'Questions you missed come back here until you master them.', 'mahan-academy' ),
+			'reviewDue'        => __( 'due for review', 'mahan-academy' ),
+			'reviewNow'        => __( 'Review now', 'mahan-academy' ),
+			'reviewLesson'     => __( 'Review your misses', 'mahan-academy' ),
+			'reviewNone'       => __( "You're all caught up — no reviews due. Nice!", 'mahan-academy' ),
+			'reviewMastered'   => __( 'mastered', 'mahan-academy' ),
+			'reviewLearning'   => __( 'learning', 'mahan-academy' ),
+			'reviewDone'       => __( 'Review complete!', 'mahan-academy' ),
+			'reviewCleared'    => __( 'cleared', 'mahan-academy' ),
+			'reviewMasteredMsg' => __( 'Mastered! You won\'t see this one for a while.', 'mahan-academy' ),
+			'reviewAgainSoon'  => __( "We'll ask you again soon.", 'mahan-academy' ),
+			'askDifferently'   => __( 'Ask a different way', 'mahan-academy' ),
+			'answerWas'        => __( 'Answer:', 'mahan-academy' ),
+			'reviewProgress'   => __( 'of', 'mahan-academy' ),
+			'skip'             => __( 'Skip', 'mahan-academy' ),
+			'variantFailed'    => __( "Couldn't rephrase that one — here's the original.", 'mahan-academy' ),
+			'backToDashboard'  => __( 'Back to My Learning', 'mahan-academy' ),
 		);
 	}
 }

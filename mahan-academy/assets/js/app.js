@@ -1101,6 +1101,11 @@
 						btn.classList.add('is-done');
 						if (r.course_completed) {
 							setTimeout(function () { showCourseComplete(L.course_id, L.course_title, r.certificate); }, 600);
+						} else if ((r.review_pending || 0) > 0) {
+							// "Ask the missed questions at the end": re-drill
+							// this lesson's mistakes before moving on.
+							toast('🎯 ' + esc(t('reviewLesson', 'Review your misses')), 'level');
+							setTimeout(function () { go('review', { lesson: L.id, course: L.course_id }); }, 900);
 						} else if (L.unit_quiz && !L.unit_quiz.passed) {
 							// Last lesson of a unit with a quiz: bring the quiz
 							// into the flow instead of silently skipping past it.
@@ -1470,6 +1475,22 @@
 					]),
 					h('button', { class: 'mahan-btn mahan-btn-primary mahan-btn-lg', text: t('continueLearning', 'Continue learning'),
 						onClick: function () { go('lesson', { course: jb.id, lesson: jb.next_lesson_id }); } })
+				]));
+			}
+
+			// Adaptive review: surface due misses front and centre.
+			var rv = s.reviews || {};
+			if ((rv.due || 0) > 0) {
+				wrap.appendChild(h('div', { class: 'mahan-review-cta' }, [
+					h('div', { class: 'mahan-review-cta-body' }, [
+						h('span', { class: 'mahan-review-cta-icon', text: '🎯' }),
+						h('div', {}, [
+							h('h2', { class: 'mahan-review-cta-title', text: t('reviewTitle', 'Practice your mistakes') }),
+							h('p', { class: 'mahan-review-cta-sub', text: rv.due + ' ' + t('reviewDue', 'due for review') + (rv.mastered ? ' · ' + rv.mastered + ' ' + t('reviewMastered', 'mastered') : '') })
+						])
+					]),
+					h('button', { class: 'mahan-btn mahan-btn-primary mahan-btn-lg', text: t('reviewNow', 'Review now'),
+						onClick: function () { go('review'); } })
 				]));
 			}
 
@@ -1962,6 +1983,202 @@
 	});
 
 	/* ------------------------------------------------------------------ */
+	/* View: Adaptive review (spaced repetition of missed questions)       */
+	/* ------------------------------------------------------------------ */
+
+	// A single review question. `onGrade(answer, variantToken)` is called when
+	// the learner checks; the returned object exposes lock()/showResult().
+	function reviewCard(item) {
+		var chosen = { i: -1, text: '' };
+		var card = h('div', { class: 'mahan-ex mahan-review-card' + (item.is_variant ? ' is-variant' : '') });
+		if (item.is_variant) {
+			card.appendChild(h('span', { class: 'mahan-review-variant-tag', text: '✨ ' + t('askDifferently', 'Ask a different way') }));
+		}
+		card.appendChild(h('div', { class: 'mahan-ex-q', html: mdToHtml(item.question || '') }));
+
+		var input;
+		if ((item.type === 'multiple_choice' || item.type === 'true_false') && item.options) {
+			input = h('div', { class: 'mahan-ex-options' + (item.type === 'true_false' ? ' mahan-ex-tf' : '') }, item.options.map(function (o, i) {
+				return h('button', { class: 'mahan-ex-option', type: 'button', text: o,
+					onClick: function (e) {
+						if (card.classList.contains('is-locked')) { return; }
+						input.querySelectorAll('.mahan-ex-option').forEach(function (b) { b.classList.remove('is-chosen'); });
+						e.currentTarget.classList.add('is-chosen');
+						chosen.i = i;
+					} });
+			}));
+			card.appendChild(input);
+		} else {
+			input = h('input', { class: 'mahan-ex-input mahan-ex-blank', type: 'text', placeholder: t('typeAnswer', 'Type your answer…') });
+			card.appendChild(input);
+		}
+
+		return {
+			node: card,
+			answer: function () {
+				return (item.type === 'multiple_choice' || item.type === 'true_false') ? chosen.i : input.value;
+			},
+			lock: function () {
+				card.classList.add('is-locked');
+				card.querySelectorAll('.mahan-ex-option, .mahan-ex-input').forEach(function (n) { n.disabled = true; });
+			},
+			markResult: function (res) {
+				card.classList.add(res.is_correct ? 'is-correct' : 'is-incorrect');
+				var opts = card.querySelectorAll('.mahan-ex-option');
+				if (opts.length && typeof res.correct_index === 'number' && opts[res.correct_index]) {
+					opts[res.correct_index].classList.add('is-correct');
+				}
+			}
+		};
+	}
+
+	function reviewEmpty(counts) {
+		var wrap = h('div', { class: 'mahan-review' });
+		wrap.appendChild(reviewHeader());
+		wrap.appendChild(h('div', { class: 'mahan-empty' }, [
+			h('div', { class: 'mahan-review-empty-icon', text: '✅' }),
+			h('p', { text: t('reviewNone', "You're all caught up — no reviews due. Nice!") }),
+			(counts && counts.mastered) ? h('p', { class: 'mahan-badges-sub', text: counts.mastered + ' ' + t('reviewMastered', 'mastered') + (counts.learning ? ' · ' + counts.learning + ' ' + t('reviewLearning', 'learning') : '') }) : null,
+			h('button', { class: 'mahan-btn mahan-btn-ghost', text: t('backToDashboard', 'Back to My Learning'), onClick: function () { go('dashboard'); } })
+		]));
+		return wrap;
+	}
+
+	function reviewHeader() {
+		return h('div', { class: 'mahan-dash-hero mahan-review-hero' }, [
+			h('h1', { text: '🎯 ' + t('reviewTitle', 'Practice your mistakes') }),
+			h('p', { class: 'mahan-hero-sub', text: t('reviewSub', 'Questions you missed come back here until you master them.') })
+		]);
+	}
+
+	function renderReview() {
+		if (!D.loggedIn) { mount(loginGate()); return; }
+		setTitle(t('review', 'Review'));
+		var lessonScope = state.lessonId > 0;
+		var courseId = state.courseId;
+		var path = lessonScope ? '/reviews?scope=lesson&lesson_id=' + state.lessonId : '/reviews';
+		mount(loadingShell('rows'));
+		api(path).then(function (j) {
+			var items = (j.items || []).slice();
+			if (!items.length) { mount(reviewEmpty(j.counts)); return; }
+			runReviewSession(items, j.counts || {}, !!j.ai_ready, lessonScope, courseId);
+		}).catch(function (e) { mount(errorBox(renderReview, e)); });
+	}
+
+	function runReviewSession(queue, counts, aiReady, lessonScope, courseId) {
+		var total = queue.length;
+		var pos = 0, cleared = 0;
+		var wrap = h('div', { class: 'mahan-review' });
+		var head = reviewHeader();
+		var bar = h('div', { class: 'mahan-review-progress' }, [
+			h('div', { class: 'mahan-review-progress-track' }, [h('span', { class: 'mahan-review-progress-fill' })]),
+			h('span', { class: 'mahan-review-progress-label' })
+		]);
+		var stage = h('div', { class: 'mahan-review-stage' });
+		wrap.appendChild(head);
+		wrap.appendChild(bar);
+		wrap.appendChild(stage);
+		mount(wrap);
+
+		function updateBar() {
+			var done = pos;
+			var pct = total ? Math.round((done / total) * 100) : 0;
+			bar.querySelector('.mahan-review-progress-fill').style.width = pct + '%';
+			bar.querySelector('.mahan-review-progress-label').textContent = Math.min(pos + 1, total) + ' ' + t('reviewProgress', 'of') + ' ' + total;
+		}
+
+		function finish() {
+			stage.innerHTML = '';
+			bar.querySelector('.mahan-review-progress-fill').style.width = '100%';
+			bar.querySelector('.mahan-review-progress-label').textContent = total + ' ' + t('reviewProgress', 'of') + ' ' + total;
+			var done = h('div', { class: 'mahan-empty mahan-review-complete' }, [
+				h('div', { class: 'mahan-review-empty-icon', text: '🎉' }),
+				h('h2', { text: t('reviewDone', 'Review complete!') }),
+				h('p', { class: 'mahan-badges-sub', text: cleared + ' ' + t('reviewCleared', 'cleared') }),
+				lessonScope
+					? h('button', { class: 'mahan-btn mahan-btn-primary mahan-btn-lg', text: t('continueLearning', 'Continue learning'), onClick: function () { go('course', { course: courseId }); } })
+					: h('button', { class: 'mahan-btn mahan-btn-primary mahan-btn-lg', text: t('backToDashboard', 'Back to My Learning'), onClick: function () { go('dashboard'); } })
+			]);
+			stage.appendChild(done);
+		}
+
+		function showItem(item) {
+			updateBar();
+			stage.innerHTML = '';
+			var rc = reviewCard(item);
+			var variantToken = item._variant_token || '';
+			var feedback = h('div', { class: 'mahan-ex-feedback', style: 'display:none' });
+			var msg = h('div', { class: 'mahan-review-msg' });
+
+			var checkBtn = h('button', { class: 'mahan-btn mahan-btn-primary mahan-ex-check', text: t('check', 'Check'),
+				onClick: function (e) {
+					var ans = rc.answer();
+					var isChoice = (item.type === 'multiple_choice' || item.type === 'true_false');
+					if (isChoice && ans === -1) { return; }
+					if (!isChoice && !String(ans).trim()) { return; }
+					var restore = setBusy(e.currentTarget);
+					api('/review', 'POST', { review_id: item.review_id, answer: ans, variant_token: variantToken }).then(function (r) {
+						if (!r.ok) { restore(); toast(t('error', 'Something went wrong.'), 'error'); return; }
+						rc.lock();
+						rc.markResult(r);
+						if (r.is_correct) { cleared++; celebrateXp(r); }
+						feedback.style.display = 'block';
+						feedback.className = 'mahan-ex-feedback ' + (r.is_correct ? 'is-correct' : 'is-incorrect');
+						var headTxt = r.is_correct ? '✓ ' + t('correct', 'Correct!') : '✕ ' + t('incorrect', 'Not quite');
+						var detail = r.is_correct
+							? (r.mastered ? t('reviewMasteredMsg', 'Mastered! You won\'t see this one for a while.') : t('reviewAgainSoon', "We'll ask you again soon."))
+							: (r.correct_text ? t('answerWas', 'Answer:') + ' ' + esc(r.correct_text) : t('reviewAgainSoon', "We'll ask you again soon."));
+						feedback.innerHTML = '<strong>' + headTxt + '</strong><div>' + detail + '</div>';
+						// Wrong answers come back at the end of this same session.
+						if (!r.is_correct && !item._retried) {
+							item._retried = true;
+							queue.push(item);
+							total++;
+						}
+						btnRow.innerHTML = '';
+						btnRow.appendChild(h('button', { class: 'mahan-btn mahan-btn-primary', text: t('continueBtn', 'Continue'),
+							onClick: function () { pos++; next(); } }));
+					}).catch(function () { restore(); toast(t('error', 'Something went wrong.'), 'error'); });
+				} });
+
+			var actions = [];
+			// "Ask a different way" — an AI variant, only before answering.
+			if (aiReady && !item.is_variant) {
+				var variantBtn = h('button', { class: 'mahan-btn mahan-btn-ghost mahan-review-variant-btn', text: '✨ ' + t('askDifferently', 'Ask a different way'),
+					onClick: function (e) {
+						var restore = setBusy(e.currentTarget, t('loading', 'Loading…'));
+						api('/review/variant', 'POST', { review_id: item.review_id }).then(function (r) {
+							if (r.ok && r.item) {
+								var v = r.item;
+								v._variant_token = r.variant_token;
+								v._retried = item._retried;
+								showItem(v);
+							} else {
+								restore();
+								toast(t('variantFailed', "Couldn't rephrase that one — here's the original."), 'info');
+							}
+						}).catch(function () { restore(); toast(t('variantFailed', "Couldn't rephrase that one — here's the original."), 'info'); });
+					} });
+				actions.push(variantBtn);
+			}
+			actions.push(h('button', { class: 'mahan-btn mahan-btn-ghost', text: t('skip', 'Skip'), onClick: function () { pos++; next(); } }));
+			actions.push(checkBtn);
+			var btnRow = h('div', { class: 'mahan-ex-bar mahan-review-bar' }, actions);
+
+			stage.appendChild(rc.node);
+			stage.appendChild(feedback);
+			stage.appendChild(msg);
+			stage.appendChild(btnRow);
+		}
+
+		function next() {
+			if (pos >= total) { finish(); return; }
+			showItem(queue[pos]);
+		}
+		next();
+	}
+
+	/* ------------------------------------------------------------------ */
 	/* Render dispatcher                                                   */
 	/* ------------------------------------------------------------------ */
 
@@ -1970,6 +2187,7 @@
 			case 'course': return renderCourse();
 			case 'lesson': return D.loggedIn ? renderLesson() : mount(loginGate());
 			case 'dashboard': return renderDashboard();
+			case 'review': return D.loggedIn ? renderReview() : mount(loginGate());
 			case 'leaderboard': return D.leaderboard ? renderLeaderboard() : renderCatalog();
 			case 'paths': return renderPaths();
 			case 'path': return renderPath();

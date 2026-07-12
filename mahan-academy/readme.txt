@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.6.0
+Stable tag: 1.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -25,6 +25,7 @@ Mahan Academy is a self-contained learning plugin built to teach people how to u
 * Schema-driven learner profile that personalizes the tutor and grading prompts
 * Gamification: XP with a full audit log, streak XP multipliers, linear or RPG-style progressive levels & titles, daily XP goals, streaks with earned streak freezes, weekly activity dots, 21 tiered achievements with live unlock notifications and progress bars, and weekly + all-time leaderboards
 * Polished learner UX: instant catalog search, "Jump back in" resume, lesson wayfinding (unit · lesson X of Y), confetti course-completion celebrations, offline-aware errors, and instant back/forward navigation
+* Adaptive review: wrong answers are re-asked at the end of the lesson and again on later days (spaced repetition), with an optional AI "ask it a different way" from another model
 * End-of-unit quizzes with instant grading and a passing score
 * Learning paths — group courses into a guided, ordered program
 * Email notifications (welcome, completion, achievement, streak reminder)
@@ -53,6 +54,13 @@ No. Everything happens inside WordPress.
 Yes — *Settings → Profile Form* takes a JSON schema. The placeholders you define there flow into the tutor's system prompt automatically.
 
 == Changelog ==
+
+= 1.7.0 =
+* New: Adaptive review — the plugin now remembers every question a learner answers wrong and re-asks it: right at the end of the lesson, and again on later days using spaced repetition (a Leitner schedule) until they master it.
+* New: "Ask a different way" — a learner can have the AI re-pose a missed question from a fresh angle (a new scenario/wording of the same concept), and, when more than one AI provider is configured, it comes from a different model.
+* New: "Practice your mistakes" review session in the app, with a progress bar, instant grading, the correct answer on a miss, and XP for each cleared item — wrong answers loop back to the end of the session.
+* New: A dashboard "Review now" card shows how many items are due; finishing a lesson with mistakes drops you straight into a quick review of just those questions.
+* New: Settings → Gamification → Adaptive review (toggle + XP per cleared review). New `mahan_reviews` table (DB v3, migrated automatically).
 
 = 1.6.0 =
 * New: Real busy states on every action button — a spinner + disabled state while enrolling, submitting a quiz, checking an answer, or completing a lesson (no more bare "…").

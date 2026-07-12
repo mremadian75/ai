@@ -229,6 +229,21 @@ class Mahan_Quizzes {
 				'correct'       => (bool) $g['correct'],
 				'correct_index' => $g['correct_index'],
 			);
+
+			// Queue each wrong quiz question for spaced-repetition review.
+			Mahan_Reviews::record(
+				$user_id,
+				array(
+					'source'    => 'quiz',
+					'course_id' => (int) $course_id,
+					'lesson_id' => 0,
+					'item_key'  => Mahan_Reviews::key_quiz( $course_id, $unit, $key ),
+					'concept'   => isset( $q['question'] ) ? (string) $q['question'] : '',
+					'type'      => (string) $q['type'],
+					'snapshot'  => $q,
+				),
+				(bool) $g['correct']
+			);
 		}
 		$score  = $total > 0 ? (int) round( ( $correct / $total ) * 100 ) : 0;
 		$passed = $score >= (int) $def['passing'];

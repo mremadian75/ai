@@ -627,3 +627,37 @@ button.mahan-quiz-row:hover { border-color: var(--m-primary); background: color-
 @media (prefers-reduced-motion: reduce) {
 	.mahan-btn-spinner, .mahan-tutor-send.is-busy::after { animation-duration: .01ms; }
 }
+
+/* ==================================================================== */
+/* v1.7.0 — Adaptive review (spaced repetition of missed questions)     */
+/* ==================================================================== */
+
+/* Dashboard call-to-action */
+.mahan-review-cta { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; margin-bottom: 26px; padding: 18px 22px; border-radius: var(--m-radius); border: 1px solid color-mix(in srgb, #f59e0b 35%, var(--m-border)); background: linear-gradient(120deg, color-mix(in srgb, #f59e0b 12%, var(--m-surface)), var(--m-surface) 60%); box-shadow: var(--m-shadow-sm); }
+.mahan-review-cta-body { display: flex; align-items: center; gap: 14px; }
+.mahan-review-cta-icon { font-size: 34px; line-height: 1; }
+.mahan-review-cta-title { margin: 0; font-size: 20px; }
+.mahan-review-cta-sub { margin: 2px 0 0; color: var(--m-muted); font-size: 14px; font-weight: 600; }
+@media (max-width: 640px) { .mahan-review-cta .mahan-btn { width: 100%; } }
+
+/* Review session */
+.mahan-review-hero { text-align: center; }
+.mahan-review-progress { display: flex; align-items: center; gap: 12px; max-width: 720px; margin: 0 auto 20px; }
+.mahan-review-progress-track { flex: 1; height: 10px; border-radius: 999px; background: var(--m-border); overflow: hidden; }
+.mahan-review-progress-fill { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--m-primary), var(--m-accent)); border-radius: 999px; transition: width .35s ease; }
+.mahan-review-progress-label { font-size: 13px; font-weight: 700; color: var(--m-muted); min-width: 64px; text-align: right; }
+.mahan-review-stage { max-width: 720px; margin: 0 auto; }
+.mahan-review-card { position: relative; background: var(--m-surface); }
+.mahan-review-card.is-correct { border-color: var(--m-accent); }
+.mahan-review-card.is-incorrect { border-color: #ef4444; }
+.mahan-review-card.is-variant { border-style: dashed; }
+.mahan-review-variant-tag { display: inline-block; margin-bottom: 10px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--m-primary); background: color-mix(in srgb, var(--m-primary) 12%, transparent); padding: 3px 10px; border-radius: 999px; }
+.mahan-review-bar { flex-wrap: wrap; gap: 10px; }
+.mahan-review-variant-btn { margin-right: auto; }
+.mahan-review-msg { color: #b91c1c; font-size: 14px; }
+.mahan-review-empty-icon { font-size: 56px; line-height: 1; }
+.mahan-review-complete h2 { margin: 6px 0; }
+@media (max-width: 640px) {
+	.mahan-review-bar .mahan-btn { flex: 1; }
+	.mahan-review-variant-btn { margin-right: 0; flex-basis: 100%; }
+}

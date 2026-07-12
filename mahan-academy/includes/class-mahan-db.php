@@ -75,6 +75,11 @@ class Mahan_DB {
 		return $wpdb->prefix . 'mahan_xp_log';
 	}
 
+	public static function reviews() {
+		global $wpdb;
+		return $wpdb->prefix . 'mahan_reviews';
+	}
+
 	/* ------------------------------------------------------------------ */
 	/* Schema                                                              */
 	/* ------------------------------------------------------------------ */
@@ -92,6 +97,7 @@ class Mahan_DB {
 		$chat        = self::chat();
 		$ai_cache    = self::ai_cache();
 		$xp_log      = self::xp_log();
+		$reviews     = self::reviews();
 
 		$sql = array();
 
@@ -188,6 +194,30 @@ class Mahan_DB {
 			PRIMARY KEY  (cache_key)
 		) {$charset};";
 
+		// Adaptive review queue (spaced repetition of wrong answers).
+		$sql[] = "CREATE TABLE {$reviews} (
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			user_id BIGINT UNSIGNED NOT NULL,
+			course_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
+			lesson_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
+			source VARCHAR(16) NOT NULL DEFAULT 'exercise',
+			item_key VARCHAR(128) NOT NULL,
+			qtype VARCHAR(32) NOT NULL DEFAULT '',
+			concept VARCHAR(190) NOT NULL DEFAULT '',
+			snapshot LONGTEXT NULL,
+			box TINYINT UNSIGNED NOT NULL DEFAULT 0,
+			reps INT UNSIGNED NOT NULL DEFAULT 0,
+			lapses INT UNSIGNED NOT NULL DEFAULT 0,
+			last_result TINYINT(1) NOT NULL DEFAULT 0,
+			due_at DATETIME NOT NULL,
+			created_at DATETIME NOT NULL,
+			updated_at DATETIME NOT NULL,
+			PRIMARY KEY  (id),
+			UNIQUE KEY user_item (user_id, item_key),
+			KEY user_due (user_id, due_at),
+			KEY user_lesson (user_id, lesson_id)
+		) {$charset};";
+
 		foreach ( $sql as $statement ) {
 			dbDelta( $statement );
 		}
@@ -206,6 +236,7 @@ class Mahan_DB {
 			self::chat(),
 			self::ai_cache(),
 			self::xp_log(),
+			self::reviews(),
 		);
 		foreach ( $tables as $table ) {
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery

@@ -59,6 +59,10 @@ class Mahan_Settings {
 			'freeze_earn_days'    => 7,
 			'freeze_max'          => 2,
 
+			// Adaptive review (spaced repetition of wrong answers).
+			'review_enabled'      => 1,
+			'review_xp'           => 5,
+
 			// Appearance.
 			'primary_color'       => '#4f46e5',
 			'accent_color'        => '#22c55e',

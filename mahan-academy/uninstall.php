@@ -33,6 +33,7 @@ $tables = array(
 	$wpdb->prefix . 'mahan_chat',
 	$wpdb->prefix . 'mahan_ai_cache',
 	$wpdb->prefix . 'mahan_xp_log',
+	$wpdb->prefix . 'mahan_reviews',
 );
 foreach ( $tables as $t ) {
 	// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery
@@ -55,6 +56,8 @@ $options = array(
 	// Gamification v2 (1.3.0).
 	'mahan_level_mode', 'mahan_xp_streak_bonus', 'mahan_daily_goal_default',
 	'mahan_streak_freeze_enabled', 'mahan_freeze_earn_days', 'mahan_freeze_max',
+	// Adaptive review (1.7.0).
+	'mahan_review_enabled', 'mahan_review_xp',
 	// Emails (1.2.0).
 	'mahan_emails_enabled', 'mahan_email_from_name', 'mahan_email_from_email',
 	'mahan_email_welcome', 'mahan_email_complete', 'mahan_email_badge', 'mahan_email_streak',

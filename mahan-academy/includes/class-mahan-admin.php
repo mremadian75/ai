@@ -95,8 +95,8 @@ class Mahan_Admin {
 		$filter = current_filter(); // sanitize_option_mahan_xxx.
 		$key    = preg_replace( '/^sanitize_option_' . preg_quote( Mahan_Settings::PREFIX, '/' ) . '/', '', $filter );
 
-		$int_keys  = array( 'max_tokens', 'xp_per_lesson', 'xp_per_exercise', 'level_curve', 'hearts_max', 'ai_cache_ttl', 'app_page_id', 'xp_streak_bonus', 'daily_goal_default', 'freeze_earn_days', 'freeze_max' );
-		$bool_keys = array( 'gate_enabled', 'streak_enabled', 'hearts_enabled', 'debug', 'badges_enabled', 'leaderboard_enabled', 'certificate_enabled', 'emails_enabled', 'email_welcome', 'email_complete', 'email_badge', 'email_streak', 'streak_freeze_enabled' );
+		$int_keys  = array( 'max_tokens', 'xp_per_lesson', 'xp_per_exercise', 'level_curve', 'hearts_max', 'ai_cache_ttl', 'app_page_id', 'xp_streak_bonus', 'daily_goal_default', 'freeze_earn_days', 'freeze_max', 'review_xp' );
+		$bool_keys = array( 'gate_enabled', 'streak_enabled', 'hearts_enabled', 'debug', 'badges_enabled', 'leaderboard_enabled', 'certificate_enabled', 'emails_enabled', 'email_welcome', 'email_complete', 'email_badge', 'email_streak', 'streak_freeze_enabled', 'review_enabled' );
 
 		if ( in_array( $key, $int_keys, true ) ) {
 			return absint( $value );
@@ -659,6 +659,18 @@ class Mahan_Admin {
 									<?php esc_html_e( 'streak days, holding at most', 'mahan-academy' ); ?>
 									<input type="number" min="0" class="small-text" name="mahan_freeze_max" value="<?php echo esc_attr( $g( 'freeze_max' ) ); ?>" style="width:60px" />
 									<?php esc_html_e( 'freezes.', 'mahan-academy' ); ?>
+								</p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><?php esc_html_e( 'Adaptive review', 'mahan-academy' ); ?></th>
+							<td>
+								<input type="hidden" name="mahan_review_enabled" value="0" />
+								<label><input type="checkbox" name="mahan_review_enabled" value="1" <?php checked( (int) $g( 'review_enabled' ), 1 ); ?> /> <?php esc_html_e( 'Re-ask questions the learner got wrong — at the end of the lesson and, with spaced repetition, on later days.', 'mahan-academy' ); ?></label>
+								<p class="description">
+									<?php esc_html_e( 'XP per cleared review:', 'mahan-academy' ); ?>
+									<input type="number" min="1" class="small-text" name="mahan_review_xp" value="<?php echo esc_attr( $g( 'review_xp' ) ); ?>" style="width:60px" />
+									<?php esc_html_e( 'Learners can also ask the AI to re-pose a missed question a different way (from a different provider when more than one is configured).', 'mahan-academy' ); ?>
 								</p>
 							</td>
 						</tr>

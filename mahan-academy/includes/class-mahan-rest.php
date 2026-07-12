@@ -124,6 +124,25 @@ class Mahan_REST {
 				'permission_callback' => $logged_in,
 			),
 		) );
+
+		// Adaptive review (spaced repetition of wrong answers).
+		register_rest_route( self::NS, '/reviews', array(
+			'methods'             => WP_REST_Server::READABLE,
+			'callback'            => array( __CLASS__, 'get_reviews' ),
+			'permission_callback' => $logged_in,
+		) );
+
+		register_rest_route( self::NS, '/review', array(
+			'methods'             => WP_REST_Server::CREATABLE,
+			'callback'            => array( __CLASS__, 'submit_review' ),
+			'permission_callback' => $logged_in,
+		) );
+
+		register_rest_route( self::NS, '/review/variant', array(
+			'methods'             => WP_REST_Server::CREATABLE,
+			'callback'            => array( __CLASS__, 'review_variant' ),
+			'permission_callback' => $logged_in,
+		) );
 	}
 
 	/* ------------------------------------------------------------------ */
@@ -368,6 +387,9 @@ class Mahan_REST {
 			$res['certificate'] = (bool) Mahan_Utils::meta_int( $course_id, Mahan_Courses::M_CERTIFICATE, 0 )
 				&& (bool) Mahan_Settings::get( 'certificate_enabled', 1 );
 		}
+		// How many questions from this lesson are queued for review, so the
+		// app can offer a "review your misses" step before moving on.
+		$res['review_pending'] = Mahan_Reviews::for_lesson_count( $user_id, $lesson_id );
 		return rest_ensure_response( $res );
 	}
 
@@ -497,8 +519,9 @@ class Mahan_REST {
 		$user_id = get_current_user_id();
 		$user    = wp_get_current_user();
 
-		$stats         = Mahan_Gamification::hud( $user_id );
-		$stats['week'] = Mahan_Gamification::week_activity( $user_id );
+		$stats            = Mahan_Gamification::hud( $user_id );
+		$stats['week']    = Mahan_Gamification::week_activity( $user_id );
+		$stats['reviews'] = Mahan_Reviews::counts( $user_id );
 
 		// "Jump back in": give each in-progress course its next lesson so the
 		// dashboard can deep-link straight into the lesson player.
@@ -694,5 +717,75 @@ class Mahan_REST {
 			'profile'  => $profile,
 			'complete' => $complete,
 		) );
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Adaptive review                                                     */
+	/* ------------------------------------------------------------------ */
+
+	/**
+	 * Due review items. `scope=lesson&lesson_id=N` returns that lesson's
+	 * misses (the end-of-lesson loop); otherwise the cross-course due queue.
+	 */
+	public static function get_reviews( WP_REST_Request $request ) {
+		$user_id = get_current_user_id();
+		if ( ! Mahan_Reviews::enabled() ) {
+			return rest_ensure_response( array( 'ok' => true, 'items' => array(), 'counts' => array( 'due' => 0, 'learning' => 0, 'mastered' => 0 ) ) );
+		}
+		$scope = (string) $request->get_param( 'scope' );
+		if ( 'lesson' === $scope ) {
+			$lesson_id = absint( $request->get_param( 'lesson_id' ) );
+			$rows      = Mahan_Reviews::for_lesson( $user_id, $lesson_id );
+		} else {
+			$limit = absint( $request->get_param( 'limit' ) );
+			$rows  = Mahan_Reviews::due( $user_id, $limit > 0 ? $limit : 20 );
+		}
+		$items = array();
+		foreach ( $rows as $row ) {
+			$items[] = Mahan_Reviews::public_item( $row );
+		}
+		return rest_ensure_response( array(
+			'ok'       => true,
+			'items'    => $items,
+			'counts'   => Mahan_Reviews::counts( $user_id ),
+			'ai_ready' => Mahan_Settings::ai_ready(),
+		) );
+	}
+
+	/**
+	 * Grade a review answer (against the original snapshot or an AI variant).
+	 */
+	public static function submit_review( WP_REST_Request $request ) {
+		$user_id = get_current_user_id();
+		$body    = $request->get_json_params();
+		$rid     = isset( $body['review_id'] ) ? absint( $body['review_id'] ) : 0;
+		if ( ! $rid ) {
+			return new WP_REST_Response( array( 'ok' => false, 'error' => 'missing_review_id' ), 400 );
+		}
+		$answer = isset( $body['answer'] ) ? $body['answer'] : '';
+		$token  = isset( $body['variant_token'] ) ? (string) $body['variant_token'] : '';
+		$res    = Mahan_Reviews::grade( $user_id, $rid, $answer, $token );
+		if ( empty( $res['ok'] ) ) {
+			return new WP_REST_Response( $res, 404 );
+		}
+		return rest_ensure_response( $res );
+	}
+
+	/**
+	 * Ask the AI to re-pose a missed question a different way.
+	 */
+	public static function review_variant( WP_REST_Request $request ) {
+		$user_id = get_current_user_id();
+		$body    = $request->get_json_params();
+		$rid     = isset( $body['review_id'] ) ? absint( $body['review_id'] ) : 0;
+		if ( ! $rid ) {
+			return new WP_REST_Response( array( 'ok' => false, 'error' => 'missing_review_id' ), 400 );
+		}
+		$res = Mahan_Reviews::variant( $user_id, $rid );
+		if ( empty( $res['ok'] ) ) {
+			$status = ( 'not_found' === ( isset( $res['error'] ) ? $res['error'] : '' ) ) ? 404 : 422;
+			return new WP_REST_Response( $res, $status );
+		}
+		return rest_ensure_response( $res );
 	}
 }

@@ -303,17 +303,19 @@ class Mahan_Courses {
 		if ( ! $user_id || ! $course_id ) {
 			return false;
 		}
+		// Walk the SAME flat, canonical lesson order that next_lesson() and
+		// course_progress_pct() use — so the lesson the app auto-navigates to
+		// (the first not-completed one) can never be reported locked, even if
+		// unit grouping metadata is inconsistent. Fails open by construction.
 		$status_map = Mahan_Progress::course_lesson_status( $user_id, $course_id );
 		$prev_done  = true; // The first lesson is always unlocked.
-		foreach ( self::get_course_units( $course_id ) as $unit ) {
-			foreach ( $unit['lessons'] as $lesson ) {
-				$lid    = (int) $lesson->ID;
-				$status = isset( $status_map[ $lid ] ) ? $status_map[ $lid ] : 'not_started';
-				if ( $lid === $lesson_id ) {
-					return ( ! $prev_done && 'completed' !== $status && 'in_progress' !== $status );
-				}
-				$prev_done = ( 'completed' === $status );
+		foreach ( self::get_course_lessons( $course_id ) as $lesson ) {
+			$lid    = (int) $lesson->ID;
+			$status = isset( $status_map[ $lid ] ) ? $status_map[ $lid ] : 'not_started';
+			if ( $lid === $lesson_id ) {
+				return ( ! $prev_done && 'completed' !== $status && 'in_progress' !== $status );
 			}
+			$prev_done = ( 'completed' === $status );
 		}
 		return false;
 	}

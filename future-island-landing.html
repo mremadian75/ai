@@ -3,421 +3,454 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Future Island · Invitación de embarque</title>
+<title>Future Island · Sala de embarque</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..700;1,400..600&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <link href="https://assets.calendly.com/assets/external/widget.css" rel="stylesheet">
 
 <style>
-/* ============================================================
-   FUTURE ISLAND — Landing "Invitación de embarque" (edición clara)
-   Todo limitado a #fi-boarding para no chocar con el tema.
-   ============================================================ */
+/* ==================================================================
+   FUTURE ISLAND — "Sala de embarque en vivo" (edición nocturna)
+   Todo limitado a #fi-boarding. Colores oscuros inline para evitar FOUC.
+   ================================================================== */
 #fi-boarding{
-  --bg:#F3EDE1; --panel:#FFFDF8; --panel-2:#F7F1E5;
-  --petrol:#0B2126; --petrol-2:#123239;
-  --ink:#1B2A2D; --ink-2:#3C4B4D; --muted:#645C46;
-  --gold:#A8814C; --gold-lt:#C79A5C; --gold-deep:#7E5F33;
-  --tan:#B4A785; --line:#E1D7C2; --cream:#F1ECDF;
-  --serif:'Playfair Display', Georgia, 'Times New Roman', serif;
-  --mono:'Space Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --void:#071619; --petrol:#0B2126; --flap-back:#0F2E35; --flap-face:#13363E;
+  --cream:#F1ECDF; --cream-dim:#B7B3A4;
+  --gold:#C79A5C; --gold-mid:#A8814C; --gold-deep:#7E5F33; --foil:#E4C58A;
+  --green:#5FBF8A; --amber:#E8B563;
+  --aurora-teal:#1F7A70; --aurora-indigo:#33285A; --radar:#6FC7C1;
+  --hair:rgba(201,191,168,.14);
+  --serif:'Playfair Display', Georgia, serif;
+  --mono:'Space Mono', ui-monospace, Menlo, monospace;
 
-  position:relative;
-  background:
-    radial-gradient(1100px 620px at 50% -220px, #FBF7EE 0%, rgba(251,247,238,0) 72%),
-    var(--bg);
-  color:var(--ink);
-  font-family:var(--mono);
-  font-size:16px; line-height:1.5; font-weight:400; text-align:left; letter-spacing:normal;
+  position:relative; isolation:isolate;
+  background:radial-gradient(120% 90% at 50% 0%, #0d2930 0%, var(--petrol) 45%, var(--void) 100%);
+  color:var(--cream);
+  font-family:var(--mono); font-size:16px; line-height:1.55; font-weight:400;
+  text-align:left; letter-spacing:normal;
   -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
-  overflow:hidden; max-width:none; width:auto;
+  max-width:none; width:auto;
 }
-/* reset defensivo contra el tema */
 #fi-boarding *,#fi-boarding *::before,#fi-boarding *::after{box-sizing:border-box;margin:0;padding:0}
 #fi-boarding a{color:inherit;text-decoration:none}
 #fi-boarding img,#fi-boarding svg{max-width:100%}
 #fi-boarding button{font:inherit;color:inherit}
-#fi-boarding a:focus-visible,#fi-boarding .fi-btn:focus-visible{outline:2px solid var(--gold-deep);outline-offset:3px;border-radius:8px}
-#fi-boarding::before{
-  content:"";position:absolute;inset:0;pointer-events:none;z-index:0;
-  background-image:radial-gradient(rgba(120,95,50,.06) 1px, transparent 1px);
-  background-size:22px 22px;opacity:.5;
-}
-#fi-boarding .fi-wrap{
-  position:relative;z-index:1;
-  max-width:1180px;margin:0 auto;
-  padding:clamp(20px,4vw,44px) clamp(16px,4vw,44px) clamp(48px,7vw,90px);
-}
+#fi-boarding a:focus-visible,#fi-boarding .fi-btn:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:8px}
+
+/* ---------- capa ambiente (dentro del hero, sin afectar a Calendly) ---------- */
+#fi-boarding .fi-amb{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+#fi-boarding .fi-aurora{position:absolute;width:150vw;height:150vw;border-radius:50%;filter:none;mix-blend-mode:screen;opacity:.5;will-change:transform}
+#fi-boarding .fi-aurora.a{top:-40vw;left:-30vw;background:radial-gradient(circle at 50% 50%, var(--aurora-teal) 0%, rgba(31,122,112,0) 60%);animation:fiAuroraA 78s ease-in-out infinite alternate}
+#fi-boarding .fi-aurora.b{bottom:-50vw;right:-30vw;background:radial-gradient(circle at 50% 50%, var(--aurora-indigo) 0%, rgba(51,40,90,0) 62%);animation:fiAuroraB 92s ease-in-out infinite alternate}
+#fi-boarding .fi-aurora.c{top:20vh;right:-20vw;width:90vw;height:90vw;background:radial-gradient(circle at 50% 50%, rgba(199,154,92,.5) 0%, rgba(199,154,92,0) 60%);opacity:.22;animation:fiAuroraA 64s ease-in-out infinite alternate-reverse}
+#fi-boarding .fi-stars{position:absolute;inset:0;width:100%;height:100%;opacity:.55;mix-blend-mode:screen;animation:fiDrift 120s linear infinite}
+#fi-boarding .fi-grain{position:absolute;inset:0;opacity:.05;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>")}
+#fi-boarding .fi-spot{position:absolute;top:0;left:0;width:520px;height:520px;margin:-260px 0 0 -260px;border-radius:50%;background:radial-gradient(circle,var(--gold) 0%,rgba(199,154,92,0) 60%);mix-blend-mode:screen;opacity:0;transition:opacity .4s ease;will-change:transform}
+#fi-boarding.fi-hasspot .fi-spot{opacity:.20}
+
+/* avión que sobrevuela la página al hacer scroll (fixed, no toca a Calendly) */
+#fi-boarding .fi-flight{position:fixed;inset:0;z-index:41;pointer-events:none;opacity:.9;transition:opacity .4s ease}
+#fi-boarding .fi-flight.hide{opacity:0}
+#fi-boarding .fi-flight svg{position:absolute;inset:0;width:100%;height:100%}
+#fi-boarding .fi-plane2{offset-rotate:auto}
+
+#fi-boarding .fi-wrap{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:clamp(20px,4vw,40px) clamp(16px,4vw,44px) clamp(48px,7vw,90px)}
 
 /* ---------- barra superior ---------- */
-#fi-boarding .fi-top{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap;padding-bottom:clamp(22px,4vw,40px)}
-#fi-boarding .fi-kicker{font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold-deep);line-height:2}
-#fi-boarding .fi-kicker .star{color:var(--gold)}
-#fi-boarding .fi-kicker .dim{color:var(--tan)}
-#fi-boarding .fi-top-right{display:flex;flex-direction:column;align-items:flex-end;gap:10px}
-#fi-boarding .fi-status{display:inline-flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:100px;padding:7px 14px;background:rgba(255,255,255,.55)}
-#fi-boarding .fi-dot{position:relative;width:8px;height:8px;border-radius:50%;background:var(--tan);flex:none}
-#fi-boarding .fi-dot::after{content:"";position:absolute;inset:0;border-radius:50%;background:inherit;opacity:.55}
-#fi-boarding .fi-flap{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-2);white-space:nowrap}
-#fi-boarding .fi-flap-cell{display:inline-block;min-width:.62em;text-align:center}
-#fi-boarding .fi-clock{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-variant-numeric:tabular-nums}
-#fi-boarding .fi-clock b{color:var(--gold-deep);font-weight:400}
-#fi-boarding.is-selecting .fi-dot{background:var(--gold-lt)}
-#fi-boarding.is-selecting .fi-flap{color:var(--gold-deep)}
-#fi-boarding.is-confirmed .fi-dot{background:var(--gold)}
-#fi-boarding.is-confirmed .fi-flap{color:var(--gold-deep)}
+#fi-boarding .fi-top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-bottom:clamp(20px,3vw,34px)}
+#fi-boarding .fi-brandmark{font-family:var(--serif);font-weight:700;font-size:clamp(15px,1.8vw,19px);letter-spacing:.02em;color:var(--cream)}
+#fi-boarding .fi-brandmark .s{color:var(--gold)}
+#fi-boarding .fi-toprt{display:flex;align-items:center;gap:16px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--cream-dim)}
+#fi-boarding .fi-clock{color:var(--gold);font-variant-numeric:tabular-nums}
+#fi-boarding .fi-live{display:inline-flex;align-items:center;gap:8px}
+#fi-boarding .fi-live .d{width:8px;height:8px;border-radius:50%;background:var(--green);position:relative}
+#fi-boarding .fi-live .d::after{content:"";position:absolute;inset:0;border-radius:50%;background:var(--green)}
 
-/* ---------- hero ---------- */
-#fi-boarding .fi-hero{max-width:760px;padding:clamp(6px,2vw,14px) 0 clamp(30px,5vw,52px)}
-#fi-boarding .fi-hero .fi-eyebrow{font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold-deep);margin-bottom:18px}
-#fi-boarding .fi-hero h1{font-family:var(--serif);font-weight:500;font-size:clamp(34px,6.2vw,66px);line-height:1.03;letter-spacing:-.01em;color:var(--ink)}
-#fi-boarding .fi-hero h1 em{font-style:italic;color:var(--gold)}
-#fi-boarding .fi-hero p{margin-top:clamp(16px,2.6vw,26px);max-width:60ch;font-size:clamp(13px,1.5vw,15px);line-height:1.9;color:var(--ink-2)}
-#fi-boarding .fi-cta-row{display:flex;flex-wrap:wrap;gap:14px;margin-top:clamp(24px,3vw,34px)}
+/* ==================================================================
+   HERO — tablero de salidas + billete
+   ================================================================== */
+#fi-boarding .fi-hero{display:grid;grid-template-columns:1.5fr 1fr;gap:clamp(18px,2.4vw,28px);align-items:start}
+#fi-boarding .fi-eyebrow{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold)}
 
-/* ---------- botones ---------- */
-#fi-boarding .fi-btn{position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:10px;cursor:pointer;font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;padding:15px 26px;border-radius:8px;border:1px solid transparent;transition:transform .18s ease,box-shadow .25s ease,background .25s ease,color .2s ease,border-color .2s ease}
-#fi-boarding .fi-btn::after{content:"";position:absolute;inset:0;pointer-events:none;transform:translateX(-135%);background:linear-gradient(100deg,transparent 20%,rgba(255,255,255,.5) 50%,transparent 80%)}
-#fi-boarding .fi-btn:hover::after{animation:fiSheen .7s ease}
-#fi-boarding .fi-btn--gold{color:#20150a;font-weight:700;background:linear-gradient(180deg,var(--gold-lt),var(--gold) 60%,var(--gold-deep));box-shadow:0 12px 26px -12px rgba(126,95,51,.55),inset 0 1px 0 rgba(255,255,255,.35)}
-#fi-boarding .fi-btn--gold:hover{transform:translateY(-2px);box-shadow:0 18px 36px -12px rgba(126,95,51,.6),inset 0 1px 0 rgba(255,255,255,.4)}
-#fi-boarding .fi-btn--ghost{color:var(--ink);border-color:rgba(27,42,45,.25);background:rgba(255,255,255,.4)}
-#fi-boarding .fi-btn--ghost:hover{border-color:var(--gold);color:var(--gold-deep);transform:translateY(-2px)}
+/* tablero */
+#fi-boarding .fi-board{background:linear-gradient(180deg,var(--flap-back),var(--petrol));border:1px solid var(--hair);border-radius:18px;padding:clamp(18px,2.4vw,28px);box-shadow:0 40px 90px -50px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.03)}
+#fi-boarding .fi-board-top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:14px;border-bottom:1px solid var(--hair);font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--cream-dim)}
+#fi-boarding .fi-board-top b{color:var(--gold);font-weight:400;font-variant-numeric:tabular-nums}
+#fi-boarding .fi-board-title{margin:clamp(14px,2vw,22px) 0 6px}
+#fi-boarding .fi-board-sub{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--cream-dim);margin-bottom:clamp(16px,2.2vw,24px)}
+#fi-boarding .fi-board-sub .s{color:var(--gold)}
 
-/* ============================================================
-   BILLETE
-   ============================================================ */
-#fi-boarding .fi-ticket{display:grid;grid-template-columns:1fr 340px;position:relative;border-radius:26px;overflow:hidden;background:var(--panel);color:var(--ink);box-shadow:0 30px 70px -34px rgba(31,43,46,.35),0 2px 0 rgba(255,255,255,.5);border:1px solid var(--line);opacity:1}
-#fi-boarding .fi-main,#fi-boarding .fi-stub{position:relative;background-image:repeating-linear-gradient(45deg,rgba(126,95,51,.04) 0 2px,transparent 2px 9px)}
-#fi-boarding .fi-main{padding:clamp(24px,3.4vw,42px)}
-#fi-boarding .fi-stub{padding:clamp(24px,3vw,38px) clamp(22px,2.6vw,34px);background-color:var(--panel-2);border-left:2px dashed #d8ccaf}
-#fi-boarding .fi-ticket::before,#fi-boarding .fi-ticket::after{content:"";position:absolute;right:340px;width:34px;height:34px;border-radius:50%;background:var(--bg);transform:translateX(50%);z-index:3;box-shadow:inset 0 0 0 1px var(--line)}
-#fi-boarding .fi-ticket::before{top:-17px}
-#fi-boarding .fi-ticket::after{bottom:-17px}
-#fi-boarding .fi-brand{font-family:var(--serif);font-weight:700;font-size:clamp(18px,2.1vw,23px);letter-spacing:.02em;color:var(--ink)}
-#fi-boarding .fi-brand sup{font-size:.5em;vertical-align:super;color:var(--gold-deep)}
-#fi-boarding .fi-mono-label{font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:var(--muted)}
-#fi-boarding .fi-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
-#fi-boarding .fi-chip{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-deep);border:1px solid rgba(126,95,51,.4);border-radius:6px;padding:8px 12px;white-space:nowrap}
-#fi-boarding .fi-class{display:inline-block;margin-top:16px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#2c2110;font-weight:700;background:linear-gradient(180deg,#e3c079,#c99e57);border-radius:6px;padding:8px 14px}
-#fi-boarding .fi-route-row{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-top:clamp(20px,2.6vw,30px)}
-#fi-boarding .fi-place{font-family:var(--serif);font-weight:500;font-size:clamp(30px,4.6vw,50px);line-height:1;color:var(--ink)}
-#fi-boarding .fi-place.right{text-align:right}
-#fi-boarding .fi-place small{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);margin-top:10px;font-weight:400}
-#fi-boarding .fi-map{margin-top:clamp(18px,2.4vw,26px);border-radius:14px;overflow:hidden;position:relative;border:1px solid rgba(126,95,51,.22)}
-#fi-boarding .fi-map svg{display:block;width:100%;height:auto}
-#fi-boarding .fi-map .fi-pill{position:absolute;top:12px;left:12px;display:inline-flex;align-items:center;gap:8px;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:#e9e2cf;background:rgba(9,26,30,.72);border:1px solid rgba(201,191,168,.2);padding:6px 10px;border-radius:20px}
-#fi-boarding .fi-pill .dot{width:6px;height:6px;border-radius:50%;background:var(--gold-lt)}
-#fi-boarding .fi-route{stroke-dasharray:520;stroke-dashoffset:520}
-#fi-boarding .fi-ticket.fi-in .fi-route{transition:stroke-dashoffset 1.5s cubic-bezier(.16,1,.3,1) .1s;stroke-dashoffset:0}
-#fi-boarding .fi-plane{opacity:0}
+/* split-flap cells */
+#fi-boarding .fi-flap{display:inline-flex;flex-wrap:wrap;gap:4px}
+#fi-boarding .fi-cell{display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(180deg,var(--flap-face) 0 49%,var(--flap-back) 51% 100%);border:1px solid rgba(0,0,0,.4);border-radius:3px;box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 1px 2px rgba(0,0,0,.5);position:relative;overflow:hidden}
+#fi-boarding .fi-cell::before{content:"";position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(0,0,0,.55);z-index:2}
+#fi-boarding .fi-cellg{font-family:var(--mono);font-weight:700;color:var(--cream);line-height:1;transform-origin:center;will-change:transform;display:block}
+/* tamaños */
+#fi-boarding .fi-title{gap:3px}
+#fi-boarding .fi-title .fi-cell{width:clamp(24px,3.4vw,44px);height:clamp(36px,5vw,64px)}
+#fi-boarding .fi-title .fi-cellg{font-size:clamp(19px,2.7vw,36px)}
+#fi-boarding .fi-title .fi-cell.sp{background:none;border:none;box-shadow:none;width:clamp(8px,1.1vw,14px)}
+#fi-boarding .fi-title .fi-cell.sp::before{display:none}
+#fi-boarding .fi-rowflap .fi-cell{width:14px;height:22px;border-radius:2px}
+#fi-boarding .fi-rowflap .fi-cellg{font-size:12px;color:var(--cream)}
+#fi-boarding .fi-rowflap .fi-cell.sp{background:none;border:none;box-shadow:none;width:6px}
+#fi-boarding .fi-rowflap .fi-cell.sp::before{display:none}
+
+/* filas de vuelos */
+#fi-boarding .fi-flights{margin-top:6px}
+#fi-boarding .fi-frow{display:grid;grid-template-columns:1fr auto auto auto;gap:14px;align-items:center;padding:12px 2px;border-bottom:1px solid var(--hair)}
+#fi-boarding .fi-frow.head{font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold-deep);border-bottom:1px solid var(--hair)}
+#fi-boarding .fi-frow .col2,#fi-boarding .fi-frow .col3{font-size:12px;letter-spacing:.12em;color:var(--cream-dim);font-variant-numeric:tabular-nums;min-width:44px;text-align:center}
+#fi-boarding .fi-chip{justify-self:end;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;padding:5px 10px;border-radius:20px;border:1px solid;white-space:nowrap}
+#fi-boarding .fi-chip.green{color:var(--green);border-color:rgba(95,191,138,.4);background:rgba(95,191,138,.08)}
+#fi-boarding .fi-chip.amber{color:var(--amber);border-color:rgba(232,181,99,.4);background:rgba(232,181,99,.08)}
+#fi-boarding .fi-chip.cream{color:var(--cream-dim);border-color:var(--hair)}
+
+/* ---------- billete (con tilt 3D) ---------- */
+#fi-boarding .fi-tilt{perspective:1200px}
+#fi-boarding .fi-ticket{position:relative;background:linear-gradient(180deg,var(--flap-back),#0c252b);border:1px solid var(--hair);border-radius:18px;overflow:hidden;box-shadow:0 40px 90px -46px rgba(0,0,0,.9);transform-style:preserve-3d;transition:transform .4s cubic-bezier(.16,1,.3,1)}
+#fi-boarding .fi-ticket.print{animation:fiPrint 1s cubic-bezier(.16,1,.3,1) both}
+#fi-boarding .fi-glare{position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at var(--mx,50%) var(--my,0%), rgba(255,255,255,.16), rgba(255,255,255,0) 45%);mix-blend-mode:screen;opacity:0;transition:opacity .3s ease;z-index:5}
+#fi-boarding .fi-tilt:hover .fi-glare{opacity:1}
+#fi-boarding .fi-tk-head{padding:clamp(18px,2.4vw,24px);border-bottom:1px dashed rgba(201,191,168,.22)}
+#fi-boarding .fi-tk-brand{font-family:var(--serif);font-weight:700;font-size:18px;color:var(--cream)}
+#fi-boarding .fi-tk-brand sup{font-size:.5em;color:var(--gold)}
+#fi-boarding .fi-tk-label{font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--cream-dim);margin-top:4px}
+#fi-boarding .fi-tk-grid{padding:clamp(16px,2.2vw,22px);display:grid;grid-template-columns:1fr 1fr;gap:14px 16px}
+#fi-boarding .fi-tk-grid .full{grid-column:1/-1}
+#fi-boarding .fi-tk-k{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-deep)}
+#fi-boarding .fi-tk-v{font-family:var(--serif);font-size:18px;color:var(--cream);margin-top:3px}
+#fi-boarding .fi-tk-v.gold{color:var(--gold)}
+#fi-boarding .fi-barcode{position:relative;height:52px;margin:2px clamp(16px,2.2vw,22px) 14px;border-radius:3px;overflow:hidden;background:repeating-linear-gradient(90deg,#e9e2cf 0 2px,transparent 2px 4px,#e9e2cf 4px 7px,transparent 7px 9px,#e9e2cf 9px 10px,transparent 10px 13px,#e9e2cf 13px 16px,transparent 16px 17px,#e9e2cf 17px 21px,transparent 21px 23px)}
+#fi-boarding .fi-scan{position:absolute;top:0;bottom:0;width:3px;background:linear-gradient(180deg,transparent,var(--gold),transparent);box-shadow:0 0 12px 2px rgba(199,154,92,.7);transform:translateX(-20px);opacity:0}
+#fi-boarding .fi-ticket.scanning .fi-scan{animation:fiScan 2.1s ease-in-out}
+#fi-boarding .fi-tk-cta{padding:clamp(14px,2vw,20px) clamp(16px,2.2vw,22px) clamp(18px,2.4vw,24px)}
+#fi-boarding .fi-estado{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 clamp(16px,2.2vw,22px) clamp(14px,2vw,18px)}
+
+/* botones */
+#fi-boarding .fi-btn{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;padding:15px 26px;border-radius:9px;border:1px solid transparent;transition:transform .18s ease,box-shadow .25s ease,color .2s ease,border-color .2s ease}
+#fi-boarding .fi-btn::after{content:"";position:absolute;top:0;bottom:0;left:0;width:60%;pointer-events:none;transform:translateX(-160%) skewX(-18deg);background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent)}
+#fi-boarding .fi-btn:hover::after{animation:fiSheen .8s ease}
+#fi-boarding .fi-btn--gold{width:100%;color:#1c1206;font-weight:700;background:linear-gradient(180deg,var(--foil),var(--gold) 55%,var(--gold-deep));box-shadow:0 14px 34px -14px rgba(199,154,92,.8), inset 0 1px 0 rgba(255,255,255,.4)}
+#fi-boarding .fi-btn--gold:hover{transform:translateY(-2px);box-shadow:0 20px 44px -14px rgba(199,154,92,.9), inset 0 1px 0 rgba(255,255,255,.5)}
+#fi-boarding .fi-btn--ghost{color:var(--cream);border-color:rgba(201,191,168,.28);background:rgba(255,255,255,.02)}
+#fi-boarding .fi-btn--ghost:hover{border-color:var(--gold);color:var(--gold);transform:translateY(-2px)}
+#fi-boarding .fi-hero-cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:clamp(16px,2.2vw,22px)}
+#fi-boarding .fi-hero-cta .fi-btn--gold{width:auto}
+
+/* ==================================================================
+   SECCIONES
+   ================================================================== */
+#fi-boarding .fi-sec{margin-top:clamp(56px,9vw,120px);position:relative}
+#fi-boarding .fi-sec-head{text-align:center;margin-bottom:clamp(26px,4vw,46px)}
+#fi-boarding .fi-mask{overflow:hidden;display:block}
+#fi-boarding .fi-line{display:block;font-family:var(--serif);font-weight:500;font-size:clamp(28px,5vw,54px);line-height:1.08;color:var(--cream);font-variation-settings:'wght' 460}
+#fi-boarding .fi-line em{font-style:italic;color:var(--gold)}
+#fi-boarding .fi-lead{max-width:60ch;margin:clamp(16px,2.4vw,24px) auto 0;font-size:clamp(14px,1.5vw,16px);line-height:1.9;color:var(--cream-dim);text-align:center}
+
+/* manifiesto */
+#fi-boarding .fi-manif{text-align:center;max-width:900px;margin-left:auto;margin-right:auto}
+#fi-boarding .fi-manif .fi-line{font-size:clamp(30px,5.6vw,62px)}
+
+/* itinerario / legs */
+#fi-boarding .fi-legs{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(14px,2vw,22px)}
+#fi-boarding .fi-leg{position:relative;background:linear-gradient(180deg,rgba(15,46,53,.7),rgba(11,33,38,.7));border:1px solid var(--hair);border-radius:16px;padding:clamp(22px,3vw,30px);overflow:hidden;transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease}
+#fi-boarding .fi-leg:hover{transform:translateY(-4px);border-color:rgba(199,154,92,.4);box-shadow:0 26px 54px -30px rgba(199,154,92,.35)}
+#fi-boarding .fi-leg::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:100%;background:linear-gradient(90deg,var(--gold),transparent);transform:scaleX(0);transform-origin:left;transition:transform .6s ease}
+#fi-boarding .fi-leg.in::after{transform:scaleX(1)}
+#fi-boarding .fi-leg-top{display:flex;align-items:center;justify-content:space-between;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-deep)}
+#fi-boarding .fi-leg-n{font-family:var(--serif);font-size:34px;color:var(--gold);line-height:1;margin-top:14px}
+#fi-boarding .fi-leg h3{font-family:var(--serif);font-weight:600;font-size:20px;margin-top:8px;color:var(--cream)}
+#fi-boarding .fi-leg p{margin-top:8px;font-size:13px;line-height:1.7;color:var(--cream-dim)}
+
+/* resultados / stats */
+#fi-boarding .fi-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(14px,2vw,24px);border-top:1px solid var(--hair);border-bottom:1px solid var(--hair);padding:clamp(28px,4vw,44px) 0}
+#fi-boarding .fi-stat{text-align:center}
+#fi-boarding .fi-stat-n{font-family:var(--serif);font-weight:500;font-size:clamp(30px,4.6vw,52px);color:var(--cream);line-height:1;font-variant-numeric:tabular-nums}
+#fi-boarding .fi-stat-n .u{color:var(--gold);font-size:.6em;margin-left:2px}
+#fi-boarding .fi-stat-l{margin-top:10px;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--cream-dim)}
+
+/* ruta / mapa */
+#fi-boarding .fi-map{position:relative;border:1px solid var(--hair);border-radius:18px;overflow:hidden;background:#08181d}
+#fi-boarding .fi-map svg.base{display:block;width:100%;height:auto}
+#fi-boarding .fi-radar{position:absolute;top:50%;left:50%;width:120%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:conic-gradient(from 0deg, rgba(111,199,193,0) 0deg 300deg, rgba(111,199,193,.28) 355deg, rgba(111,199,193,0) 360deg);mix-blend-mode:screen;pointer-events:none}
+#fi-boarding .fi-map.live .fi-radar{animation:fiRadar 5s linear infinite}
+#fi-boarding .fi-route{stroke-dasharray:560;stroke-dashoffset:560}
+#fi-boarding .fi-map.live .fi-route{transition:stroke-dashoffset 1.8s cubic-bezier(.16,1,.3,1);stroke-dashoffset:0}
+#fi-boarding .fi-planem{opacity:0}
 @supports (offset-path: path('M0 0')){
-  #fi-boarding .fi-plane{offset-path:path('M168 250 Q 420 78 656 160');offset-rotate:auto;offset-distance:0%}
-  #fi-boarding .fi-ticket.fi-in .fi-plane{opacity:1;animation:fiFly 1.8s cubic-bezier(.16,1,.3,1) .1s forwards}
+  #fi-boarding .fi-planem{offset-path:path('M150 250 Q 430 70 664 156');offset-rotate:auto;offset-distance:0%}
+  #fi-boarding .fi-map.live .fi-planem{opacity:1;animation:fiFlyArc 14s linear infinite}
 }
-#fi-boarding .fi-ping{transform-box:fill-box;transform-origin:center;transform:scale(0);opacity:0}
-#fi-boarding.is-confirmed .fi-ping{animation:fiPing 1.4s ease-out}
-#fi-boarding .fi-quote{margin-top:clamp(20px,2.6vw,28px);font-family:var(--serif);font-style:italic;font-weight:400;font-size:clamp(16px,2vw,21px);line-height:1.5;color:#33403f}
-#fi-boarding .fi-includes{margin-top:clamp(18px,2.4vw,26px);border:1px solid rgba(126,95,51,.24);border-radius:12px;padding:clamp(16px,2vw,22px)}
-#fi-boarding .fi-includes ul{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:10px 24px;margin:12px 0 0}
-#fi-boarding .fi-includes li{position:relative;padding-left:20px;font-size:12.5px;letter-spacing:.02em;color:#2e3a39}
-#fi-boarding .fi-includes li::before{content:"\2726";position:absolute;left:0;top:0;color:var(--gold-deep);font-size:10px}
-#fi-boarding .fi-includes .fi-note-line{margin-top:16px;font-family:var(--serif);font-style:italic;font-size:14px;color:var(--gold-deep)}
-#fi-boarding .fi-main-foot{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-top:clamp(20px,2.6vw,28px);padding-top:16px;border-top:1px dashed #ddd0b4}
-#fi-boarding .fi-stub-inner{position:relative;z-index:1}
-#fi-boarding .fi-field{margin-top:16px}
-#fi-boarding .fi-field .v{font-family:var(--serif);font-size:19px;color:var(--ink);margin-top:5px}
-#fi-boarding .fi-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-#fi-boarding .fi-barcode{position:relative;height:56px;margin-top:22px;border-radius:4px;overflow:hidden;background:repeating-linear-gradient(90deg,#233231 0 2px,transparent 2px 4px,#233231 4px 7px,transparent 7px 9px,#233231 9px 10px,transparent 10px 13px,#233231 13px 16px,transparent 16px 17px,#233231 17px 21px,transparent 21px 23px)}
-#fi-boarding .fi-barcode::after{content:"";position:absolute;top:0;bottom:0;width:40%;transform:translateX(-160%);background:linear-gradient(90deg,transparent,rgba(168,129,76,.55),transparent);pointer-events:none}
-#fi-boarding.is-confirmed .fi-barcode::after{animation:fiScan .9s ease}
-#fi-boarding .fi-confirm{width:100%;justify-content:center;margin-top:18px}
-#fi-boarding .fi-stamp{position:absolute;top:34%;left:50%;z-index:4;pointer-events:none;transform:translate(-50%,-50%) rotate(-11deg) scale(1.35);opacity:0;border:3px solid var(--gold-deep);color:var(--gold-deep);border-radius:10px;padding:10px 18px;font-size:15px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;background:rgba(255,253,248,.55)}
-#fi-boarding.is-confirmed .fi-stamp{animation:fiStamp .5s cubic-bezier(.2,.9,.3,1.2) forwards}
-#fi-boarding .fi-itin{margin-top:26px;position:relative}
-#fi-boarding .fi-itin::before{content:"";position:absolute;left:5px;top:12px;bottom:12px;width:2px;background:#e0d4b8}
-#fi-boarding .fi-stop{position:relative;padding:0 0 20px 26px}
-#fi-boarding .fi-stop:last-child{padding-bottom:0}
-#fi-boarding .fi-stop::before{content:"";position:absolute;left:0;top:2px;width:12px;height:12px;border-radius:50%;background:var(--gold-deep);box-shadow:0 0 0 3px var(--panel-2)}
-#fi-boarding .fi-stop.diamond::before{border-radius:2px;transform:rotate(45deg)}
-#fi-boarding .fi-stop .t{font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
-#fi-boarding .fi-stop .d{font-size:14px;color:#26332f;margin-top:4px}
-#fi-boarding .fi-embark{display:flex;justify-content:space-between;align-items:center;margin-top:22px;padding-top:16px;border-top:1px dashed #ddd0b4}
-#fi-boarding .fi-book{margin-top:clamp(48px,7vw,86px);text-align:center}
-#fi-boarding .fi-book .fi-eyebrow{font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold-deep)}
-#fi-boarding .fi-book h2{font-family:var(--serif);font-weight:500;font-size:clamp(28px,4.6vw,46px);line-height:1.08;margin-top:14px;color:var(--ink)}
-#fi-boarding .fi-book h2 em{font-style:italic;color:var(--gold)}
-#fi-boarding .fi-book p{margin:14px auto 0;max-width:52ch;font-size:13px;line-height:1.8;color:var(--ink-2)}
-#fi-boarding .fi-cal-frame{margin-top:clamp(26px,4vw,42px);border-radius:20px;overflow:hidden;border:1px solid var(--line);background:var(--panel);box-shadow:0 30px 70px -40px rgba(31,43,46,.3)}
+#fi-boarding .fi-blip{transform-box:fill-box;transform-origin:center;opacity:0}
+#fi-boarding .fi-map.live .fi-blip{animation:fiBlip 5s ease-out infinite}
+#fi-boarding .fi-map-pill{position:absolute;top:14px;left:14px;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--radar);background:rgba(8,24,29,.7);border:1px solid rgba(111,199,193,.25);padding:6px 12px;border-radius:20px}
+
+/* embarque / calendly (SIN transform en ancestros) */
+#fi-boarding .fi-book{text-align:center}
+#fi-boarding .fi-cal-frame{margin-top:clamp(26px,4vw,42px);border-radius:20px;overflow:hidden;border:1px solid var(--hair);background:var(--petrol);box-shadow:0 40px 90px -50px rgba(0,0,0,.9)}
 #fi-boarding .calendly-inline-widget{min-width:320px;height:720px}
-#fi-boarding .fi-note{margin-top:clamp(40px,6vw,72px);padding-top:26px;border-top:1px solid var(--line);font-size:12px;line-height:1.9;color:var(--muted);max-width:900px}
-#fi-boarding .fi-note b{color:var(--gold-deep)}
 
-/* ---------- secciones adicionales ---------- */
-#fi-boarding .fi-eyebrow{font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold-deep)}
-#fi-boarding .fi-sec-head{text-align:center;margin-bottom:clamp(24px,4vw,40px)}
-#fi-boarding .fi-sec-title{font-family:var(--serif);font-weight:500;font-size:clamp(26px,4.4vw,42px);line-height:1.1;margin-top:12px;color:var(--ink)}
-#fi-boarding .fi-sec-title em{font-style:italic;color:var(--gold)}
-#fi-boarding .fi-proceso{margin-top:clamp(48px,7vw,86px)}
-#fi-boarding .fi-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(14px,2vw,22px)}
-#fi-boarding .fi-step{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:clamp(22px,3vw,30px);transition:transform .25s ease,box-shadow .25s ease}
-#fi-boarding .fi-step:hover{transform:translateY(-4px);box-shadow:0 24px 50px -30px rgba(31,43,46,.4)}
-#fi-boarding .fi-step-n{font-family:var(--serif);font-size:34px;color:var(--gold);line-height:1}
-#fi-boarding .fi-step h3{font-family:var(--serif);font-weight:600;font-size:20px;margin-top:14px;color:var(--ink)}
-#fi-boarding .fi-step p{margin-top:8px;font-size:13px;line-height:1.7;color:var(--ink-2)}
-#fi-boarding .fi-step::after{content:"\2726";position:absolute;top:22px;right:22px;color:var(--tan);font-size:12px}
-#fi-boarding .fi-stats{margin-top:clamp(40px,6vw,72px);display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(12px,2vw,20px);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:clamp(24px,3.5vw,38px) 0}
-#fi-boarding .fi-stat{text-align:center;padding:0 8px}
-#fi-boarding .fi-stat-n{font-family:var(--serif);font-weight:500;font-size:clamp(26px,3.4vw,38px);color:var(--ink);line-height:1}
-#fi-boarding .fi-stat-l{margin-top:8px;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
-#fi-boarding .fi-faq{margin-top:clamp(48px,7vw,86px);max-width:760px;margin-left:auto;margin-right:auto}
-#fi-boarding .fi-faq-list{margin-top:clamp(20px,3vw,30px)}
-#fi-boarding .fi-q{border-top:1px solid var(--line)}
-#fi-boarding .fi-q:last-child{border-bottom:1px solid var(--line)}
-#fi-boarding .fi-q summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 4px;font-family:var(--serif);font-size:clamp(16px,2vw,20px);color:var(--ink)}
-#fi-boarding .fi-q summary::-webkit-details-marker{display:none}
-#fi-boarding .fi-q summary::after{content:"+";font-family:var(--mono);font-size:20px;color:var(--gold-deep);transition:transform .25s ease}
-#fi-boarding .fi-q[open] summary::after{transform:rotate(45deg)}
-#fi-boarding .fi-a{padding:0 4px 20px;font-size:13px;line-height:1.8;color:var(--ink-2);max-width:64ch}
-#fi-boarding .fi-stickybar{position:fixed;left:50%;bottom:20px;z-index:60;transform:translate(-50%,180%);transition:transform .45s cubic-bezier(.16,1,.3,1);display:flex;align-items:center;gap:16px;background:var(--panel);border:1px solid var(--line);border-radius:100px;padding:10px 10px 10px 22px;box-shadow:0 20px 50px -20px rgba(31,43,46,.5);max-width:calc(100% - 28px)}
+/* footer / marquee */
+#fi-boarding .fi-foot{margin-top:clamp(50px,7vw,86px);border-top:1px solid var(--hair);padding-top:26px}
+#fi-boarding .fi-marquee{overflow:hidden;white-space:nowrap;-webkit-mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+#fi-boarding .fi-marquee span{display:inline-block;padding-right:40px;font-size:12px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold-deep);animation:fiMarquee 26s linear infinite}
+#fi-boarding .fi-marquee:hover span{animation-play-state:paused}
+#fi-boarding .fi-marquee .s{color:var(--gold)}
+#fi-boarding .fi-legal{margin-top:22px;font-size:11px;line-height:1.9;color:var(--cream-dim);max-width:760px}
+#fi-boarding .fi-legal b{color:var(--gold)}
+
+/* barra fija */
+#fi-boarding .fi-stickybar{position:fixed;left:50%;bottom:20px;z-index:60;transform:translate(-50%,180%);transition:transform .45s cubic-bezier(.16,1,.3,1);display:flex;align-items:center;gap:16px;background:linear-gradient(180deg,var(--flap-face),var(--petrol));border:1px solid rgba(199,154,92,.3);border-radius:100px;padding:10px 10px 10px 22px;box-shadow:0 24px 60px -20px rgba(0,0,0,.9);max-width:calc(100% - 28px)}
 #fi-boarding .fi-stickybar.is-visible{transform:translate(-50%,0)}
-#fi-boarding .fi-sticky-txt{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
-#fi-boarding .fi-stickybar .fi-btn{padding:12px 20px}
+#fi-boarding .fi-sticky-txt{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--cream-dim);white-space:nowrap}
+#fi-boarding .fi-stickybar .fi-btn--gold{width:auto;padding:12px 22px}
 
-/* ============================================================ KEYFRAMES ============================================================ */
-@keyframes fiSheen{to{transform:translateX(135%)}}
-@keyframes fiFly{from{offset-distance:0%}to{offset-distance:100%}}
-@keyframes fiPing{0%{transform:scale(.2);opacity:.7}100%{transform:scale(3.4);opacity:0}}
-@keyframes fiScan{0%{transform:translateX(-160%)}100%{transform:translateX(320%)}}
-@keyframes fiStamp{from{transform:translate(-50%,-50%) rotate(-11deg) scale(1.5);opacity:0}to{transform:translate(-50%,-50%) rotate(-11deg) scale(1);opacity:.92}}
-@keyframes fiReveal{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
-@keyframes fiRevealStub{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:none}}
-@keyframes fiPulse{0%{transform:scale(1);opacity:.55}100%{transform:scale(2.6);opacity:0}}
+/* reveal */
+#fi-boarding.fi-js [data-reveal]{opacity:0}
+
+/* ==================================================================
+   KEYFRAMES
+   ================================================================== */
+@keyframes fiAuroraA{0%{transform:translate3d(0,0,0) scale(1)}100%{transform:translate3d(8vw,6vh,0) scale(1.25)}}
+@keyframes fiAuroraB{0%{transform:translate3d(0,0,0) scale(1.1)}100%{transform:translate3d(-7vw,-5vh,0) scale(1.35)}}
+@keyframes fiDrift{0%{transform:translate3d(0,0,0)}100%{transform:translate3d(0,-40px,0)}}
+@keyframes fiSheen{to{transform:translateX(320%) skewX(-18deg)}}
+@keyframes fiPrint{from{clip-path:inset(100% 0 0 0);transform:translateY(26px)}to{clip-path:inset(0 0 0 0);transform:translateY(0)}}
+@keyframes fiScan{0%{transform:translateX(-20px);opacity:0}8%{opacity:1}92%{opacity:1}100%{transform:translateX(360px);opacity:0}}
+@keyframes fiRadar{to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes fiFlyArc{0%{offset-distance:0%}70%{offset-distance:100%}100%{offset-distance:100%}}
+@keyframes fiBlip{0%,55%{transform:scale(0);opacity:0}60%{opacity:.9}100%{transform:scale(3.4);opacity:0}}
+@keyframes fiMarquee{to{transform:translateX(-50%)}}
+@keyframes fiReveal{to{opacity:1;transform:none}}
+@keyframes fiPulse2{0%{transform:scale(1);opacity:.5}100%{transform:scale(2.6);opacity:0}}
+
 @media (prefers-reduced-motion: no-preference){
-  #fi-boarding .fi-ticket{opacity:0}
-  #fi-boarding .fi-ticket.fi-in{animation:fiReveal .7s cubic-bezier(.16,1,.3,1) forwards}
-  #fi-boarding .fi-ticket.fi-in .fi-stub{animation:fiRevealStub .7s cubic-bezier(.16,1,.3,1) .12s both}
-  #fi-boarding .fi-dot::after{animation:fiPulse 2.2s ease-out infinite}
-  #fi-boarding.fi-js [data-reveal]{opacity:0;transform:translateY(22px)}
-  #fi-boarding.fi-js [data-reveal].in{opacity:1;transform:none;transition:opacity .7s ease,transform .7s cubic-bezier(.16,1,.3,1)}
+  #fi-boarding.fi-js [data-reveal]{transform:translateY(24px)}
+  #fi-boarding.fi-js [data-reveal].in{animation:fiReveal .7s cubic-bezier(.16,1,.3,1) forwards}
+  #fi-boarding .fi-line{transform:translateY(110%);transition:transform .75s cubic-bezier(.16,1,.3,1),font-variation-settings .75s ease}
+  #fi-boarding .in .fi-line{transform:none;font-variation-settings:'wght' 640}
+  #fi-boarding .fi-live .d::after{animation:fiPulse2 2s ease-out infinite}
 }
 @media (prefers-reduced-motion: reduce){
+  #fi-boarding .fi-aurora,#fi-boarding .fi-stars,#fi-boarding .fi-map.live .fi-radar,#fi-boarding .fi-map.live .fi-planem,#fi-boarding .fi-map.live .fi-blip,#fi-boarding .fi-marquee span{animation:none}
   #fi-boarding .fi-route{stroke-dashoffset:0}
-  #fi-boarding .fi-btn:hover::after{animation:none}
-  @supports (offset-path: path('M0 0')){
-    #fi-boarding .fi-plane{offset-distance:100%;opacity:1;animation:none}
-  }
-  #fi-boarding.is-confirmed .fi-ping,#fi-boarding.is-confirmed .fi-barcode::after,#fi-boarding.is-confirmed .fi-stamp{animation:none}
-  #fi-boarding.is-confirmed .fi-stamp{opacity:.92}
+  #fi-boarding .fi-flight{display:none}
+  #fi-boarding.fi-js [data-reveal]{opacity:1}
 }
 
-/* ============================================================ RESPONSIVE ============================================================ */
+/* ==================================================================
+   RESPONSIVE
+   ================================================================== */
+@media (max-width:940px){
+  #fi-boarding .fi-hero{grid-template-columns:1fr}
+  #fi-boarding .fi-legs{grid-template-columns:1fr}
+}
 @media (max-width:860px){
-  #fi-boarding .fi-ticket{grid-template-columns:1fr}
-  #fi-boarding .fi-ticket::before,#fi-boarding .fi-ticket::after{display:none}
-  #fi-boarding .fi-stub{border-left:0;border-top:2px dashed #d8ccaf}
-  #fi-boarding .fi-includes ul{grid-template-columns:1fr}
-  #fi-boarding .fi-top-right{align-items:flex-start}
-  #fi-boarding .fi-steps{grid-template-columns:1fr}
+  #fi-boarding .fi-amb .fi-stars{display:none}
 }
 @media (max-width:640px){
-  #fi-boarding .fi-stats{grid-template-columns:1fr 1fr;gap:22px 12px}
+  #fi-boarding .fi-stats{grid-template-columns:1fr 1fr;gap:26px 14px}
+  #fi-boarding .fi-frow{grid-template-columns:1fr auto;gap:8px 12px}
+  #fi-boarding .fi-frow .col2,#fi-boarding .fi-frow .col3{display:none}
 }
 @media (max-width:520px){
-  #fi-boarding .fi-btn{width:100%;justify-content:center}
-  #fi-boarding .fi-route-row{flex-direction:column;align-items:flex-start;gap:14px}
-  #fi-boarding .fi-place.right{text-align:left}
-  #fi-boarding .calendly-inline-widget{height:1000px}
+  #fi-boarding .fi-hero-cta .fi-btn{width:100%}
   #fi-boarding .fi-sticky-txt{display:none}
-  #fi-boarding .fi-stickybar{bottom:12px;padding:8px;gap:0}
+  #fi-boarding .fi-stickybar{bottom:12px;padding:8px}
+  #fi-boarding .fi-title .fi-cell{width:22px;height:32px}
+  #fi-boarding .fi-title .fi-cellg{font-size:15px}
+  #fi-boarding .fi-title .fi-cell.sp{width:7px}
+  #fi-boarding .fi-rowflap .fi-cell{width:12px;height:19px}
+  #fi-boarding .fi-rowflap .fi-cellg{font-size:10px}
 }
 </style>
 </head>
-<body>
+<body style="margin:0;background:#071619">
 
 <!-- ==================== INICIO DEL BLOQUE ==================== -->
-<div id="fi-boarding" data-cal-url="https://calendly.com/mahan-future-island/30min?background_color=FFFDF8&text_color=1B2A2D&primary_color=A8814C&hide_gdpr_banner=1&hide_event_type_details=1&utm_source=landing&utm_medium=cta&utm_campaign=invitacion-de-embarque">
+<div id="fi-boarding" style="background:#0B2126;color:#F1ECDF" data-cal-url="https://calendly.com/mahan-future-island/30min?background_color=0B2126&text_color=F1ECDF&primary_color=C79A5C&hide_gdpr_banner=1&hide_event_type_details=1&utm_source=landing&utm_medium=cta&utm_campaign=invitacion-de-embarque">
+
+  <!-- capa ambiente -->
+  <div class="fi-amb" aria-hidden="true">
+    <div class="fi-aurora a"></div>
+    <div class="fi-aurora b"></div>
+    <div class="fi-aurora c"></div>
+    <canvas class="fi-stars" data-stars></canvas>
+    <div class="fi-grain"></div>
+    <div class="fi-spot" data-spot></div>
+  </div>
+
+  <!-- avión que sobrevuela al hacer scroll -->
+  <div class="fi-flight" data-flight aria-hidden="true">
+    <svg viewBox="0 0 100 1000" preserveAspectRatio="none">
+      <path id="fiFlightPath" d="M88 0 C 70 220, 30 360, 50 560 C 66 720, 30 850, 60 1000" fill="none" stroke="rgba(199,154,92,.18)" stroke-width=".5" stroke-dasharray="2 6"/>
+    </svg>
+    <div class="fi-plane2" data-plane style="position:absolute;top:0;left:0;color:#E4C58A;font-size:22px;filter:drop-shadow(0 0 8px rgba(199,154,92,.6))">&#10022;</div>
+  </div>
+
   <div class="fi-wrap">
 
+    <!-- barra superior -->
     <header class="fi-top">
-      <div class="fi-kicker">
-        FUTURE ISLAND <span class="star">&#10022;</span> INVITACIÓN DE EMBARQUE<br>
-        FUTURE ISLAND <span class="dim">·</span> EMBARQUE DE VERANO 2026
-      </div>
-      <div class="fi-top-right">
-        <span class="fi-status"><span class="fi-dot"></span><span class="fi-flap" data-flap>EMBARCANDO</span></span>
-        <span class="fi-clock" data-clock>SALA DE EMBARQUE <b>--:--:--</b></span>
+      <div class="fi-brandmark">FUTURE ISLAND<span class="s">&#8482;</span></div>
+      <div class="fi-toprt">
+        <span class="fi-live"><span class="d"></span> EN VIVO</span>
+        <span>SALA DE EMBARQUE</span>
+        <span class="fi-clock" data-clock>--:--:--</span>
       </div>
     </header>
 
+    <!-- ================= HERO ================= -->
     <section class="fi-hero">
-      <div class="fi-eyebrow">Primera clase &#10022; Cortesía</div>
-      <h1>El vídeo vertical ya no es una tendencia. <em>Es el canal.</em></h1>
-      <p>Las mini-series verticales en TikTok e Instagram son hoy la vía más rápida
-         para que una marca conquiste a la próxima generación. Esta es su invitación
-         a descubrir la ruta de la suya — a bordo de Future Island.</p>
-      <div class="fi-cta-row">
-        <a class="fi-btn fi-btn--gold fi-magnetic" data-cal href="#reservar"><span class="fi-btn-label">Confirmar asiento</span> &#10022;</a>
-        <a class="fi-btn fi-btn--ghost" href="#billete">Ver el billete &darr;</a>
-      </div>
-    </section>
+      <!-- tablero de salidas -->
+      <div class="fi-board" data-board>
+        <div class="fi-board-top">
+          <span>Salidas &#10022; Departures</span>
+          <span><b data-clock2>--:--:--</b> &#10022; Verano 2026</span>
+        </div>
+        <div class="fi-eyebrow" style="margin-top:16px">Invitación de embarque</div>
+        <div class="fi-board-title"><span class="fi-flap fi-title" data-flap="ISLA FUTURA"></span></div>
+        <div class="fi-board-sub">Future Island <span class="s">&#10022;</span> Terminal de vídeo vertical</div>
 
-    <section class="fi-ticket" id="billete">
-      <div class="fi-main">
-        <div class="fi-head">
-          <div>
-            <div class="fi-brand">FUTURE ISLAND<sup>&#8482;</sup></div>
-            <div class="fi-mono-label" style="margin-top:6px">Invitación de embarque · Verano 2026</div>
-          </div>
-          <div class="fi-chip">Primera clase</div>
+        <div class="fi-flights">
+          <div class="fi-frow head"><span>Destino</span><span class="col2">Vuelo</span><span class="col3">Puerta</span><span style="justify-self:end">Estado</span></div>
+          <div class="fi-frow"><span class="fi-flap fi-rowflap" data-flap="PRIMERA CLASE"></span><span class="col2">FI-001</span><span class="col3">A1</span><span class="fi-chip green">Embarcando</span></div>
+          <div class="fi-frow"><span class="fi-flap fi-rowflap" data-flap="SESION 30 MIN"></span><span class="col2">FI-002</span><span class="col3">A2</span><span class="fi-chip cream">A tiempo</span></div>
+          <div class="fi-frow" style="border-bottom:none"><span class="fi-flap fi-rowflap" data-flap="RUTA DE CRECIMIENTO"></span><span class="col2">FI-003</span><span class="col3">A3</span><span class="fi-chip amber">Sin coste</span></div>
         </div>
 
-        <span class="fi-class">&#10022; Primera clase · Cortesía</span>
-
-        <div class="fi-route-row">
-          <div class="fi-place">Su marca<small>Salida · hoy mismo</small></div>
-          <div class="fi-place right">F.I<small>Future Island · Territorio libre</small></div>
-        </div>
-
-        <div class="fi-map">
-          <span class="fi-pill"><span class="dot"></span> Vista satélite &#10022; Mediterráneo</span>
-          <svg viewBox="0 0 800 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ruta de vuelo hacia Isla Futura">
-            <defs>
-              <linearGradient id="fiSea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#173e46"/><stop offset="1" stop-color="#0d2a30"/></linearGradient>
-              <linearGradient id="fiLand" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6f6a45"/><stop offset="1" stop-color="#4a4a34"/></linearGradient>
-            </defs>
-            <rect width="800" height="380" fill="url(#fiSea)"/>
-            <g stroke="rgba(201,191,168,.12)" stroke-width="1">
-              <line x1="0" y1="95" x2="800" y2="95"/><line x1="0" y1="190" x2="800" y2="190"/><line x1="0" y1="285" x2="800" y2="285"/>
-              <line x1="160" y1="0" x2="160" y2="380"/><line x1="320" y1="0" x2="320" y2="380"/><line x1="480" y1="0" x2="480" y2="380"/><line x1="640" y1="0" x2="640" y2="380"/>
-            </g>
-            <path d="M-20 110 C60 88 150 96 196 150 C226 184 214 244 258 262 C206 302 120 322 44 344 L-20 380 Z" fill="url(#fiLand)" opacity=".92"/>
-            <ellipse cx="430" cy="150" rx="15" ry="9" fill="url(#fiLand)" opacity=".9"/>
-            <ellipse cx="474" cy="196" rx="10" ry="6" fill="url(#fiLand)" opacity=".9"/>
-            <ellipse cx="520" cy="162" rx="7" ry="5" fill="url(#fiLand)" opacity=".9"/>
-            <path d="M618 118 C660 106 704 120 712 152 C720 184 690 208 652 202 C614 196 600 158 618 118 Z" fill="url(#fiLand)"/>
-            <circle class="fi-ping" cx="656" cy="160" r="14" fill="none" stroke="#C79A5C" stroke-width="3"/>
-            <path class="fi-route" d="M168 250 Q 420 78 656 160" fill="none" stroke="#F1ECDF" stroke-width="2.5" stroke-linecap="round"/>
-            <g class="fi-plane"><path d="M-16 0 Q-16 -3 -8 -3 L14 -4 Q22 -3 24 0 Q22 3 14 4 L-8 3 Q-16 3 -16 0 Z M-11 -2 L-20 -12 L-13 -12 L-4 -2 Z M3 2 L-8 13 L-1 13 L10 2 Z" fill="#F1ECDF"/></g>
-            <circle cx="168" cy="250" r="7" fill="none" stroke="#F1ECDF" stroke-width="3"/><circle cx="168" cy="250" r="2.5" fill="#F1ECDF"/>
-            <rect x="648" y="152" width="16" height="16" transform="rotate(45 656 160)" fill="none" stroke="#C79A5C" stroke-width="3"/>
-            <text x="168" y="278" fill="#dfd8c6" font-family="'Space Mono',monospace" font-size="12" letter-spacing="2" text-anchor="middle">AQUÍ</text>
-            <text x="656" y="132" fill="#e7c98d" font-family="'Space Mono',monospace" font-size="12" letter-spacing="2" text-anchor="middle">ISLA FUTURA</text>
-            <text x="470" y="330" fill="#a7b0a0" font-family="'Playfair Display',serif" font-style="italic" font-size="16" text-anchor="middle">Mar Mediterráneo</text>
-          </svg>
-        </div>
-
-        <div class="fi-mono-label" style="margin-top:22px">Lo que vemos con usted</div>
-        <p class="fi-quote">En el lineal, la diferencia ya no se juega en el packaging: se juega en un
-           feed vertical. Una mini-serie propia convierte una categoría saturada en algo que la
-           Generación Z sigue episodio a episodio.</p>
-
-        <div class="fi-includes">
-          <div class="fi-mono-label">El billete incluye</div>
-          <ul>
-            <li>Ruta de crecimiento en vertical</li>
-            <li>Casos de estudio reales</li>
-            <li>Recomendaciones ejecutivas</li>
-            <li>Ideas de mini-serie para su marca</li>
-          </ul>
-          <div class="fi-note-line">Sesión de verano en Future Island · 30 min · sin coste</div>
-        </div>
-
-        <div class="fi-main-foot">
-          <div class="fi-mono-label">A bordo · un anticipo</div>
-          <div class="fi-mono-label">Vuelo FI-001 · Primera · Cortesía</div>
+        <div class="fi-hero-cta">
+          <a class="fi-btn fi-btn--gold" data-cal href="#reservar"><span class="fi-btn-label">Confirmar asiento</span> &#10022;</a>
+          <a class="fi-btn fi-btn--ghost" href="#ruta">Ver la ruta &darr;</a>
         </div>
       </div>
 
-      <div class="fi-stub">
-        <div class="fi-stamp">Asiento confirmado &#10022;</div>
-        <div class="fi-stub-inner">
-          <div class="fi-brand" style="font-size:19px">FUTURE ISLAND<sup>&#8482;</sup></div>
-          <div class="fi-mono-label" style="margin-top:6px">Primera clase · Cortesía</div>
-          <div class="fi-field"><div class="fi-mono-label">Pasajero</div><div class="v">Su marca</div></div>
-          <div class="fi-field"><div class="fi-mono-label">Vuelo</div><div class="v">FI-001 · Verano 2026</div></div>
-          <div class="fi-grid2">
-            <div class="fi-field"><div class="fi-mono-label">Asiento</div><div class="v">1A</div></div>
-            <div class="fi-field"><div class="fi-mono-label">Localizador</div><div class="v">FI-2026</div></div>
+      <!-- billete -->
+      <div class="fi-tilt" data-tilt>
+        <div class="fi-ticket" data-ticket>
+          <div class="fi-glare"></div>
+          <div class="fi-tk-head">
+            <div class="fi-tk-brand">FUTURE ISLAND<sup>&#8482;</sup></div>
+            <div class="fi-tk-label">Tarjeta de embarque &#10022; Primera clase</div>
           </div>
-          <div class="fi-barcode" aria-hidden="true"></div>
-          <a class="fi-btn fi-btn--gold fi-confirm fi-magnetic" data-cal href="#reservar"><span class="fi-btn-label">Confirmar asiento</span> &#10022;</a>
-          <div class="fi-itin">
-            <div class="fi-mono-label" style="margin-bottom:14px">Itinerario</div>
-            <div class="fi-stop"><div class="t">Salida</div><div class="d">Su marca hoy</div></div>
-            <div class="fi-stop"><div class="t">Vuelo</div><div class="d">FI-001 · Sesión 30&#8242;</div></div>
-            <div class="fi-stop"><div class="t">Llegada</div><div class="d">Isla Futura</div></div>
-            <div class="fi-stop diamond"><div class="t">En destino</div><div class="d">Ruta de crecimiento</div></div>
+          <div class="fi-tk-grid">
+            <div><div class="fi-tk-k">Pasajero</div><div class="fi-tk-v">Usted</div></div>
+            <div><div class="fi-tk-k">Destino</div><div class="fi-tk-v gold">Isla Futura</div></div>
+            <div><div class="fi-tk-k">Vuelo</div><div class="fi-tk-v">FI-001</div></div>
+            <div><div class="fi-tk-k">Puerta</div><div class="fi-tk-v">A1</div></div>
+            <div class="full"><div class="fi-tk-k">Asiento</div><div class="fi-tk-v">1A &#10022; Primera clase &#183; Cortesía</div></div>
           </div>
-          <div class="fi-embark">
-            <div><div class="fi-mono-label">Embarque hasta</div><div class="v" style="font-size:16px">31 JUL 2026</div></div>
-            <div style="color:var(--gold-deep);font-size:18px">&#10022;</div>
+          <div class="fi-barcode" aria-hidden="true"><span class="fi-scan"></span></div>
+          <div class="fi-estado">
+            <div><div class="fi-tk-k">Estado</div><div class="fi-tk-v" data-estado style="font-size:15px">Embarcando</div></div>
+            <div class="fi-tk-k" style="text-align:right">FI &#183; 2026<br>Localizador FI-2026</div>
+          </div>
+          <div class="fi-tk-cta">
+            <a class="fi-btn fi-btn--gold" data-cal href="#reservar"><span class="fi-btn-label">Confirmar asiento</span> &#10022;</a>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ============ PROCESO ============ -->
-    <section class="fi-proceso" data-reveal>
+    <!-- ================= MANIFIESTO ================= -->
+    <section class="fi-sec fi-manif" data-reveal>
+      <div class="fi-eyebrow" style="text-align:center;display:block;margin-bottom:18px">Primera clase &#10022; Cortesía</div>
+      <div class="fi-mask"><span class="fi-line">El vídeo vertical ya no</span></div>
+      <div class="fi-mask"><span class="fi-line">es una tendencia. <em>Es el canal.</em></span></div>
+      <p class="fi-lead">Las mini-series verticales en TikTok e Instagram son hoy la vía más rápida para que una
+         marca conquiste a la próxima generación. Esta es su invitación a descubrir la ruta de la suya —
+         a bordo de Future Island.</p>
+    </section>
+
+    <!-- ================= ITINERARIO ================= -->
+    <section class="fi-sec" data-reveal>
       <div class="fi-sec-head">
-        <div class="fi-eyebrow">Proceso de embarque</div>
-        <h2 class="fi-sec-title">Tres pasos hasta <em>Isla Futura</em></h2>
+        <div class="fi-eyebrow" style="display:block;margin-bottom:12px">Itinerario del vuelo</div>
+        <div class="fi-mask"><span class="fi-line">Tres tramos hasta <em>Isla Futura</em></span></div>
       </div>
-      <div class="fi-steps">
-        <div class="fi-step"><div class="fi-step-n">01</div><h3>Reserva tu asiento</h3><p>Eliges tu hora en el calendario. Treinta minutos, sin coste ni compromiso.</p></div>
-        <div class="fi-step"><div class="fi-step-n">02</div><h3>Trazamos tu ruta</h3><p>Analizamos tu marca y diseñamos su recorrido en vídeo vertical, con casos reales.</p></div>
-        <div class="fi-step"><div class="fi-step-n">03</div><h3>Despegas</h3><p>Te llevas una ruta de crecimiento accionable y recomendaciones ejecutivas.</p></div>
+      <div class="fi-legs">
+        <div class="fi-leg" data-leg><div class="fi-leg-top"><span>Tramo 01</span><span>FI-001</span></div><div class="fi-leg-n">01</div><h3>Reserva tu asiento</h3><p>Eliges tu hora en el calendario. Treinta minutos, sin coste ni compromiso.</p></div>
+        <div class="fi-leg" data-leg><div class="fi-leg-top"><span>Tramo 02</span><span>FI-002</span></div><div class="fi-leg-n">02</div><h3>Trazamos tu ruta</h3><p>Analizamos tu marca y diseñamos su recorrido en vídeo vertical, con casos reales.</p></div>
+        <div class="fi-leg" data-leg><div class="fi-leg-top"><span>Tramo 03</span><span>FI-003</span></div><div class="fi-leg-n">03</div><h3>Despegas</h3><p>Te llevas una ruta de crecimiento accionable y recomendaciones ejecutivas.</p></div>
       </div>
     </section>
 
-    <!-- ============ CIFRAS ============ -->
-    <section class="fi-stats" data-reveal>
-      <div class="fi-stat"><div class="fi-stat-n">30 min</div><div class="fi-stat-l">Sesión · cortesía</div></div>
-      <div class="fi-stat"><div class="fi-stat-n">1ª clase</div><div class="fi-stat-l">Atención dedicada</div></div>
-      <div class="fi-stat"><div class="fi-stat-n">Gen Z</div><div class="fi-stat-l">Audiencia objetivo</div></div>
-      <div class="fi-stat"><div class="fi-stat-n">Vertical</div><div class="fi-stat-l">TikTok · Reels</div></div>
-    </section>
-
-    <!-- ============ FAQ ============ -->
-    <section class="fi-faq" data-reveal>
+    <!-- ================= RESULTADOS ================= -->
+    <section class="fi-sec" data-reveal>
       <div class="fi-sec-head">
-        <div class="fi-eyebrow">Antes de embarcar</div>
-        <h2 class="fi-sec-title">Preguntas frecuentes</h2>
+        <div class="fi-eyebrow" style="display:block;margin-bottom:12px">Datos de vuelo</div>
+        <div class="fi-mask"><span class="fi-line">El plan de vuelo, en cifras</span></div>
       </div>
-      <div class="fi-faq-list">
-        <details class="fi-q"><summary>¿Tiene algún coste?</summary><div class="fi-a">No. La sesión de verano en Future Island es una cortesía: treinta minutos sin coste ni compromiso.</div></details>
-        <details class="fi-q"><summary>¿Cuánto dura y cómo es?</summary><div class="fi-a">Treinta minutos por videollamada. Revisamos tu marca y trazamos su ruta de crecimiento en vídeo vertical.</div></details>
-        <details class="fi-q"><summary>¿Para qué marcas es?</summary><div class="fi-a">Para marcas que quieren conquistar a la próxima generación con mini-series verticales en TikTok e Instagram.</div></details>
-        <details class="fi-q"><summary>¿Necesito preparar algo?</summary><div class="fi-a">Nada. Ven con tus preguntas; del resto nos encargamos nosotros.</div></details>
+      <div class="fi-stats" data-stats>
+        <div class="fi-stat"><div class="fi-stat-n"><span data-count data-to="120" data-suffix="">0</span><span class="u">M</span></div><div class="fi-stat-l">Reproducciones</div></div>
+        <div class="fi-stat"><div class="fi-stat-n"><span data-count data-to="30" data-suffix="">0</span></div><div class="fi-stat-l">Países alcanzados</div></div>
+        <div class="fi-stat"><div class="fi-stat-n"><span data-count data-to="92" data-suffix="">0</span><span class="u">%</span></div><div class="fi-stat-l">Retención media</div></div>
+        <div class="fi-stat"><div class="fi-stat-n">Gen&#8202;Z</div><div class="fi-stat-l">Audiencia objetivo</div></div>
       </div>
     </section>
 
-    <!-- ============ RESERVA ============ -->
-    <section class="fi-book" id="reservar">
-      <div class="fi-eyebrow">Confirmar asiento</div>
-      <h2>Elija su hora y <em>reserve su plaza</em></h2>
-      <p>30 minutos en los que trazamos la ruta de crecimiento de su marca en vídeo
-         vertical. Sin coste y sin compromiso — escoja el momento que mejor le venga.</p>
+    <!-- ================= RUTA / MAPA ================= -->
+    <section class="fi-sec" id="ruta" data-reveal>
+      <div class="fi-sec-head">
+        <div class="fi-eyebrow" style="display:block;margin-bottom:12px">Torre de control</div>
+        <div class="fi-mask"><span class="fi-line">La ruta hacia <em>Isla Futura</em></span></div>
+      </div>
+      <div class="fi-map" data-map>
+        <span class="fi-map-pill">Vista satélite &#10022; Mediterráneo</span>
+        <svg class="base" viewBox="0 0 800 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ruta de vuelo hacia Isla Futura">
+          <defs>
+            <linearGradient id="fiSea2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0f333b"/><stop offset="1" stop-color="#071b20"/></linearGradient>
+            <linearGradient id="fiLand2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a3a34"/><stop offset="1" stop-color="#1c2a26"/></linearGradient>
+          </defs>
+          <rect width="800" height="380" fill="url(#fiSea2)"/>
+          <g stroke="rgba(111,199,193,.10)" stroke-width="1">
+            <line x1="0" y1="95" x2="800" y2="95"/><line x1="0" y1="190" x2="800" y2="190"/><line x1="0" y1="285" x2="800" y2="285"/>
+            <line x1="160" y1="0" x2="160" y2="380"/><line x1="320" y1="0" x2="320" y2="380"/><line x1="480" y1="0" x2="480" y2="380"/><line x1="640" y1="0" x2="640" y2="380"/>
+          </g>
+          <g stroke="rgba(111,199,193,.16)" fill="none">
+            <circle cx="664" cy="156" r="60"/><circle cx="664" cy="156" r="110"/><circle cx="664" cy="156" r="165"/>
+          </g>
+          <path d="M-20 110 C60 88 150 96 196 150 C226 184 214 244 258 262 C206 302 120 322 44 344 L-20 380 Z" fill="url(#fiLand2)"/>
+          <ellipse cx="430" cy="150" rx="15" ry="9" fill="url(#fiLand2)"/>
+          <ellipse cx="474" cy="196" rx="10" ry="6" fill="url(#fiLand2)"/>
+          <path d="M626 122 C666 110 708 124 716 154 C724 184 694 208 658 202 C622 196 610 160 626 122 Z" fill="url(#fiLand2)"/>
+          <circle class="fi-blip" cx="664" cy="156" r="14" fill="none" stroke="#6FC7C1" stroke-width="3"/>
+          <path class="fi-route" d="M150 250 Q 430 70 664 156" fill="none" stroke="#E4C58A" stroke-width="2.5" stroke-linecap="round"/>
+          <g class="fi-planem"><path d="M-15 0 Q-15 -3 -7 -3 L14 -4 Q22 -3 24 0 Q22 3 14 4 L-7 3 Q-15 3 -15 0 Z M-10 -2 L-19 -12 L-12 -12 L-3 -2 Z M4 2 L-7 13 L0 13 L11 2 Z" fill="#F1ECDF"/></g>
+          <circle cx="150" cy="250" r="6" fill="none" stroke="#E4C58A" stroke-width="3"/><circle cx="150" cy="250" r="2.4" fill="#E4C58A"/>
+          <text x="150" y="278" fill="#9fb0a6" font-family="'Space Mono',monospace" font-size="12" letter-spacing="2" text-anchor="middle">AQUÍ</text>
+          <text x="664" y="128" fill="#6FC7C1" font-family="'Space Mono',monospace" font-size="12" letter-spacing="2" text-anchor="middle">ISLA FUTURA</text>
+        </svg>
+        <div class="fi-radar"></div>
+      </div>
+    </section>
+
+    <!-- ================= EMBARQUE / CALENDLY ================= -->
+    <section class="fi-sec fi-book" id="reservar" data-reveal>
+      <div class="fi-eyebrow" style="display:block;margin-bottom:12px">Confirmar asiento</div>
+      <div class="fi-mask"><span class="fi-line">Elija su hora y <em>embarque</em></span></div>
+      <p class="fi-lead">30 minutos en los que trazamos la ruta de crecimiento de su marca en vídeo vertical.
+         Sin coste y sin compromiso — escoja el momento que mejor le venga.</p>
       <div class="fi-cal-frame">
-        <div class="calendly-inline-widget"
-             data-url="https://calendly.com/mahan-future-island/30min?background_color=FFFDF8&text_color=1B2A2D&primary_color=A8814C&hide_gdpr_banner=1&hide_event_type_details=1&utm_source=landing&utm_medium=cta&utm_campaign=invitacion-de-embarque"></div>
+        <div class="calendly-inline-widget" data-url="https://calendly.com/mahan-future-island/30min?background_color=0B2126&text_color=F1ECDF&primary_color=C79A5C&hide_gdpr_banner=1&hide_event_type_details=1&utm_source=landing&utm_medium=cta&utm_campaign=invitacion-de-embarque"></div>
       </div>
     </section>
 
-    <footer class="fi-note">
-      <b>Invitación personal.</b> La sesión de verano en Future Island es una cortesía:
-      30 minutos en los que trazamos la ruta de crecimiento de su marca en vídeo vertical —
-      con casos de estudio reales y recomendaciones ejecutivas, sin coste. Pulse
-      <b>Confirmar asiento</b> para reservar su plaza antes del 31 de julio de 2026.
+    <!-- ================= FOOTER ================= -->
+    <footer class="fi-foot">
+      <div class="fi-marquee"><span>&#10022; Invitación de embarque <span class="s">&#10022;</span> Primera clase <span class="s">&#10022;</span> Vídeo vertical <span class="s">&#10022;</span> Isla Futura <span class="s">&#10022;</span> Sesión 30 min · sin coste <span class="s">&#10022;</span> Invitación de embarque <span class="s">&#10022;</span> Primera clase <span class="s">&#10022;</span> Vídeo vertical <span class="s">&#10022;</span> Isla Futura <span class="s">&#10022;</span> Sesión 30 min · sin coste <span class="s">&#10022;</span> </span></div>
+      <div class="fi-legal"><b>Invitación personal.</b> La sesión de verano en Future Island es una cortesía: 30 minutos
+        sin coste ni compromiso. Pulse <b>Confirmar asiento</b> para reservar su plaza antes del 31 de julio de 2026.</div>
     </footer>
 
   </div>
 
-  <!-- barra fija de reserva (aparece al hacer scroll) -->
+  <!-- barra fija -->
   <div class="fi-stickybar" data-sticky>
-    <span class="fi-sticky-txt">Tu sesión de verano &#10022; 30 min &#10022; sin coste</span>
+    <span class="fi-sticky-txt">Sala de embarque &#10022; 30 min &#10022; sin coste</span>
     <a class="fi-btn fi-btn--gold" data-cal href="#reservar"><span class="fi-btn-label">Confirmar asiento</span> &#10022;</a>
   </div>
 </div>
@@ -428,161 +461,225 @@
   if(!root) return;
   root.classList.add('fi-js');
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var finePointer = window.matchMedia && window.matchMedia('(hover:hover) and (pointer:fine)').matches;
   var CAL = root.getAttribute('data-cal-url');
   var CAL_JS = 'https://assets.calendly.com/assets/external/widget.js';
   var CAL_CSS = 'https://assets.calendly.com/assets/external/widget.css';
+  var raf = window.requestAnimationFrame.bind(window);
+  var now = function(){ return (window.performance && performance.now) ? performance.now() : new Date().getTime(); };
 
-  /* asegura CSS + JS de Calendly y ejecuta cb cuando window.Calendly esté listo */
+  /* ============ SPLIT-FLAP (un solo rAF para todos) ============ */
+  var GLYPHS = ' ABCDEFGHIJKLMNÑOPQRSTUVWXYZ0123456789·✦/-.';
+  var flaps = [];            // celdas activas
+  var ticking = false;
+  var FLIP_MS = 42;
+  function idx(ch){ var i = GLYPHS.indexOf(ch); return i < 0 ? 0 : i; }
+  function buildFlap(container, text){
+    container.textContent = '';
+    var cells = [];
+    var chars = text.toUpperCase().split('');
+    for(var i=0;i<chars.length;i++){
+      var cell = document.createElement('span');
+      cell.className = 'fi-cell' + (chars[i]===' ' ? ' sp' : '');
+      var g = document.createElement('span'); g.className = 'fi-cellg';
+      g.textContent = chars[i]===' ' ? ' ' : chars[i];
+      cell.appendChild(g); container.appendChild(cell);
+      if(chars[i]!==' ') cells.push({ g:g, target:idx(chars[i]), cur:0, phase:0, flipping:false, start: now() + i*55 });
+    }
+    return cells;
+  }
+  function primeFlap(container, text){
+    var cells = buildFlap(container, text);
+    if(reduce) return;
+    for(var i=0;i<cells.length;i++){ cells[i].cur = 0; cells[i].g.textContent = GLYPHS[0]; }
+    flaps = flaps.concat(cells);
+    if(!ticking){ ticking = true; raf(tick); }
+  }
+  var last = now();
+  function tick(t){
+    var dt = t - last; last = t; if(dt > 80) dt = 80;
+    var active = false;
+    for(var i=0;i<flaps.length;i++){
+      var f = flaps[i];
+      if(f.cur === f.target && !f.flipping){ continue; }
+      active = true;
+      if(!f.flipping){ if(t >= f.start){ f.flipping = true; f.phase = 0; f.swapped = false; } else { continue; } }
+      f.phase += dt / FLIP_MS;
+      if(f.phase >= 0.5 && !f.swapped){ f.cur = (f.cur + 1) % GLYPHS.length; f.g.textContent = GLYPHS[f.cur]; f.swapped = true; }
+      var s = f.phase < 0.5 ? (1 - f.phase*2) : ((f.phase - 0.5)*2);
+      f.g.style.transform = 'scaleY(' + Math.max(0.04, s) + ')';
+      if(f.phase >= 1){ f.flipping = false; f.swapped = false; f.g.style.transform=''; f.start = t; }
+    }
+    if(active) raf(tick); else { ticking = false; }
+  }
+
+  /* fija los tableros de flap */
+  var boardEls = root.querySelectorAll('[data-flap]');
+  function fireBoards(){ boardEls.forEach(function(el){ primeFlap(el, el.getAttribute('data-flap')); }); }
+  if(reduce){ boardEls.forEach(function(el){ buildFlap(el, el.getAttribute('data-flap')); }); }
+  else { raf(function(){ raf(fireBoards); }); }
+
+  /* ============ RELOJ EN VIVO ============ */
+  var clocks = root.querySelectorAll('[data-clock],[data-clock2]');
+  function pad(n){ return (n<10?'0':'')+n; }
+  function tickClock(){ if(document.hidden) return; var d=new Date(); var s=pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds()); clocks.forEach(function(c){ c.textContent=s; }); }
+  tickClock(); setInterval(tickClock, 1000);
+
+  /* ============ CALENDLY (montaje robusto, sin transform en ancestros) ============ */
   function ensureCalendly(cb){
     if(!document.querySelector('link[href^="https://assets.calendly.com/assets/external/widget.css"]')){
       var l=document.createElement('link'); l.rel='stylesheet'; l.href=CAL_CSS; document.head.appendChild(l);
     }
     if(window.Calendly && Calendly.initInlineWidget){ cb && cb(); return; }
-    if(!document.querySelector('script[src^="'+CAL_JS+'"]')){
-      var s=document.createElement('script'); s.src=CAL_JS; s.async=true; document.head.appendChild(s);
-    }
-    var n=0, iv=setInterval(function(){
-      if(window.Calendly && Calendly.initInlineWidget){ clearInterval(iv); cb && cb(); }
-      else if(++n>150){ clearInterval(iv); }  /* ~30s */
-    },200);
+    if(!document.querySelector('script[src^="'+CAL_JS+'"]')){ var s=document.createElement('script'); s.src=CAL_JS; s.async=true; document.head.appendChild(s); }
+    var n=0, iv=setInterval(function(){ if(window.Calendly && Calendly.initInlineWidget){ clearInterval(iv); cb && cb(); } else if(++n>150){ clearInterval(iv); } },200);
   }
-
-  /* monta el widget inline de forma fiable (aunque un optimizador retrase widget.js) */
   var host = root.querySelector('.calendly-inline-widget');
-  if(host){
-    ensureCalendly(function(){
-      if(!host.querySelector('iframe')){
-        Calendly.initInlineWidget({ url: host.getAttribute('data-url'), parentElement: host });
-      }
-    });
-  }
-
-  /* CTA -> popup (si no está listo, lo carga y luego abre) */
+  if(host){ ensureCalendly(function(){ if(!host.querySelector('iframe')){ Calendly.initInlineWidget({ url: host.getAttribute('data-url'), parentElement: host }); } }); }
   function openBooking(){
-    if(window.Calendly && Calendly.initPopupWidget){
-      Calendly.initPopupWidget({ url: CAL, utm:{ utmSource:'landing', utmMedium:'cta', utmCampaign:'invitacion-de-embarque' } });
-    }else{
-      var t = document.getElementById('reservar');
-      if(t) t.scrollIntoView({behavior: reduce ? 'auto' : 'smooth'});
-      ensureCalendly(function(){ if(window.Calendly && Calendly.initPopupWidget){ Calendly.initPopupWidget({ url: CAL }); } });
+    if(window.Calendly && Calendly.initPopupWidget){ Calendly.initPopupWidget({ url: CAL, utm:{ utmSource:'landing', utmMedium:'cta', utmCampaign:'invitacion-de-embarque' } }); }
+    else { var t=document.getElementById('reservar'); if(t) t.scrollIntoView({behavior: reduce?'auto':'smooth'}); ensureCalendly(function(){ if(window.Calendly && Calendly.initPopupWidget){ Calendly.initPopupWidget({ url: CAL }); } }); }
+  }
+  root.querySelectorAll('[data-cal]').forEach(function(b){ b.addEventListener('click', function(e){ e.preventDefault(); openBooking(); }); });
+  root.querySelectorAll('a[href^="#"]:not([data-cal])').forEach(function(a){ a.addEventListener('click', function(e){ var el=document.querySelector(a.getAttribute('href')); if(el){ e.preventDefault(); el.scrollIntoView({behavior: reduce?'auto':'smooth'}); } }); });
+
+  /* ============ REVEAL + line masks + legs ============ */
+  function observe(sel, cb, opt){
+    var els = root.querySelectorAll(sel); if(!els.length) return;
+    if('IntersectionObserver' in window && !reduce){
+      var io = new IntersectionObserver(function(en){ en.forEach(function(x){ if(x.isIntersecting){ cb(x.target); io.unobserve(x.target); } }); }, opt||{threshold:.16});
+      els.forEach(function(el){ io.observe(el); });
+    } else { els.forEach(function(el){ cb(el); }); }
+  }
+  observe('[data-reveal]', function(el){ el.classList.add('in'); });
+  observe('[data-leg]', function(el){ el.classList.add('in'); });
+
+  /* ============ TICKET: print + scan + tilt ============ */
+  var ticket = root.querySelector('[data-ticket]');
+  if(ticket){
+    observe('[data-ticket]', function(el){
+      if(!reduce){ el.classList.add('print'); }
+      setTimeout(function(){ el.classList.add('scanning'); }, reduce?0:700);
+    }, {threshold:.3});
+  }
+  var tilt = root.querySelector('[data-tilt]');
+  if(tilt && ticket && finePointer && !reduce){
+    var tcur={x:0,y:0}, ttar={x:0,y:0}, tRunning=false;
+    tilt.addEventListener('pointermove', function(e){
+      var r = tilt.getBoundingClientRect();
+      var px=(e.clientX-r.left)/r.width, py=(e.clientY-r.top)/r.height;
+      ttar.x = (0.5-py)*12; ttar.y = (px-0.5)*12;
+      ticket.style.setProperty('--mx',(px*100)+'%'); ticket.style.setProperty('--my',(py*100)+'%');
+      if(!tRunning){ tRunning=true; ticket.style.willChange='transform'; raf(tloop); }
+    });
+    tilt.addEventListener('pointerleave', function(){ ttar.x=0; ttar.y=0; });
+    function tloop(){
+      tcur.x += (ttar.x-tcur.x)*0.12; tcur.y += (ttar.y-tcur.y)*0.12;
+      ticket.style.transform = 'rotateX('+tcur.x.toFixed(2)+'deg) rotateY('+tcur.y.toFixed(2)+'deg)';
+      if(Math.abs(tcur.x-ttar.x)>0.05 || Math.abs(tcur.y-ttar.y)>0.05){ raf(tloop); }
+      else { ticket.style.transform=''; ticket.style.willChange=''; tRunning=false; }
     }
   }
-  root.querySelectorAll('[data-cal]').forEach(function(btn){
-    btn.addEventListener('click', function(e){ e.preventDefault(); openBooking(); });
-  });
 
-  root.querySelectorAll('a[href^="#"]:not([data-cal])').forEach(function(a){
-    a.addEventListener('click', function(e){
-      var el = document.querySelector(a.getAttribute('href'));
-      if(el){ e.preventDefault(); el.scrollIntoView({behavior: reduce ? 'auto' : 'smooth'}); }
+  /* ============ MAPA (radar/arco/avión) lazy ============ */
+  observe('[data-map]', function(el){ el.classList.add('live'); }, {threshold:.25});
+
+  /* ============ COUNT-UP ============ */
+  observe('[data-stats]', function(el){
+    el.querySelectorAll('[data-count]').forEach(function(c){
+      var to = parseFloat(c.getAttribute('data-to'))||0, suf=c.getAttribute('data-suffix')||'';
+      if(reduce){ c.textContent = to + suf; return; }
+      var start = now();
+      (function step(){
+        var t = Math.min(1,(now()-start)/1400); var e = 1-Math.pow(1-t,3);
+        c.textContent = Math.round(to*e) + suf;
+        if(t<1) raf(step);
+      })();
     });
+  }, {threshold:.4});
+
+  /* ============ ESTRELLAS (canvas dibujado una vez) ============ */
+  (function(){
+    if(reduce) return;
+    var cv = root.querySelector('[data-stars]'); if(!cv || window.innerWidth < 860) return;
+    try{
+      var dpr = Math.min(2, window.devicePixelRatio||1);
+      var w = cv.clientWidth||window.innerWidth, h = cv.clientHeight||window.innerHeight;
+      cv.width = w*dpr; cv.height = h*dpr; var ctx = cv.getContext('2d'); ctx.scale(dpr,dpr);
+      for(var i=0;i<130;i++){
+        var x=(i*97.13)%w, y=(i*57.31+ (i%7)*11)%h, rr=((i%5)===0?1.4:0.8), a=0.25+((i%9)/9)*0.5;
+        ctx.beginPath(); ctx.arc(x,y,rr,0,6.283); ctx.fillStyle='rgba(230,240,238,'+a.toFixed(2)+')'; ctx.fill();
+      }
+    }catch(_){}
+  })();
+
+  /* ============ SPOTLIGHT (cursor) ============ */
+  (function(){
+    if(reduce || !finePointer) return;
+    var spot = root.querySelector('[data-spot]'); if(!spot) return;
+    root.classList.add('fi-hasspot');
+    var sx=0, sy=0, run=false;
+    root.addEventListener('pointermove', function(e){
+      var r = root.getBoundingClientRect(); sx = e.clientX-r.left; sy = e.clientY-r.top;
+      if(!run){ run=true; raf(function(){ spot.style.transform='translate3d('+sx+'px,'+sy+'px,0)'; run=false; }); }
+    });
+  })();
+
+  /* ============ AVIÓN QUE SOBREVUELA (scroll) ============ */
+  (function(){
+    var wrap = root.querySelector('[data-flight]'); var plane = root.querySelector('[data-plane]');
+    var path = document.getElementById('fiFlightPath');
+    if(!wrap || !plane || !path || reduce || !path.getTotalLength) return;
+    var len = path.getTotalLength();
+    var book = document.getElementById('reservar');
+    var pending=false;
+    function place(){
+      pending=false;
+      var doc = document.documentElement;
+      var max = (doc.scrollHeight - window.innerHeight) || 1;
+      var p = Math.min(1, Math.max(0, (window.pageYOffset||doc.scrollTop) / max));
+      var pt = path.getPointAtLength(len*p);
+      var pt2 = path.getPointAtLength(Math.min(len, len*p+1));
+      var ang = Math.atan2(pt2.y-pt.y, pt2.x-pt.x)*180/Math.PI;
+      // el svg del path usa viewBox 100x1000 escalado a la ventana:
+      var x = (pt.x/100)*window.innerWidth, y = (pt.y/1000)*window.innerHeight;
+      plane.style.transform = 'translate3d('+x+'px,'+y+'px,0) rotate('+(ang+90)+'deg)';
+      if(book){ var r=book.getBoundingClientRect(); wrap.classList.toggle('hide', r.top < window.innerHeight*0.7 && r.bottom>0); }
+    }
+    function onScroll(){ if(!pending){ pending=true; raf(place); } }
+    window.addEventListener('scroll', onScroll, {passive:true});
+    window.addEventListener('resize', onScroll);
+    place();
+  })();
+
+  /* ============ ESTADO / CALENDLY EVENTS ============ */
+  var estado = root.querySelector('[data-estado]');
+  var chips = root.querySelectorAll('.fi-chip');
+  function setConfirmed(){
+    if(estado){ estado.textContent='Confirmado'; estado.style.color='var(--green)'; }
+    if(ticket){ ticket.classList.remove('scanning'); void ticket.offsetWidth; ticket.classList.add('scanning'); }
+    root.querySelectorAll('[data-cal] .fi-btn-label').forEach(function(l){ l.textContent='Embarque confirmado'; });
+    try{ sessionStorage.setItem('fiBoarding','confirmed'); }catch(_){}
+  }
+  try{ if(sessionStorage.getItem('fiBoarding')==='confirmed'){ if(estado){ estado.textContent='Confirmado'; estado.style.color='var(--green)'; } } }catch(_){}
+  window.addEventListener('message', function(e){
+    if(e.origin!=='https://calendly.com') return;
+    var d=e.data; if(!d||typeof d.event!=='string'||d.event.indexOf('calendly.')!==0) return;
+    if(d.event==='calendly.date_and_time_selected'){ if(estado){ estado.textContent='Seleccionando'; estado.style.color='var(--amber)'; } }
+    if(d.event==='calendly.event_scheduled'){ setConfirmed(); }
   });
 
-  var ticket = root.querySelector('.fi-ticket');
-  if(ticket){
-    if('IntersectionObserver' in window && !reduce){
-      var io = new IntersectionObserver(function(en){
-        en.forEach(function(x){ if(x.isIntersecting){ x.target.classList.add('fi-in'); io.disconnect(); } });
-      },{threshold:.15});
-      io.observe(ticket);
-    }else{ ticket.classList.add('fi-in'); }
-  }
-
-  /* reveal al hacer scroll de las secciones marcadas con data-reveal */
-  var reveals = root.querySelectorAll('[data-reveal]');
-  if(reveals.length){
-    if('IntersectionObserver' in window && !reduce){
-      var ro = new IntersectionObserver(function(en){
-        en.forEach(function(x){ if(x.isIntersecting){ x.target.classList.add('in'); ro.unobserve(x.target); } });
-      },{threshold:.12});
-      reveals.forEach(function(el){ ro.observe(el); });
-    }else{ reveals.forEach(function(el){ el.classList.add('in'); }); }
-  }
-
-  /* barra fija de reserva: visible tras el hero, oculta en la sección de reserva/pie */
+  /* ============ BARRA FIJA ============ */
   var bar = root.querySelector('[data-sticky]');
   if(bar && 'IntersectionObserver' in window){
-    var hero = root.querySelector('.fi-hero');
-    var book = document.getElementById('reservar');
-    var foot = root.querySelector('.fi-note');
-    var seen = function(el){ if(!el) return false; var r = el.getBoundingClientRect(); return r.top < (window.innerHeight * 0.9) && r.bottom > 0; };
-    var pastHero = false;
-    var updBar = function(){ bar.classList.toggle('is-visible', pastHero && !seen(book) && !seen(foot)); };
-    if(hero){ new IntersectionObserver(function(e){ pastHero = !e[0].isIntersecting; updBar(); }, {threshold:0}).observe(hero); }
-    var endObs = new IntersectionObserver(function(){ updBar(); }, {threshold:[0, .12, .5]});
-    if(book) endObs.observe(book);
-    if(foot) endObs.observe(foot);
+    var hero = root.querySelector('.fi-hero'), book2 = document.getElementById('reservar'), foot = root.querySelector('.fi-foot');
+    var seen = function(el){ if(!el) return false; var r=el.getBoundingClientRect(); return r.top < window.innerHeight*0.9 && r.bottom>0; };
+    var pastHero=false;
+    var upd=function(){ bar.classList.toggle('is-visible', pastHero && !seen(book2) && !seen(foot)); };
+    if(hero){ new IntersectionObserver(function(x){ pastHero=!x[0].isIntersecting; upd(); },{threshold:0}).observe(hero); }
+    var eo=new IntersectionObserver(function(){ upd(); },{threshold:[0,.15,.5]});
+    if(book2) eo.observe(book2); if(foot) eo.observe(foot);
   }
-
-  var clock = root.querySelector('[data-clock] b');
-  if(clock){
-    var p = function(n){ return (n<10?'0':'')+n; };
-    var tick = function(){ if(document.hidden) return; var d=new Date(); clock.textContent = p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds()); };
-    tick(); setInterval(tick, 1000);
-  }
-
-  var GLYPHS = 'ABCDEFGHIJKLMNÑOPQRSTUVWXYZ0123456789·✦';
-  function splitFlap(el, text){
-    text = (text||'').toUpperCase();
-    if(reduce){ el.textContent = text; return; }
-    var target = text.split('');
-    el.textContent = '';
-    var cells = target.map(function(){ var s=document.createElement('span'); s.className='fi-flap-cell'; s.textContent=' '; el.appendChild(s); return s; });
-    var settle = target.map(function(_,i){ return 5 + i*2; });
-    var f = 0;
-    var iv = setInterval(function(){
-      var done = true;
-      for(var i=0;i<cells.length;i++){
-        if(f >= settle[i]){ cells[i].textContent = target[i]===' ' ? ' ' : target[i]; }
-        else { cells[i].textContent = GLYPHS.charAt((Math.random()*GLYPHS.length)|0); done=false; }
-      }
-      f++;
-      if(done) clearInterval(iv);
-    }, 45);
-  }
-
-  if(!reduce){
-    root.querySelectorAll('.fi-magnetic').forEach(function(btn){
-      var raf = null;
-      btn.addEventListener('pointermove', function(e){
-        var r = btn.getBoundingClientRect();
-        var dx = e.clientX - (r.left + r.width/2);
-        var dy = e.clientY - (r.top + r.height/2);
-        if(raf) cancelAnimationFrame(raf);
-        raf = requestAnimationFrame(function(){ btn.style.transform = 'translate(' + (dx*0.18) + 'px,' + (dy*0.18 - 2) + 'px)'; });
-      });
-      btn.addEventListener('pointerleave', function(){ if(raf) cancelAnimationFrame(raf); btn.style.transform=''; });
-    });
-  }
-
-  var pill = root.querySelector('[data-flap]');
-  var STATES = {
-    idle:      { cls:null,           txt:'EMBARCANDO' },
-    selecting: { cls:'is-selecting', txt:'SELECCIONANDO' },
-    confirmed: { cls:'is-confirmed', txt:'EMBARQUE CONFIRMADO' }
-  };
-  function setState(name, animate){
-    var s = STATES[name]; if(!s) return;
-    root.classList.remove('is-selecting','is-confirmed');
-    if(s.cls) root.classList.add(s.cls);
-    if(pill){ animate === false ? (pill.textContent = s.txt) : splitFlap(pill, s.txt); }
-    if(name === 'confirmed'){
-      root.querySelectorAll('[data-cal] .fi-btn-label').forEach(function(l){ l.textContent = 'Embarque confirmado'; });
-    }
-  }
-
-  try{ if(sessionStorage.getItem('fiBoarding') === 'confirmed'){ setState('confirmed', false); } }catch(_){}
-
-  window.addEventListener('message', function(e){
-    if(e.origin !== 'https://calendly.com') return;
-    var d = e.data;
-    if(!d || typeof d.event !== 'string' || d.event.indexOf('calendly.') !== 0) return;
-    if(d.event === 'calendly.date_and_time_selected'){ setState('selecting'); }
-    if(d.event === 'calendly.event_scheduled'){
-      setState('confirmed');
-      try{ sessionStorage.setItem('fiBoarding','confirmed'); }catch(_){}
-    }
-  });
 })();
 </script>
 <!-- ==================== FIN DEL BLOQUE ==================== -->

@@ -93,6 +93,7 @@ if ( ! function_exists( 'fi_landing_inline_js' ) ) {
 (function(){
   var root = document.getElementById('fi-boarding');
   if(!root) return;
+  root.classList.add('fi-js');
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var CAL = root.getAttribute('data-cal-url');
   var CAL_JS = 'https://assets.calendly.com/assets/external/widget.js';
@@ -149,6 +150,30 @@ if ( ! function_exists( 'fi_landing_inline_js' ) ) {
       },{threshold:.15});
       io.observe(ticket);
     }else{ ticket.classList.add('fi-in'); }
+  }
+
+  var reveals = root.querySelectorAll('[data-reveal]');
+  if(reveals.length){
+    if('IntersectionObserver' in window && !reduce){
+      var ro = new IntersectionObserver(function(en){
+        en.forEach(function(x){ if(x.isIntersecting){ x.target.classList.add('in'); ro.unobserve(x.target); } });
+      },{threshold:.12});
+      reveals.forEach(function(el){ ro.observe(el); });
+    }else{ reveals.forEach(function(el){ el.classList.add('in'); }); }
+  }
+
+  var bar = root.querySelector('[data-sticky]');
+  if(bar && 'IntersectionObserver' in window){
+    var hero = root.querySelector('.fi-hero');
+    var book = document.getElementById('reservar');
+    var foot = root.querySelector('.fi-note');
+    var seen = function(el){ if(!el) return false; var r = el.getBoundingClientRect(); return r.top < (window.innerHeight * 0.9) && r.bottom > 0; };
+    var pastHero = false;
+    var updBar = function(){ bar.classList.toggle('is-visible', pastHero && !seen(book) && !seen(foot)); };
+    if(hero){ new IntersectionObserver(function(e){ pastHero = !e[0].isIntersecting; updBar(); }, {threshold:0}).observe(hero); }
+    var endObs = new IntersectionObserver(function(){ updBar(); }, {threshold:[0, .12, .5]});
+    if(book) endObs.observe(book);
+    if(foot) endObs.observe(foot);
   }
 
   var clock = root.querySelector('[data-clock] b');
@@ -364,6 +389,35 @@ if ( ! function_exists( 'fi_landing_shortcode' ) ) {
 		#fi-boarding .calendly-inline-widget{min-width:320px;height:720px}
 		#fi-boarding .fi-note{margin-top:clamp(40px,6vw,72px);padding-top:26px;border-top:1px solid var(--line);font-size:12px;line-height:1.9;color:var(--muted);max-width:900px}
 		#fi-boarding .fi-note b{color:var(--gold-deep)}
+		#fi-boarding .fi-eyebrow{font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold-deep)}
+		#fi-boarding .fi-sec-head{text-align:center;margin-bottom:clamp(24px,4vw,40px)}
+		#fi-boarding .fi-sec-title{font-family:var(--serif);font-weight:500;font-size:clamp(26px,4.4vw,42px);line-height:1.1;margin-top:12px;color:var(--ink)}
+		#fi-boarding .fi-sec-title em{font-style:italic;color:var(--gold)}
+		#fi-boarding .fi-proceso{margin-top:clamp(48px,7vw,86px)}
+		#fi-boarding .fi-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(14px,2vw,22px)}
+		#fi-boarding .fi-step{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:clamp(22px,3vw,30px);transition:transform .25s ease,box-shadow .25s ease}
+		#fi-boarding .fi-step:hover{transform:translateY(-4px);box-shadow:0 24px 50px -30px rgba(31,43,46,.4)}
+		#fi-boarding .fi-step-n{font-family:var(--serif);font-size:34px;color:var(--gold);line-height:1}
+		#fi-boarding .fi-step h3{font-family:var(--serif);font-weight:600;font-size:20px;margin-top:14px;color:var(--ink)}
+		#fi-boarding .fi-step p{margin-top:8px;font-size:13px;line-height:1.7;color:var(--ink-2)}
+		#fi-boarding .fi-step::after{content:"\2726";position:absolute;top:22px;right:22px;color:var(--tan);font-size:12px}
+		#fi-boarding .fi-stats{margin-top:clamp(40px,6vw,72px);display:grid;grid-template-columns:repeat(4,1fr);gap:clamp(12px,2vw,20px);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:clamp(24px,3.5vw,38px) 0}
+		#fi-boarding .fi-stat{text-align:center;padding:0 8px}
+		#fi-boarding .fi-stat-n{font-family:var(--serif);font-weight:500;font-size:clamp(26px,3.4vw,38px);color:var(--ink);line-height:1}
+		#fi-boarding .fi-stat-l{margin-top:8px;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+		#fi-boarding .fi-faq{margin-top:clamp(48px,7vw,86px);max-width:760px;margin-left:auto;margin-right:auto}
+		#fi-boarding .fi-faq-list{margin-top:clamp(20px,3vw,30px)}
+		#fi-boarding .fi-q{border-top:1px solid var(--line)}
+		#fi-boarding .fi-q:last-child{border-bottom:1px solid var(--line)}
+		#fi-boarding .fi-q summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 4px;font-family:var(--serif);font-size:clamp(16px,2vw,20px);color:var(--ink)}
+		#fi-boarding .fi-q summary::-webkit-details-marker{display:none}
+		#fi-boarding .fi-q summary::after{content:"+";font-family:var(--mono);font-size:20px;color:var(--gold-deep);transition:transform .25s ease}
+		#fi-boarding .fi-q[open] summary::after{transform:rotate(45deg)}
+		#fi-boarding .fi-a{padding:0 4px 20px;font-size:13px;line-height:1.8;color:var(--ink-2);max-width:64ch}
+		#fi-boarding .fi-stickybar{position:fixed;left:50%;bottom:20px;z-index:60;transform:translate(-50%,180%);transition:transform .45s cubic-bezier(.16,1,.3,1);display:flex;align-items:center;gap:16px;background:var(--panel);border:1px solid var(--line);border-radius:100px;padding:10px 10px 10px 22px;box-shadow:0 20px 50px -20px rgba(31,43,46,.5);max-width:calc(100% - 28px)}
+		#fi-boarding .fi-stickybar.is-visible{transform:translate(-50%,0)}
+		#fi-boarding .fi-sticky-txt{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+		#fi-boarding .fi-stickybar .fi-btn{padding:12px 20px}
 		@keyframes fiSheen{to{transform:translateX(135%)}}
 		@keyframes fiFly{from{offset-distance:0%}to{offset-distance:100%}}
 		@keyframes fiPing{0%{transform:scale(.2);opacity:.7}100%{transform:scale(3.4);opacity:0}}
@@ -377,6 +431,8 @@ if ( ! function_exists( 'fi_landing_shortcode' ) ) {
 			#fi-boarding .fi-ticket.fi-in{animation:fiReveal .7s cubic-bezier(.16,1,.3,1) forwards}
 			#fi-boarding .fi-ticket.fi-in .fi-stub{animation:fiRevealStub .7s cubic-bezier(.16,1,.3,1) .12s both}
 			#fi-boarding .fi-dot::after{animation:fiPulse 2.2s ease-out infinite}
+			#fi-boarding.fi-js [data-reveal]{opacity:0;transform:translateY(22px)}
+			#fi-boarding.fi-js [data-reveal].in{opacity:1;transform:none;transition:opacity .7s ease,transform .7s cubic-bezier(.16,1,.3,1)}
 		}
 		@media (prefers-reduced-motion: reduce){
 			#fi-boarding .fi-route{stroke-dashoffset:0}
@@ -393,12 +449,18 @@ if ( ! function_exists( 'fi_landing_shortcode' ) ) {
 			#fi-boarding .fi-stub{border-left:0;border-top:2px dashed #d8ccaf}
 			#fi-boarding .fi-includes ul{grid-template-columns:1fr}
 			#fi-boarding .fi-top-right{align-items:flex-start}
+			#fi-boarding .fi-steps{grid-template-columns:1fr}
+		}
+		@media (max-width:640px){
+			#fi-boarding .fi-stats{grid-template-columns:1fr 1fr;gap:22px 12px}
 		}
 		@media (max-width:520px){
 			#fi-boarding .fi-btn{width:100%;justify-content:center}
 			#fi-boarding .fi-route-row{flex-direction:column;align-items:flex-start;gap:14px}
 			#fi-boarding .fi-place.right{text-align:left}
 			#fi-boarding .calendly-inline-widget{height:1000px}
+			#fi-boarding .fi-sticky-txt{display:none}
+			#fi-boarding .fi-stickybar{bottom:12px;padding:8px;gap:0}
 		}
 	</style>
 
@@ -522,6 +584,38 @@ if ( ! function_exists( 'fi_landing_shortcode' ) ) {
 			</div>
 		</section>
 
+		<section class="fi-proceso" data-reveal>
+			<div class="fi-sec-head">
+				<div class="fi-eyebrow">Proceso de embarque</div>
+				<h2 class="fi-sec-title">Tres pasos hasta <em>Isla Futura</em></h2>
+			</div>
+			<div class="fi-steps">
+				<div class="fi-step"><div class="fi-step-n">01</div><h3>Reserva tu asiento</h3><p>Eliges tu hora en el calendario. Treinta minutos, sin coste ni compromiso.</p></div>
+				<div class="fi-step"><div class="fi-step-n">02</div><h3>Trazamos tu ruta</h3><p>Analizamos tu marca y diseñamos su recorrido en vídeo vertical, con casos reales.</p></div>
+				<div class="fi-step"><div class="fi-step-n">03</div><h3>Despegas</h3><p>Te llevas una ruta de crecimiento accionable y recomendaciones ejecutivas.</p></div>
+			</div>
+		</section>
+
+		<section class="fi-stats" data-reveal>
+			<div class="fi-stat"><div class="fi-stat-n">30 min</div><div class="fi-stat-l">Sesión · cortesía</div></div>
+			<div class="fi-stat"><div class="fi-stat-n">1ª clase</div><div class="fi-stat-l">Atención dedicada</div></div>
+			<div class="fi-stat"><div class="fi-stat-n">Gen Z</div><div class="fi-stat-l">Audiencia objetivo</div></div>
+			<div class="fi-stat"><div class="fi-stat-n">Vertical</div><div class="fi-stat-l">TikTok · Reels</div></div>
+		</section>
+
+		<section class="fi-faq" data-reveal>
+			<div class="fi-sec-head">
+				<div class="fi-eyebrow">Antes de embarcar</div>
+				<h2 class="fi-sec-title">Preguntas frecuentes</h2>
+			</div>
+			<div class="fi-faq-list">
+				<details class="fi-q"><summary>¿Tiene algún coste?</summary><div class="fi-a">No. La sesión de verano en Future Island es una cortesía: treinta minutos sin coste ni compromiso.</div></details>
+				<details class="fi-q"><summary>¿Cuánto dura y cómo es?</summary><div class="fi-a">Treinta minutos por videollamada. Revisamos tu marca y trazamos su ruta de crecimiento en vídeo vertical.</div></details>
+				<details class="fi-q"><summary>¿Para qué marcas es?</summary><div class="fi-a">Para marcas que quieren conquistar a la próxima generación con mini-series verticales en TikTok e Instagram.</div></details>
+				<details class="fi-q"><summary>¿Necesito preparar algo?</summary><div class="fi-a">Nada. Ven con tus preguntas; del resto nos encargamos nosotros.</div></details>
+			</div>
+		</section>
+
 		<section class="fi-book" id="reservar">
 			<div class="fi-eyebrow">Confirmar asiento</div>
 			<h2>Elija su hora y <em>reserve su plaza</em></h2>
@@ -539,6 +633,11 @@ if ( ! function_exists( 'fi_landing_shortcode' ) ) {
 			<b>Confirmar asiento</b> para reservar su plaza antes del 31 de julio de 2026.
 		</footer>
 
+	</div>
+
+	<div class="fi-stickybar" data-sticky>
+		<span class="fi-sticky-txt">Tu sesión de verano &#10022; 30 min &#10022; sin coste</span>
+		<a class="fi-btn fi-btn--gold" data-cal href="#reservar"><span class="fi-btn-label">Confirmar asiento</span> &#10022;</a>
 	</div>
 </div>
 		<?php

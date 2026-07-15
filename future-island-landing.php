@@ -534,7 +534,7 @@ if ( ! function_exists( 'fi_landing_shortcode' ) ) {
   #fi-boarding .fi-live .d::after{animation:fiPulse2 2s ease-out infinite}
 }
 @media (prefers-reduced-motion: reduce){
-  #fi-boarding .fi-aurora,#fi-boarding .fi-stars,#fi-boarding .fi-marquee span,#fi-boarding .fi-sheen::before{animation:none}
+  #fi-boarding .fi-aurora,#fi-boarding .fi-stars,#fi-boarding .fi-marquee span,#fi-boarding .fi-sheen::before,#fi-boarding .fi-ticket.scanning .fi-scan,#fi-boarding .fi-btn:hover::after{animation:none}
   #fi-boarding .fi-flight{display:none}
   #fi-boarding.fi-js [data-reveal]{opacity:1}
 }
@@ -665,9 +665,9 @@ if ( ! function_exists( 'fi_landing_shortcode' ) ) {
         <div class="fi-mask"><span class="fi-line">Tres tramos hasta <em>Future Island</em></span></div>
       </div>
       <div class="fi-legs">
-        <div class="fi-leg" data-leg><div class="fi-leg-top"><span>Tramo 01</span><span>FI-001</span></div><div class="fi-leg-n">01</div><h3>Reserva tu asiento</h3><p>Eliges tu hora en el calendario. Treinta minutos, sin coste ni compromiso.</p></div>
-        <div class="fi-leg" data-leg><div class="fi-leg-top"><span>Tramo 02</span><span>FI-002</span></div><div class="fi-leg-n">02</div><h3>Trazamos tu ruta</h3><p>Analizamos tu marca y diseñamos su recorrido en vídeo vertical, con casos reales.</p></div>
-        <div class="fi-leg" data-leg><div class="fi-leg-top"><span>Tramo 03</span><span>FI-003</span></div><div class="fi-leg-n">03</div><h3>Despegas</h3><p>Te llevas una ruta de crecimiento accionable y recomendaciones ejecutivas.</p></div>
+        <div class="fi-leg" data-leg><div class="fi-leg-top"><span>Tramo 01</span><span>FI-001</span></div><div class="fi-leg-n">01</div><h3>Reserve su asiento</h3><p>Elige su hora en el calendario. Treinta minutos, sin coste ni compromiso.</p></div>
+        <div class="fi-leg" data-leg><div class="fi-leg-top"><span>Tramo 02</span><span>FI-002</span></div><div class="fi-leg-n">02</div><h3>Trazamos su ruta</h3><p>Analizamos su marca y diseñamos su recorrido en vídeo vertical, con casos reales.</p></div>
+        <div class="fi-leg" data-leg><div class="fi-leg-top"><span>Tramo 03</span><span>FI-003</span></div><div class="fi-leg-n">03</div><h3>Despega</h3><p>Se lleva una ruta de crecimiento accionable y recomendaciones ejecutivas.</p></div>
       </div>
     </section>
 

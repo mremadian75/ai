@@ -84,7 +84,8 @@ if ( ! function_exists( 'fi_landing_inline_js' ) ) {
     var cells = buildFlap(container, text);
     if(reduce) return;
     for(var i=0;i<cells.length;i++){ cells[i].cur = 0; cells[i].g.textContent = GLYPHS[0]; }
-    flaps = flaps.concat(cells);
+    /* purga las celdas ya asentadas para que el array no crezca sin límite */
+    flaps = flaps.filter(function(f){ return f.flipping || f.cur !== f.target; }).concat(cells);
     if(!ticking){ ticking = true; raf(tick); }
   }
   var last = now();
@@ -193,9 +194,6 @@ if ( ! function_exists( 'fi_landing_inline_js' ) ) {
     });
   }
 
-  /* ============ MAPA (radar/arco/avión) lazy ============ */
-  observe('[data-map]', function(el){ el.classList.add('live'); }, {threshold:.25});
-
   /* ============ COUNT-UP ============ */
   observe('[data-stats]', function(el){
     el.querySelectorAll('[data-count]').forEach(function(c){
@@ -302,10 +300,11 @@ if ( ! function_exists( 'fi_landing_shortcode' ) ) {
 		static $rendered = false;
 		if ( $rendered ) { return '<!-- future_island_landing: solo una instancia por pagina -->'; }
 		$rendered = true;
-		$atts = shortcode_atts( array( 'calendly' => 'https://calendly.com/mahan-future-island/30min' ), $atts, $tag );
+		$atts = shortcode_atts( array( 'calendly' => 'https://calendly.com/mahan-future-island/30min', 'home' => home_url( '/' ) ), $atts, $tag );
 		$theme   = 'background_color=0B2126&text_color=F1ECDF&primary_color=C79A5C&hide_gdpr_banner=1&hide_event_type_details=1&utm_source=landing&utm_medium=cta&utm_campaign=invitacion-de-embarque';
 		$sep     = ( strpos( $atts['calendly'], '?' ) === false ) ? '?' : '&';
 		$cal_url = esc_url( $atts['calendly'] . $sep . $theme );
+		$home    = esc_url( $atts['home'] );
 		ob_start();
 		?>
 <div id="fi-boarding" style="background:#0B2126;color:#F1ECDF" data-cal-url="<?php echo $cal_url; ?>">
@@ -474,21 +473,14 @@ if ( ! function_exists( 'fi_landing_shortcode' ) ) {
 #fi-boarding .fi-stat-n .u{color:var(--gold);font-size:.6em;margin-left:2px}
 #fi-boarding .fi-stat-l{margin-top:10px;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--cream-dim)}
 
-/* ruta / mapa */
-#fi-boarding .fi-map{position:relative;border:1px solid var(--hair);border-radius:18px;overflow:hidden;background:#08181d}
-#fi-boarding .fi-map svg.base{display:block;width:100%;height:auto}
-#fi-boarding .fi-radar{position:absolute;top:50%;left:50%;width:120%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:conic-gradient(from 0deg, rgba(111,199,193,0) 0deg 300deg, rgba(111,199,193,.28) 355deg, rgba(111,199,193,0) 360deg);mix-blend-mode:screen;pointer-events:none}
-#fi-boarding .fi-map.live .fi-radar{animation:fiRadar 5s linear infinite}
-#fi-boarding .fi-route{stroke-dasharray:560;stroke-dashoffset:560}
-#fi-boarding .fi-map.live .fi-route{transition:stroke-dashoffset 1.8s cubic-bezier(.16,1,.3,1);stroke-dashoffset:0}
-#fi-boarding .fi-planem{opacity:0}
-@supports (offset-path: path('M0 0')){
-  #fi-boarding .fi-planem{offset-path:path('M150 250 Q 430 70 664 156');offset-rotate:auto;offset-distance:0%}
-  #fi-boarding .fi-map.live .fi-planem{opacity:1;animation:fiFlyArc 14s linear infinite}
-}
-#fi-boarding .fi-blip{transform-box:fill-box;transform-origin:center;opacity:0}
-#fi-boarding .fi-map.live .fi-blip{animation:fiBlip 5s ease-out infinite}
-#fi-boarding .fi-map-pill{position:absolute;top:14px;left:14px;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--radar);background:rgba(8,24,29,.7);border:1px solid rgba(111,199,193,.25);padding:6px 12px;border-radius:20px}
+/* vídeo (Vimeo) */
+#fi-boarding .fi-video{position:relative;border:1px solid var(--hair);border-radius:18px;overflow:hidden;background:#08181d;box-shadow:0 40px 90px -55px rgba(0,0,0,.9)}
+#fi-boarding .fi-video::before{content:"";display:block;padding-top:56.25%}
+#fi-boarding .fi-video iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
+
+/* enlace discreto al sitio */
+#fi-boarding .fi-homelink{color:var(--cream-dim);font-size:11px;letter-spacing:.16em;text-transform:uppercase;border-bottom:1px solid rgba(201,191,168,.25);padding-bottom:2px;transition:color .2s ease,border-color .2s ease}
+#fi-boarding .fi-homelink:hover{color:var(--gold);border-color:var(--gold)}
 
 /* embarque / calendly (SIN transform en ancestros) */
 #fi-boarding .fi-book{text-align:center}
@@ -527,9 +519,6 @@ if ( ! function_exists( 'fi_landing_shortcode' ) ) {
 @keyframes fiSheen{to{transform:translateX(320%) skewX(-18deg)}}
 @keyframes fiPrint{from{clip-path:inset(100% 0 0 0);transform:translateY(26px)}to{clip-path:inset(0 0 0 0);transform:translateY(0)}}
 @keyframes fiScan{0%{transform:translateX(-20px);opacity:0}8%{opacity:1}92%{opacity:1}100%{transform:translateX(360px);opacity:0}}
-@keyframes fiRadar{to{transform:translate(-50%,-50%) rotate(360deg)}}
-@keyframes fiFlyArc{0%{offset-distance:0%}70%{offset-distance:100%}100%{offset-distance:100%}}
-@keyframes fiBlip{0%,55%{transform:scale(0);opacity:0}60%{opacity:.9}100%{transform:scale(3.4);opacity:0}}
 @keyframes fiMarquee{to{transform:translateX(-50%)}}
 @keyframes fiReveal{to{opacity:1;transform:none}}
 @keyframes fiPulse2{0%{transform:scale(1);opacity:.5}100%{transform:scale(2.6);opacity:0}}
@@ -545,8 +534,7 @@ if ( ! function_exists( 'fi_landing_shortcode' ) ) {
   #fi-boarding .fi-live .d::after{animation:fiPulse2 2s ease-out infinite}
 }
 @media (prefers-reduced-motion: reduce){
-  #fi-boarding .fi-aurora,#fi-boarding .fi-stars,#fi-boarding .fi-map.live .fi-radar,#fi-boarding .fi-map.live .fi-planem,#fi-boarding .fi-map.live .fi-blip,#fi-boarding .fi-marquee span,#fi-boarding .fi-sheen::before{animation:none}
-  #fi-boarding .fi-route{stroke-dashoffset:0}
+  #fi-boarding .fi-aurora,#fi-boarding .fi-stars,#fi-boarding .fi-marquee span,#fi-boarding .fi-sheen::before{animation:none}
   #fi-boarding .fi-flight{display:none}
   #fi-boarding.fi-js [data-reveal]{opacity:1}
 }
@@ -599,7 +587,7 @@ if ( ! function_exists( 'fi_landing_shortcode' ) ) {
 
     <!-- barra superior -->
     <header class="fi-top">
-      <div class="fi-brandmark">FUTURE ISLAND<span class="s">&#8482;</span></div>
+      <a class="fi-brandmark" href="<?php echo $home; ?>" data-home>FUTURE ISLAND<span class="s">&#8482;</span></a>
       <div class="fi-toprt">
         <span class="fi-live"><span class="d"></span> EN VIVO</span>
         <span>SALA DE EMBARQUE</span>
@@ -700,36 +688,15 @@ if ( ! function_exists( 'fi_landing_shortcode' ) ) {
     <!-- ================= RUTA / MAPA ================= -->
     <section class="fi-sec" id="ruta" data-reveal>
       <div class="fi-sec-head">
-        <div class="fi-eyebrow" style="display:block;margin-bottom:12px">Torre de control</div>
-        <div class="fi-mask"><span class="fi-line">La ruta hacia <em>Future Island</em></span></div>
+        <div class="fi-eyebrow" style="display:block;margin-bottom:12px">A bordo &#10022; Un anticipo</div>
+        <div class="fi-mask"><span class="fi-line">Vídeo vertical <em>en acción</em></span></div>
       </div>
-      <div class="fi-map" data-map>
-        <span class="fi-map-pill">Vista satélite &#10022; Mediterráneo</span>
-        <svg class="base" viewBox="0 0 800 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ruta de vuelo hacia Future Island">
-          <defs>
-            <linearGradient id="fiSea2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0f333b"/><stop offset="1" stop-color="#071b20"/></linearGradient>
-            <linearGradient id="fiLand2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a3a34"/><stop offset="1" stop-color="#1c2a26"/></linearGradient>
-          </defs>
-          <rect width="800" height="380" fill="url(#fiSea2)"/>
-          <g stroke="rgba(111,199,193,.10)" stroke-width="1">
-            <line x1="0" y1="95" x2="800" y2="95"/><line x1="0" y1="190" x2="800" y2="190"/><line x1="0" y1="285" x2="800" y2="285"/>
-            <line x1="160" y1="0" x2="160" y2="380"/><line x1="320" y1="0" x2="320" y2="380"/><line x1="480" y1="0" x2="480" y2="380"/><line x1="640" y1="0" x2="640" y2="380"/>
-          </g>
-          <g stroke="rgba(111,199,193,.16)" fill="none">
-            <circle cx="664" cy="156" r="60"/><circle cx="664" cy="156" r="110"/><circle cx="664" cy="156" r="165"/>
-          </g>
-          <path d="M-20 110 C60 88 150 96 196 150 C226 184 214 244 258 262 C206 302 120 322 44 344 L-20 380 Z" fill="url(#fiLand2)"/>
-          <ellipse cx="430" cy="150" rx="15" ry="9" fill="url(#fiLand2)"/>
-          <ellipse cx="474" cy="196" rx="10" ry="6" fill="url(#fiLand2)"/>
-          <path d="M626 122 C666 110 708 124 716 154 C724 184 694 208 658 202 C622 196 610 160 626 122 Z" fill="url(#fiLand2)"/>
-          <circle class="fi-blip" cx="664" cy="156" r="14" fill="none" stroke="#6FC7C1" stroke-width="3"/>
-          <path class="fi-route" d="M150 250 Q 430 70 664 156" fill="none" stroke="#E4C58A" stroke-width="2.5" stroke-linecap="round"/>
-          <g class="fi-planem"><path d="M-15 0 Q-15 -3 -7 -3 L14 -4 Q22 -3 24 0 Q22 3 14 4 L-7 3 Q-15 3 -15 0 Z M-10 -2 L-19 -12 L-12 -12 L-3 -2 Z M4 2 L-7 13 L0 13 L11 2 Z" fill="#F1ECDF"/></g>
-          <circle cx="150" cy="250" r="6" fill="none" stroke="#E4C58A" stroke-width="3"/><circle cx="150" cy="250" r="2.4" fill="#E4C58A"/>
-          <text x="150" y="278" fill="#9fb0a6" font-family="'Space Mono',monospace" font-size="12" letter-spacing="2" text-anchor="middle">AQUÍ</text>
-          <text x="664" y="128" fill="#6FC7C1" font-family="'Space Mono',monospace" font-size="12" letter-spacing="2" text-anchor="middle">FUTURE ISLAND</text>
-        </svg>
-        <div class="fi-radar"></div>
+      <div class="fi-video">
+        <iframe src="https://player.vimeo.com/video/1198372904?h=c84ca79e2f&dnt=1&title=0&byline=0&portrait=0"
+                title="Future Island — vídeo" loading="lazy"
+                referrerpolicy="strict-origin-when-cross-origin"
+                allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
+                allowfullscreen></iframe>
       </div>
     </section>
 
@@ -749,6 +716,7 @@ if ( ! function_exists( 'fi_landing_shortcode' ) ) {
       <div class="fi-marquee"><span>&#10022; Invitación de embarque <span class="s">&#10022;</span> Primera clase <span class="s">&#10022;</span> Vídeo vertical <span class="s">&#10022;</span> Future Island <span class="s">&#10022;</span> Sesión 30 min · sin coste <span class="s">&#10022;</span> Invitación de embarque <span class="s">&#10022;</span> Primera clase <span class="s">&#10022;</span> Vídeo vertical <span class="s">&#10022;</span> Future Island <span class="s">&#10022;</span> Sesión 30 min · sin coste <span class="s">&#10022;</span> </span></div>
       <div class="fi-legal"><b>Invitación personal.</b> La sesión de verano en Future Island es una cortesía: 30 minutos
         sin coste ni compromiso. Pulse <b>Confirmar asiento</b> para reservar su plaza antes del 31 de julio de 2026.</div>
+      <div style="margin-top:20px"><a class="fi-homelink" href="<?php echo $home; ?>" data-home>Future Island &#10022; Ir al sitio principal</a></div>
     </footer>
 
   </div>

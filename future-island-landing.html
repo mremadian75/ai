@@ -26,7 +26,8 @@
   --mono:'Space Mono', ui-monospace, Menlo, monospace;
 
   position:relative; isolation:isolate;
-  background:radial-gradient(120% 90% at 50% 0%, #0d2930 0%, var(--petrol) 45%, var(--void) 100%);
+  background:#09201F;
+  background:radial-gradient(150% 100% at 50% -8%, #0e2a2c 0%, #0a2024 42%, var(--void) 100%);
   color:var(--cream);
   font-family:var(--mono); font-size:16px; line-height:1.55; font-weight:400;
   text-align:left; letter-spacing:normal;
@@ -41,10 +42,9 @@
 
 /* ---------- capa ambiente (dentro del hero, sin afectar a Calendly) ---------- */
 #fi-boarding .fi-amb{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
-#fi-boarding .fi-aurora{position:absolute;width:150vw;height:150vw;border-radius:50%;filter:none;mix-blend-mode:screen;opacity:.5;will-change:transform}
-#fi-boarding .fi-aurora.a{top:-40vw;left:-30vw;background:radial-gradient(circle at 50% 50%, var(--aurora-teal) 0%, rgba(31,122,112,0) 60%);animation:fiAuroraA 78s ease-in-out infinite alternate}
-#fi-boarding .fi-aurora.b{bottom:-50vw;right:-30vw;background:radial-gradient(circle at 50% 50%, var(--aurora-indigo) 0%, rgba(51,40,90,0) 62%);animation:fiAuroraB 92s ease-in-out infinite alternate}
-#fi-boarding .fi-aurora.c{top:20vh;right:-20vw;width:90vw;height:90vw;background:radial-gradient(circle at 50% 50%, rgba(199,154,92,.5) 0%, rgba(199,154,92,0) 60%);opacity:.22;animation:fiAuroraA 64s ease-in-out infinite alternate-reverse}
+#fi-boarding .fi-aurora{position:absolute;width:150vw;height:150vw;border-radius:50%;filter:none;mix-blend-mode:screen;opacity:.26;will-change:transform}
+#fi-boarding .fi-aurora.a{top:-45vw;left:-32vw;background:radial-gradient(circle at 50% 50%, var(--aurora-teal) 0%, rgba(31,122,112,0) 62%);animation:fiAuroraA 96s ease-in-out infinite alternate}
+#fi-boarding .fi-aurora.b{bottom:-55vw;right:-32vw;background:radial-gradient(circle at 50% 50%, var(--aurora-indigo) 0%, rgba(51,40,90,0) 64%);animation:fiAuroraB 112s ease-in-out infinite alternate}
 #fi-boarding .fi-stars{position:absolute;inset:0;width:100%;height:100%;opacity:.55;mix-blend-mode:screen;animation:fiDrift 120s linear infinite}
 #fi-boarding .fi-grain{position:absolute;inset:0;opacity:.05;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>")}
 #fi-boarding .fi-spot{position:absolute;top:0;left:0;width:520px;height:520px;margin:-260px 0 0 -260px;border-radius:50%;background:radial-gradient(circle,var(--gold) 0%,rgba(199,154,92,0) 60%);mix-blend-mode:screen;opacity:0;transition:opacity .4s ease;will-change:transform}
@@ -75,7 +75,8 @@
 #fi-boarding .fi-eyebrow{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold)}
 
 /* tablero */
-#fi-boarding .fi-board{background:linear-gradient(180deg,var(--flap-back),var(--petrol));border:1px solid var(--hair);border-radius:18px;padding:clamp(18px,2.4vw,28px);box-shadow:0 40px 90px -50px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.03)}
+#fi-boarding .fi-board{position:relative;background:#0C242A;border:1px solid var(--hair);border-radius:18px;padding:clamp(18px,2.4vw,28px);box-shadow:0 40px 90px -55px rgba(0,0,0,.9)}
+#fi-boarding .fi-board::before{content:"";position:absolute;left:20px;right:20px;top:0;height:1px;background:linear-gradient(90deg,transparent,rgba(201,191,168,.22),transparent)}
 #fi-boarding .fi-board-top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:14px;border-bottom:1px solid var(--hair);font-size:10.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--cream-dim)}
 #fi-boarding .fi-board-top b{color:var(--gold);font-weight:400;font-variant-numeric:tabular-nums}
 #fi-boarding .fi-board-title{margin:clamp(14px,2vw,22px) 0 6px}
@@ -110,7 +111,9 @@
 
 /* ---------- billete (con tilt 3D) ---------- */
 #fi-boarding .fi-tilt{perspective:1200px}
-#fi-boarding .fi-ticket{position:relative;background:linear-gradient(180deg,var(--flap-back),#0c252b);border:1px solid var(--hair);border-radius:18px;overflow:hidden;box-shadow:0 40px 90px -46px rgba(0,0,0,.9);transform-style:preserve-3d;transition:transform .4s cubic-bezier(.16,1,.3,1)}
+#fi-boarding .fi-ticket{position:relative;background:#0C242A;border:1px solid var(--hair);border-radius:18px;overflow:hidden;box-shadow:0 40px 90px -50px rgba(0,0,0,.9);transform-style:preserve-3d;transition:transform .4s cubic-bezier(.16,1,.3,1)}
+#fi-boarding .fi-sheen{position:absolute;inset:0;pointer-events:none;overflow:hidden;border-radius:inherit;z-index:6}
+#fi-boarding .fi-sheen::before{content:"";position:absolute;top:-25%;left:-40%;width:45%;height:150%;transform:translateX(-260%) rotate(16deg);background:linear-gradient(90deg,transparent,rgba(228,197,138,.14),rgba(228,197,138,.34),rgba(228,197,138,.14),transparent)}
 #fi-boarding .fi-ticket.print{animation:fiPrint 1s cubic-bezier(.16,1,.3,1) both}
 #fi-boarding .fi-glare{position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at var(--mx,50%) var(--my,0%), rgba(255,255,255,.16), rgba(255,255,255,0) 45%);mix-blend-mode:screen;opacity:0;transition:opacity .3s ease;z-index:5}
 #fi-boarding .fi-tilt:hover .fi-glare{opacity:1}
@@ -156,7 +159,7 @@
 
 /* itinerario / legs */
 #fi-boarding .fi-legs{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(14px,2vw,22px)}
-#fi-boarding .fi-leg{position:relative;background:linear-gradient(180deg,rgba(15,46,53,.7),rgba(11,33,38,.7));border:1px solid var(--hair);border-radius:16px;padding:clamp(22px,3vw,30px);overflow:hidden;transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease}
+#fi-boarding .fi-leg{position:relative;background:#0C242A;border:1px solid var(--hair);border-radius:16px;padding:clamp(22px,3vw,30px);overflow:hidden;transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease}
 #fi-boarding .fi-leg:hover{transform:translateY(-4px);border-color:rgba(199,154,92,.4);box-shadow:0 26px 54px -30px rgba(199,154,92,.35)}
 #fi-boarding .fi-leg::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:100%;background:linear-gradient(90deg,var(--gold),transparent);transform:scaleX(0);transform-origin:left;transition:transform .6s ease}
 #fi-boarding .fi-leg.in::after{transform:scaleX(1)}
@@ -203,10 +206,15 @@
 #fi-boarding .fi-legal b{color:var(--gold)}
 
 /* barra fija */
-#fi-boarding .fi-stickybar{position:fixed;left:50%;bottom:20px;z-index:60;transform:translate(-50%,180%);transition:transform .45s cubic-bezier(.16,1,.3,1);display:flex;align-items:center;gap:16px;background:linear-gradient(180deg,var(--flap-face),var(--petrol));border:1px solid rgba(199,154,92,.3);border-radius:100px;padding:10px 10px 10px 22px;box-shadow:0 24px 60px -20px rgba(0,0,0,.9);max-width:calc(100% - 28px)}
+#fi-boarding .fi-stickybar{position:fixed;left:50%;bottom:20px;z-index:60;transform:translate(-50%,180%);transition:transform .45s cubic-bezier(.16,1,.3,1);display:flex;align-items:center;gap:16px;background:#0E2A30;border:1px solid rgba(199,154,92,.3);border-radius:100px;padding:10px 10px 10px 22px;box-shadow:0 24px 60px -20px rgba(0,0,0,.9);max-width:calc(100% - 28px)}
 #fi-boarding .fi-stickybar.is-visible{transform:translate(-50%,0)}
 #fi-boarding .fi-sticky-txt{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--cream-dim);white-space:nowrap}
 #fi-boarding .fi-stickybar .fi-btn--gold{width:auto;padding:12px 22px}
+
+/* más motion: barrido de foil + hover de filas */
+#fi-boarding .fi-frow{transition:background .25s ease,padding-left .25s ease}
+#fi-boarding .fi-frow:not(.head):hover{background:rgba(199,154,92,.06);padding-left:10px}
+#fi-boarding .fi-tk-cta .fi-btn,#fi-boarding .fi-hero-cta .fi-btn--gold,#fi-boarding .fi-stickybar .fi-btn--gold{will-change:transform}
 
 /* reveal */
 #fi-boarding.fi-js [data-reveal]{opacity:0}
@@ -226,8 +234,11 @@
 @keyframes fiMarquee{to{transform:translateX(-50%)}}
 @keyframes fiReveal{to{opacity:1;transform:none}}
 @keyframes fiPulse2{0%{transform:scale(1);opacity:.5}100%{transform:scale(2.6);opacity:0}}
+@keyframes fiFoil{0%{transform:translateX(-260%) rotate(16deg)}14%{transform:translateX(620%) rotate(16deg)}14.01%,100%{transform:translateX(-260%) rotate(16deg)}}
+@keyframes fiFlapPulse{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.06)}}
 
 @media (prefers-reduced-motion: no-preference){
+  #fi-boarding .fi-ticket .fi-sheen::before{animation:fiFoil 6.5s ease-in-out infinite}
   #fi-boarding.fi-js [data-reveal]{transform:translateY(24px)}
   #fi-boarding.fi-js [data-reveal].in{animation:fiReveal .7s cubic-bezier(.16,1,.3,1) forwards}
   #fi-boarding .fi-line{transform:translateY(110%);transition:transform .75s cubic-bezier(.16,1,.3,1),font-variation-settings .75s ease}
@@ -235,7 +246,7 @@
   #fi-boarding .fi-live .d::after{animation:fiPulse2 2s ease-out infinite}
 }
 @media (prefers-reduced-motion: reduce){
-  #fi-boarding .fi-aurora,#fi-boarding .fi-stars,#fi-boarding .fi-map.live .fi-radar,#fi-boarding .fi-map.live .fi-planem,#fi-boarding .fi-map.live .fi-blip,#fi-boarding .fi-marquee span{animation:none}
+  #fi-boarding .fi-aurora,#fi-boarding .fi-stars,#fi-boarding .fi-map.live .fi-radar,#fi-boarding .fi-map.live .fi-planem,#fi-boarding .fi-map.live .fi-blip,#fi-boarding .fi-marquee span,#fi-boarding .fi-sheen::before{animation:none}
   #fi-boarding .fi-route{stroke-dashoffset:0}
   #fi-boarding .fi-flight{display:none}
   #fi-boarding.fi-js [data-reveal]{opacity:1}
@@ -277,7 +288,6 @@
   <div class="fi-amb" aria-hidden="true">
     <div class="fi-aurora a"></div>
     <div class="fi-aurora b"></div>
-    <div class="fi-aurora c"></div>
     <canvas class="fi-stars" data-stars></canvas>
     <div class="fi-grain"></div>
     <div class="fi-spot" data-spot></div>
@@ -312,7 +322,7 @@
           <span><b data-clock2>--:--:--</b> &#10022; Verano 2026</span>
         </div>
         <div class="fi-eyebrow" style="margin-top:16px">Invitación de embarque</div>
-        <div class="fi-board-title"><span class="fi-flap fi-title" data-flap="ISLA FUTURA"></span></div>
+        <div class="fi-board-title"><span class="fi-flap fi-title" data-flap="FUTURE ISLAND"></span></div>
         <div class="fi-board-sub">Future Island <span class="s">&#10022;</span> Terminal de vídeo vertical</div>
 
         <div class="fi-flights">
@@ -332,13 +342,14 @@
       <div class="fi-tilt" data-tilt>
         <div class="fi-ticket" data-ticket>
           <div class="fi-glare"></div>
+          <div class="fi-sheen"></div>
           <div class="fi-tk-head">
             <div class="fi-tk-brand">FUTURE ISLAND<sup>&#8482;</sup></div>
             <div class="fi-tk-label">Tarjeta de embarque &#10022; Primera clase</div>
           </div>
           <div class="fi-tk-grid">
             <div><div class="fi-tk-k">Pasajero</div><div class="fi-tk-v">Usted</div></div>
-            <div><div class="fi-tk-k">Destino</div><div class="fi-tk-v gold">Isla Futura</div></div>
+            <div><div class="fi-tk-k">Destino</div><div class="fi-tk-v gold">Future Island</div></div>
             <div><div class="fi-tk-k">Vuelo</div><div class="fi-tk-v">FI-001</div></div>
             <div><div class="fi-tk-k">Puerta</div><div class="fi-tk-v">A1</div></div>
             <div class="full"><div class="fi-tk-k">Asiento</div><div class="fi-tk-v">1A &#10022; Primera clase &#183; Cortesía</div></div>
@@ -369,7 +380,7 @@
     <section class="fi-sec" data-reveal>
       <div class="fi-sec-head">
         <div class="fi-eyebrow" style="display:block;margin-bottom:12px">Itinerario del vuelo</div>
-        <div class="fi-mask"><span class="fi-line">Tres tramos hasta <em>Isla Futura</em></span></div>
+        <div class="fi-mask"><span class="fi-line">Tres tramos hasta <em>Future Island</em></span></div>
       </div>
       <div class="fi-legs">
         <div class="fi-leg" data-leg><div class="fi-leg-top"><span>Tramo 01</span><span>FI-001</span></div><div class="fi-leg-n">01</div><h3>Reserva tu asiento</h3><p>Eliges tu hora en el calendario. Treinta minutos, sin coste ni compromiso.</p></div>
@@ -396,11 +407,11 @@
     <section class="fi-sec" id="ruta" data-reveal>
       <div class="fi-sec-head">
         <div class="fi-eyebrow" style="display:block;margin-bottom:12px">Torre de control</div>
-        <div class="fi-mask"><span class="fi-line">La ruta hacia <em>Isla Futura</em></span></div>
+        <div class="fi-mask"><span class="fi-line">La ruta hacia <em>Future Island</em></span></div>
       </div>
       <div class="fi-map" data-map>
         <span class="fi-map-pill">Vista satélite &#10022; Mediterráneo</span>
-        <svg class="base" viewBox="0 0 800 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ruta de vuelo hacia Isla Futura">
+        <svg class="base" viewBox="0 0 800 380" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ruta de vuelo hacia Future Island">
           <defs>
             <linearGradient id="fiSea2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0f333b"/><stop offset="1" stop-color="#071b20"/></linearGradient>
             <linearGradient id="fiLand2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a3a34"/><stop offset="1" stop-color="#1c2a26"/></linearGradient>
@@ -422,7 +433,7 @@
           <g class="fi-planem"><path d="M-15 0 Q-15 -3 -7 -3 L14 -4 Q22 -3 24 0 Q22 3 14 4 L-7 3 Q-15 3 -15 0 Z M-10 -2 L-19 -12 L-12 -12 L-3 -2 Z M4 2 L-7 13 L0 13 L11 2 Z" fill="#F1ECDF"/></g>
           <circle cx="150" cy="250" r="6" fill="none" stroke="#E4C58A" stroke-width="3"/><circle cx="150" cy="250" r="2.4" fill="#E4C58A"/>
           <text x="150" y="278" fill="#9fb0a6" font-family="'Space Mono',monospace" font-size="12" letter-spacing="2" text-anchor="middle">AQUÍ</text>
-          <text x="664" y="128" fill="#6FC7C1" font-family="'Space Mono',monospace" font-size="12" letter-spacing="2" text-anchor="middle">ISLA FUTURA</text>
+          <text x="664" y="128" fill="#6FC7C1" font-family="'Space Mono',monospace" font-size="12" letter-spacing="2" text-anchor="middle">FUTURE ISLAND</text>
         </svg>
         <div class="fi-radar"></div>
       </div>
@@ -441,7 +452,7 @@
 
     <!-- ================= FOOTER ================= -->
     <footer class="fi-foot">
-      <div class="fi-marquee"><span>&#10022; Invitación de embarque <span class="s">&#10022;</span> Primera clase <span class="s">&#10022;</span> Vídeo vertical <span class="s">&#10022;</span> Isla Futura <span class="s">&#10022;</span> Sesión 30 min · sin coste <span class="s">&#10022;</span> Invitación de embarque <span class="s">&#10022;</span> Primera clase <span class="s">&#10022;</span> Vídeo vertical <span class="s">&#10022;</span> Isla Futura <span class="s">&#10022;</span> Sesión 30 min · sin coste <span class="s">&#10022;</span> </span></div>
+      <div class="fi-marquee"><span>&#10022; Invitación de embarque <span class="s">&#10022;</span> Primera clase <span class="s">&#10022;</span> Vídeo vertical <span class="s">&#10022;</span> Future Island <span class="s">&#10022;</span> Sesión 30 min · sin coste <span class="s">&#10022;</span> Invitación de embarque <span class="s">&#10022;</span> Primera clase <span class="s">&#10022;</span> Vídeo vertical <span class="s">&#10022;</span> Future Island <span class="s">&#10022;</span> Sesión 30 min · sin coste <span class="s">&#10022;</span> </span></div>
       <div class="fi-legal"><b>Invitación personal.</b> La sesión de verano en Future Island es una cortesía: 30 minutos
         sin coste ni compromiso. Pulse <b>Confirmar asiento</b> para reservar su plaza antes del 31 de julio de 2026.</div>
     </footer>
@@ -519,6 +530,13 @@
   if(reduce){ boardEls.forEach(function(el){ buildFlap(el, el.getAttribute('data-flap')); }); }
   else { raf(function(){ raf(fireBoards); }); }
 
+  /* re-flip periódico de una fila: el tablero sigue vivo */
+  if(!reduce){
+    var rowFlaps = root.querySelectorAll('.fi-rowflap[data-flap]');
+    var ri = 0;
+    setInterval(function(){ if(document.hidden || !rowFlaps.length) return; var el = rowFlaps[ri % rowFlaps.length]; ri++; primeFlap(el, el.getAttribute('data-flap')); }, 6500);
+  }
+
   /* ============ RELOJ EN VIVO ============ */
   var clocks = root.querySelectorAll('[data-clock],[data-clock2]');
   function pad(n){ return (n<10?'0':'')+n; }
@@ -579,6 +597,19 @@
       if(Math.abs(tcur.x-ttar.x)>0.05 || Math.abs(tcur.y-ttar.y)>0.05){ raf(tloop); }
       else { ticket.style.transform=''; ticket.style.willChange=''; tRunning=false; }
     }
+  }
+
+  /* ============ BOTONES MAGNÉTICOS ============ */
+  if(finePointer && !reduce){
+    root.querySelectorAll('.fi-btn--gold').forEach(function(btn){
+      var r=null;
+      btn.addEventListener('pointermove', function(e){
+        var b=btn.getBoundingClientRect(); var dx=e.clientX-(b.left+b.width/2), dy=e.clientY-(b.top+b.height/2);
+        if(r) cancelAnimationFrame(r);
+        r=raf(function(){ btn.style.transform='translate('+(dx*0.16)+'px,'+(dy*0.16-1)+'px)'; });
+      });
+      btn.addEventListener('pointerleave', function(){ if(r) cancelAnimationFrame(r); btn.style.transform=''; });
+    });
   }
 
   /* ============ MAPA (radar/arco/avión) lazy ============ */

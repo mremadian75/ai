@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.9.1
+Stable tag: 1.9.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -54,6 +54,14 @@ No. Everything happens inside WordPress.
 Yes — *Settings → Profile Form* takes a JSON schema. The placeholders you define there flow into the tutor's system prompt automatically.
 
 == Changelog ==
+
+= 1.9.2 =
+Typography & reading-experience refinement (continues the 1.9.x visual series), verified by rendering long-form lesson content in a headless browser in both themes.
+* Lesson content is now capped to a comfortable reading measure (~66 characters per line) instead of running the full column width, and body text uses a more generous line-height — long lessons are noticeably easier to read.
+* Refined prose rhythm: tighter, more consistent heading spacing; links get a cleaner offset underline that thickens on hover; the first block no longer adds stray top space.
+* In-page headings now scroll clear of the sticky top bar when linked to.
+* Modernised the font stack (system-ui first, dedicated emoji fallbacks, optical sizing) for crisper, more consistent text across platforms.
+* Styling only — no functional or content changes. Database version unchanged (still v4).
 
 = 1.9.1 =
 UI depth & elevation refinement (follows the 1.9.0 visual pass), verified by rendering the dashboard and lesson components in a headless browser in both themes.

@@ -834,3 +834,36 @@ div.mahan-lesson-row { cursor: pointer; }
 	.mahan-card:focus-visible { transform: none; }
 	.mahan-btn-primary:active { transform: none; }
 }
+
+/* ==================================================================== */
+/* v1.9.2 — typography & reading experience                             */
+/* ==================================================================== */
+
+/* Modern font stack: system-ui first, dedicated emoji fallbacks, optical
+   sizing on variable system fonts. */
+.mahan-app {
+	font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+	font-optical-sizing: auto;
+}
+
+/* Optimal reading measure (~66 characters) for long-form lesson content —
+   only the lesson's reading column, not full-width headings/exercises or the
+   course description. Comfortable line-height for sustained reading. */
+.mahan-lesson-col > .mahan-prose { max-width: 66ch; }
+.mahan-prose { line-height: 1.7; }
+.mahan-prose > :first-child { margin-top: 0; }
+.mahan-prose h1, .mahan-prose h2, .mahan-prose h3, .mahan-prose h4 {
+	line-height: 1.2; letter-spacing: -.015em; scroll-margin-top: 84px;
+}
+
+/* Refined prose links: an offset, slightly thicker underline that grows on
+   hover — clearer than the browser default baseline underline. */
+.mahan-prose a {
+	text-decoration-thickness: 1px; text-underline-offset: 2px;
+	transition: text-decoration-thickness .1s ease;
+}
+.mahan-prose a:hover { text-decoration-thickness: 2px; }
+
+/* In-page anchor targets clear the sticky top bar instead of hiding under it */
+.mahan-app :target { scroll-margin-top: 84px; }
+.mahan-lesson-title, .mahan-section h2 { scroll-margin-top: 84px; }

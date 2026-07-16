@@ -4,6 +4,27 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.9.2]
+
+Typography & reading-experience refinement, continuing the 1.9.x visual
+series. **Styling only — no PHP/JS changes, DB stays v4.** Verified by
+rendering long-form lesson prose in headless Chromium in both themes.
+
+- **Reading measure.** `.mahan-lesson-col > .mahan-prose` is capped at `66ch`
+  so long lesson lines don't run the full column width (the classic 45–75
+  character readability range); scoped to the lesson reading column, so
+  full-width headings, exercises, and the course description are unaffected.
+- **Prose rhythm.** `line-height: 1.7` on prose body; prose headings get
+  `line-height: 1.2` + `-.015em` tracking; `:first-child` top-margin reset.
+- **Links.** Prose links use `text-underline-offset: 2px` +
+  `text-decoration-thickness: 1px`, thickening to `2px` on hover.
+- **Sticky-bar anchors.** `scroll-margin-top: 84px` on prose headings, the
+  lesson title, section `h2`s, and `:target`, so in-page jumps clear the
+  sticky top bar.
+- **Font stack.** `system-ui` first, dedicated emoji fallbacks
+  (`"Apple Color Emoji"`, `"Segoe UI Emoji"`, `"Segoe UI Symbol"`), and
+  `font-optical-sizing: auto`.
+
 ## [1.9.1]
 
 UI depth & elevation refinement, building on the 1.9.0 token system.

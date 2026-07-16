@@ -7,9 +7,23 @@
 	--m-text: #1f2433;
 	--m-muted: #6b7280;
 	--m-border: #e7e9f0;
+	--m-surface-2: #eef0f7;
+	/* Semantic colors — themed so reds/ambers stay legible in dark mode too.
+	   *-solid variants stay saturated for white-on-fill (badges); the plain
+	   token is the accessible text/border shade. */
+	--m-danger: #dc2626;
+	--m-danger-solid: #ef4444;
+	--m-warning: #f59e0b;
+	--m-warning-text: #b45309;
+	--m-info: #38bdf8;
+	--m-radius-sm: 10px;
 	--m-radius: 16px;
+	--m-radius-lg: 22px;
 	--m-shadow: 0 10px 30px rgba(20, 23, 40, .08);
 	--m-shadow-sm: 0 2px 8px rgba(20, 23, 40, .06);
+	--m-shadow-lg: 0 24px 70px rgba(20, 23, 40, .18);
+	--m-ring: 0 0 0 3px color-mix(in srgb, var(--m-primary) 22%, transparent);
+	color-scheme: light;
 	box-sizing: border-box;
 	color: var(--m-text);
 	background: var(--m-bg);
@@ -23,10 +37,17 @@
 .mahan-app.mahan-theme-dark {
 	--m-bg: #0d1117;
 	--m-surface: #161b25;
+	--m-surface-2: #1e2530;
 	--m-text: #e6e8ee;
 	--m-muted: #9aa3b2;
 	--m-border: #262c39;
+	/* Lighter red/amber so status text reads on the dark surface. */
+	--m-danger: #f87171;
+	--m-warning: #fbbf24;
+	--m-warning-text: #fbbf24;
 	--m-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+	--m-shadow-lg: 0 24px 70px rgba(0, 0, 0, .5);
+	color-scheme: dark;
 }
 
 /* Boot */
@@ -44,7 +65,7 @@
 .mahan-nav-link.is-active { color: var(--m-primary); background: color-mix(in srgb, var(--m-primary) 10%, transparent); }
 .mahan-hud { margin-left: auto; display: flex; align-items: center; gap: 14px; }
 .mahan-hud-item { display: flex; align-items: center; gap: 5px; font-weight: 800; font-size: 15px; }
-.mahan-hud-streak { color: #f59e0b; }
+.mahan-hud-streak { color: var(--m-warning); }
 .mahan-hud-xp { color: var(--m-primary); }
 .mahan-hud-level { color: var(--m-accent); }
 .mahan-hud-icon { font-size: 16px; }
@@ -171,7 +192,7 @@ a.mahan-lesson-row:hover { border-color: var(--m-primary); background: color-mix
 .mahan-ex-hint-btn { background: none; border: none; color: var(--m-muted); font-weight: 600; cursor: pointer; font-size: 14px; }
 .mahan-ex-feedback { margin-top: 14px; padding: 14px 16px; border-radius: 12px; font-size: 15px; }
 .mahan-ex-feedback.is-correct { background: color-mix(in srgb, var(--m-accent) 14%, transparent); color: color-mix(in srgb, var(--m-accent) 70%, #000); }
-.mahan-ex-feedback.is-incorrect { background: color-mix(in srgb, #ef4444 12%, transparent); color: #b91c1c; }
+.mahan-ex-feedback.is-incorrect { background: color-mix(in srgb, var(--m-danger) 12%, transparent); color: var(--m-danger); }
 .mahan-ex-feedback p { margin: .35em 0 0; }
 
 /* Lesson footer */
@@ -214,7 +235,7 @@ a.mahan-lesson-row:hover { border-color: var(--m-primary); background: color-mix
 
 /* Modal / profile */
 .mahan-modal-overlay { position: fixed; inset: 0; z-index: 100000; background: rgba(15, 18, 30, .6); display: flex; align-items: center; justify-content: center; padding: 18px; backdrop-filter: blur(3px); }
-.mahan-modal { background: var(--m-surface); color: var(--m-text); width: 100%; max-width: 560px; max-height: 90vh; overflow: auto; border-radius: 20px; padding: 28px; box-shadow: 0 24px 70px rgba(0, 0, 0, .35); }
+.mahan-modal { background: var(--m-surface); color: var(--m-text); width: 100%; max-width: 560px; max-height: 90vh; overflow: auto; border-radius: var(--m-radius-lg); padding: 28px; box-shadow: var(--m-shadow-lg); }
 .mahan-modal h2 { margin: 0 0 6px; font-size: 24px; }
 .mahan-modal-sub { color: var(--m-muted); margin: 0 0 18px; }
 .mahan-profile-form { display: grid; grid-template-columns: 1fr; gap: 14px; }
@@ -226,7 +247,7 @@ a.mahan-lesson-row:hover { border-color: var(--m-primary); background: color-mix
 .mahan-check-item { font-weight: 500; display: flex; align-items: center; gap: 6px; }
 .mahan-modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
 .mahan-modal-actions.mahan-center { justify-content: center; }
-.mahan-profile-msg { margin-top: 12px; color: #b91c1c; font-size: 14px; }
+.mahan-profile-msg { margin-top: 12px; color: var(--m-danger); font-size: 14px; }
 .mahan-login-gate { gap: 18px; }
 
 /* Toasts */
@@ -330,7 +351,7 @@ button.mahan-quiz-row:hover { border-color: var(--m-primary); background: color-
 .mahan-quiz-row .mahan-lesson-icon { background: color-mix(in srgb, var(--m-primary) 14%, var(--m-surface)); }
 .mahan-quiz-tag { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--m-primary); background: color-mix(in srgb, var(--m-primary) 12%, transparent); padding: 2px 8px; border-radius: 999px; }
 .mahan-quiz-score { color: var(--m-accent); font-weight: 800; }
-.mahan-quiz-score-fail { color: #b45309; font-weight: 700; }
+.mahan-quiz-score-fail { color: var(--m-warning-text); font-weight: 700; }
 
 .mahan-quiz-modal { max-width: 640px; }
 .mahan-quiz-q { padding: 16px 0; border-bottom: 1px solid var(--m-border); }
@@ -338,13 +359,13 @@ button.mahan-quiz-row:hover { border-color: var(--m-primary); background: color-
 .mahan-quiz-q-title { font-weight: 700; margin-bottom: 12px; }
 .mahan-quiz-opts { display: flex; flex-direction: column; gap: 8px; }
 .mahan-quiz-q.is-correct .mahan-quiz-q-title { color: color-mix(in srgb, var(--m-accent) 75%, #000); }
-.mahan-quiz-q.is-incorrect .mahan-quiz-q-title { color: #b91c1c; }
+.mahan-quiz-q.is-incorrect .mahan-quiz-q-title { color: var(--m-danger); }
 .mahan-quiz-result { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-radius: 14px; margin: 4px 0 16px; }
 .mahan-quiz-result.is-pass { background: color-mix(in srgb, var(--m-accent) 14%, transparent); }
-.mahan-quiz-result.is-fail { background: color-mix(in srgb, #f59e0b 16%, transparent); }
+.mahan-quiz-result.is-fail { background: color-mix(in srgb, var(--m-warning) 16%, transparent); }
 .mahan-quiz-result-icon { font-size: 30px; }
 .mahan-quiz-result-sub { color: var(--m-muted); font-size: 14px; }
-.mahan-quiz-msg { color: #b91c1c; font-size: 14px; margin-top: 8px; }
+.mahan-quiz-msg { color: var(--m-danger); font-size: 14px; margin-top: 8px; }
 
 /* Learning paths */
 .mahan-path-courses { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; counter-reset: pc; }
@@ -359,7 +380,7 @@ button.mahan-quiz-row:hover { border-color: var(--m-primary); background: color-
 .mahan-path-course .mahan-progress { max-width: 260px; }
 
 /* Gamification v2: daily goal, freezes, weekly leaderboard */
-.mahan-hud-freeze { font-size: 12px; margin-left: 2px; color: #38bdf8; font-weight: 700; }
+.mahan-hud-freeze { font-size: 12px; margin-left: 2px; color: var(--m-info); font-weight: 700; }
 .mahan-hud-goal { color: var(--m-muted); }
 .mahan-hud-goal.is-done { color: var(--m-accent); }
 
@@ -527,7 +548,7 @@ button.mahan-quiz-row:hover { border-color: var(--m-primary); background: color-
 .mahan-lesson-course-bar span { display: block; height: 100%; background: var(--m-accent); border-radius: 999px; transition: width .5s ease; }
 
 /* Inline exercise hint */
-.mahan-ex-hint { margin-top: 12px; padding: 10px 14px; border-radius: 10px; background: color-mix(in srgb, #f59e0b 12%, transparent); color: color-mix(in srgb, #b45309 85%, var(--m-text)); font-size: 14px; }
+.mahan-ex-hint { margin-top: 12px; padding: 10px 14px; border-radius: 10px; background: color-mix(in srgb, var(--m-warning) 12%, transparent); color: color-mix(in srgb, var(--m-warning-text) 85%, var(--m-text)); font-size: 14px; }
 
 /* Quiz: answered counter + guarded submit */
 .mahan-quiz-actions { align-items: center; }
@@ -582,7 +603,7 @@ button.mahan-quiz-row:hover { border-color: var(--m-primary); background: color-
 
 /* Goal card helper text + profile validation */
 .mahan-goal-pick-msg { margin: 6px 0 0; color: var(--m-muted); font-size: 13.5px; }
-.mahan-field.is-invalid label { color: #b91c1c; }
+.mahan-field.is-invalid label { color: var(--m-danger); }
 .mahan-field.is-invalid input, .mahan-field.is-invalid textarea, .mahan-field.is-invalid select, .mahan-field.is-invalid .mahan-checks { border-color: #dc2626; }
 
 /* Error box hint */
@@ -620,9 +641,9 @@ button.mahan-quiz-row:hover { border-color: var(--m-primary); background: color-
 .mahan-tutor-send[disabled] { opacity: .8; cursor: progress; }
 
 /* Cold-flame streak stat (today not yet counted) */
-.mahan-stat-big.is-cold { background: color-mix(in srgb, #f59e0b 8%, var(--m-bg)); }
+.mahan-stat-big.is-cold { background: color-mix(in srgb, var(--m-warning) 8%, var(--m-bg)); }
 .mahan-stat-big.is-cold .mahan-stat-icon { filter: grayscale(.3); opacity: .85; }
-.mahan-stat-big.is-cold .mahan-stat-label { color: #b45309; }
+.mahan-stat-big.is-cold .mahan-stat-label { color: var(--m-warning-text); }
 
 @media (prefers-reduced-motion: reduce) {
 	.mahan-btn-spinner, .mahan-tutor-send.is-busy::after { animation-duration: .01ms; }
@@ -633,7 +654,7 @@ button.mahan-quiz-row:hover { border-color: var(--m-primary); background: color-
 /* ==================================================================== */
 
 /* Dashboard call-to-action */
-.mahan-review-cta { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; margin-bottom: 26px; padding: 18px 22px; border-radius: var(--m-radius); border: 1px solid color-mix(in srgb, #f59e0b 35%, var(--m-border)); background: linear-gradient(120deg, color-mix(in srgb, #f59e0b 12%, var(--m-surface)), var(--m-surface) 60%); box-shadow: var(--m-shadow-sm); }
+.mahan-review-cta { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; margin-bottom: 26px; padding: 18px 22px; border-radius: var(--m-radius); border: 1px solid color-mix(in srgb, var(--m-warning) 35%, var(--m-border)); background: linear-gradient(120deg, color-mix(in srgb, var(--m-warning) 12%, var(--m-surface)), var(--m-surface) 60%); box-shadow: var(--m-shadow-sm); }
 .mahan-review-cta-body { display: flex; align-items: center; gap: 14px; }
 .mahan-review-cta-icon { font-size: 34px; line-height: 1; }
 .mahan-review-cta-title { margin: 0; font-size: 20px; }
@@ -649,12 +670,12 @@ button.mahan-quiz-row:hover { border-color: var(--m-primary); background: color-
 .mahan-review-stage { max-width: 720px; margin: 0 auto; }
 .mahan-review-card { position: relative; background: var(--m-surface); }
 .mahan-review-card.is-correct { border-color: var(--m-accent); }
-.mahan-review-card.is-incorrect { border-color: #ef4444; }
+.mahan-review-card.is-incorrect { border-color: var(--m-danger); }
 .mahan-review-card.is-variant { border-style: dashed; }
 .mahan-review-variant-tag { display: inline-block; margin-bottom: 10px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--m-primary); background: color-mix(in srgb, var(--m-primary) 12%, transparent); padding: 3px 10px; border-radius: 999px; }
 .mahan-review-bar { flex-wrap: wrap; gap: 10px; }
 .mahan-review-variant-btn { margin-right: auto; }
-.mahan-review-msg { color: #b91c1c; font-size: 14px; }
+.mahan-review-msg { color: var(--m-danger); font-size: 14px; }
 .mahan-review-empty-icon { font-size: 56px; line-height: 1; }
 .mahan-review-complete h2 { margin: 6px 0; }
 @media (max-width: 640px) {
@@ -675,7 +696,7 @@ button.mahan-quiz-row:hover { border-color: var(--m-primary); background: color-
 
 /* Due-review count badge on nav items */
 .mahan-nav-link { position: relative; }
-.mahan-nav-count { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 6px; border-radius: 999px; background: #ef4444; color: #fff; font-size: 11px; font-weight: 800; line-height: 1; vertical-align: 1px; }
+.mahan-nav-count { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 6px; border-radius: 999px; background: var(--m-danger-solid); color: #fff; font-size: 11px; font-weight: 800; line-height: 1; vertical-align: 1px; }
 .mahan-bottomnav-icon { position: relative; display: inline-flex; }
 .mahan-bottomnav-icon .mahan-nav-count { position: absolute; top: -6px; right: -14px; margin-left: 0; }
 
@@ -727,7 +748,89 @@ div.mahan-lesson-row { cursor: pointer; }
 /* Inline right/wrong text cue prepended to graded quiz questions */
 .mahan-grade-cue { font-weight: 800; }
 .mahan-quiz-q.is-correct .mahan-grade-cue { color: var(--m-accent); }
-.mahan-quiz-q.is-incorrect .mahan-grade-cue { color: #ef4444; }
+.mahan-quiz-q.is-incorrect .mahan-grade-cue { color: var(--m-danger); }
 
 /* Re-drill expectation line under an incorrect review answer */
 .mahan-review-again { margin-top: 4px; font-size: 13px; opacity: .85; }
+
+/* ==================================================================== */
+/* v1.9.0 — UI polish: type system, tactile controls, focus, surfaces   */
+/* ==================================================================== */
+
+/* Normalize custom buttons: strip native control chrome so themed styling is
+   consistent across platforms/browsers. (Selects keep their native, now
+   colour-scheme-aware, caret.) */
+.mahan-btn, .mahan-ex-option, .mahan-chip, button.mahan-quiz-row,
+.mahan-tutor-send, .mahan-review-exit, .mahan-tutor-close, .mahan-tutor-fab,
+.mahan-ex-hint-btn {
+	appearance: none; -webkit-appearance: none;
+}
+
+/* Crisper text rendering + a system selection colour */
+.mahan-app { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; accent-color: var(--m-primary); text-rendering: optimizeLegibility; }
+.mahan-app ::selection { background: color-mix(in srgb, var(--m-primary) 22%, transparent); }
+
+/* Tabular numerals: live-updating counters (XP, streak, level, %, ranks)
+   keep a fixed digit width so they don't shift/jitter as values change. */
+.mahan-hud-item, .mahan-stat-value, .mahan-progress-label, .mahan-level-bar-label,
+.mahan-lb-xp, .mahan-lb-rank, .mahan-nav-count, .mahan-goal-select,
+.mahan-review-progress-label, .mahan-quiz-count, .mahan-quiz-score, .mahan-quiz-score-fail {
+	font-variant-numeric: tabular-nums;
+	font-feature-settings: "tnum" 1;
+}
+
+/* Balanced headings — no orphan last word on multi-line titles */
+.mahan-hero h1, .mahan-course-hero h1, .mahan-lesson-title, .mahan-card-title,
+.mahan-jump-title, .mahan-dash-title, .mahan-modal h2, .mahan-section h2 {
+	text-wrap: balance;
+}
+/* Longer body sub-copy reads better with pretty wrapping */
+.mahan-hero-sub, .mahan-course-sub, .mahan-card-sub { text-wrap: pretty; }
+
+/* Tactile 3D primary button: the press physically sinks into its shadow
+   (Duolingo-style) instead of the flat 1px nudge the other buttons use. */
+.mahan-btn-primary { transition: transform .08s ease, box-shadow .12s ease, filter .15s ease; }
+.mahan-btn-primary:active { transform: translateY(3px); box-shadow: 0 1px 0 color-mix(in srgb, var(--m-primary) 60%, #000); }
+.mahan-btn-primary.is-done:active { box-shadow: 0 1px 0 color-mix(in srgb, var(--m-accent) 60%, #000); }
+.mahan-btn-primary[disabled]:active { transform: none; }
+
+/* Consistent, affordant focus ring on every text control (was border-only) */
+.mahan-ex-input:focus, .mahan-tutor-input:focus, .mahan-goal-select:focus,
+.mahan-field input[type="text"]:focus, .mahan-field textarea:focus, .mahan-field select:focus {
+	outline: none; border-color: var(--m-primary); box-shadow: var(--m-ring);
+}
+
+/* Smooth hover on pill controls */
+.mahan-chip { transition: background .12s ease, border-color .12s ease, color .12s ease; }
+.mahan-nav-link, .mahan-bottomnav-item { transition: background .12s ease, color .12s ease; }
+.mahan-chip:hover:not(.is-active) { border-color: color-mix(in srgb, var(--m-primary) 40%, var(--m-border)); color: var(--m-text); }
+
+/* Cards: keyboard focus mirrors the hover lift, and hover gains a defined edge */
+.mahan-card:hover { border-color: color-mix(in srgb, var(--m-primary) 22%, var(--m-border)); }
+.mahan-card:focus-visible { transform: translateY(-4px); box-shadow: var(--m-shadow); border-color: color-mix(in srgb, var(--m-primary) 30%, var(--m-border)); }
+
+/* Thin, themed scrollbars for the app's scroll regions */
+.mahan-tutor-log, .mahan-modal, .mahan-prose pre { scrollbar-width: thin; scrollbar-color: var(--m-border) transparent; }
+.mahan-tutor-log::-webkit-scrollbar, .mahan-modal::-webkit-scrollbar, .mahan-prose pre::-webkit-scrollbar { width: 8px; height: 8px; }
+.mahan-tutor-log::-webkit-scrollbar-thumb, .mahan-modal::-webkit-scrollbar-thumb, .mahan-prose pre::-webkit-scrollbar-thumb { background: var(--m-border); border-radius: 999px; }
+.mahan-tutor-log::-webkit-scrollbar-thumb:hover, .mahan-modal::-webkit-scrollbar-thumb:hover { background: var(--m-muted); }
+
+/* Empty-state icons get a focal circular badge instead of a bare glyph */
+.mahan-review-empty-icon {
+	display: inline-flex; align-items: center; justify-content: center;
+	width: 88px; height: 88px; border-radius: 50%; font-size: 40px;
+	background: color-mix(in srgb, var(--m-primary) 10%, var(--m-surface));
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--m-primary) 16%, transparent);
+}
+
+/* Send button gets the same tactile/disabled feedback as other controls */
+.mahan-tutor-send { transition: filter .15s ease, transform .08s ease; }
+.mahan-tutor-send:hover { filter: brightness(1.05); }
+.mahan-tutor-send:active { transform: translateY(1px); }
+.mahan-tutor-send:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Keep the polish honest under reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+	.mahan-card:focus-visible { transform: none; }
+	.mahan-btn-primary:active { transform: none; }
+}

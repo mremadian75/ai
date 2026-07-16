@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.8.0
+Stable tag: 1.9.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -54,6 +54,15 @@ No. Everything happens inside WordPress.
 Yes — *Settings → Profile Form* takes a JSON schema. The placeholders you define there flow into the tutor's system prompt automatically.
 
 == Changelog ==
+
+= 1.9.0 =
+UI best-practices pass — a visual-design refinement of the whole front-end, verified by rendering the components in a headless browser in both light and dark themes.
+* Proper semantic colour system: reds, ambers, and the info blue are now theme-aware design tokens, so status text (errors, "not quite", failed quiz, streak-at-risk) stays legible in dark mode instead of being too dark to read.
+* Live-updating numbers (XP, streak, level, percentages, ranks) now use tabular figures so they no longer shift width and "jitter" as they change.
+* The primary "Continue / Complete" button now presses down with a tactile 3D motion; every text field shows a clear focus ring; pill controls and cards have smoother, more defined hover and keyboard-focus states.
+* Native form controls (selects, scrollbars, checkboxes) now follow the light/dark theme via `color-scheme`; the app's scroll areas get slim themed scrollbars.
+* Headings wrap more gracefully (no orphan last word), text renders crisper, empty-state icons get a focal circular badge, and text selection uses the brand colour.
+* No functional or content changes — styling only. Database version unchanged (still v4).
 
 = 1.8.0 =
 UX best-practices round 3 — a multi-lens audit of the whole learner experience (adaptive review, dashboard, lesson player, accessibility, and motivation copy), with the findings folded back in.

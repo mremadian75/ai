@@ -184,6 +184,16 @@ Config + i18n are injected via `wp_localize_script` as `window.MahanData`. Theme
 colors are CSS variables (`--mahan-primary`, `--mahan-accent`) set inline from
 settings.
 
+The stylesheet (`assets/css/app.css`) is token-driven. `.mahan-app` defines the
+design tokens — surfaces, `--m-muted`/`--m-border`, a **semantic colour system**
+(`--m-danger`/`--m-danger-solid`/`--m-warning`/`--m-warning-text`/`--m-info`),
+radius scale (`--m-radius-sm/-/-lg`), elevation (`--m-shadow-sm/-/-lg`), and a
+`--m-ring` focus token — and `.mahan-theme-dark` overrides them (including
+`color-scheme: dark` so native controls follow the theme, and lighter red/amber
+so status text stays legible). Status colours should reference these tokens, not
+literals, so both themes stay correct. Live-updating numbers use
+`font-variant-numeric: tabular-nums` to avoid width jitter.
+
 Responsive & accessibility behaviors (1.4.0):
 
 - **Navigation** — the desktop pill nav collapses below 640px into a fixed

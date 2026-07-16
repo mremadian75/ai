@@ -4,6 +4,43 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.9.0]
+
+UI best-practices pass — a visual-design refinement of `assets/css/app.css`,
+verified by rendering representative components in headless Chromium in both
+light and dark themes. **Styling only — no PHP/JS changes, DB stays v4.**
+
+### Design tokens
+
+- Expanded the `.mahan-app` token layer with a **semantic colour system**:
+  `--m-danger` / `--m-danger-solid` / `--m-warning` / `--m-warning-text` /
+  `--m-info`, plus `--m-surface-2`, radius scale (`--m-radius-sm/lg`),
+  `--m-shadow-lg`, and a `--m-ring` focus token. The dark theme overrides the
+  reds/ambers to lighter shades so status text stays legible.
+- Threaded ~15 previously hard-coded `#ef4444` / `#b91c1c` / `#f59e0b` /
+  `#b45309` / `#38bdf8` rules through the new tokens (feedback, quiz results,
+  profile/quiz/review messages, nav badge, hint, streak, freeze, grade cues,
+  cold-streak stat). Only the body-level error toast (outside `.mahan-app`,
+  where the vars don't resolve) stays literal.
+
+### Polish layer
+
+- **Tabular numerals** (`font-variant-numeric: tnum`) on all live-updating
+  counters — HUD, stats, progress %, level bar, leaderboard, nav badge, review
+  progress — so digits don't jitter as values change.
+- **Tactile primary button**: the 3D press now sinks into its shadow instead of
+  the flat 1px nudge; the tutor send button gains matching hover/active/disabled
+  states.
+- **Consistent focus** — a soft `--m-ring` on every text control (was
+  border-only), and cards mirror their hover lift on keyboard focus.
+- `color-scheme: light` / `dark` per theme so native selects, checkboxes, and
+  scrollbars adopt the theme; slim themed scrollbars for the tutor log, modals,
+  and code blocks; `accent-color` for native controls.
+- `appearance: none` normalization on the custom buttons; `text-wrap: balance`
+  on headings and `pretty` on body sub-copy; `-webkit-font-smoothing`;
+  `::selection` in the brand colour; empty-state icons get a focal circular
+  badge. All new motion respects `prefers-reduced-motion`.
+
 ## [1.8.0]
 
 UX best-practices round 3. A six-agent audit fanned out across the adaptive

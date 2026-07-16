@@ -68,6 +68,8 @@ class Mahan_Settings {
 			'accent_color'        => '#22c55e',
 			'theme'               => 'light',
 			'custom_css'          => '',
+			'hero_title'          => '',
+			'hero_subtitle'       => '',
 
 			// Pages (auto-created on activation).
 			'app_page_id'         => 0,

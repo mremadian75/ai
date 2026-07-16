@@ -668,3 +668,66 @@ button.mahan-quiz-row:hover { border-color: var(--m-primary); background: color-
 .mahan-app.mahan-theme-dark .mahan-ex-feedback.is-correct { color: color-mix(in srgb, var(--m-accent) 80%, #fff); }
 .mahan-app.mahan-theme-dark .mahan-goal-done-msg { color: color-mix(in srgb, var(--m-accent) 80%, #fff); }
 .mahan-app.mahan-theme-dark .mahan-quiz-q.is-correct .mahan-quiz-q-title { color: color-mix(in srgb, var(--m-accent) 80%, #fff); }
+
+/* ==================================================================== */
+/* v1.8.0 — UX round 3: nav badges, review context, focus management    */
+/* ==================================================================== */
+
+/* Due-review count badge on nav items */
+.mahan-nav-link { position: relative; }
+.mahan-nav-count { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 6px; border-radius: 999px; background: #ef4444; color: #fff; font-size: 11px; font-weight: 800; line-height: 1; vertical-align: 1px; }
+.mahan-bottomnav-icon { position: relative; display: inline-flex; }
+.mahan-bottomnav-icon .mahan-nav-count { position: absolute; top: -6px; right: -14px; margin-left: 0; }
+
+/* Review card context ("Course · Lesson") */
+.mahan-review-context { font-size: 12px; font-weight: 700; color: var(--m-muted); text-transform: uppercase; letter-spacing: .03em; margin-bottom: 10px; }
+
+/* Programmatic focus target for route changes — no visible ring */
+.mahan-main:focus { outline: none; }
+
+/* Logged-out CTA row (login + create account) */
+.mahan-cta-row { display: flex; gap: 10px; flex-wrap: wrap; }
+@media (max-width: 640px) { .mahan-cta-row .mahan-btn { flex: 1; } }
+
+/* Review session exit button */
+.mahan-review-exit { flex: none; width: 34px; height: 34px; border: 1px solid var(--m-border); border-radius: 50%; background: var(--m-surface); color: var(--m-muted); font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.mahan-review-exit:hover { color: var(--m-text); background: var(--m-bg); }
+
+/* Inert (locked / not-enrolled) lesson rows are tappable for an explanation */
+.mahan-lesson-row.is-locked { cursor: pointer; }
+div.mahan-lesson-row { cursor: pointer; }
+
+/* Dashboard: standalone page title (actions render before the stats hero) */
+.mahan-dash-title { margin: 0 0 18px; font-size: 28px; }
+
+/* ==================================================================== */
+/* v1.8.0 — round 3 batch 2: a11y utilities, lazy images, key hints     */
+/* ==================================================================== */
+
+/* Screen-reader-only utility (visible to AT, removed from visual flow) */
+.mahan-sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+/* Empty nav badge (rendered at 0 so refreshHud can patch it) stays hidden */
+.mahan-nav-count:empty { display: none; }
+
+/* Lazy-loaded card image: fades in over the tinted placeholder */
+.mahan-card-media { position: relative; overflow: hidden; }
+.mahan-card-img { width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0; transition: opacity .3s ease; }
+.mahan-card-img.is-loaded { opacity: 1; }
+
+/* Number-key hint chip on review answer options */
+.mahan-ex-option-key { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; margin-right: 9px; padding: 0 4px; border-radius: 5px; background: color-mix(in srgb, var(--m-primary) 12%, var(--m-surface)); color: var(--m-muted); font-size: 11px; font-weight: 800; vertical-align: 1px; }
+.mahan-ex-option.is-chosen .mahan-ex-option-key { background: color-mix(in srgb, var(--m-primary) 26%, var(--m-surface)); color: var(--m-primary); }
+.mahan-ex-option.is-correct .mahan-ex-option-key { background: color-mix(in srgb, var(--m-accent) 22%, var(--m-surface)); }
+@media (max-width: 640px) { .mahan-ex-options.mahan-ex-tf .mahan-ex-option-key { display: none; } }
+
+/* Cold-streak flame in the top bar (today hasn't counted yet) */
+.mahan-hud-streak.is-cold .mahan-hud-icon { filter: grayscale(.4); opacity: .8; }
+
+/* Inline right/wrong text cue prepended to graded quiz questions */
+.mahan-grade-cue { font-weight: 800; }
+.mahan-quiz-q.is-correct .mahan-grade-cue { color: var(--m-accent); }
+.mahan-quiz-q.is-incorrect .mahan-grade-cue { color: #ef4444; }
+
+/* Re-drill expectation line under an incorrect review answer */
+.mahan-review-again { margin-top: 4px; font-size: 13px; opacity: .85; }

@@ -4,6 +4,79 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.8.0]
+
+UX best-practices round 3. A six-agent audit fanned out across the adaptive
+review flow, a fresh-eyes pass over the whole SPA, accessibility, perceived
+performance, and motivation copy; the 38 raw findings were de-duplicated into a
+24-item backlog and the high- and medium-impact items were implemented. No
+schema change (**DB version stays 4**).
+
+### Dashboard & navigation
+
+- **Actionable-first order.** The due-review CTA and "Jump back in" card now
+  render above the stats hero. When both are present only one is a primary
+  button (the other is demoted to a ghost) so the page keeps a single obvious
+  next step. Review sub-copy reframed around memory decay
+  (`reviewFading`) rather than inventory count.
+- **Live reviews-due badge.** `navBadge()` now always renders (hidden at 0 via
+  `:empty`) so `refreshHud()` can patch the count in place. `Mahan_Gamification::hud()`
+  now carries `reviews` (`Mahan_Reviews::counts`) on every stats payload, so a
+  newly created miss bumps the badge immediately instead of waiting for a `/me`
+  refetch. `refreshHud()` also preserves `week`/`reviews` across bare payloads
+  and toggles the cold-streak flame everywhere.
+- **Cold-streak flame in the top bar.** Mirrors the dashboard: when today's
+  activity hasn't counted yet the 🔥 becomes 🕯️ with an `is-cold` class.
+
+### Adaptive review
+
+- **Variant re-queue.** Missing an AI variant now re-queues the *original*
+  (its one-time token is spent, so grading falls back to the snapshot) instead
+  of dropping the concept for the session.
+- **No back-to-back repeats.** A re-queued miss is spliced a couple of cards
+  ahead when near the end of the queue, so it never reappears right after its
+  answer was shown. An explicit "you'll see this again" line sets the
+  expectation when the finish line grows.
+- **Remediation path.** A wrong answer now offers a one-tap "Revisit lesson →"
+  (guarded on `lesson_id`).
+- **Honest completion.** A session that cleared nothing (or left items skipped)
+  gets neutral copy instead of 🎉, plus a "Review skipped" shortcut that re-runs
+  just the skipped items.
+- **Keyboard.** Number keys (1–9) pick answer options; results carry ✓/✕ text
+  cues, not colour alone.
+- **Scope-aware header** for the lesson re-drill, and a count-aware, readable
+  post-lesson redirect toast (1400 ms).
+
+### Accessibility
+
+- `.mahan-sr-only` utility added. Week-day nodes get `role="img"` + composed
+  labels and a non-colour cue; badges announce earned/locked state; graded quiz
+  and review options carry screen-reader cues; the AI tutor gets a dedicated
+  once-per-reply `role="status"` announcer (log demoted from a noisy live
+  region). Unit titles are real `<h3>` headings and the catalog gains a
+  visually-hidden `<h2>`; locked lesson rows expose `aria-disabled`.
+
+### Tutor, motivation & performance
+
+- Tutor status reads "Online / Unavailable" (i18n) and the mobile FAB/scrim is
+  skipped entirely when the tutor isn't configured for a lesson.
+- Reinforcement copy (correct/incorrect, daily-goal, level-up) rotates through
+  translatable variant arrays via a new `tv()` picker.
+- Course-card images lazy-load as real `<img loading="lazy" decoding="async">`
+  with a fade-in; the daily-goal picker saves optimistically with rollback; the
+  lesson player already reuses its session cache for instant back-navigation.
+- New `fmt()` sprintf-lite and `plural()` helpers replace word-by-word string
+  concatenation ("1 lessons" → "1 lesson", cryptic "N Q" → "N questions"); the
+  free-text exercise button now reads "Submit for feedback".
+
+### Consciously deferred
+
+- Full app-shell diffing (mount() still rebuilds topbar/nav) and the leaderboard
+  period-toggle skeleton — both higher-risk refactors for marginal gain in a
+  dependency-free SPA; the session cache already softens the leaderboard case.
+- The deep i18n template refactor (sprintf-everything) is started (`fmt`/`plural`
+  helpers, count strings) but not exhaustive.
+
 ## [1.7.2]
 
 Second audit pass — a regression review of the 1.7.1 fixes (all confirmed

@@ -798,6 +798,19 @@ class Mahan_Admin {
 							</td>
 						</tr>
 						<tr>
+							<th scope="row"><label for="mahan_hero_title"><?php esc_html_e( 'Catalog headline', 'mahan-academy' ); ?></label></th>
+							<td>
+								<input type="text" id="mahan_hero_title" name="mahan_hero_title" value="<?php echo esc_attr( $g( 'hero_title' ) ); ?>" class="large-text" placeholder="<?php esc_attr_e( 'Learn to use AI at work', 'mahan-academy' ); ?>" />
+								<p class="description"><?php esc_html_e( 'The big title on the course catalog. Leave empty for the default.', 'mahan-academy' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><label for="mahan_hero_subtitle"><?php esc_html_e( 'Catalog tagline', 'mahan-academy' ); ?></label></th>
+							<td>
+								<input type="text" id="mahan_hero_subtitle" name="mahan_hero_subtitle" value="<?php echo esc_attr( $g( 'hero_subtitle' ) ); ?>" class="large-text" placeholder="<?php esc_attr_e( 'Structured courses. Hands-on practice. A tutor that answers in real time.', 'mahan-academy' ); ?>" />
+							</td>
+						</tr>
+						<tr>
 							<th scope="row"><label for="mahan_custom_css"><?php esc_html_e( 'Custom CSS', 'mahan-academy' ); ?></label></th>
 							<td><textarea id="mahan_custom_css" name="mahan_custom_css" rows="7" class="large-text code"><?php echo esc_textarea( $g( 'custom_css' ) ); ?></textarea></td>
 						</tr>

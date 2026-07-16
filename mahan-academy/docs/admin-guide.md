@@ -185,6 +185,9 @@ groups several courses in a recommended order.
 ## 9. Appearance & profile
 
 - **Settings → Appearance**: primary/accent colors, light/dark theme, custom CSS.
+  - **Catalog headline** and **Catalog tagline** set the hero copy at the top of
+    the Explore page. Leave them blank to use the built-in defaults ("Learn to
+    use AI at work" and its tagline).
 - **Settings → Profile Form**: a JSON schema of the questions asked on a
   learner's first lesson. The answers fill `{{placeholders}}` in the tutor's
   system prompt (Settings → AI Provider), personalizing every conversation.

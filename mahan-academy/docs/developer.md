@@ -245,6 +245,36 @@ UX behaviors (1.6.0):
 - **Leaderboard** — rows show a "+X XP → #N" gap to the next rank; the
   caller's row is scrolled into view only when off-screen.
 
+UX behaviors (1.8.0):
+
+- **`fmt(tpl, …args)`** — sprintf-lite (`%s` and positional `%1$s`) so
+  translatable strings stay whole sentences; **`plural(n, oneKey, manyKey, …)`**
+  for count labels ("1 lesson" vs "3 lessons"); **`tv(key, fallbackKey, fb, seed)`**
+  rotates through an i18n *array* (e.g. `correctVariants`, `levelUpVariants`) so
+  reinforcement copy stays fresh — the arrays survive `wp_localize_script`
+  because it JSON-encodes non-scalar values.
+- **Live HUD** — `Mahan_Gamification::hud()` now includes `reviews`
+  (`Mahan_Reviews::counts`) on every stats payload, so `refreshHud()` can keep
+  the nav reviews-due badge and the cold-streak flame correct after any grading
+  action without a `/me` refetch. `navBadge()` renders even at 0 (hidden via
+  `.mahan-nav-count:empty`) so it can be patched in place.
+- **Hero copy** — `MahanData.heroTitle` / `heroSub` come from the
+  `hero_title` / `hero_subtitle` settings (Appearance tab), falling back to a
+  translatable default.
+- **Lesson payload** — `/lesson` returns `est_min` (estimated minutes) and
+  `position`; `Mahan_Reviews::public_item()` returns a `context`
+  ("Course · Lesson") string for the mixed cross-course review queue.
+- **Optimistic UI** — `dailyGoalCard`'s select swaps the card immediately on
+  change and reconciles/rolls-back against the server response.
+- **Review engine (client)** — `runReviewSession()` re-queues the *original*
+  when an AI variant is missed, splices near-end repeats so nothing is re-asked
+  back-to-back, offers "Revisit lesson", supports number-key answers, and
+  reports an honest (non-celebratory) summary with a "Review skipped" re-run.
+- **Accessibility** — `.mahan-sr-only` utility; week dots (`role="img"`),
+  badges, and graded options carry composed labels/cues; the tutor has a
+  once-per-reply `role="status"` announcer; unit titles are `<h3>` and the
+  catalog carries a visually-hidden `<h2>`.
+
 Quiz attempts reuse the `attempts` table (`type = 'quiz'`, `lesson_id = 0`,
 `exercise_key = 'quiz:<md5(unit)>'`), so v1.2.0 still adds no tables.
 

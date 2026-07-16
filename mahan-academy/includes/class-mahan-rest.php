@@ -357,6 +357,7 @@ class Mahan_REST {
 			'unit_quiz'    => $unit_quiz,
 			'content'      => apply_filters( 'the_content', $lesson->post_content ),
 			'type'         => Mahan_Utils::meta_str( $lesson_id, Mahan_Courses::M_TYPE, 'reading' ),
+			'est_min'      => Mahan_Utils::meta_int( $lesson_id, Mahan_Courses::M_EST_MIN, 0 ),
 			'xp'           => Mahan_Courses::lesson_xp( $lesson_id ),
 			'exercises'    => $exercises,
 			'status'       => $progress ? $progress['status'] : 'not_started',
@@ -548,7 +549,7 @@ class Mahan_REST {
 
 		$stats            = Mahan_Gamification::hud( $user_id );
 		$stats['week']    = Mahan_Gamification::week_activity( $user_id );
-		$stats['reviews'] = Mahan_Reviews::counts( $user_id );
+		// hud() already carries 'reviews' (Mahan_Reviews::counts) — no refetch.
 
 		// "Jump back in": give each in-progress course its next lesson so the
 		// dashboard can deep-link straight into the lesson player.

@@ -92,6 +92,9 @@ class Mahan_Front {
 				'leaderboard'  => (bool) Mahan_Settings::get( 'leaderboard_enabled', 0 ),
 				'hasPaths'     => ( (int) wp_count_posts( Mahan_CPT::PATH )->publish > 0 ),
 				'siteName'     => get_bloginfo( 'name' ),
+				// Catalog hero copy — admin-configurable, translatable default.
+				'heroTitle'    => (string) Mahan_Settings::get( 'hero_title', '' ) ?: __( 'Learn to use AI at work', 'mahan-academy' ),
+				'heroSub'      => (string) Mahan_Settings::get( 'hero_subtitle', '' ) ?: __( 'Structured courses. Hands-on practice. A tutor that answers in real time.', 'mahan-academy' ),
 				'i18n'         => self::strings(),
 			)
 		);
@@ -173,7 +176,7 @@ class Mahan_Front {
 			'hint'             => __( 'Hint', 'mahan-academy' ),
 			'empty'            => __( 'Nothing here yet.', 'mahan-academy' ),
 			'emptyCatalog'     => __( 'No courses are available yet. Check back soon!', 'mahan-academy' ),
-			'emptyDashboard'   => __( "You haven't enrolled in any courses yet.", 'mahan-academy' ),
+			'emptyDashboard'   => __( 'Pick your first course and start earning XP today.', 'mahan-academy' ),
 			'browseCourses'    => __( 'Browse courses', 'mahan-academy' ),
 			'error'            => __( 'Something went wrong. Please try again.', 'mahan-academy' ),
 			'levelUp'          => __( 'Level up!', 'mahan-academy' ),
@@ -261,6 +264,13 @@ class Mahan_Front {
 			'longestStreak'    => __( 'Longest', 'mahan-academy' ),
 			'streakAtRisk'     => __( 'Study today to keep it!', 'mahan-academy' ),
 			'lockedLesson'     => __( 'Complete the previous lesson to unlock this one.', 'mahan-academy' ),
+			'reviewsDue'       => __( 'reviews due', 'mahan-academy' ),
+			'minShort'         => __( 'min', 'mahan-academy' ),
+			'enrollFirst'      => __( 'Enroll first — it takes one tap and it\'s free.', 'mahan-academy' ),
+			'pickAnswer'       => __( 'Pick an answer first.', 'mahan-academy' ),
+			'skippedCount'     => __( 'skipped', 'mahan-academy' ),
+			'showOriginal'     => __( 'Show the original', 'mahan-academy' ),
+			'exitReview'       => __( 'Exit review', 'mahan-academy' ),
 			// Adaptive review.
 			'review'           => __( 'Review', 'mahan-academy' ),
 			'reviewTitle'      => __( 'Practice your mistakes', 'mahan-academy' ),
@@ -281,6 +291,55 @@ class Mahan_Front {
 			'skip'             => __( 'Skip', 'mahan-academy' ),
 			'variantFailed'    => __( "Couldn't rephrase that one — here's the original.", 'mahan-academy' ),
 			'backToDashboard'  => __( 'Back to My Learning', 'mahan-academy' ),
+			// v1.8.0 — UX round 3.
+			/* translators: %s is the number of due review items. */
+			'reviewFading'     => __( '%s fading — a quick review locks them in', 'mahan-academy' ),
+			/* translators: %s is the number of missed questions. */
+			'reviewMissedToast' => __( "%s missed — let's fix them before moving on", 'mahan-academy' ),
+			'reviewSubLesson'  => __( 'A quick check on the questions you missed in this lesson.', 'mahan-academy' ),
+			'reviewEnded'      => __( 'Session ended', 'mahan-academy' ),
+			/* translators: %s is the number of skipped review items. */
+			'reviewSkipped'    => __( 'Review %s skipped', 'mahan-academy' ),
+			'seeAgainThisSession' => __( "You'll see this one again before the end of this session.", 'mahan-academy' ),
+			'revisitLesson'    => __( 'Revisit lesson', 'mahan-academy' ),
+			'tutorReady'       => __( 'Online', 'mahan-academy' ),
+			'tutorUnavailable' => __( 'Unavailable', 'mahan-academy' ),
+			'tutorConversation' => __( 'Tutor conversation', 'mahan-academy' ),
+			'coursesHeading'   => __( 'Courses', 'mahan-academy' ),
+			'weekGoalMet'      => __( 'goal met', 'mahan-academy' ),
+			'weekStudied'      => __( 'studied', 'mahan-academy' ),
+			'weekNoActivity'   => __( 'no activity', 'mahan-academy' ),
+			'today'            => __( 'today', 'mahan-academy' ),
+			'badgeEarnedState' => __( 'Earned:', 'mahan-academy' ),
+			/* translators: %1$s current progress, %2$s target. */
+			'badgeLockedState' => __( 'Locked, %1$s of %2$s:', 'mahan-academy' ),
+			'correctAnswer'    => __( 'correct answer', 'mahan-academy' ),
+			'submitFeedback'   => __( 'Submit for feedback', 'mahan-academy' ),
+			'lessonOne'        => __( 'lesson', 'mahan-academy' ),
+			'questionOne'      => __( 'question', 'mahan-academy' ),
+			// Rotating reinforcement copy — kept fresh so the reward loop
+			// doesn't go stale. Each entry is independently translatable.
+			'correctVariants'   => array(
+				__( 'Correct!', 'mahan-academy' ),
+				__( 'Nailed it!', 'mahan-academy' ),
+				__( 'Exactly right!', 'mahan-academy' ),
+				__( 'Spot on!', 'mahan-academy' ),
+			),
+			'incorrectVariants' => array(
+				__( 'Not quite', 'mahan-academy' ),
+				__( 'Close — try again', 'mahan-academy' ),
+				__( 'Almost there', 'mahan-academy' ),
+			),
+			'goalVariants'      => array(
+				__( 'Daily goal reached!', 'mahan-academy' ),
+				__( 'Goal smashed!', 'mahan-academy' ),
+				__( "You hit today's goal!", 'mahan-academy' ),
+			),
+			'levelUpVariants'   => array(
+				__( 'Level up!', 'mahan-academy' ),
+				__( 'New level unlocked!', 'mahan-academy' ),
+				__( 'You leveled up — keep going!', 'mahan-academy' ),
+			),
 		);
 	}
 }

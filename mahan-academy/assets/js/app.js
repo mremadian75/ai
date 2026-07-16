@@ -44,6 +44,33 @@
 
 	function t(key, fallback) { return I[key] || fallback || key; }
 
+	// sprintf-lite: fills %s (and positional %1$s / %2$s) placeholders so
+	// translatable strings stay whole sentences instead of word-by-word
+	// concatenation. Only the forms the UI actually uses are supported.
+	function fmt(tpl) {
+		var args = Array.prototype.slice.call(arguments, 1);
+		var i = 0;
+		return String(tpl)
+			.replace(/%(\d+)\$s/g, function (_, n) { return String(args[n - 1] == null ? '' : args[n - 1]); })
+			.replace(/%s/g, function () { return String(args[i] == null ? '' : args[i++]); });
+	}
+
+	// Pluralize a count with singular/plural i18n keys (falls back to fallback).
+	function plural(n, oneKey, manyKey, oneFb, manyFb) {
+		return n + ' ' + (n === 1 ? t(oneKey, oneFb) : t(manyKey, manyFb));
+	}
+
+	// Variant picker: rotate reinforcement copy so the reward loop doesn't go
+	// stale. `key` names an i18n array; falls back to t(fallbackKey).
+	function tv(key, fallbackKey, fallback, seed) {
+		var arr = I[key];
+		if (arr && arr.length) {
+			var idx = (typeof seed === 'number' ? seed : Math.floor(Math.random() * arr.length)) % arr.length;
+			return arr[idx] || arr[0];
+		}
+		return t(fallbackKey, fallback);
+	}
+
 	// In-memory session cache for GET responses: repeat visits paint
 	// instantly (stale-while-revalidate). Any mutation clears it.
 	var apiCache = {};
@@ -194,6 +221,10 @@
 	// away, and put them back there on browser back/forward.
 	var pendingScroll = null;
 
+	// Set on go(): once the destination's real content mounts, focus moves to
+	// the main region so assistive tech announces the route change.
+	var pendingFocus = false;
+
 	function go(view, params) {
 		var url = urlFor(view, params);
 		// Re-tapping the current destination must not stack history entries
@@ -212,6 +243,7 @@
 		state.pathId = (params && params.path) || 0;
 		state.from = (params && params.from) || '';
 		pendingScroll = null;
+		pendingFocus = true;
 		if (!samePlace) { window.history.pushState({ view: view, params: params }, '', url); }
 		window.scrollTo(0, 0);
 		render();
@@ -235,16 +267,30 @@
 
 	// Primary destinations, shared by the top nav (desktop) and bottom nav (mobile).
 	function navItems() {
+		// Duolingo-style attention badge: surface due reviews on My Learning
+		// so learners discover them from anywhere, not just the dashboard.
+		var due = (state.me && state.me.stats && state.me.stats.reviews && state.me.stats.reviews.due) || 0;
 		return [
 			{ view: 'catalog', icon: '🧭', label: t('catalog', 'Explore'),
 				active: state.view === 'catalog' || state.view === 'course' },
-			D.loggedIn ? { view: 'dashboard', icon: '📚', label: t('dashboard', 'My Learning'),
-				active: state.view === 'dashboard' || state.view === 'lesson' } : null,
+			D.loggedIn ? { view: 'dashboard', icon: '📚', label: t('dashboard', 'My Learning'), badge: due,
+				active: state.view === 'dashboard' || state.view === 'lesson' || state.view === 'review' } : null,
 			D.hasPaths ? { view: 'paths', icon: '🗺️', label: t('paths', 'Paths'),
 				active: state.view === 'paths' || state.view === 'path' } : null,
 			D.leaderboard ? { view: 'leaderboard', icon: '🏆', label: t('leaderboard', 'Leaderboard'),
 				active: state.view === 'leaderboard' } : null
 		].filter(Boolean);
+	}
+
+	function navBadge(it) {
+		if (it.badge === undefined) { return null; }
+		// Rendered even at 0 (hidden via :empty) so refreshHud() can patch the
+		// count in place when stats change mid-session.
+		return h('span', {
+			class: 'mahan-nav-count',
+			text: it.badge > 0 ? (it.badge > 9 ? '9+' : String(it.badge)) : '',
+			'aria-label': it.badge > 0 ? it.badge + ' ' + t('reviewsDue', 'reviews due') : null
+		});
 	}
 
 	function bottomNav() {
@@ -256,7 +302,10 @@
 				'aria-current': it.active ? 'page' : null,
 				onClick: function (e) { e.preventDefault(); go(it.view); }
 			}, [
-				h('span', { class: 'mahan-bottomnav-icon', text: it.icon, 'aria-hidden': 'true' }),
+				h('span', { class: 'mahan-bottomnav-icon' }, [
+					h('span', { text: it.icon, 'aria-hidden': 'true' }),
+					navBadge(it)
+				]),
 				h('span', { class: 'mahan-bottomnav-label', text: it.label })
 			]);
 		}));
@@ -264,24 +313,35 @@
 
 	function hud() {
 		var bar = h('header', { class: 'mahan-topbar' });
+		// Brand = the site's actual name (two-tone on the last word), not a
+		// hardcoded plugin name.
+		var siteName = (D.siteName || 'Mahan Academy').trim();
+		var spaceAt = siteName.lastIndexOf(' ');
+		var brandKids = spaceAt > 0
+			? [siteName.slice(0, spaceAt + 1), h('span', { text: siteName.slice(spaceAt + 1) })]
+			: [h('span', { text: siteName })];
 		var brand = h('a', { class: 'mahan-brand', href: urlFor('catalog'),
-			onClick: function (e) { e.preventDefault(); go('catalog'); } }, ['Mahan ', h('span', { text: 'Academy' })]);
+			onClick: function (e) { e.preventDefault(); go('catalog'); } }, brandKids);
 
 		var nav = h('nav', { class: 'mahan-nav', 'aria-label': t('menu', 'Menu') }, navItems().map(function (it) {
 			return h('a', {
 				class: 'mahan-nav-link' + (it.active ? ' is-active' : ''), href: urlFor(it.view),
 				'aria-current': it.active ? 'page' : null,
-				onClick: function (e) { e.preventDefault(); go(it.view); }, text: it.label
-			});
+				onClick: function (e) { e.preventDefault(); go(it.view); }
+			}, [
+				document.createTextNode(it.label),
+				navBadge(it)
+			]);
 		}));
 
 		var right;
 		if (D.loggedIn && state.me && state.me.stats) {
 			var s = state.me.stats;
 			var goalDone = (s.daily_goal > 0 && (s.daily_xp || 0) >= s.daily_goal);
+			var cold = hudStreakCold(s);
 			right = h('div', { class: 'mahan-hud' }, [
-				h('div', { class: 'mahan-hud-item mahan-hud-streak', title: t('streak', 'day streak') + ((s.freezes || 0) > 0 ? ' · ' + s.freezes + ' ' + t('freezes', 'streak freezes') : '') }, [
-					h('span', { class: 'mahan-hud-icon', text: '🔥' }), h('span', { id: 'hud-streak', text: String(s.streak || 0) }),
+				h('div', { class: 'mahan-hud-item mahan-hud-streak' + (cold ? ' is-cold' : ''), title: t('streak', 'day streak') + ((s.freezes || 0) > 0 ? ' · ' + s.freezes + ' ' + t('freezes', 'streak freezes') : '') }, [
+					h('span', { class: 'mahan-hud-icon', id: 'hud-streak-icon', text: cold ? '🕯️' : '🔥' }), h('span', { id: 'hud-streak', text: String(s.streak || 0) }),
 					h('span', { class: 'mahan-hud-freeze', id: 'hud-freeze', text: (s.freezes || 0) > 0 ? '❄️' + s.freezes : '' })]),
 				(s.daily_goal > 0) ? h('div', { class: 'mahan-hud-item mahan-hud-goal' + (goalDone ? ' is-done' : ''), id: 'hud-goal', title: t('dailyGoal', 'Daily goal') }, [
 					h('span', { class: 'mahan-hud-icon', text: goalDone ? '✅' : '🎯' }),
@@ -308,8 +368,20 @@
 		return bar;
 	}
 
+	// The at-risk signal: a running streak that today's activity hasn't
+	// extended yet (last week-strip day inactive).
+	function hudStreakCold(s) {
+		return (s.streak || 0) > 0 && !!(s.week && s.week.length) && !s.week[s.week.length - 1].active;
+	}
+
 	function refreshHud(stats) {
 		if (!stats) { return; }
+		// Bare hud() payloads may lack week/reviews — keep the last known
+		// values so the flame and the reviews badge don't silently reset.
+		if (state.me && state.me.stats) {
+			if (!stats.week) { stats.week = state.me.stats.week; }
+			if (!stats.reviews) { stats.reviews = state.me.stats.reviews; }
+		}
 		if (state.me) { state.me.stats = stats; }
 		var x = el('hud-xp'), l = el('hud-level'), st = el('hud-streak'), fz = el('hud-freeze'), g = el('hud-goal'), gt = el('hud-goal-text');
 		if (x) { x.textContent = stats.xp; }
@@ -323,6 +395,21 @@
 			var icon = g.querySelector('.mahan-hud-icon');
 			if (icon) { icon.textContent = done ? '✅' : '🎯'; }
 		}
+		var streakItem = document.querySelector('.mahan-hud-streak');
+		if (streakItem) {
+			var cold = hudStreakCold(stats);
+			streakItem.classList.toggle('is-cold', cold);
+			var sIcon = el('hud-streak-icon');
+			if (sIcon) { sIcon.textContent = cold ? '🕯️' : '🔥'; }
+		}
+		// Reviews-due badge on the nav (desktop + mobile), patched in place.
+		var due = (stats.reviews && stats.reviews.due) || 0;
+		var badges = document.querySelectorAll('.mahan-nav-count');
+		for (var bi = 0; bi < badges.length; bi++) {
+			badges[bi].textContent = due > 0 ? (due > 9 ? '9+' : String(due)) : '';
+			if (due > 0) { badges[bi].setAttribute('aria-label', due + ' ' + t('reviewsDue', 'reviews due')); }
+			else { badges[bi].removeAttribute('aria-label'); }
+		}
 	}
 
 	/* ------------------------------------------------------------------ */
@@ -332,6 +419,9 @@
 	function toast(msg, kind) {
 		var box = el('mahan-toasts');
 		if (!box) { box = h('div', { id: 'mahan-toasts', class: 'mahan-toasts', role: 'status', 'aria-live': 'polite' }); document.body.appendChild(box); }
+		// Never stack more than 3 — a lesson completion can fire XP + streak
+		// + goal + level + badges; drop the oldest instead of a toast tower.
+		while (box.children.length >= 3) { box.removeChild(box.firstChild); }
 		var node = h('div', { class: 'mahan-toast mahan-toast-' + (kind || 'info'), html: msg });
 		// Dismiss on tap; celebrations linger a bit longer than info blips.
 		var life = (kind === 'level') ? 4000 : 2600;
@@ -347,13 +437,19 @@
 		// two core-loop moments — by comparing stats before/after.
 		var old = state.me && state.me.stats;
 		if (res.xp_awarded > 0) { toast('⚡ +' + res.xp_awarded + ' XP', 'xp'); }
+		// Merge the streak/goal celebrations into ONE toast so a big moment
+		// (xp + streak + goal + level + badge) doesn't evict its own toasts.
+		var parts = [];
 		if (old && res.stats) {
 			if (res.stats.streak > (old.streak || 0)) {
-				setTimeout(function () { toast('🔥 ' + res.stats.streak + ' ' + esc(t('streak', 'day streak')) + '!', 'level'); }, 250);
+				parts.push('🔥 ' + res.stats.streak + ' ' + esc(t('streak', 'day streak')) + '!');
 			}
 			if ((res.stats.daily_goal || 0) > 0 && (old.daily_xp || 0) < (old.daily_goal || 0) && (res.stats.daily_xp || 0) >= res.stats.daily_goal) {
-				setTimeout(function () { toast('🎯 ' + esc(t('goalHit', 'Daily goal reached!')), 'level'); }, 450);
+				parts.push('🎯 ' + esc(tv('goalVariants', 'goalHit', 'Daily goal reached!')));
 			}
+		}
+		if (parts.length) {
+			setTimeout(function () { toast(parts.join(' · '), 'level'); }, 350);
 		}
 		if (res.stats) {
 			if (!state.me) {
@@ -368,7 +464,11 @@
 		}
 		if (res.leveled_up) {
 			var title = (res.stats && res.stats.level_title) ? ' — ' + res.stats.level_title : '';
-			setTimeout(function () { toast('◆ ' + t('levelUp', 'Level up!') + title, 'level'); }, 650);
+			// Rotate the celebration copy so the reward loop doesn't go stale.
+			// Seed by level so the same level always reads the same, but climbing
+			// levels rotates through fresh phrasings.
+			var lvMsg = tv('levelUpVariants', 'levelUp', 'Level up!', (res.stats && res.stats.level) || 1);
+			setTimeout(function () { toast('◆ ' + lvMsg + title, 'level'); }, 650);
 		}
 		// New achievements arrive with grading/progress responses — celebrate each.
 		(res.new_badges || []).forEach(function (b, i) {
@@ -394,11 +494,20 @@
 		var bnav = bottomNav();
 		if (bnav) { root.appendChild(bnav); }
 		overlays.forEach(function (o) { root.appendChild(o); });
+		var isSkeleton = !!main.querySelector('.mahan-skeleton');
 		// Restore the saved scroll position once real content (not a
 		// skeleton) is on screen — back/forward lands where the user was.
-		if (pendingScroll !== null && !main.querySelector('.mahan-skeleton')) {
+		if (pendingScroll !== null && !isSkeleton) {
 			window.scrollTo(0, pendingScroll);
 			pendingScroll = null;
+		}
+		// SPA route-change announcement: move focus to the new main region
+		// (once real content is in) so screen readers read the new view
+		// instead of being stranded on a removed node.
+		if (pendingFocus && !isSkeleton) {
+			pendingFocus = false;
+			main.setAttribute('tabindex', '-1');
+			try { main.focus({ preventScroll: true }); } catch (e) { main.focus(); }
 		}
 	}
 
@@ -532,8 +641,8 @@
 			var courses = j.courses || [];
 			var wrap = h('div', { class: 'mahan-catalog' });
 			wrap.appendChild(h('div', { class: 'mahan-hero' }, [
-				h('h1', { text: 'Learn to use AI at work' }),
-				h('p', { class: 'mahan-hero-sub', text: 'Structured courses. Hands-on practice. A tutor that answers in real time.' })
+				h('h1', { text: D.heroTitle || 'Learn to use AI at work' }),
+				h('p', { class: 'mahan-hero-sub', text: D.heroSub || 'Structured courses. Hands-on practice. A tutor that answers in real time.' })
 			]));
 
 			// Search + level filter — both client-side and instant.
@@ -588,6 +697,7 @@
 					]));
 					return;
 				}
+				listArea.appendChild(h('h2', { class: 'mahan-sr-only', text: t('coursesHeading', 'Courses') }));
 				var grid = h('div', { class: 'mahan-grid' });
 				filtered.forEach(function (c) { grid.appendChild(courseCard(c)); });
 				listArea.appendChild(grid);
@@ -605,11 +715,25 @@
 		}, renderCatalog);
 	}
 
+	// Warm the session cache for a course while the pointer hovers its card,
+	// so the click lands on an instant paint instead of a skeleton.
+	var prefetching = {};
+	function prefetchCourse(id) {
+		var path = '/course/' + id;
+		if (apiCache[path] || prefetching[path]) { return; }
+		prefetching[path] = true;
+		api(path).then(function (j) { apiCache[path] = j; }).catch(function () {})
+			.then(function () { delete prefetching[path]; });
+	}
+
 	function courseCard(c, from) {
 		var nav = { course: c.id };
 		if (from) { nav.from = from; }
 		var media = c.image
-			? h('div', { class: 'mahan-card-media', style: 'background-image:url(' + esc(c.image) + ')' })
+			? h('div', { class: 'mahan-card-media' }, [
+				h('img', { class: 'mahan-card-img', src: c.image, alt: '', loading: 'lazy', decoding: 'async',
+					onLoad: function (e) { e.currentTarget.classList.add('is-loaded'); } })
+			])
 			: h('div', { class: 'mahan-card-media mahan-card-media-ph' }, [h('span', { text: (c.title || '?').charAt(0) })]);
 
 		var foot = c.enrolled
@@ -618,11 +742,13 @@
 				h('span', { class: 'mahan-progress-label', text: (c.progress_pct || 0) + '%' })])
 			: h('div', { class: 'mahan-card-tags' }, [
 				h('span', { class: 'mahan-tag', text: levelLabel(c.level) }),
-				h('span', { class: 'mahan-tag mahan-tag-soft', text: c.lesson_count + ' ' + t('lessons', 'lessons') })]);
+				h('span', { class: 'mahan-tag mahan-tag-soft', text: plural(c.lesson_count, 'lessonOne', 'lessons', 'lesson', 'lessons') })]);
 
 		return h('a', {
 			class: 'mahan-card' + (c.featured ? ' is-featured' : ''), href: urlFor('course', nav),
-			onClick: function (e) { e.preventDefault(); go('course', nav); }
+			onClick: function (e) { e.preventDefault(); go('course', nav); },
+			onMouseenter: function () { prefetchCourse(c.id); },
+			onFocus: function () { prefetchCourse(c.id); }
 		}, [
 			c.featured ? h('span', { class: 'mahan-ribbon', text: '★ ' + t('featured', 'Featured') }) : null,
 			media,
@@ -733,7 +859,7 @@
 			// Content / units.
 			var content = h('section', { class: 'mahan-section' }, [h('h2', { text: t('courseContent', 'Course content') })]);
 			(j.units || []).forEach(function (unit) {
-				content.appendChild(h('div', { class: 'mahan-unit-title', text: unit.title }));
+				content.appendChild(h('h3', { class: 'mahan-unit-title', text: unit.title }));
 				var list = h('ul', { class: 'mahan-lesson-list' });
 				unit.lessons.forEach(function (ls) {
 					list.appendChild(lessonRow(ls, j.enrolled));
@@ -751,7 +877,11 @@
 
 	function courseCta(j) {
 		if (!D.loggedIn) {
-			return h('a', { class: 'mahan-btn mahan-btn-primary mahan-btn-lg', href: loginHref(), text: t('loginToLearn', 'Log in to start learning') });
+			// Give first-time visitors a signup path, not just "Log in".
+			return h('div', { class: 'mahan-cta-row' }, [
+				h('a', { class: 'mahan-btn mahan-btn-primary mahan-btn-lg', href: loginHref(), text: t('loginToLearn', 'Log in to start learning') }),
+				D.canRegister ? h('a', { class: 'mahan-btn mahan-btn-ghost mahan-btn-lg', href: D.registerUrl, text: t('register', 'Create account') }) : null
+			]);
 		}
 		if (!j.enrolled) {
 			return h('button', { class: 'mahan-btn mahan-btn-primary mahan-btn-lg', text: t('enroll', 'Enroll — free'),
@@ -804,8 +934,18 @@
 		return h(clickable ? 'a' : 'div', {
 			class: cls,
 			href: clickable ? urlFor('lesson', { course: state.courseId, lesson: ls.id }) : null,
+			role: clickable ? null : 'button',
+			tabindex: clickable ? null : '0',
+			'aria-disabled': clickable ? null : 'true',
 			title: ls.locked ? t('locked', 'Complete the previous lesson to unlock') : '',
-			onClick: clickable ? function (e) { e.preventDefault(); go('lesson', { course: state.courseId, lesson: ls.id }); } : null
+			onClick: clickable
+				? function (e) { e.preventDefault(); go('lesson', { course: state.courseId, lesson: ls.id }); }
+				// Inert rows still explain themselves on tap instead of dead silence.
+				: function () {
+					toast(ls.locked
+						? esc(t('lockedLesson', 'Complete the previous lesson to unlock this one.'))
+						: esc(t('enrollFirst', 'Enroll first — it takes one tap and it\'s free.')), 'info');
+				}
 		}, [
 			h('span', { class: 'mahan-lesson-icon', text: ls.locked ? '🔒' : icon }),
 			h('span', { class: 'mahan-lesson-name', text: ls.title }),
@@ -833,7 +973,7 @@
 			h('span', { class: 'mahan-lesson-meta' }, [
 				q.passed ? h('span', { class: 'mahan-quiz-score', text: '✓ ' + q.score + '%' })
 					: (q.score !== null ? h('span', { class: 'mahan-quiz-score-fail', text: q.score + '%' }) : null),
-				h('span', { class: 'mahan-lesson-min', text: q.count + ' Q' })
+				h('span', { class: 'mahan-lesson-min', text: plural(q.count, 'questionOne', 'questions', 'question', 'questions') })
 			])
 		]);
 	}
@@ -872,17 +1012,18 @@
 			block.appendChild(h('div', { class: 'mahan-quiz-q-title', html: (i + 1) + '. ' + mdToHtml(q.question) }));
 			if ((q.type === 'multiple_choice' || q.type === 'true_false') && q.options) {
 				var opts = h('div', { class: 'mahan-quiz-opts' }, q.options.map(function (o, oi) {
-					return h('button', { class: 'mahan-ex-option', type: 'button', text: o,
+					return h('button', { class: 'mahan-ex-option', type: 'button', text: o, 'aria-pressed': 'false',
 						onClick: function (e) {
-							opts.querySelectorAll('.mahan-ex-option').forEach(function (b) { b.classList.remove('is-chosen'); });
+							opts.querySelectorAll('.mahan-ex-option').forEach(function (b) { b.classList.remove('is-chosen'); b.setAttribute('aria-pressed', 'false'); });
 							e.currentTarget.classList.add('is-chosen');
+						e.currentTarget.setAttribute('aria-pressed', 'true');
 							answers[q.key] = oi;
 							updateCounter();
 						} });
 				}));
 				block.appendChild(opts);
 			} else {
-				var inp = h('input', { class: 'mahan-ex-input', type: 'text', placeholder: t('typeAnswer', 'Type your answer…') });
+				var inp = h('input', { class: 'mahan-ex-input', type: 'text', placeholder: t('typeAnswer', 'Type your answer…'), 'aria-label': t('typeAnswer', 'Type your answer…') });
 				inp.addEventListener('input', function () {
 					answers[q.key] = inp.value.trim() === '' ? '' : inp.value;
 					updateCounter();
@@ -894,7 +1035,7 @@
 		});
 		updateCounter();
 
-		var msg = h('div', { class: 'mahan-quiz-msg' });
+		var msg = h('div', { class: 'mahan-quiz-msg', role: 'status' });
 		var modal;
 		var armed = false;
 		var submitBtn = h('button', { class: 'mahan-btn mahan-btn-primary', text: t('submitQuiz', 'Submit quiz'),
@@ -952,9 +1093,12 @@
 			var res = byKey[key];
 			if (!res) { return; }
 			block.classList.add(res.correct ? 'is-correct' : 'is-incorrect');
+			var qtitle = block.querySelector('.mahan-quiz-q-title');
+			if (qtitle) { qtitle.insertBefore(h('span', { class: 'mahan-grade-cue', 'aria-label': res.correct ? t('correct', 'Correct!') : t('incorrect', 'Not quite'), text: (res.correct ? '✓' : '✕') + ' ' }), qtitle.firstChild); }
 			var opts = block.querySelectorAll('.mahan-ex-option');
 			if (opts.length && typeof res.correct_index === 'number' && opts[res.correct_index]) {
 				opts[res.correct_index].classList.add('is-correct');
+				opts[res.correct_index].appendChild(h('span', { class: 'mahan-sr-only', text: ' (' + t('correctAnswer', 'correct answer') + ')' }));
 			}
 			block.querySelectorAll('.mahan-ex-option, .mahan-ex-input').forEach(function (el) { el.disabled = true; });
 		});
@@ -988,13 +1132,28 @@
 
 	function renderLesson() {
 		var seq = navSeq;
-		mount(loadingShell('article'));
+		var key = '/lesson/' + state.lessonId;
+		var hit = apiCache[key];
+		// Stale-while-revalidate for browser Back: paint the cached lesson
+		// instantly, then refresh (the GET also re-marks "started" — that's
+		// idempotent server-side).
+		if (hit) { paintLesson(hit); } else { mount(loadingShell('article')); }
 		ensureProfile().then(function () {
-			return api('/lesson/' + state.lessonId);
+			return api(key);
 		}).then(function (L) {
 			// Ignore a slow lesson response once the learner has moved on.
-			if (seq !== navSeq) { return; }
+			if (seq !== navSeq) { if (L && L.ok) { apiCache[key] = L; } return; }
 			if (!L.ok) { mount(errorBox(renderLesson)); return; }
+			var same = hit && JSON.stringify(hit) === JSON.stringify(L);
+			apiCache[key] = L;
+			if (!same) { paintLesson(L); }
+		}).catch(function (e) {
+			if (seq !== navSeq) { return; }
+			if (e && e.status === 401) { mount(loginGate()); return; }
+			if (!hit) { mount(errorBox(renderLesson, e)); }
+		});
+
+		function paintLesson(L) {
 			setTitle(L.title);
 			if (L.stats) {
 				if (!state.me && D.loggedIn) { state.me = { stats: L.stats, user: D.user || null }; }
@@ -1012,7 +1171,8 @@
 						text: '← ' + (L.course_title || t('backToCourse', 'Back to course')) }),
 					(pos.total > 0 && pos.index > 0) ? h('span', { class: 'mahan-lesson-pos' }, [
 						pos.unit ? h('span', { class: 'mahan-lesson-pos-unit', text: pos.unit + ' · ' }) : null,
-						h('span', { text: t('lesson', 'Lesson') + ' ' + pos.index + ' ' + t('of', 'of') + ' ' + pos.total })
+						h('span', { text: t('lesson', 'Lesson') + ' ' + pos.index + ' ' + t('of', 'of') + ' ' + pos.total }),
+						(L.est_min > 0) ? h('span', { text: ' · ~' + L.est_min + ' ' + t('minShort', 'min') }) : null
 					]) : null
 				]),
 				(L.enrolled && pos.total > 0) ? h('div', { class: 'mahan-lesson-course-bar', title: (L.course_pct || 0) + '%' }, [
@@ -1043,22 +1203,21 @@
 
 			wrap.appendChild(layout);
 			// Mobile-only affordances: scrim behind the sheet + a FAB to open it.
-			wrap.appendChild(h('div', { class: 'mahan-tutor-scrim', onClick: function () { toggleTutor(false); } }));
-			wrap.appendChild(h('button', {
-				class: 'mahan-tutor-fab', type: 'button',
-				'aria-label': t('askTutor', 'Ask the AI tutor'), 'aria-expanded': 'false',
-				onClick: function () { toggleTutor(true); }
-			}, [h('span', { 'aria-hidden': 'true', text: '🤖' })]));
+			// Only when the tutor is actually usable — no dead sheet otherwise.
+			if (D.aiReady && L.tutor_ready) {
+				wrap.appendChild(h('div', { class: 'mahan-tutor-scrim', onClick: function () { toggleTutor(false); } }));
+				wrap.appendChild(h('button', {
+					class: 'mahan-tutor-fab', type: 'button',
+					'aria-label': t('askTutor', 'Ask the AI tutor'), 'aria-expanded': 'false',
+					onClick: function () { toggleTutor(true); }
+				}, [h('span', { 'aria-hidden': 'true', text: '🤖' })]));
+			}
 			// Fresh lesson → fresh tutor panel; clear any lingering busy flag
 			// from a previous lesson's stream so this lesson's history loads.
 			tutorBusy = false;
 			mount(wrap);
 			loadChat(L.id);
-		}).catch(function (e) {
-			if (seq !== navSeq) { return; }
-			if (e && e.status === 401) { mount(loginGate()); return; }
-			mount(errorBox(renderLesson, e));
-		});
+		}
 	}
 
 	// Course-completion celebration: a real moment, not a 2.6s toast.
@@ -1121,21 +1280,21 @@
 		} else {
 			main = h('button', {
 				class: 'mahan-btn mahan-btn-primary' + (done ? ' is-done' : ''),
-				text: done ? '✓ ' + t('lessonComplete', 'Completed') : t('completeLesson', 'Complete lesson'),
+				text: done ? '✓ ' + t('completed', 'Completed') : t('completeLesson', 'Complete lesson'),
 				onClick: function (e) {
 					var btn = e.currentTarget;
 					var restore = setBusy(btn, t('loading', 'Loading…'));
 					api('/progress', 'POST', { lesson_id: L.id }).then(function (r) {
 						celebrateXp(r);
-						restore('✓ ' + esc(t('lessonComplete', 'Completed')));
+						restore('✓ ' + esc(t('completed', 'Completed')));
 						btn.classList.add('is-done');
 						if (r.course_completed) {
 							setTimeout(function () { showCourseComplete(L.course_id, L.course_title, r.certificate); }, 600);
 						} else if ((r.review_pending || 0) > 0) {
 							// "Ask the missed questions at the end": re-drill
 							// this lesson's mistakes before moving on.
-							toast('🎯 ' + esc(t('reviewLesson', 'Review your misses')), 'level');
-							setTimeout(function () { go('review', { lesson: L.id, course: L.course_id }); }, 900);
+							toast('🎯 ' + esc(fmt(t('reviewMissedToast', "%s missed — let's fix them before moving on"), r.review_pending || 0)), 'level');
+							setTimeout(function () { go('review', { lesson: L.id, course: L.course_id }); }, 1400);
 						} else if (L.unit_quiz && !L.unit_quiz.passed) {
 							// Last lesson of a unit with a quiz: bring the quiz
 							// into the flow instead of silently skipping past it.
@@ -1164,17 +1323,18 @@
 		var card = h('div', { class: 'mahan-ex' + (ex.solved ? ' is-solved' : '') });
 		card.appendChild(h('div', { class: 'mahan-ex-q', html: mdToHtml(ex.question || ex.task || '') }));
 
-		var feedback = h('div', { class: 'mahan-ex-feedback', style: 'display:none' });
+		var feedback = h('div', { class: 'mahan-ex-feedback', style: 'display:none', role: 'status' });
 		var checkBtn;
 
 		if ((ex.type === 'multiple_choice' || ex.type === 'true_false') && ex.options) {
 			var chosen = { i: -1 };
 			var opts = h('div', { class: 'mahan-ex-options' + (ex.type === 'true_false' ? ' mahan-ex-tf' : '') }, ex.options.map(function (o, i) {
-				return h('button', { class: 'mahan-ex-option', type: 'button', text: o,
+				return h('button', { class: 'mahan-ex-option', type: 'button', text: o, 'aria-pressed': 'false',
 					onClick: function (e) {
 						if (card.classList.contains('is-solved')) { return; }
-						opts.querySelectorAll('.mahan-ex-option').forEach(function (b) { b.classList.remove('is-chosen'); });
+						opts.querySelectorAll('.mahan-ex-option').forEach(function (b) { b.classList.remove('is-chosen'); b.setAttribute('aria-pressed', 'false'); });
 						e.currentTarget.classList.add('is-chosen');
+						e.currentTarget.setAttribute('aria-pressed', 'true');
 						chosen.i = i;
 						checkBtn.disabled = false;
 					} });
@@ -1185,17 +1345,17 @@
 					submitExercise(L.id, ex, chosen.i, card, feedback, checkBtn, opts);
 				} });
 		} else if (ex.type === 'fill_blank') {
-			var inp = h('input', { class: 'mahan-ex-input mahan-ex-blank', type: 'text', placeholder: ex.placeholder || t('typeAnswer', 'Type your answer…') });
+			var inp = h('input', { class: 'mahan-ex-input mahan-ex-blank', type: 'text', placeholder: ex.placeholder || t('typeAnswer', 'Type your answer…'), 'aria-label': ex.placeholder || t('typeAnswer', 'Type your answer…') });
 			if (ex.solved) { inp.disabled = true; }
 			card.appendChild(inp);
 			checkBtn = h('button', { class: 'mahan-btn mahan-btn-primary mahan-ex-check', text: t('check', 'Check'),
 				onClick: function () { submitExercise(L.id, ex, inp.value, card, feedback, checkBtn, null); } });
 			inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); checkBtn.click(); } });
 		} else {
-			var ta = h('textarea', { class: 'mahan-ex-input', rows: 4, placeholder: ex.placeholder || t('writeAnswer', 'Write your answer…') });
+			var ta = h('textarea', { class: 'mahan-ex-input', rows: 4, placeholder: ex.placeholder || t('writeAnswer', 'Write your answer…'), 'aria-label': ex.placeholder || t('writeAnswer', 'Write your answer…') });
 			if (ex.solved) { ta.disabled = true; }
 			card.appendChild(ta);
-			checkBtn = h('button', { class: 'mahan-btn mahan-btn-primary mahan-ex-check', text: t('submit', 'Submit'),
+			checkBtn = h('button', { class: 'mahan-btn mahan-btn-primary mahan-ex-check', text: t('submitFeedback', 'Submit for feedback'),
 				onClick: function () { submitExercise(L.id, ex, ta.value, card, feedback, checkBtn, null); } });
 		}
 
@@ -1222,15 +1382,18 @@
 
 	function submitExercise(lessonId, ex, answer, card, feedback, btn, opts) {
 		var isChoice = (ex.type === 'multiple_choice' || ex.type === 'true_false');
-		if (isChoice && (answer === -1 || answer === '')) { return; }
-		if (!isChoice && !String(answer).trim()) { return; }
+		// Explain instead of silently ignoring an empty submit.
+		if ((isChoice && (answer === -1 || answer === '')) || (!isChoice && !String(answer).trim())) {
+			toast(esc(t('pickAnswer', 'Pick an answer first.')), 'info');
+			return;
+		}
 		var oldLabel = btn.innerHTML;
 		var restore = setBusy(btn);
 		api('/exercise', 'POST', { lesson_id: lessonId, key: ex.key, answer: answer }).then(function (r) {
 			restore(oldLabel);
 			feedback.style.display = 'block';
 			feedback.className = 'mahan-ex-feedback ' + (r.is_correct ? 'is-correct' : 'is-incorrect');
-			var head = r.is_correct ? '✓ ' + t('correct', 'Correct!') : '✕ ' + t('incorrect', 'Not quite');
+			var head = r.is_correct ? '✓ ' + tv('correctVariants', 'correct', 'Correct!') : '✕ ' + tv('incorrectVariants', 'incorrect', 'Not quite');
 			feedback.innerHTML = '<strong>' + head + '</strong>' + (r.feedback ? '<div>' + mdToHtml(r.feedback) + '</div>' : '');
 			if (opts && (ex.type === 'multiple_choice' || ex.type === 'true_false') && typeof r.correct_index === 'number') {
 				var btns = opts.querySelectorAll('.mahan-ex-option');
@@ -1282,21 +1445,26 @@
 		var ready = D.aiReady && L.tutor_ready;
 		panel.appendChild(h('div', { class: 'mahan-tutor-head' }, [
 			h('span', { class: 'mahan-tutor-avatar', text: '🤖' }),
-			h('div', {}, [h('strong', { text: t('tutorTitle', 'AI Tutor') }), h('span', { class: 'mahan-tutor-status' + (ready ? '' : ' is-off'), text: ready ? 'online' : 'offline' })]),
+			h('div', {}, [h('strong', { text: t('tutorTitle', 'AI Tutor') }), h('span', { class: 'mahan-tutor-status' + (ready ? '' : ' is-off'), text: ready ? t('tutorReady', 'Online') : t('tutorUnavailable', 'Unavailable') })]),
 			h('button', { class: 'mahan-tutor-close', type: 'button', 'aria-label': t('close', 'Close'), text: '✕',
 				onClick: function () { toggleTutor(false); } })
 		]));
 		panel.addEventListener('keydown', function (e) {
 			if (e.key === 'Escape' && panel.classList.contains('is-open')) { toggleTutor(false); }
 		});
-		var log = h('div', { class: 'mahan-tutor-log', id: 'mahan-tutor-log' });
+		var log = h('div', { class: 'mahan-tutor-log', id: 'mahan-tutor-log', 'aria-label': t('tutorConversation', 'Tutor conversation') });
 		if (!D.aiReady || !L.tutor_ready) {
 			log.appendChild(tutorBubble('assistant', t('tutorOffline', 'The AI tutor is not configured yet.')));
 		} else {
 			log.appendChild(tutorBubble('assistant', t('tutorIntro', 'Hi! Ask me anything about this lesson.')));
 		}
 		panel.appendChild(log);
-		var input = h('textarea', { class: 'mahan-tutor-input', rows: 1, placeholder: t('tutorPlaceholder', 'Ask the tutor…') });
+		// Streamed replies rewrite the bubble per token; announce the finished
+		// reply exactly once here instead of re-reading partial content.
+		panel.appendChild(h('div', { class: 'mahan-sr-only', id: 'mahan-tutor-live', role: 'status', 'aria-live': 'polite' }));
+		var input = h('textarea', { class: 'mahan-tutor-input', rows: 1,
+			placeholder: ready ? t('tutorPlaceholder', 'Ask the tutor…') : t('tutorOffline', 'The AI tutor is not configured yet.') });
+		if (!ready) { input.disabled = true; }
 		input.addEventListener('keydown', function (e) {
 			if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendToTutor(L.id, input); }
 		});
@@ -1306,6 +1474,7 @@
 			input.style.height = Math.min(input.scrollHeight, 120) + 'px';
 		});
 		var send = h('button', { class: 'mahan-tutor-send', text: '➤', 'aria-label': t('send', 'Send'), title: t('send', 'Send'), onClick: function () { sendToTutor(L.id, input); } });
+		if (!ready) { send.disabled = true; }
 		panel.appendChild(h('div', { class: 'mahan-tutor-bar' }, [input, send]));
 		panel.appendChild(h('div', { class: 'mahan-tutor-hint', text: t('enterToSend', 'Enter to send · Shift+Enter for a new line') }));
 		return panel;
@@ -1372,6 +1541,8 @@
 				// can retry without retyping.
 				if (!input.value) { input.value = msg; }
 			}
+			var live = el('mahan-tutor-live');
+			if (live) { live.textContent = err ? err : (bubble._raw || t('error', 'Something went wrong.')); }
 			log.scrollTop = log.scrollHeight;
 		}
 
@@ -1452,9 +1623,11 @@
 			h('span', { class: 'mahan-week-label', text: t('thisWeekActivity', 'This week') }),
 			h('div', { class: 'mahan-week-days' }, week.map(function (d) {
 				var cls = 'mahan-week-day' + (d.goal_met ? ' is-goal' : (d.active ? ' is-active' : '')) + (d.today ? ' is-today' : '');
-				return h('div', { class: cls, title: d.label }, [
-					h('span', { class: 'mahan-week-dot', text: d.goal_met ? '✓' : '' }),
-					h('span', { class: 'mahan-week-name', text: d.label })
+				var st = d.goal_met ? t('weekGoalMet', 'goal met') : (d.active ? t('weekStudied', 'studied') : t('weekNoActivity', 'no activity'));
+				var aria = d.label + ': ' + st + (d.today ? ', ' + t('today', 'today') : '');
+				return h('div', { class: cls, role: 'img', 'aria-label': aria }, [
+					h('span', { class: 'mahan-week-dot', 'aria-hidden': 'true', text: d.goal_met ? '✓' : (d.active ? '·' : '') }),
+					h('span', { class: 'mahan-week-name', 'aria-hidden': 'true', text: d.label })
 				]);
 			}))
 		]);
@@ -1470,12 +1643,14 @@
 			// nudge that the streak is at risk until the learner earns XP.
 			var todayCounted = !!(s.week && s.week.length && s.week[s.week.length - 1].active);
 			var streakCold = (s.streak || 0) > 0 && !todayCounted;
-			var streakSub = ((s.longest_streak || 0) > (s.streak || 0))
-				? t('longestStreak', 'Longest') + ': ' + s.longest_streak
-				: (streakCold ? t('streakAtRisk', 'Study today to keep it!') : t('streak', 'day streak'));
+			var streakSub = streakCold
+				? t('streakAtRisk', 'Study today to keep it!')
+				: (((s.longest_streak || 0) > (s.streak || 0))
+					? t('longestStreak', 'Longest') + ': ' + s.longest_streak
+					: t('streak', 'day streak'));
 			var wrap = h('div', { class: 'mahan-dash' });
-			wrap.appendChild(h('div', { class: 'mahan-dash-hero' }, [
-				h('h1', { text: (t('dashboard', 'My Learning')) }),
+			wrap.appendChild(h('h1', { class: 'mahan-dash-title', text: (t('dashboard', 'My Learning')) }));
+			var hero = h('div', { class: 'mahan-dash-hero' }, [
 				h('div', { class: 'mahan-dash-stats' }, [
 					statBig(streakCold ? '🕯️' : '🔥', s.streak || 0, streakSub, streakCold ? 'is-cold' : ''),
 					statBig('⚡', s.xp || 0, 'XP'),
@@ -1488,12 +1663,32 @@
 					h('span', { class: 'mahan-level-bar-label', text: (s.xp_into_level || 0) + ' / ' + (s.xp_per_level || 100) + ' XP → ' + t('level', 'Level') + ' ' + ((s.level || 1) + 1) })
 				]),
 				dailyGoalCard(s)
-			]));
+			]);
 
 			var courses = j.courses || [];
+			var rv = s.reviews || {};
+			var hasReview = (rv.due || 0) > 0;
 
-			// "Jump back in": one tap straight into the next lesson of the
-			// most recent in-progress course (no course-page detour).
+			// Adaptive review first — it's the time-sensitive task (due items
+			// fade from memory unless refreshed on schedule).
+			if (hasReview) {
+				wrap.appendChild(h('div', { class: 'mahan-review-cta' }, [
+					h('div', { class: 'mahan-review-cta-body' }, [
+						h('span', { class: 'mahan-review-cta-icon', text: '🎯' }),
+						h('div', {}, [
+							h('h2', { class: 'mahan-review-cta-title', text: t('reviewTitle', 'Practice your mistakes') }),
+							h('p', { class: 'mahan-review-cta-sub', text: fmt(t('reviewFading', '%s fading — a 2-minute review locks them in'), rv.due) + (rv.mastered ? ' · ' + rv.mastered + ' ' + t('reviewMastered', 'mastered') : '') })
+						])
+					]),
+					h('button', { class: 'mahan-btn mahan-btn-primary mahan-btn-lg', text: t('reviewNow', 'Review now'),
+						onClick: function () { go('review'); } })
+				]));
+			}
+
+			// "Jump back in": one tap straight into the next lesson of the most
+			// recent in-progress course (no course-page detour). Demoted to a
+			// ghost button when the review CTA is present so the page keeps a
+			// single primary action.
 			var inProgress = courses.filter(function (c) { return c.next_lesson_id && (c.progress_pct || 0) < 100; });
 			if (inProgress.length) {
 				var jb = inProgress[0];
@@ -1507,30 +1702,17 @@
 							h('span', { class: 'mahan-progress-label', text: (jb.progress_pct || 0) + '%' })
 						])
 					]),
-					h('button', { class: 'mahan-btn mahan-btn-primary mahan-btn-lg', text: t('continueLearning', 'Continue learning'),
+					h('button', { class: 'mahan-btn mahan-btn-lg ' + (hasReview ? 'mahan-btn-ghost' : 'mahan-btn-primary'), text: t('continueLearning', 'Continue learning'),
 						onClick: function () { go('lesson', { course: jb.id, lesson: jb.next_lesson_id }); } })
 				]));
 			}
 
-			// Adaptive review: surface due misses front and centre.
-			var rv = s.reviews || {};
-			if ((rv.due || 0) > 0) {
-				wrap.appendChild(h('div', { class: 'mahan-review-cta' }, [
-					h('div', { class: 'mahan-review-cta-body' }, [
-						h('span', { class: 'mahan-review-cta-icon', text: '🎯' }),
-						h('div', {}, [
-							h('h2', { class: 'mahan-review-cta-title', text: t('reviewTitle', 'Practice your mistakes') }),
-							h('p', { class: 'mahan-review-cta-sub', text: rv.due + ' ' + t('reviewDue', 'due for review') + (rv.mastered ? ' · ' + rv.mastered + ' ' + t('reviewMastered', 'mastered') : '') })
-						])
-					]),
-					h('button', { class: 'mahan-btn mahan-btn-primary mahan-btn-lg', text: t('reviewNow', 'Review now'),
-						onClick: function () { go('review'); } })
-				]));
-			}
+			// Stats after the actions: what to DO comes before how it's going.
+			wrap.appendChild(hero);
 
 			if (!courses.length) {
 				wrap.appendChild(h('div', { class: 'mahan-empty' }, [
-					h('p', { text: t('emptyDashboard', "You haven't enrolled in any courses yet.") }),
+					h('p', { text: t('emptyDashboard', 'Pick your first course and start earning XP today.') }),
 					h('button', { class: 'mahan-btn mahan-btn-primary', text: t('browseCourses', 'Browse courses'), onClick: function () { go('catalog'); } })
 				]));
 			} else {
@@ -1549,7 +1731,8 @@
 				j.badges.forEach(function (b) {
 					var showProgress = !b.earned && (b.need || 0) > 1 && (b.progress || 0) > 0;
 					bgrid.appendChild(h('div', { class: 'mahan-badge' + (b.earned ? ' is-earned' : ' is-locked'), title: b.desc }, [
-						h('span', { class: 'mahan-badge-icon', text: b.icon }),
+						h('span', { class: 'mahan-sr-only', text: b.earned ? t('badgeEarnedState', 'Earned:') : fmt(t('badgeLockedState', 'Locked, %s of %s:'), b.progress || 0, b.need || 1) }),
+						h('span', { class: 'mahan-badge-icon', 'aria-hidden': 'true', text: b.icon }),
 						h('span', { class: 'mahan-badge-title', text: b.title }),
 						h('span', { class: 'mahan-badge-desc', text: b.desc }),
 						showProgress ? h('div', { class: 'mahan-badge-progress' }, [
@@ -1585,6 +1768,7 @@
 			].map(function (p) {
 				return h('button', {
 					class: 'mahan-chip' + (period === p[0] ? ' is-active' : ''), text: p[1],
+					'aria-pressed': period === p[0] ? 'true' : 'false',
 					onClick: function () { state.lbPeriod = p[0]; syncUrl(); renderLeaderboard(); }
 				});
 			})));
@@ -1813,18 +1997,28 @@
 		select.addEventListener('change', function () {
 			var v = parseInt(select.value, 10);
 			if (!v) { return; }
-			select.disabled = true;
+			// Optimistic: the client already knows the new goal, so swap the
+			// card and celebrate immediately, then reconcile with the server.
+			// On failure, roll back to the previous card.
+			var prevStats = s;
+			var optimistic = Object.assign({}, s, { daily_goal: v });
+			var fresh = dailyGoalCard(optimistic);
+			if (card.parentNode) { card.parentNode.replaceChild(fresh, card); }
+			toast('🎯 ' + esc(t('goalSaved', 'Daily goal updated')), 'info');
 			api('/goal', 'POST', { daily_goal: v }).then(function (r) {
 				if (state.me) { state.me.stats = r.stats; }
 				// Rebuild the top bar (not just refreshHud) so a first-ever
 				// goal creates its 🎯 HUD chip, which refreshHud can't add.
 				refreshTopbar();
-				// Swap the card in place — no full-dashboard re-render (which
-				// would reset scroll and refetch everything).
-				var fresh = dailyGoalCard(r.stats);
-				if (card.parentNode) { card.parentNode.replaceChild(fresh, card); }
-				toast('🎯 ' + esc(t('goalSaved', 'Daily goal updated')), 'info');
-			}).catch(function () { select.disabled = false; toast(t('error', 'Something went wrong.'), 'error'); });
+				// Reconcile the optimistic card with the server's authoritative
+				// stats (in case daily_xp / level shifted).
+				var reconciled = dailyGoalCard(r.stats);
+				if (fresh.parentNode) { fresh.parentNode.replaceChild(reconciled, fresh); }
+			}).catch(function () {
+				var rollback = dailyGoalCard(prevStats);
+				if (fresh.parentNode) { fresh.parentNode.replaceChild(rollback, fresh); }
+				toast(t('error', 'Something went wrong.'), 'error');
+			});
 		});
 
 		var card = h('div', { class: 'mahan-goal-card' + (done ? ' is-done' : '') }, [
@@ -1856,6 +2050,8 @@
 	function ensureProfile() {
 		if (!D.loggedIn || !D.gateEnabled) { return Promise.resolve(); }
 		if (state.profile && state.profile.complete) { return Promise.resolve(); }
+		// "Not now" means not this session — don't re-nag on every lesson.
+		try { if (window.sessionStorage && sessionStorage.getItem('mahanProfileSkip')) { return Promise.resolve(); } } catch (e) { /* private mode */ }
 		return api('/profile').then(function (j) {
 			state.profile = j;
 			if (j.complete) { return; }
@@ -1910,8 +2106,15 @@
 						} })
 				])
 			]);
-			// Dismissing the gate (Escape / outside click) is the same as "Not now".
-			modal = openModal(dialog, { label: t('profileTitle', 'Tell us about you'), onClose: resolve });
+			// Dismissing the gate (Escape / outside click) is the same as
+			// "Not now": remember for this session so it doesn't re-nag on
+			// every lesson (saving marks the profile complete anyway).
+			modal = openModal(dialog, { label: t('profileTitle', 'Tell us about you'), onClose: function () {
+				if (!(state.profile && state.profile.complete)) {
+					try { if (window.sessionStorage) { sessionStorage.setItem('mahanProfileSkip', '1'); } } catch (e) { /* private mode */ }
+				}
+				resolve();
+			} });
 		});
 	}
 
@@ -2031,33 +2234,61 @@
 
 	// A single review question. `onGrade(answer, variantToken)` is called when
 	// the learner checks; the returned object exposes lock()/showResult().
-	function reviewCard(item) {
+	function reviewCard(item, onSubmit) {
 		var chosen = { i: -1, text: '' };
 		var card = h('div', { class: 'mahan-ex mahan-review-card' + (item.is_variant ? ' is-variant' : '') });
 		if (item.is_variant) {
 			card.appendChild(h('span', { class: 'mahan-review-variant-tag', text: '✨ ' + t('askDifferently', 'Ask a different way') }));
+		}
+		// Where this question came from (course · lesson) — a mixed
+		// cross-course queue needs orientation.
+		if (item.context) {
+			card.appendChild(h('div', { class: 'mahan-review-context', text: item.context }));
 		}
 		card.appendChild(h('div', { class: 'mahan-ex-q', html: mdToHtml(item.question || '') }));
 
 		var input;
 		if ((item.type === 'multiple_choice' || item.type === 'true_false') && item.options) {
 			input = h('div', { class: 'mahan-ex-options' + (item.type === 'true_false' ? ' mahan-ex-tf' : '') }, item.options.map(function (o, i) {
-				return h('button', { class: 'mahan-ex-option', type: 'button', text: o,
+				return h('button', { class: 'mahan-ex-option', type: 'button', 'aria-pressed': 'false',
 					onClick: function (e) {
 						if (card.classList.contains('is-locked')) { return; }
-						input.querySelectorAll('.mahan-ex-option').forEach(function (b) { b.classList.remove('is-chosen'); });
+						input.querySelectorAll('.mahan-ex-option').forEach(function (b) { b.classList.remove('is-chosen'); b.setAttribute('aria-pressed', 'false'); });
 						e.currentTarget.classList.add('is-chosen');
+						e.currentTarget.setAttribute('aria-pressed', 'true');
 						chosen.i = i;
-					} });
+					} }, [
+					h('span', { class: 'mahan-ex-option-key', 'aria-hidden': 'true', text: String(i + 1) }),
+					document.createTextNode(o)
+				]);
 			}));
+			// Number-key shortcuts (1–9) for keyboard-driven practice.
+			card.addEventListener('keydown', function (e) {
+				if (card.classList.contains('is-locked') || e.metaKey || e.ctrlKey || e.altKey) { return; }
+				var n = parseInt(e.key, 10);
+				if (n >= 1 && n <= 9) {
+					var opts = input.querySelectorAll('.mahan-ex-option');
+					if (opts[n - 1]) { e.preventDefault(); opts[n - 1].click(); }
+				}
+			});
 			card.appendChild(input);
 		} else {
-			input = h('input', { class: 'mahan-ex-input mahan-ex-blank', type: 'text', placeholder: t('typeAnswer', 'Type your answer…') });
+			input = h('input', { class: 'mahan-ex-input mahan-ex-blank', type: 'text', placeholder: t('typeAnswer', 'Type your answer…'), 'aria-label': t('typeAnswer', 'Type your answer…') });
+			// Enter submits, same as lesson exercises.
+			input.addEventListener('keydown', function (e) {
+				if (e.key === 'Enter' && onSubmit && !card.classList.contains('is-locked')) { e.preventDefault(); onSubmit(); }
+			});
 			card.appendChild(input);
 		}
 
 		return {
 			node: card,
+			focus: function () {
+				// Focus the first option for keyboard flow; deliberately skip
+				// text inputs so the mobile keyboard doesn't pop uninvited.
+				var f = card.querySelector('.mahan-ex-option');
+				if (f) { try { f.focus({ preventScroll: true }); } catch (e) { /* ok */ } }
+			},
 			answer: function () {
 				return (item.type === 'multiple_choice' || item.type === 'true_false') ? chosen.i : input.value;
 			},
@@ -2070,6 +2301,7 @@
 				var opts = card.querySelectorAll('.mahan-ex-option');
 				if (opts.length && typeof res.correct_index === 'number' && opts[res.correct_index]) {
 					opts[res.correct_index].classList.add('is-correct');
+					opts[res.correct_index].appendChild(h('span', { class: 'mahan-sr-only', text: ' (' + t('correctAnswer', 'correct answer') + ')' }));
 				}
 			}
 		};
@@ -2087,10 +2319,12 @@
 		return wrap;
 	}
 
-	function reviewHeader() {
+	function reviewHeader(lessonScope) {
 		return h('div', { class: 'mahan-dash-hero mahan-review-hero' }, [
 			h('h1', { text: '🎯 ' + t('reviewTitle', 'Practice your mistakes') }),
-			h('p', { class: 'mahan-hero-sub', text: t('reviewSub', 'Questions you missed come back here until you master them.') })
+			h('p', { class: 'mahan-hero-sub', text: lessonScope
+				? t('reviewSubLesson', 'A quick check on the questions you missed in this lesson.')
+				: t('reviewSub', 'Questions you missed come back here until you master them.') })
 		]);
 	}
 
@@ -2112,12 +2346,16 @@
 
 	function runReviewSession(queue, counts, aiReady, lessonScope, courseId) {
 		var total = queue.length;
-		var pos = 0, cleared = 0;
+		var pos = 0, cleared = 0, skipped = 0;
+		var skippedItems = [];
 		var wrap = h('div', { class: 'mahan-review' });
-		var head = reviewHeader();
+		var head = reviewHeader(lessonScope);
 		var bar = h('div', { class: 'mahan-review-progress' }, [
 			h('div', { class: 'mahan-review-progress-track' }, [h('span', { class: 'mahan-review-progress-fill' })]),
-			h('span', { class: 'mahan-review-progress-label' })
+			h('span', { class: 'mahan-review-progress-label' }),
+			h('button', { class: 'mahan-review-exit', type: 'button', text: '✕',
+				'aria-label': t('exitReview', 'Exit review'), title: t('exitReview', 'Exit review'),
+				onClick: function () { if (lessonScope && courseId) { go('course', { course: courseId }); } else { go('dashboard'); } } })
 		]);
 		var stage = h('div', { class: 'mahan-review-stage' });
 		wrap.appendChild(head);
@@ -2125,10 +2363,14 @@
 		wrap.appendChild(stage);
 		mount(wrap);
 
+		var maxPct = 0;
+		var xpEarned = 0;
 		function updateBar() {
-			var done = pos;
-			var pct = total ? Math.round((done / total) * 100) : 0;
-			bar.querySelector('.mahan-review-progress-fill').style.width = pct + '%';
+			// Monotonic fill: a wrong answer re-queues an item (total grows),
+			// but the bar must never visibly move backwards.
+			var pct = total ? Math.round((pos / total) * 100) : 0;
+			maxPct = Math.max(maxPct, pct);
+			bar.querySelector('.mahan-review-progress-fill').style.width = maxPct + '%';
 			bar.querySelector('.mahan-review-progress-label').textContent = Math.min(pos + 1, total) + ' ' + t('reviewProgress', 'of') + ' ' + total;
 		}
 
@@ -2136,60 +2378,94 @@
 			stage.innerHTML = '';
 			bar.querySelector('.mahan-review-progress-fill').style.width = '100%';
 			bar.querySelector('.mahan-review-progress-label').textContent = total + ' ' + t('reviewProgress', 'of') + ' ' + total;
-			var done = h('div', { class: 'mahan-empty mahan-review-complete' }, [
-				h('div', { class: 'mahan-review-empty-icon', text: '🎉' }),
-				h('h2', { text: t('reviewDone', 'Review complete!') }),
-				h('p', { class: 'mahan-badges-sub', text: cleared + ' ' + t('reviewCleared', 'cleared') }),
-				lessonScope
-					? h('button', { class: 'mahan-btn mahan-btn-primary mahan-btn-lg', text: t('continueLearning', 'Continue learning'), onClick: function () { go('course', { course: courseId }); } })
-					: h('button', { class: 'mahan-btn mahan-btn-primary mahan-btn-lg', text: t('backToDashboard', 'Back to My Learning'), onClick: function () { go('dashboard'); } })
-			]);
-			stage.appendChild(done);
+			// Honest feedback: only the celebratory icon/heading when something
+			// was actually cleared and nothing was left behind.
+			var win = cleared > 0 && skipped === 0;
+			var hasSkipped = skippedItems.length > 0;
+			var kids = [
+				h('div', { class: 'mahan-review-empty-icon', text: win ? '🎉' : '✅' }),
+				h('h2', { text: win ? t('reviewDone', 'Review complete!') : t('reviewEnded', 'Session ended') }),
+				h('p', { class: 'mahan-badges-sub', text: cleared + ' ' + t('reviewCleared', 'cleared')
+					+ (skipped > 0 ? ' · ' + skipped + ' ' + t('skippedCount', 'skipped') : '')
+					+ (xpEarned > 0 ? ' · ⚡ +' + xpEarned + ' XP' : '') })
+			];
+			// Re-run just the skipped items instead of forcing a full re-entry.
+			if (hasSkipped) {
+				kids.push(h('button', { class: 'mahan-btn mahan-btn-primary mahan-btn-lg', text: '🔁 ' + fmt(t('reviewSkipped', 'Review %s skipped'), skippedItems.length),
+					onClick: function () { runReviewSession(skippedItems.slice(), counts, aiReady, lessonScope, courseId); } }));
+			}
+			kids.push(lessonScope
+				? h('button', { class: 'mahan-btn ' + (hasSkipped ? 'mahan-btn-ghost' : 'mahan-btn-primary') + ' mahan-btn-lg', text: t('continueLearning', 'Continue learning'), onClick: function () { go('course', { course: courseId }); } })
+				: h('button', { class: 'mahan-btn ' + (hasSkipped ? 'mahan-btn-ghost' : 'mahan-btn-primary') + ' mahan-btn-lg', text: t('backToDashboard', 'Back to My Learning'), onClick: function () { go('dashboard'); } }));
+			stage.appendChild(h('div', { class: 'mahan-empty mahan-review-complete' }, kids));
 		}
 
 		function showItem(item) {
 			updateBar();
 			stage.innerHTML = '';
-			var rc = reviewCard(item);
+			var rc = reviewCard(item, function () { checkBtn.click(); });
 			var variantToken = item._variant_token || '';
-			var feedback = h('div', { class: 'mahan-ex-feedback', style: 'display:none' });
-			var msg = h('div', { class: 'mahan-review-msg' });
+			var feedback = h('div', { class: 'mahan-ex-feedback', style: 'display:none', role: 'status' });
+			var msg = h('div', { class: 'mahan-review-msg', role: 'status' });
 
 			var checkBtn = h('button', { class: 'mahan-btn mahan-btn-primary mahan-ex-check', text: t('check', 'Check'),
 				onClick: function (e) {
 					var ans = rc.answer();
 					var isChoice = (item.type === 'multiple_choice' || item.type === 'true_false');
-					if (isChoice && ans === -1) { return; }
-					if (!isChoice && !String(ans).trim()) { return; }
+					if ((isChoice && ans === -1) || (!isChoice && !String(ans).trim())) {
+						msg.textContent = t('pickAnswer', 'Pick an answer first.');
+						return;
+					}
+					msg.textContent = '';
 					var restore = setBusy(e.currentTarget);
 					api('/review', 'POST', { review_id: item.review_id, answer: ans, variant_token: variantToken }).then(function (r) {
 						if (!r.ok) { restore(); toast(t('error', 'Something went wrong.'), 'error'); return; }
 						rc.lock();
 						rc.markResult(r);
-						if (r.is_correct) { cleared++; celebrateXp(r); }
+						if (r.is_correct) { cleared++; xpEarned += (r.xp_awarded || 0); celebrateXp(r); }
 						feedback.style.display = 'block';
 						feedback.className = 'mahan-ex-feedback ' + (r.is_correct ? 'is-correct' : 'is-incorrect');
-						var headTxt = r.is_correct ? '✓ ' + t('correct', 'Correct!') : '✕ ' + t('incorrect', 'Not quite');
+						var headTxt = r.is_correct ? '✓ ' + tv('correctVariants', 'correct', 'Correct!') : '✕ ' + tv('incorrectVariants', 'incorrect', 'Not quite');
 						var detail = r.is_correct
 							? (r.mastered ? t('reviewMasteredMsg', 'Mastered! You won\'t see this one for a while.') : t('reviewAgainSoon', "We'll ask you again soon."))
-							: (r.correct_text ? t('answerWas', 'Answer:') + ' ' + esc(r.correct_text) : t('reviewAgainSoon', "We'll ask you again soon."));
-						feedback.innerHTML = '<strong>' + headTxt + '</strong><div>' + detail + '</div>';
-						// Wrong answers come back at the end of this same session —
-						// but never re-queue an AI variant (its one-time token is
-						// already spent, so it would be graded against the
-						// original question while still showing the variant).
-						if (!r.is_correct && !item._retried && !item.is_variant) {
-							item._retried = true;
-							queue.push(item);
+							: (r.correct_text ? t('answerWas', 'Answer:') + ' ' + esc(r.correct_text) : '');
+						// Wrong answers come back once more this same session. Missing
+						// an AI variant re-queues the ORIGINAL (its one-time token is
+						// spent), so the concept still returns.
+						if (!r.is_correct && !item._retried) {
+							var reItem = item._orig || item;
+							reItem._retried = true;
+							// Never re-ask back-to-back right after showing the answer:
+							// slot it a couple of cards ahead when near the end.
+							if (total - pos <= 2) { queue.splice(Math.min(pos + 2, total), 0, reItem); }
+							else { queue.push(reItem); }
 							total++;
+							detail += '<div class="mahan-review-again">' + esc(t('seeAgainThisSession', "You'll see this one again before the end of this session.")) + '</div>';
 						}
+						feedback.innerHTML = '<strong>' + headTxt + '</strong>' + (detail ? '<div>' + detail + '</div>' : '');
 						btnRow.innerHTML = '';
-						btnRow.appendChild(h('button', { class: 'mahan-btn mahan-btn-primary', text: t('continueBtn', 'Continue'),
-							onClick: function () { pos++; next(); } }));
+						var contBtn = h('button', { class: 'mahan-btn mahan-btn-primary', text: t('continueBtn', 'Continue'),
+							onClick: function () { pos++; next(); } });
+						btnRow.appendChild(contBtn);
+						// A miss dead-ends without the source material — offer a jump
+						// back to the lesson that teaches the concept.
+						if (!r.is_correct && (item.lesson_id || (item._orig && item._orig.lesson_id))) {
+							var lid = item.lesson_id || item._orig.lesson_id;
+							var cid = item.course_id || (item._orig && item._orig.course_id) || courseId;
+							btnRow.appendChild(h('button', { class: 'mahan-btn mahan-btn-ghost', text: t('revisitLesson', 'Revisit lesson') + ' →',
+								onClick: function () { go('lesson', { course: cid, lesson: lid }); } }));
+						}
+						// Enter advances to the next question.
+						try { contBtn.focus({ preventScroll: true }); } catch (err) { /* ok */ }
 					}).catch(function () { restore(); toast(t('error', 'Something went wrong.'), 'error'); });
 				} });
 
 			var actions = [];
+			// A variant can always go back to the original question.
+			if (item.is_variant && item._orig) {
+				actions.push(h('button', { class: 'mahan-btn mahan-btn-ghost mahan-review-variant-btn', text: '↩ ' + t('showOriginal', 'Show the original'),
+					onClick: function () { showItem(item._orig); } }));
+			}
 			// "Ask a different way" — an AI variant, only before answering.
 			if (aiReady && !item.is_variant) {
 				var variantBtn = h('button', { class: 'mahan-btn mahan-btn-ghost mahan-review-variant-btn', text: '✨ ' + t('askDifferently', 'Ask a different way'),
@@ -2200,6 +2476,7 @@
 								var v = r.item;
 								v._variant_token = r.variant_token;
 								v._retried = item._retried;
+								v._orig = item;
 								showItem(v);
 							} else {
 								restore();
@@ -2209,7 +2486,7 @@
 					} });
 				actions.push(variantBtn);
 			}
-			actions.push(h('button', { class: 'mahan-btn mahan-btn-ghost', text: t('skip', 'Skip'), onClick: function () { pos++; next(); } }));
+			actions.push(h('button', { class: 'mahan-btn mahan-btn-ghost', text: t('skip', 'Skip'), onClick: function () { skipped++; skippedItems.push(item._orig || item); pos++; next(); } }));
 			actions.push(checkBtn);
 			var btnRow = h('div', { class: 'mahan-ex-bar mahan-review-bar' }, actions);
 
@@ -2217,6 +2494,7 @@
 			stage.appendChild(feedback);
 			stage.appendChild(msg);
 			stage.appendChild(btnRow);
+			rc.focus();
 		}
 
 		function next() {

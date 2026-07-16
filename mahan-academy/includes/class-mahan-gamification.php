@@ -471,6 +471,12 @@ class Mahan_Gamification {
 			'level_title'    => self::level_title( $resolved['level'] ),
 			'daily_xp'       => $user_id ? self::xp_today( $user_id ) : 0,
 			'daily_goal'     => $user_id ? self::daily_goal( $user_id ) : 0,
+			// Carried on every stats payload so the SPA's reviews-due badge
+			// stays live after grading (a new miss must surface immediately,
+			// not wait for a full /me refetch).
+			'reviews'        => $user_id && class_exists( 'Mahan_Reviews' )
+				? Mahan_Reviews::counts( $user_id )
+				: array( 'due' => 0, 'learning' => 0, 'mastered' => 0 ),
 		);
 	}
 }

@@ -282,6 +282,12 @@ class Mahan_Reviews {
 		$q    = ( is_array( $variant ) && ! empty( $variant['question'] ) ) ? $variant : $snap;
 		$type = (string) $row['qtype'];
 
+		// Where the question came from — lets the session card show context
+		// ("Prompt Basics · Lesson 3") so a mixed cross-course queue isn't
+		// disorienting.
+		$course_title = (int) $row['course_id'] ? get_the_title( (int) $row['course_id'] ) : '';
+		$lesson_title = (int) $row['lesson_id'] ? get_the_title( (int) $row['lesson_id'] ) : '';
+
 		$out = array(
 			'review_id' => (int) $row['id'],
 			'source'    => (string) $row['source'],
@@ -289,6 +295,7 @@ class Mahan_Reviews {
 			'question'  => isset( $q['question'] ) ? (string) $q['question'] : '',
 			'lesson_id' => (int) $row['lesson_id'],
 			'course_id' => (int) $row['course_id'],
+			'context'   => trim( implode( ' · ', array_filter( array( $course_title, $lesson_title ) ) ) ),
 			'box'       => (int) $row['box'],
 			'is_variant' => ! empty( $variant ),
 		);
@@ -550,10 +557,11 @@ class Mahan_Reviews {
 		$question = isset( $orig['question'] ) ? (string) $orig['question'] : '';
 		$provider = self::variant_provider();
 
-		$system = 'You write practice questions for a course that teaches people to use AI at work. '
+		$system = 'You write practice questions for an online course. '
 			. 'You are given a question the learner previously got wrong. Produce ONE fresh question that tests the '
-			. 'exact same concept from a different angle (reworded, new scenario or example) at the same difficulty. '
-			. 'Keep it self-contained and unambiguous.';
+			. 'exact same concept from a different angle (reworded, new scenario or example) at the same difficulty, '
+			. 'staying within the same subject matter as the original. Keep it self-contained and unambiguous. '
+			. 'Write the question in the same language as the original question.';
 
 		if ( 'multiple_choice' === $type ) {
 			$schema = '{"question":"<text>","options":["<a>","<b>","<c>","<d>"],"answer":<0-based index of the correct option>}';

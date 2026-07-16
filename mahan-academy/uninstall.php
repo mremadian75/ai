@@ -58,6 +58,8 @@ $options = array(
 	'mahan_streak_freeze_enabled', 'mahan_freeze_earn_days', 'mahan_freeze_max',
 	// Adaptive review (1.7.0).
 	'mahan_review_enabled', 'mahan_review_xp',
+	// Appearance hero copy (1.8.0).
+	'mahan_hero_title', 'mahan_hero_subtitle',
 	// Emails (1.2.0).
 	'mahan_emails_enabled', 'mahan_email_from_name', 'mahan_email_from_email',
 	'mahan_email_welcome', 'mahan_email_complete', 'mahan_email_badge', 'mahan_email_streak',

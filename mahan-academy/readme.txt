@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.7.2
+Stable tag: 1.8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -54,6 +54,18 @@ No. Everything happens inside WordPress.
 Yes — *Settings → Profile Form* takes a JSON schema. The placeholders you define there flow into the tutor's system prompt automatically.
 
 == Changelog ==
+
+= 1.8.0 =
+UX best-practices round 3 — a multi-lens audit of the whole learner experience (adaptive review, dashboard, lesson player, accessibility, and motivation copy), with the findings folded back in.
+* Dashboard now leads with what to do: the due-review call-to-action and "Jump back in" card sit above the stats hero, and only one of them is the primary button so the page has a single obvious next step.
+* The reviews-due count now shows as a live badge on the navigation (desktop and mobile) and stays correct after every answer — a new mistake surfaces immediately instead of waiting for a page refresh.
+* The streak flame in the top bar goes "cold" on days you haven't studied yet, matching the dashboard — a gentle, honest nudge that the streak is at risk.
+* Adaptive review is fairer and more helpful: missing an AI-rephrased question now brings the original concept back later in the session (instead of dropping it), a missed item is never re-asked immediately after its answer was shown, each wrong answer offers a one-tap "Revisit lesson", and a session that cleared nothing is reported honestly (with a "Review skipped" shortcut) rather than celebrated.
+* Answer options in review can be picked with the number keys (1–9), and correct/incorrect results now carry a ✓/✕ text cue — not colour alone.
+* Reinforcement copy ("Correct!", "Daily goal reached!", "Level up!") now rotates through several phrasings so the reward loop stays fresh.
+* Accessibility: week-activity dots, achievement badges, graded answers, and the AI tutor's replies are now announced properly to screen readers; unit titles and the catalog use a correct heading order; locked lessons expose their disabled state.
+* The AI tutor now shows a clear "Online / Unavailable" status, and the mobile chat button no longer appears when the tutor isn't configured for a lesson.
+* Course-card images now load lazily (faster catalog on slow connections), the daily-goal picker saves optimistically (no frozen dropdown), and the lesson player reuses its cache for instant back-navigation.
 
 = 1.7.2 =
 Second audit pass — regression checks on the 1.7.1 fixes plus deeper subsystem review. **DB v4** (adds one column to the reviews table, migrated automatically).

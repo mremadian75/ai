@@ -4,6 +4,24 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.9.1]
+
+UI depth & elevation refinement, building on the 1.9.0 token system.
+**Styling only — no PHP/JS changes, DB stays v4.** Verified by rendering the
+dashboard hero and lesson list in headless Chromium in both themes.
+
+- **Elevation via `--m-surface-2`.** Threaded the layered-surface token
+  (defined but barely used in 1.9.0) through the inset/nested elements that
+  previously used `--m-bg`: dashboard stat tiles, progress/level tracks,
+  lesson- and path-step circles, the daily-goal card, `.mahan-tag-soft`, the
+  assistant tutor bubble, and prose `code`/`pre`. In dark mode these lift out
+  of the near-black page background instead of reading as holes; in light mode
+  they gain subtle definition. The cold-streak tile mixes its amber tint over
+  `--m-surface-2` and gains a warm border.
+- **Hairline borders** on stat tiles so the stats grid reads as a set of cards.
+- **Two-layer shadows.** `--m-shadow` / `--m-shadow-sm` are now a soft contact
+  shadow plus a wider ambient one (both themes) for more natural depth.
+
 ## [1.9.0]
 
 UI best-practices pass — a visual-design refinement of `assets/css/app.css`,

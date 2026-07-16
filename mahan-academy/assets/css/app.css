@@ -19,8 +19,8 @@
 	--m-radius-sm: 10px;
 	--m-radius: 16px;
 	--m-radius-lg: 22px;
-	--m-shadow: 0 10px 30px rgba(20, 23, 40, .08);
-	--m-shadow-sm: 0 2px 8px rgba(20, 23, 40, .06);
+	--m-shadow: 0 2px 6px rgba(20, 23, 40, .05), 0 12px 32px rgba(20, 23, 40, .10);
+	--m-shadow-sm: 0 1px 2px rgba(20, 23, 40, .04), 0 2px 8px rgba(20, 23, 40, .06);
 	--m-shadow-lg: 0 24px 70px rgba(20, 23, 40, .18);
 	--m-ring: 0 0 0 3px color-mix(in srgb, var(--m-primary) 22%, transparent);
 	color-scheme: light;
@@ -45,7 +45,7 @@
 	--m-danger: #f87171;
 	--m-warning: #fbbf24;
 	--m-warning-text: #fbbf24;
-	--m-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+	--m-shadow: 0 2px 6px rgba(0, 0, 0, .3), 0 12px 32px rgba(0, 0, 0, .45);
 	--m-shadow-lg: 0 24px 70px rgba(0, 0, 0, .5);
 	color-scheme: dark;
 }
@@ -109,11 +109,11 @@
 .mahan-card-sub { color: var(--m-muted); font-size: 14px; margin: 0 0 8px; flex: 1; }
 .mahan-card-tags { display: flex; gap: 8px; flex-wrap: wrap; }
 .mahan-tag { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: color-mix(in srgb, var(--m-primary) 12%, transparent); color: var(--m-primary); }
-.mahan-tag-soft { background: var(--m-bg); color: var(--m-muted); }
+.mahan-tag-soft { background: var(--m-surface-2); color: var(--m-muted); }
 
 /* Progress bar */
 .mahan-progress { display: flex; align-items: center; gap: 10px; }
-.mahan-progress-bar { flex: 1; height: 10px; border-radius: 999px; background: var(--m-bg); overflow: hidden; }
+.mahan-progress-bar { flex: 1; height: 10px; border-radius: 999px; background: var(--m-surface-2); overflow: hidden; }
 .mahan-progress-bar span { display: block; height: 100%; background: var(--m-accent); border-radius: 999px; transition: width .5s ease; }
 .mahan-progress-label { font-size: 13px; font-weight: 700; color: var(--m-accent); }
 
@@ -143,7 +143,7 @@
 a.mahan-lesson-row:hover { border-color: var(--m-primary); background: color-mix(in srgb, var(--m-primary) 5%, var(--m-surface)); }
 .mahan-lesson-row.is-done { background: color-mix(in srgb, var(--m-accent) 8%, var(--m-surface)); }
 .mahan-lesson-row.is-locked { opacity: .6; cursor: not-allowed; }
-.mahan-lesson-icon { width: 30px; height: 30px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--m-bg); font-size: 14px; }
+.mahan-lesson-icon { width: 30px; height: 30px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--m-surface-2); font-size: 14px; }
 .mahan-lesson-row.is-done .mahan-lesson-icon { background: var(--m-accent); color: #fff; }
 .mahan-lesson-name { flex: 1; font-weight: 600; }
 .mahan-lesson-meta { display: flex; gap: 10px; align-items: center; color: var(--m-muted); font-size: 13px; font-weight: 600; }
@@ -165,8 +165,8 @@ a.mahan-lesson-row:hover { border-color: var(--m-primary); background: color-mix
 .mahan-prose ul, .mahan-prose ol { margin: 0 0 1em 1.3em; }
 .mahan-prose li { margin: .4em 0; }
 .mahan-prose img { max-width: 100%; height: auto; border-radius: 12px; }
-.mahan-prose pre { background: var(--m-bg); padding: 16px; border-radius: 12px; overflow: auto; }
-.mahan-prose code { background: var(--m-bg); padding: 2px 6px; border-radius: 6px; font-size: .9em; }
+.mahan-prose pre { background: var(--m-surface-2); padding: 16px; border-radius: 12px; overflow: auto; }
+.mahan-prose code { background: var(--m-surface-2); padding: 2px 6px; border-radius: 6px; font-size: .9em; }
 .mahan-prose pre code { background: none; padding: 0; }
 .mahan-prose blockquote { margin: 1em 0; padding: 12px 18px; border-left: 4px solid var(--m-primary); background: color-mix(in srgb, var(--m-primary) 6%, transparent); border-radius: 8px; }
 .mahan-prose a { color: var(--m-primary); }
@@ -209,7 +209,7 @@ a.mahan-lesson-row:hover { border-color: var(--m-primary); background: color-mix
 .mahan-bubble p { margin: 0 0 .5em; } .mahan-bubble p:last-child { margin-bottom: 0; }
 .mahan-bubble ul, .mahan-bubble ol { margin: .3em 0 .3em 1.1em; }
 .mahan-bubble code { background: rgba(127,127,127,.16); padding: 1px 5px; border-radius: 5px; }
-.mahan-bubble-assistant { align-self: flex-start; background: var(--m-bg); border-bottom-left-radius: 4px; }
+.mahan-bubble-assistant { align-self: flex-start; background: var(--m-surface-2); border-bottom-left-radius: 4px; }
 .mahan-bubble-user { align-self: flex-end; background: var(--m-primary); color: #fff; border-bottom-right-radius: 4px; }
 .mahan-tutor-bar { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--m-border); }
 .mahan-tutor-input { flex: 1; resize: none; border: 1px solid var(--m-border); border-radius: 12px; padding: 10px 12px; font-family: inherit; font-size: 14px; max-height: 120px; background: var(--m-surface); color: var(--m-text); }
@@ -224,11 +224,11 @@ a.mahan-lesson-row:hover { border-color: var(--m-primary); background: color-mix
 .mahan-dash-hero { background: var(--m-surface); border: 1px solid var(--m-border); border-radius: var(--m-radius); padding: 28px; box-shadow: var(--m-shadow-sm); margin-bottom: 26px; }
 .mahan-dash-hero h1 { margin: 0 0 18px; font-size: 28px; }
 .mahan-dash-stats { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; }
-.mahan-stat-big { flex: 1; min-width: 120px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 18px; border-radius: 14px; background: var(--m-bg); }
+.mahan-stat-big { flex: 1; min-width: 120px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 18px; border-radius: 14px; background: var(--m-surface-2); border: 1px solid var(--m-border); }
 .mahan-stat-icon { font-size: 26px; }
 .mahan-stat-value { font-size: 28px; font-weight: 800; }
 .mahan-stat-label { font-size: 13px; color: var(--m-muted); font-weight: 600; }
-.mahan-level-bar-track { height: 12px; border-radius: 999px; background: var(--m-bg); overflow: hidden; margin-bottom: 6px; }
+.mahan-level-bar-track { height: 12px; border-radius: 999px; background: var(--m-surface-2); overflow: hidden; margin-bottom: 6px; }
 .mahan-level-bar-track span { display: block; height: 100%; background: linear-gradient(90deg, var(--m-primary), var(--m-accent)); border-radius: 999px; transition: width .5s ease; }
 .mahan-level-bar-label { font-size: 13px; color: var(--m-muted); font-weight: 600; }
 .mahan-dash-h2 { margin: 8px 0 16px; }
@@ -371,7 +371,7 @@ button.mahan-quiz-row:hover { border-color: var(--m-primary); background: color-
 .mahan-path-courses { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; counter-reset: pc; }
 .mahan-path-course { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid var(--m-border); border-radius: 12px; background: var(--m-surface); }
 .mahan-path-course.is-done { background: color-mix(in srgb, var(--m-accent) 8%, var(--m-surface)); }
-.mahan-path-step { width: 32px; height: 32px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--m-bg); font-weight: 800; }
+.mahan-path-step { width: 32px; height: 32px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--m-surface-2); font-weight: 800; }
 .mahan-path-course.is-done .mahan-path-step { background: var(--m-accent); color: #fff; }
 .mahan-path-course-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .mahan-path-course-title { font-weight: 700; color: var(--m-text); text-decoration: none; }
@@ -384,7 +384,7 @@ button.mahan-quiz-row:hover { border-color: var(--m-primary); background: color-
 .mahan-hud-goal { color: var(--m-muted); }
 .mahan-hud-goal.is-done { color: var(--m-accent); }
 
-.mahan-goal-card { margin-top: 18px; padding: 16px 18px; border: 1px solid var(--m-border); border-radius: 14px; background: var(--m-bg); }
+.mahan-goal-card { margin-top: 18px; padding: 16px 18px; border: 1px solid var(--m-border); border-radius: 14px; background: var(--m-surface-2); }
 .mahan-goal-card.is-done { border-color: color-mix(in srgb, var(--m-accent) 45%, var(--m-border)); background: color-mix(in srgb, var(--m-accent) 7%, var(--m-bg)); }
 .mahan-goal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
 .mahan-goal-title { font-weight: 800; }
@@ -641,7 +641,7 @@ button.mahan-quiz-row:hover { border-color: var(--m-primary); background: color-
 .mahan-tutor-send[disabled] { opacity: .8; cursor: progress; }
 
 /* Cold-flame streak stat (today not yet counted) */
-.mahan-stat-big.is-cold { background: color-mix(in srgb, var(--m-warning) 8%, var(--m-bg)); }
+.mahan-stat-big.is-cold { background: color-mix(in srgb, var(--m-warning) 8%, var(--m-surface-2)); border-color: color-mix(in srgb, var(--m-warning) 22%, var(--m-border)); }
 .mahan-stat-big.is-cold .mahan-stat-icon { filter: grayscale(.3); opacity: .85; }
 .mahan-stat-big.is-cold .mahan-stat-label { color: var(--m-warning-text); }
 

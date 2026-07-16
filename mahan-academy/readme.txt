@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.9.0
+Stable tag: 1.9.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -54,6 +54,13 @@ No. Everything happens inside WordPress.
 Yes — *Settings → Profile Form* takes a JSON schema. The placeholders you define there flow into the tutor's system prompt automatically.
 
 == Changelog ==
+
+= 1.9.1 =
+UI depth & elevation refinement (follows the 1.9.0 visual pass), verified by rendering the dashboard and lesson components in a headless browser in both themes.
+* Inset elements — dashboard stat tiles, XP/level/progress tracks, lesson & path step circles, the daily-goal card, soft tags, tutor reply bubbles, and code blocks — now use a dedicated layered surface. In dark mode they read as distinct raised cards instead of near-black "holes"; in light mode they gain crisper definition.
+* Dashboard stat tiles gain a hairline border, and the streak-at-risk tile a matching warm outline, so the stats grid reads as a clean set of cards.
+* Card and panel shadows are now softer, two-layer depth (a subtle contact shadow plus a wider ambient one) for a more premium feel.
+* Styling only — no functional or content changes. Database version unchanged (still v4).
 
 = 1.9.0 =
 UI best-practices pass — a visual-design refinement of the whole front-end, verified by rendering the components in a headless browser in both light and dark themes.

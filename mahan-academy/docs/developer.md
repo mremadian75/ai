@@ -188,11 +188,21 @@ The stylesheet (`assets/css/app.css`) is token-driven. `.mahan-app` defines the
 design tokens — surfaces, `--m-muted`/`--m-border`, a **semantic colour system**
 (`--m-danger`/`--m-danger-solid`/`--m-warning`/`--m-warning-text`/`--m-info`),
 radius scale (`--m-radius-sm/-/-lg`), elevation (`--m-shadow-sm/-/-lg`), and a
-`--m-ring` focus token — and `.mahan-theme-dark` overrides them (including
-`color-scheme: dark` so native controls follow the theme, and lighter red/amber
-so status text stays legible). Status colours should reference these tokens, not
-literals, so both themes stay correct. Live-updating numbers use
-`font-variant-numeric: tabular-nums` to avoid width jitter.
+`--m-ring` focus token, a **motion scale** (`--m-ease`/`--m-ease-out`,
+`--m-dur-1/2/3`) and a **spacing scale** (`--m-space-1..6`, `--m-section-gap`) —
+and `.mahan-theme-dark` overrides them (including `color-scheme: dark` so native
+controls follow the theme, and lighter red/amber so status text stays legible).
+
+Colour has two families: the raw **fill** tokens (`--m-primary`, `--m-accent`,
+`--m-warning`, `--m-info`) for solid backgrounds/borders with white text, and
+the **on-surface text** variants (`--m-primary-text`, `--m-accent-text`,
+`--m-warning-text`, `--m-info-text`, plus `--m-accent-fill` for white-glyph
+circles) which are theme-tuned for AA contrast — a fill shade is often too light
+as small text on the low-contrast side of a theme. Use the `-text` token when a
+brand/accent colour is text or an icon; use the fill token for backgrounds.
+Status colours should reference tokens, not literals, so both themes stay
+correct. Live-updating numbers use `font-variant-numeric: tabular-nums` to avoid
+width jitter.
 
 Responsive & accessibility behaviors (1.4.0):
 

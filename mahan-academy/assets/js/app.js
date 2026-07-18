@@ -685,12 +685,16 @@
 			function paintList() {
 				listArea.innerHTML = '';
 				if (!courses.length) {
-					listArea.appendChild(h('div', { class: 'mahan-empty', text: t('emptyCatalog', 'No courses available yet.') }));
+					listArea.appendChild(h('div', { class: 'mahan-empty' }, [
+						h('div', { class: 'mahan-empty-icon', 'aria-hidden': 'true', text: '📚' }),
+						h('p', { text: t('emptyCatalog', 'No courses available yet.') })
+					]));
 					return;
 				}
 				var filtered = courses.filter(matches);
 				if (!filtered.length) {
 					listArea.appendChild(h('div', { class: 'mahan-empty' }, [
+						h('div', { class: 'mahan-empty-icon', 'aria-hidden': 'true', text: '🔍' }),
 						h('p', { text: t('noResults', 'No courses match your search.') }),
 						h('button', { class: 'mahan-btn mahan-btn-ghost', text: t('clearFilters', 'Clear filters'),
 							onClick: function () { state.q = ''; state.levelFilter = ''; search.value = ''; paintChips(); paintList(); syncUrl(); } })
@@ -1712,6 +1716,7 @@
 
 			if (!courses.length) {
 				wrap.appendChild(h('div', { class: 'mahan-empty' }, [
+					h('div', { class: 'mahan-empty-icon', 'aria-hidden': 'true', text: '📚' }),
 					h('p', { text: t('emptyDashboard', 'Pick your first course and start earning XP today.') }),
 					h('button', { class: 'mahan-btn mahan-btn-primary', text: t('browseCourses', 'Browse courses'), onClick: function () { go('catalog'); } })
 				]));
@@ -1776,6 +1781,7 @@
 			var entries = j.entries || [];
 			if (!entries.length) {
 				wrap.appendChild(h('div', { class: 'mahan-empty' }, [
+					h('div', { class: 'mahan-empty-icon', 'aria-hidden': 'true', text: '🏆' }),
 					h('p', { text: t('emptyLeaderboard', 'No ranked learners yet — earn some XP!') }),
 					h('button', { class: 'mahan-btn mahan-btn-primary', text: t('browseCourses', 'Browse courses'), onClick: function () { go('catalog'); } })
 				]));
@@ -1844,6 +1850,7 @@
 			var paths = j.paths || [];
 			if (!paths.length) {
 				wrap.appendChild(h('div', { class: 'mahan-empty' }, [
+					h('div', { class: 'mahan-empty-icon', 'aria-hidden': 'true', text: '🗺️' }),
 					h('p', { text: t('emptyPaths', 'No learning paths yet.') }),
 					h('button', { class: 'mahan-btn mahan-btn-primary', text: t('browseCourses', 'Browse courses'), onClick: function () { go('catalog'); } })
 				]));
@@ -2213,6 +2220,7 @@
 		}
 		var offline = (typeof navigator !== 'undefined') && navigator.onLine === false;
 		return h('div', { class: 'mahan-empty mahan-error-box' }, [
+			h('div', { class: 'mahan-empty-icon', 'aria-hidden': 'true', text: offline ? '📡' : '⚠️' }),
 			h('p', { text: offline ? t('offline', 'You appear to be offline. Check your connection and try again.') : t('error', 'Something went wrong.') }),
 			offline ? h('p', { class: 'mahan-error-hint', text: '📡' }) : null,
 			h('button', { class: 'mahan-btn mahan-btn-ghost', text: '↻ ' + t('retry', 'Try again'), onClick: retry })

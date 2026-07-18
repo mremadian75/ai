@@ -4,6 +4,57 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.9.3]
+
+Accessibility & UI-states pass from a six-lens visual-design audit (responsive,
+motion, hierarchy, component-consistency, contrast, states). **Styling +
+6-line JS (empty-state icons) only — DB stays v4.** Verified by rendering the
+dashboard, a graded quiz, disabled fields, and empty states in headless
+Chromium in both themes.
+
+### Contrast (WCAG AA)
+
+- Added on-surface **text** tokens `--m-primary-text` / `--m-accent-text` /
+  `--m-info-text` and a `--m-accent-fill`, theme-tuned so each brand/accent/info
+  shade is legible on the low-contrast side of each theme. Repointed the failing
+  text/icon usages (HUD XP/level/streak/freeze, progress %, quiz score, lesson/lb
+  XP, tags, active nav, checks, `--m-primary`-as-text) — fills like buttons and
+  `.chip.is-active` keep the raw token. Fixed the invisible active-day week-dot
+  glyph and darkened white-on-green completion circles to meet 3:1. Nudged light
+  `--m-muted` (#6b7280→#5b6270) to clear AA on `--m-surface-2`.
+
+### States & affordances
+
+- Gated the four ungated `:hover` rules on `:not([disabled])`/`:not(:disabled)`
+  so disabled buttons/options/tutor-send no longer light up.
+- Added a disabled resting state for text inputs/textareas/selects
+  (`--m-surface-2` bg, muted text, `-webkit-text-fill-color`, `not-allowed`).
+- Graded wrong pick: `.is-incorrect .mahan-ex-option.is-chosen:not(.is-correct)`
+  now outlines red (scoped so re-submittable lesson exercises are untouched).
+- Press states on chips / options / clickable div rows; hover on clickable
+  (non-`<a>`) lesson rows; themed `::placeholder`; prereq-note link underline.
+- Generalized the review empty-icon badge to a shared `.mahan-empty-icon`,
+  prepended (decorative, `aria-hidden`) to the catalog/dashboard/leaderboard/
+  paths/no-results/error states.
+
+### Responsive & overflow
+
+- Brand ellipsizes + HUD `flex:none` + `min-width:0` so a wide HUD can't force a
+  whole-page horizontal scrollbar; prose `overflow-wrap`, scrollable wide tables,
+  bubble `overflow-wrap:anywhere`; toasts lifted above the mobile bottom nav +
+  `max-width`; four missed 44px touch targets; L/R `env(safe-area-inset-*)` on
+  topbar/main for landscape notches.
+
+### Motion & rhythm
+
+- Desktop modal fade/scale-in; exercise feedback + hint reveal animations
+  (reduced-motion-guarded); button `background-color` transitions;
+  `.mahan-dash-h2` sized to the 22px scale with `--m-section-gap` rhythm;
+  heading-band letter-spacing; leaderboard-hero trailing-space fix; goal-select
+  radius aligned to the scale. Introduced `--m-ease`/`--m-ease-out` +
+  `--m-dur-1/2/3` motion tokens and a `--m-space-*`/`--m-section-gap` spacing
+  scale, threaded through high-traffic transitions.
+
 ## [1.9.2]
 
 Typography & reading-experience refinement, continuing the 1.9.x visual

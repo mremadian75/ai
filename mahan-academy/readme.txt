@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.9.2
+Stable tag: 1.9.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -54,6 +54,16 @@ No. Everything happens inside WordPress.
 Yes — *Settings → Profile Form* takes a JSON schema. The placeholders you define there flow into the tutor's system prompt automatically.
 
 == Changelog ==
+
+= 1.9.3 =
+Accessibility & UI-states pass driven by a six-lens visual-design audit, verified by rendering the dashboard, a graded quiz, disabled fields and empty states in a headless browser in both themes.
+* Fixed several colour-contrast (WCAG AA) failures: the HUD XP/level/streak/freeze counters, progress percentages, quiz scores, tags and active-nav pill now use legible on-surface shades in whichever theme they were failing — core gamification numbers are readable at a glance in both light and dark.
+* Disabled and locked controls now clearly look disabled: buttons and answer options no longer light up on hover when disabled, and a solved answer field or the tutor box (when the AI isn't configured) now shows a proper greyed-out, not-editable state.
+* In a graded quiz/review, the option you picked wrong is now outlined in red — not just the correct one shown in green — so your own mistake is unmistakable.
+* Empty and error screens (no search results, empty dashboard/leaderboard/paths, generic errors) now show a focal circular icon, matching the polished review empty state.
+* Mobile hardening: the top bar can't force a sideways scroll on narrow phones, long lesson tokens/tables wrap or scroll inside their own box, toasts no longer cover the bottom navigation, and a few small tap targets were brought up to 44px; landscape-notch safe-area insets added.
+* Motion & rhythm polish: modals fade/scale in on desktop, exercise feedback and hints ease in instead of snapping, dashboard section headers sit on the type scale with correct spacing, and shared motion/spacing tokens were introduced.
+* Styling only — no functional or content changes. Database version unchanged (still v4).
 
 = 1.9.2 =
 Typography & reading-experience refinement (continues the 1.9.x visual series), verified by rendering long-form lesson content in a headless browser in both themes.

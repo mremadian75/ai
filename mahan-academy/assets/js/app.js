@@ -127,6 +127,9 @@
 	function setTitle(view) {
 		var site = D.siteName || 'Academy';
 		document.title = view ? view + ' – ' + site : site;
+		// Announce the new view to screen readers on SPA navigation (not on the
+		// very first paint — the page title already conveys that).
+		if (liveRegion && view && announceRoutes) { liveRegion.textContent = view; }
 	}
 
 	// Put an async button into a real busy state: a spinner + aria-busy,
@@ -180,6 +183,25 @@
 
 	var state = { view: 'catalog', courseId: 0, lessonId: 0, me: null, profile: null, levelFilter: '' };
 	var root = el('mahan-app');
+
+	// --- Keyboard / screen-reader infrastructure (persists across mount()) ---
+	// A skip link (first tabbable element) + a polite live region that announces
+	// each SPA view change. Both are re-attached on every mount() because
+	// mount() clears root.innerHTML.
+	var skipLink = null, liveRegion = null, announceRoutes = false;
+	function a11yNodes() {
+		if (!skipLink) {
+			skipLink = h('a', { class: 'mahan-skip', href: '#mahan-main', text: t('skipToContent', 'Skip to content'),
+				onClick: function (e) {
+					e.preventDefault();
+					var m = el('mahan-main');
+					if (m) { m.setAttribute('tabindex', '-1'); try { m.focus(); } catch (er) { /* ok */ } m.scrollIntoView(); }
+				} });
+		}
+		if (!liveRegion) {
+			liveRegion = h('div', { class: 'mahan-sr-only', id: 'mahan-live', role: 'status', 'aria-live': 'polite' });
+		}
+	}
 
 	function parseUrl() {
 		var p = new URLSearchParams(window.location.search);
@@ -244,6 +266,8 @@
 		state.from = (params && params.from) || '';
 		pendingScroll = null;
 		pendingFocus = true;
+		// From the first user navigation on, announce view changes to AT.
+		announceRoutes = true;
 		if (!samePlace) { window.history.pushState({ view: view, params: params }, '', url); }
 		window.scrollTo(0, 0);
 		render();
@@ -488,11 +512,15 @@
 		var overlays = Array.prototype.slice.call(root.querySelectorAll('.mahan-modal-overlay'));
 		overlays.forEach(function (o) { o.remove(); });
 		root.innerHTML = '';
+		a11yNodes();
+		// Skip link is the first tabbable element; the live region trails.
+		root.appendChild(skipLink);
 		root.appendChild(hud());
-		var main = h('main', { class: 'mahan-main' }, [content]);
+		var main = h('main', { class: 'mahan-main', id: 'mahan-main' }, [content]);
 		root.appendChild(main);
 		var bnav = bottomNav();
 		if (bnav) { root.appendChild(bnav); }
+		root.appendChild(liveRegion);
 		overlays.forEach(function (o) { root.appendChild(o); });
 		var isSkeleton = !!main.querySelector('.mahan-skeleton');
 		// Restore the saved scroll position once real content (not a
@@ -2532,6 +2560,26 @@
 			default: return renderCatalog();
 		}
 	}
+
+	// Arrow-key navigation across a single-select answer group (roving focus).
+	// Delegated once so every option list — lesson MC/TF, quiz, review — gets
+	// it without per-render wiring; buttons keep their click/aria-pressed logic.
+	root.addEventListener('keydown', function (e) {
+		var opt = e.target;
+		if (!opt || !opt.classList || !opt.classList.contains('mahan-ex-option')) { return; }
+		var dir = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1, Home: 'home', End: 'end' };
+		if (!(e.key in dir)) { return; }
+		var group = opt.closest ? opt.closest('.mahan-ex-options') : null;
+		if (!group) { return; }
+		var opts = Array.prototype.slice.call(group.querySelectorAll('.mahan-ex-option')).filter(function (b) { return !b.disabled; });
+		if (opts.length < 2) { return; }
+		e.preventDefault();
+		var i = opts.indexOf(opt);
+		var next = dir[e.key] === 'home' ? opts[0]
+			: dir[e.key] === 'end' ? opts[opts.length - 1]
+			: opts[(i + dir[e.key] + opts.length) % opts.length];
+		if (next) { try { next.focus(); } catch (er) { /* ok */ } }
+	});
 
 	function boot() {
 		parseUrl();

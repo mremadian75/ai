@@ -294,6 +294,12 @@ UX behaviors (1.8.0):
   badges, and graded options carry composed labels/cues; the tutor has a
   once-per-reply `role="status"` announcer; unit titles are `<h3>` and the
   catalog carries a visually-hidden `<h2>`.
+- **Keyboard / SR navigation (1.9.4)** — `mount()` re-attaches two persistent
+  nodes: a `.mahan-skip` skip-to-content link (first tabbable, targets
+  `#mahan-main`) and a polite `#mahan-live` region that `setTitle()` writes the
+  view name to on each navigation (gated by `announceRoutes`, set from the first
+  `go()`). A single delegated `keydown` on root gives `.mahan-ex-options`
+  arrow-key roving focus (↑↓←→ + Home/End, skips disabled, wraps).
 
 Quiz attempts reuse the `attempts` table (`type = 'quiz'`, `lesson_id = 0`,
 `exercise_key = 'quiz:<md5(unit)>'`), so v1.2.0 still adds no tables.

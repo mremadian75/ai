@@ -4,6 +4,28 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.9.4]
+
+Keyboard & screen-reader navigation pass. **Front-end (`app.js` + `app.css`) and
+one i18n string only — DB stays v4.** Verified by loading the real `app.js` in
+headless Chromium and driving it: skip link becomes the first tabbable element
+and slides in on focus; arrow-roving moves focus across a real option group
+(skipping a disabled option, wrapping, Home/End); the live region and
+`#mahan-main` exist; zero page errors.
+
+- **Skip-to-content link.** `mount()` re-attaches a persistent `.mahan-skip`
+  anchor as the first child of `#mahan-app`; it is off-screen until focused,
+  then slides to `top:0` and focuses `#mahan-main` (added an `id` to the
+  `<main>`). New `skipToContent` i18n string.
+- **Arrow-key roving focus** across `.mahan-ex-options` (lesson MC/TF, quiz,
+  review) via one delegated `keydown` on root: ↑/↓/←/→ move between enabled
+  options with wraparound, Home/End jump to ends. Buttons keep their existing
+  click / `aria-pressed` behaviour and the review card's 1–9 shortcuts.
+- **SPA route announcement.** A persistent polite live region (`#mahan-live`,
+  `role="status"`) announces the view name on each navigation. `setTitle()`
+  writes to it, gated on an `announceRoutes` flag set from the first `go()` so
+  the initial load (already conveyed by the page title) stays silent.
+
 ## [1.9.3]
 
 Accessibility & UI-states pass from a six-lens visual-design audit (responsive,

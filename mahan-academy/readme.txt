@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.9.3
+Stable tag: 1.9.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -54,6 +54,13 @@ No. Everything happens inside WordPress.
 Yes — *Settings → Profile Form* takes a JSON schema. The placeholders you define there flow into the tutor's system prompt automatically.
 
 == Changelog ==
+
+= 1.9.4 =
+Keyboard & screen-reader navigation pass, verified by driving the real front-end in a headless browser (skip link, arrow-key focus, live region).
+* Added a "Skip to content" link — the first thing keyboard users reach — that jumps straight past the navigation to the lesson/page content.
+* Answer options can now be moved through with the arrow keys (with Home/End), skipping disabled options and wrapping around — a faster, more standard keyboard flow on top of the existing 1–9 number-key shortcuts.
+* Screen readers now announce the new view each time you navigate within the app, so blind and low-vision learners know where they've landed instead of being left on a stale page.
+* Styling + front-end script only — no functional or content changes. Database version unchanged (still v4).
 
 = 1.9.3 =
 Accessibility & UI-states pass driven by a six-lens visual-design audit, verified by rendering the dashboard, a graded quiz, disabled fields and empty states in a headless browser in both themes.

@@ -291,6 +291,7 @@ class Mahan_Front {
 			'skip'             => __( 'Skip', 'mahan-academy' ),
 			'variantFailed'    => __( "Couldn't rephrase that one — here's the original.", 'mahan-academy' ),
 			'backToDashboard'  => __( 'Back to My Learning', 'mahan-academy' ),
+			'skipToContent'    => __( 'Skip to content', 'mahan-academy' ),
 			// v1.8.0 — UX round 3.
 			/* translators: %s is the number of due review items. */
 			'reviewFading'     => __( '%s fading — a quick review locks them in', 'mahan-academy' ),

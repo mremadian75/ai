@@ -615,7 +615,7 @@ class Mahan_Admin {
 							<th scope="row"><label for="mahan_tutor_system_prompt"><?php esc_html_e( 'Tutor system prompt', 'mahan-academy' ); ?></label></th>
 							<td>
 								<textarea id="mahan_tutor_system_prompt" name="mahan_tutor_system_prompt" rows="10" class="large-text code"><?php echo esc_textarea( $g( 'tutor_system_prompt' ) ); ?></textarea>
-								<p class="description"><?php esc_html_e( 'Placeholders: {{name}}, {{role}}, {{company_type}}, {{ai_level}}, {{primary_goal}}, {{daily_tools}} — filled from the learner profile.', 'mahan-academy' ); ?></p>
+								<p class="description"><?php esc_html_e( 'Placeholders: {{name}}, {{role}}, {{company_type}}, {{seniority}}, {{ai_level}}, {{primary_goal}}, {{learning_style}}, {{daily_tools}} — filled from the learner profile. The tutor also receives a live "learner context" block (progress + an adaptive target difficulty) automatically.', 'mahan-academy' ); ?></p>
 							</td>
 						</tr>
 					</table>

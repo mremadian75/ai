@@ -197,13 +197,20 @@ class Mahan_Exercises {
 		$task     = isset( $ex['task'] ) ? (string) $ex['task'] : '';
 		$rubric   = isset( $ex['rubric'] ) ? (string) $ex['rubric'] : '';
 
-		$profile_map = Mahan_Profile::placeholder_map( $user_id );
-		$profile_ctx = sprintf(
-			'The learner is a %s (%s level). Their goal: %s.',
-			isset( $profile_map['role'] ) ? $profile_map['role'] : 'professional',
-			isset( $profile_map['ai_level'] ) ? $profile_map['ai_level'] : 'beginner',
-			isset( $profile_map['primary_goal'] ) ? $profile_map['primary_goal'] : 'using AI at work'
-		);
+		// Full learner context (profile + live progress + adaptive difficulty)
+		// so feedback is pitched at the learner's level and their world.
+		if ( class_exists( 'Mahan_Personalization' ) ) {
+			$profile_ctx = Mahan_Personalization::learner_context( $user_id, array( 'with_difficulty' => false ) );
+		}
+		if ( empty( $profile_ctx ) ) {
+			$profile_map = Mahan_Profile::placeholder_map( $user_id );
+			$profile_ctx = sprintf(
+				'The learner is a %s (%s level). Their goal: %s.',
+				isset( $profile_map['role'] ) ? $profile_map['role'] : 'professional',
+				isset( $profile_map['ai_level'] ) ? $profile_map['ai_level'] : 'beginner',
+				isset( $profile_map['primary_goal'] ) ? $profile_map['primary_goal'] : 'using AI at work'
+			);
+		}
 
 		if ( 'prompt_task' === $type ) {
 			$system = 'You are an expert evaluator of AI prompts in a course that teaches people to use AI at work. '

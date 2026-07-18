@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.9.4
+Stable tag: 1.10.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -22,7 +22,7 @@ Mahan Academy is a self-contained learning plugin built to teach people how to u
 * Beautiful single-page application front-end (Coursera structure + Duolingo energy)
 * Real-time streaming AI tutor via Server-Sent Events (Anthropic / OpenAI / Google)
 * Five exercise types: multiple choice, true/false, fill-in-the-blank, short answer, and prompt-writing (open answers graded by AI)
-* Schema-driven learner profile that personalizes the tutor and grading prompts
+* Adaptive personalization engine: a professional onboarding intake builds a rich learner profile that (with a live progress + difficulty signal) tailors the tutor, AI grading, and generated practice questions to each learner's role, level, and goals
 * Gamification: XP with a full audit log, streak XP multipliers, linear or RPG-style progressive levels & titles, daily XP goals, streaks with earned streak freezes, weekly activity dots, 21 tiered achievements with live unlock notifications and progress bars, and weekly + all-time leaderboards
 * Polished learner UX: instant catalog search, "Jump back in" resume, lesson wayfinding (unit · lesson X of Y), confetti course-completion celebrations, offline-aware errors, and instant back/forward navigation
 * Adaptive review: wrong answers are re-asked at the end of the lesson and again on later days (spaced repetition), with an optional AI "ask it a different way" from another model
@@ -54,6 +54,15 @@ No. Everything happens inside WordPress.
 Yes — *Settings → Profile Form* takes a JSON schema. The placeholders you define there flow into the tutor's system prompt automatically.
 
 == Changelog ==
+
+= 1.10.0 =
+Adaptive personalization — the tutor, AI grading, and generated practice questions now tailor themselves to each learner, and onboarding is a richer professional intake. New personalization engine backed by logic tests; onboarding verified by rendering in a headless browser.
+* Professional onboarding: the intake now also asks where you are in your career and how you like to learn, on top of role, company, AI experience, goal, tools, and biggest challenge — and explains up front that the more you share, the more everything adapts. A confirmation shows when your learning is personalized.
+* A "learner context" (your profile plus your live progress) is now given to the AI tutor on every message, so it meets you at your level, uses examples from your role and tools, and connects lessons to your goal.
+* Adaptive difficulty: the system reads your experience level and how you're doing (mastered vs. still-learning reviews, your level) to pick a target difficulty, and pitches generated questions and tutor explanations there.
+* Smarter question design: the "ask it a different way" review questions are now personalized — set in a scenario from your world and tuned to your current level — instead of a generic reword.
+* AI grading feedback now uses the full learner context, so it's pitched at your level and speaks to your goals.
+* No new data tables — personalization is stored in your existing profile. Database version unchanged (still v4).
 
 = 1.9.4 =
 Keyboard & screen-reader navigation pass, verified by driving the real front-end in a headless browser (skip link, arrow-key focus, live region).

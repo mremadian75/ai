@@ -526,7 +526,7 @@ class Mahan_Reviews {
 		$snap = is_array( $snap ) ? $snap : array();
 		$type = (string) $row['qtype'];
 
-		$variant = self::generate_variant( $type, $snap );
+		$variant = self::generate_variant( $type, $snap, $user_id );
 		if ( ! $variant ) {
 			return array( 'ok' => false, 'error' => 'generation_failed' );
 		}
@@ -553,15 +553,26 @@ class Mahan_Reviews {
 	 * @param array  $orig Original question def.
 	 * @return array|null
 	 */
-	private static function generate_variant( $type, $orig ) {
+	private static function generate_variant( $type, $orig, $user_id = 0 ) {
 		$question = isset( $orig['question'] ) ? (string) $orig['question'] : '';
 		$provider = self::variant_provider();
 
 		$system = 'You write practice questions for an online course. '
 			. 'You are given a question the learner previously got wrong. Produce ONE fresh question that tests the '
-			. 'exact same concept from a different angle (reworded, new scenario or example) at the same difficulty, '
+			. 'exact same concept from a different angle (reworded, new scenario or example), '
 			. 'staying within the same subject matter as the original. Keep it self-contained and unambiguous. '
 			. 'Write the question in the same language as the original question.';
+
+		// Personalize the rewrite to the learner: use a scenario from their world
+		// and tune the challenge to their current level, rather than a generic
+		// same-difficulty reword.
+		if ( $user_id && class_exists( 'Mahan_Personalization' ) ) {
+			$ctx = Mahan_Personalization::learner_context( (int) $user_id );
+			if ( '' !== $ctx ) {
+				$system .= "\n\n" . $ctx . "\n" . Mahan_Personalization::difficulty_directive( (int) $user_id )
+					. ' Where natural, set the new question in a scenario from the learner\'s role or tools — but keep it testing the same concept.';
+			}
+		}
 
 		if ( 'multiple_choice' === $type ) {
 			$schema = '{"question":"<text>","options":["<a>","<b>","<c>","<d>"],"answer":<0-based index of the correct option>}';

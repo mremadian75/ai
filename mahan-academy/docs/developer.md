@@ -90,6 +90,25 @@ table also carries `freezes` and `daily_goal` (added in DB v2 via `dbDelta`).
 settings (overridable per call). `Mahan_AI_Stream` handles the SSE tutor via a
 cURL relay, with a non-streaming `reply()` used by the REST fallback.
 
+### Personalization (`Mahan_Personalization`)
+
+The brain that adapts AI output to the learner. Two pure, unit-tested pieces:
+
+- `difficulty_from($ai_level, $level, $mastered, $learning)` → a 1–5 target
+  difficulty (base from stated AI level, lifted by gamification level, nudged
+  ±1 by the review mastery ratio, clamped). `difficulty($user_id)` / `signals()`
+  resolve it against a real user (one `Mahan_Gamification::hud()` call).
+- `learner_context($user_id, $opts)` → a compact structured block (profile +
+  live progress + target difficulty), emitting only non-empty lines.
+  `difficulty_directive($user_id)` is a one-line teaching instruction.
+
+It's injected wherever the AI writes for a learner: the tutor system prompt
+(`Mahan_AI_Stream::build_messages`), exercise grading (`Mahan_Exercises`), and
+the personalized review-variant generator (`Mahan_Reviews::generate_variant`,
+which now takes `$user_id`). The profile itself lives in `mahan_profile` user
+meta via `Mahan_Profile`; the schema (with the `seniority` / `learning_style`
+fields) is `Mahan_Settings::default_schema()`. No new tables.
+
 ---
 
 ## REST API (`mahan/v1`)

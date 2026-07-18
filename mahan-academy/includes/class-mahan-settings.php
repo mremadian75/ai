@@ -180,12 +180,16 @@ class Mahan_Settings {
 			. "- Name: {{name}}\n"
 			. "- Role: {{role}}\n"
 			. "- Company type: {{company_type}}\n"
+			. "- Seniority: {{seniority}}\n"
 			. "- AI experience level: {{ai_level}}\n"
 			. "- Primary goal: {{primary_goal}}\n"
+			. "- Preferred learning style: {{learning_style}}\n"
 			. "- Tools they use daily: {{daily_tools}}\n\n"
 			. "Guidelines:\n"
-			. "- Adapt examples and tone to the learner's role, level, and goal.\n"
-			. "- Be concise and practical. Prefer concrete, work-relevant examples over theory.\n"
+			. "- Meet the learner at their level: match your depth and vocabulary to their AI experience, and pitch new ideas at the target difficulty noted in the learner context below when one is given.\n"
+			. "- Ground every example in THEIR world — their role, industry, seniority, tools, and stated goal. Reuse a concrete task from their day where you can.\n"
+			. "- Connect what they're learning back to their primary goal and biggest challenge.\n"
+			. "- Respect their learning style: keep it quick and practical, or go deep, as they prefer.\n"
 			. "- When the learner is stuck, give a hint before the full answer.\n"
 			. "- Encourage and motivate, Duolingo-style, but stay professional.\n"
 			. "- Use short paragraphs, bullet points, and **bold** for key ideas.\n"
@@ -254,6 +258,30 @@ class Mahan_Settings {
 						array( 'value' => 'support', 'label' => 'Improve customer support' ),
 						array( 'value' => 'coding', 'label' => 'Code & build faster' ),
 						array( 'value' => 'learning', 'label' => 'Learn & research faster' ),
+					),
+				),
+				array(
+					'key'      => 'seniority',
+					'label'    => 'Where are you in your career?',
+					'type'     => 'select',
+					'required' => false,
+					'options'  => array(
+						array( 'value' => 'ic', 'label' => 'Individual contributor' ),
+						array( 'value' => 'lead', 'label' => 'Team lead' ),
+						array( 'value' => 'manager', 'label' => 'Manager' ),
+						array( 'value' => 'director', 'label' => 'Director / VP' ),
+						array( 'value' => 'exec', 'label' => 'Executive / Owner' ),
+					),
+				),
+				array(
+					'key'      => 'learning_style',
+					'label'    => 'How do you like to learn?',
+					'type'     => 'select',
+					'required' => false,
+					'options'  => array(
+						array( 'value' => 'quick', 'label' => 'Quick & practical — just what I need' ),
+						array( 'value' => 'balanced', 'label' => 'Balanced — some depth, some practice' ),
+						array( 'value' => 'deep', 'label' => 'Deep & thorough — I want to really understand' ),
 					),
 				),
 				array(

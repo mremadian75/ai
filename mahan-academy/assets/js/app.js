@@ -2137,6 +2137,8 @@
 							api('/profile', 'POST', { profile: out }).then(function (r) {
 								state.profile = { complete: r.complete, profile: r.profile, schema: schema };
 								modal.close();
+								// Confirm the payoff: their lessons/tutor/exercises now adapt.
+								toast('✨ ' + esc(t('profileSaved', 'Your lessons, exercises, and tutor are now personalized to you.')), 'level');
 							}).catch(function () { btn.disabled = false; msg.textContent = t('error', 'Something went wrong.'); });
 						} })
 				])

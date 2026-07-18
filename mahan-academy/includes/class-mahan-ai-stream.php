@@ -122,6 +122,16 @@ class Mahan_AI_Stream {
 	private static function build_messages( $user_id, $lesson_id, $message ) {
 		$system = Mahan_Profile::render_template( (string) Mahan_Settings::get( 'tutor_system_prompt' ), $user_id );
 
+		// Live personalization: append the learner's current progress + adaptive
+		// target difficulty so the tutor meets them where they are today (the
+		// {{placeholders}} above only carry the static profile).
+		if ( class_exists( 'Mahan_Personalization' ) ) {
+			$ctx = Mahan_Personalization::learner_context( $user_id );
+			if ( '' !== $ctx ) {
+				$system .= "\n\n" . $ctx;
+			}
+		}
+
 		if ( $lesson_id ) {
 			$lesson = get_post( $lesson_id );
 			// Only ever feed PUBLISHED lesson content the learner is enrolled

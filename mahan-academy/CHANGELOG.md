@@ -4,6 +4,46 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.10.0]
+
+Adaptive personalization. A new `Mahan_Personalization` engine turns the learner
+profile + live progress into (a) a **learner-context block** injected into every
+AI prompt and (b) an **adaptive target difficulty**. **No new tables — stored in
+the existing `mahan_profile` user meta; DB stays v4.** The pure difficulty +
+context logic is covered by a 27-assertion standalone test; the enriched
+onboarding was rendered in headless Chromium (both themes).
+
+### New — `includes/class-mahan-personalization.php`
+
+- `difficulty_from($ai_level, $level, $mastered, $learning)` — pure 1–5 target
+  difficulty: base from stated AI level, lifted by gamification level, nudged
+  ±1 by the review mastery ratio once there's a signal; clamped 1–5.
+  `difficulty()` / `signals()` wire it to a real user via one `hud()` call.
+- `learner_context($user_id, $opts)` — a compact, structured block (role, org,
+  seniority, AI level, goal, tools, learning style, challenge + live progress +
+  target difficulty), emitting only lines with a real value. `difficulty_directive()`
+  adds a one-line teaching instruction tuned to difficulty + learning style.
+
+### Threaded through the AI paths
+
+- **Tutor** (`Mahan_AI_Stream::build_messages`) appends `learner_context()` after
+  the rendered system prompt, so the tutor adapts to live progress + difficulty,
+  not just the static `{{placeholders}}`. Default tutor prompt rewritten with
+  adaptive teaching directives + the new `{{seniority}}` / `{{learning_style}}`.
+- **Grading** (`Mahan_Exercises`) replaces the ad-hoc profile sprintf with the
+  full `learner_context()`.
+- **Question generation** (`Mahan_Reviews::generate_variant`, now passed the
+  user) personalizes the "ask a different way" rewrite — scenario from the
+  learner's world, difficulty tuned to performance — instead of a generic reword.
+
+### Onboarding
+
+- Richer default profile schema (`Mahan_Settings::default_schema`) adds
+  `seniority` and `learning_style` selects; the schema-driven SPA form renders
+  them automatically. Intro copy reframed around the personalization payoff, and
+  a `profileSaved` confirmation toast fires on save. Admin placeholder hint
+  updated.
+
 ## [1.9.4]
 
 Keyboard & screen-reader navigation pass. **Front-end (`app.js` + `app.css`) and

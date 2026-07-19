@@ -181,7 +181,7 @@
 	/* State & routing                                                     */
 	/* ------------------------------------------------------------------ */
 
-	var state = { view: 'catalog', courseId: 0, lessonId: 0, me: null, profile: null, levelFilter: '' };
+	var state = { view: 'catalog', courseId: 0, lessonId: 0, me: null, profile: null, levelFilter: '', catFilter: '' };
 	var root = el('mahan-app');
 
 	// --- Keyboard / screen-reader infrastructure (persists across mount()) ---
@@ -214,6 +214,7 @@
 		// filtered view reopens exactly as it was.
 		state.q = p.get('q') || '';
 		state.levelFilter = p.get('level') || '';
+		state.catFilter = p.get('cat') || '';
 		state.lbPeriod = p.get('period') || state.lbPeriod || 'week';
 	}
 
@@ -233,8 +234,8 @@
 	function syncUrl() {
 		var u = new URL(window.location.href);
 		function set(k, v) { if (v) { u.searchParams.set(k, v); } else { u.searchParams.delete(k); } }
-		if (state.view === 'catalog') { set('q', state.q); set('level', state.levelFilter); }
-		else { u.searchParams.delete('q'); u.searchParams.delete('level'); }
+		if (state.view === 'catalog') { set('q', state.q); set('level', state.levelFilter); set('cat', state.catFilter); }
+		else { u.searchParams.delete('q'); u.searchParams.delete('level'); u.searchParams.delete('cat'); }
 		if (state.view === 'leaderboard') { set('period', state.lbPeriod === 'all' ? 'all' : ''); }
 		try { window.history.replaceState(window.history.state, '', u.pathname + u.search); } catch (e) { /* ignore */ }
 	}
@@ -667,11 +668,34 @@
 		setTitle(t('catalog', 'Explore'));
 		cachedApi('/catalog', 'cards', function (j) {
 			var courses = j.courses || [];
+			var cats = j.categories || [];
+			var bundles = j.bundles || [];
 			var wrap = h('div', { class: 'mahan-catalog' });
 			wrap.appendChild(h('div', { class: 'mahan-hero' }, [
 				h('h1', { text: D.heroTitle || 'Learn to use AI at work' }),
 				h('p', { class: 'mahan-hero-sub', text: D.heroSub || 'Structured courses. Hands-on practice. A tutor that answers in real time.' })
 			]));
+
+			// Bundles (specializations) strip — Coursera-style programs, surfaced
+			// up front so multi-course paths are discoverable from the catalog.
+			if (bundles.length) {
+				var strip = h('div', { class: 'mahan-bundle-strip' });
+				strip.appendChild(h('h2', { class: 'mahan-strip-title', text: t('learningPaths', 'Learning paths') }));
+				var srow = h('div', { class: 'mahan-bundle-row' });
+				bundles.forEach(function (b) {
+					srow.appendChild(h('a', {
+						class: 'mahan-bundle-card', href: urlFor('path', { path: b.id }),
+						onClick: function (e) { e.preventDefault(); go('path', { path: b.id }); }
+					}, [
+						h('span', { class: 'mahan-bundle-badge', text: '🗺️ ' + t('pathBadge', 'Path') }),
+						h('h3', { class: 'mahan-bundle-name', text: b.title }),
+						h('p', { class: 'mahan-bundle-sub', text: b.subtitle || b.excerpt || '' }),
+						h('span', { class: 'mahan-bundle-meta', text: b.course_count + ' ' + t('courses', 'courses') })
+					]));
+				});
+				strip.appendChild(srow);
+				wrap.appendChild(strip);
+			}
 
 			// Search + level filter — both client-side and instant.
 			var search = h('input', {
@@ -686,17 +710,39 @@
 			]));
 
 			var levels = [['', t('allLevels', 'All levels')], ['beginner', t('beginner', 'Beginner')], ['intermediate', t('intermediate', 'Intermediate')], ['advanced', t('advanced', 'Advanced')]];
+			// Category (domain) filter — Coursera/Duolingo-style topic sections,
+			// only shown when the catalog spans more than one category.
+			var catArea = (cats.length > 1) ? h('div', { class: 'mahan-chips mahan-chips-cat' }) : null;
 			var chipsArea = h('div', { class: 'mahan-chips' });
 			var listArea = h('div', { class: 'mahan-catalog-list' });
+			if (catArea) { wrap.appendChild(catArea); }
 			wrap.appendChild(chipsArea);
 			wrap.appendChild(listArea);
 
 			function matches(c) {
 				if (state.levelFilter && c.level !== state.levelFilter) { return false; }
+				if (state.catFilter && (c.categories || []).indexOf(state.catFilter) < 0) { return false; }
 				var q = (state.q || '').toLowerCase().trim();
 				if (!q) { return true; }
-				var hay = [c.title, c.subtitle, c.excerpt, (c.categories || []).join(' ')].join(' ').toLowerCase();
+				var hay = [c.title, c.subtitle, c.excerpt, (c.categories || []).join(' '), (c.topics || []).join(' ')].join(' ').toLowerCase();
 				return hay.indexOf(q) >= 0;
+			}
+
+			function paintCats() {
+				if (!catArea) { return; }
+				catArea.innerHTML = '';
+				catArea.appendChild(h('button', {
+					class: 'mahan-chip' + (state.catFilter === '' ? ' is-active' : ''),
+					text: t('allTopics', 'All topics'), 'aria-pressed': state.catFilter === '' ? 'true' : 'false',
+					onClick: function () { state.catFilter = ''; paintCats(); paintList(); syncUrl(); }
+				}));
+				cats.forEach(function (cat) {
+					catArea.appendChild(h('button', {
+						class: 'mahan-chip' + (state.catFilter === cat.name ? ' is-active' : ''),
+						text: cat.name + ' (' + cat.count + ')', 'aria-pressed': state.catFilter === cat.name ? 'true' : 'false',
+						onClick: function () { state.catFilter = cat.name; paintCats(); paintList(); syncUrl(); }
+					}));
+				});
 			}
 
 			function paintChips() {
@@ -725,7 +771,7 @@
 						h('div', { class: 'mahan-empty-icon', 'aria-hidden': 'true', text: '🔍' }),
 						h('p', { text: t('noResults', 'No courses match your search.') }),
 						h('button', { class: 'mahan-btn mahan-btn-ghost', text: t('clearFilters', 'Clear filters'),
-							onClick: function () { state.q = ''; state.levelFilter = ''; search.value = ''; paintChips(); paintList(); syncUrl(); } })
+							onClick: function () { state.q = ''; state.levelFilter = ''; state.catFilter = ''; search.value = ''; paintCats(); paintChips(); paintList(); syncUrl(); } })
 					]));
 					return;
 				}
@@ -741,6 +787,7 @@
 				clearTimeout(syncT); syncT = setTimeout(syncUrl, 350);
 			});
 
+			paintCats();
 			paintChips();
 			paintList();
 			mount(wrap);

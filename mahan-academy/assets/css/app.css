@@ -118,8 +118,21 @@
 
 /* Chips */
 .mahan-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 24px; }
+.mahan-chips-cat { margin-bottom: 12px; }
 .mahan-chip { border: 1px solid var(--m-border); background: var(--m-surface); color: var(--m-muted); padding: 7px 16px; border-radius: 999px; font-weight: 600; font-size: 14px; cursor: pointer; }
 .mahan-chip.is-active { background: var(--m-primary); color: #fff; border-color: var(--m-primary); }
+
+/* Bundles (specializations) strip */
+.mahan-bundle-strip { margin: 6px 0 26px; }
+.mahan-strip-title { font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--m-muted); margin: 0 0 12px; }
+.mahan-bundle-row { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(240px, 1fr); gap: 16px; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x proximity; }
+@media (max-width: 640px) { .mahan-bundle-row { grid-auto-columns: minmax(220px, 82%); } }
+.mahan-bundle-card { scroll-snap-align: start; display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: inherit; background: linear-gradient(135deg, color-mix(in srgb, var(--m-primary) 12%, var(--m-surface)), var(--m-surface)); border: 1px solid var(--m-border); border-radius: var(--m-radius); padding: 18px 18px 16px; box-shadow: var(--m-shadow-sm); transition: transform .12s ease, box-shadow .15s ease, border-color .12s ease; }
+.mahan-bundle-card:hover { transform: translateY(-2px); border-color: var(--m-primary); box-shadow: var(--m-shadow); }
+.mahan-bundle-badge { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--m-primary); }
+.mahan-bundle-name { font-size: 17px; margin: 2px 0 2px; letter-spacing: -.01em; }
+.mahan-bundle-sub { font-size: 13px; color: var(--m-muted); margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.mahan-bundle-meta { margin-top: auto; padding-top: 8px; font-size: 12px; font-weight: 600; color: var(--m-muted); }
 
 /* Grid + cards */
 .mahan-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 22px; }

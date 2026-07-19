@@ -151,7 +151,11 @@ class Mahan_AI_Stream {
 				if ( strlen( $plain ) > 2000 ) {
 					$plain = substr( $plain, 0, 2000 ) . '…';
 				}
-				$system .= "\n\nCURRENT LESSON CONTEXT\nCourse: {$course_title}\nLesson: " . get_the_title( $lesson_id ) . "\nLesson material:\n{$plain}";
+				// Name the concepts this lesson teaches so the tutor anchors its
+				// explanation, examples, and checks on exactly those topics.
+				$topics      = Mahan_Courses::lesson_topics( $lesson_id );
+				$topics_line = ! empty( $topics ) ? "\nConcepts covered: " . implode( ', ', $topics ) : '';
+				$system .= "\n\nCURRENT LESSON CONTEXT\nCourse: {$course_title}\nLesson: " . get_the_title( $lesson_id ) . $topics_line . "\nLesson material:\n{$plain}";
 			}
 		}
 

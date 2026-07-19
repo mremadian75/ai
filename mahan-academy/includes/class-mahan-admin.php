@@ -17,6 +17,7 @@ class Mahan_Admin {
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'assets' ) );
 		add_action( 'wp_ajax_mahan_test_ai', array( __CLASS__, 'ajax_test_ai' ) );
 		add_action( 'admin_post_mahan_export_csv', array( 'Mahan_Reports', 'export_csv' ) );
+		add_action( 'admin_post_mahan_seed_install', array( __CLASS__, 'handle_seed_install' ) );
 
 		Mahan_Course_Meta::init();
 		Mahan_Lesson_Meta::init();
@@ -348,11 +349,63 @@ class Mahan_Admin {
 	/* Dashboard page                                                      */
 	/* ------------------------------------------------------------------ */
 
+	/**
+	 * Install the curated starter content (categories, topics, courses, quizzes,
+	 * and bundles) on demand. Idempotent — safe to run more than once.
+	 */
+	public static function handle_seed_install() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to do this.', 'mahan-academy' ) );
+		}
+		check_admin_referer( 'mahan_seed_install' );
+
+		$result = Mahan_Seed::install();
+
+		$redirect = add_query_arg(
+			array(
+				'page'          => 'mahan-academy',
+				'mahan_seeded'  => 1,
+				'seeded_c'      => (int) $result['courses'],
+				'seeded_l'      => (int) $result['lessons'],
+				'seeded_q'      => (int) $result['quizzes'],
+				'seeded_b'      => (int) $result['bundles'],
+				'seeded_skip'   => (int) $result['skipped'],
+			),
+			admin_url( 'admin.php' )
+		);
+		wp_safe_redirect( $redirect );
+		exit;
+	}
+
 	public static function render_dashboard() {
 		$course_count = wp_count_posts( Mahan_CPT::COURSE );
 		$lesson_count = wp_count_posts( Mahan_CPT::LESSON );
 		$app_page     = (int) Mahan_Settings::get( 'app_page_id', 0 );
 		$ai_ready     = Mahan_Settings::ai_ready();
+
+		// Confirmation notice after a starter-content install.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( isset( $_GET['mahan_seeded'] ) ) {
+			// phpcs:disable WordPress.Security.NonceVerification.Recommended
+			$sc = isset( $_GET['seeded_c'] ) ? (int) $_GET['seeded_c'] : 0;
+			$sl = isset( $_GET['seeded_l'] ) ? (int) $_GET['seeded_l'] : 0;
+			$sq = isset( $_GET['seeded_q'] ) ? (int) $_GET['seeded_q'] : 0;
+			$sb = isset( $_GET['seeded_b'] ) ? (int) $_GET['seeded_b'] : 0;
+			$sk = isset( $_GET['seeded_skip'] ) ? (int) $_GET['seeded_skip'] : 0;
+			// phpcs:enable WordPress.Security.NonceVerification.Recommended
+			$msg = ( $sc > 0 )
+				? sprintf(
+					/* translators: 1: courses, 2: lessons, 3: quizzes, 4: bundles. */
+					esc_html__( 'Starter content installed: %1$d courses, %2$d lessons, %3$d quizzes, and %4$d bundles. Open your academy page to explore.', 'mahan-academy' ),
+					$sc, $sl, $sq, $sb
+				)
+				: esc_html__( 'Starter content is already installed — nothing new to add.', 'mahan-academy' );
+			if ( $sk > 0 && $sc > 0 ) {
+				/* translators: %d: number of existing courses skipped. */
+				$msg .= ' ' . sprintf( esc_html__( '(%d existing course(s) were left untouched.)', 'mahan-academy' ), $sk );
+			}
+			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html( $msg ) . '</p></div>';
+		}
 		?>
 		<div class="wrap mahan-admin-wrap">
 			<h1><?php esc_html_e( 'Mahan Academy', 'mahan-academy' ); ?> <span class="mahan-ver">v<?php echo esc_html( MAHAN_VERSION ); ?></span></h1>
@@ -374,6 +427,36 @@ class Mahan_Admin {
 					<span class="mahan-card-label"><?php echo $ai_ready ? esc_html__( 'AI provider connected', 'mahan-academy' ) : esc_html__( 'AI not configured', 'mahan-academy' ); ?></span>
 					<a class="button" href="<?php echo esc_url( admin_url( 'admin.php?page=mahan-settings' ) ); ?>"><?php esc_html_e( 'Open settings', 'mahan-academy' ); ?></a>
 				</div>
+			</div>
+
+			<?php
+			$seed_installed = Mahan_Seed::is_installed();
+			$seed_total     = count( Mahan_Seed::courses_data() );
+			?>
+			<div class="mahan-seed-box">
+				<h2><?php esc_html_e( 'Starter content library', 'mahan-academy' ); ?></h2>
+				<p class="description">
+					<?php esc_html_e( 'Install a ready-made catalog of professionally written courses — Prompt Engineering, Machine Learning, Generative AI, and AI for Productivity — organized into categories and Coursera-style bundles, with interactive exercises and unit quizzes. Great for launching quickly or as a template to adapt.', 'mahan-academy' ); ?>
+				</p>
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" style="margin-top:12px">
+					<input type="hidden" name="action" value="mahan_seed_install" />
+					<?php wp_nonce_field( 'mahan_seed_install' ); ?>
+					<?php if ( $seed_installed ) : ?>
+						<span class="mahan-ok" style="font-weight:600">✓ <?php esc_html_e( 'Installed', 'mahan-academy' ); ?></span>
+						<button type="submit" class="button button-secondary" style="margin-left:8px">
+							<?php esc_html_e( 'Re-check / add new courses', 'mahan-academy' ); ?>
+						</button>
+						<span class="description" style="margin-left:8px"><?php esc_html_e( 'Re-running never duplicates or overwrites your content.', 'mahan-academy' ); ?></span>
+					<?php else : ?>
+						<button type="submit" class="button button-primary">
+							<?php
+							/* translators: %d: number of courses that will be installed. */
+							echo esc_html( sprintf( _n( 'Install %d starter course', 'Install %d starter courses', $seed_total, 'mahan-academy' ), $seed_total ) );
+							?>
+						</button>
+						<span class="description" style="margin-left:8px"><?php esc_html_e( 'Adds courses, bundles, categories, and topics. Nothing you already made is changed.', 'mahan-academy' ); ?></span>
+					<?php endif; ?>
+				</form>
 			</div>
 
 			<h2><?php esc_html_e( 'Getting started', 'mahan-academy' ); ?></h2>

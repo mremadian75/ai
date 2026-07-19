@@ -557,10 +557,15 @@ class Mahan_Reviews {
 		$question = isset( $orig['question'] ) ? (string) $orig['question'] : '';
 		$provider = self::variant_provider();
 
-		$system = 'You write practice questions for an online course. '
+		$system = 'You are an expert assessment writer for an online course. '
 			. 'You are given a question the learner previously got wrong. Produce ONE fresh question that tests the '
-			. 'exact same concept from a different angle (reworded, new scenario or example), '
-			. 'staying within the same subject matter as the original. Keep it self-contained and unambiguous. '
+			. 'EXACT same underlying concept from a different angle (reworded, a new scenario or example), '
+			. 'staying within the same subject matter as the original. The goal is to confirm real understanding, '
+			. 'not memorisation of the first wording. '
+			. 'Make it genuinely diagnostic: for multiple choice, write distractors that reflect the common '
+			. 'misconceptions a learner who does not truly understand this concept would fall for — each wrong option '
+			. 'should be plausible and tempting, with exactly ONE clearly correct answer. '
+			. 'Keep it self-contained and unambiguous. '
 			. 'Write the question in the same language as the original question.';
 
 		// Personalize the rewrite to the learner: use a scenario from their world

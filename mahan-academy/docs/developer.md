@@ -18,7 +18,8 @@ mahan-academy/
 │   ├── class-mahan-settings.php          # options + defaults + profile schema
 │   ├── class-mahan-cpt.php               # mahan_course / mahan_lesson + taxonomy
 │   ├── class-mahan-profile.php           # schema-driven learner profile (user meta)
-│   ├── class-mahan-courses.php           # course/lesson structure + meta keys
+│   ├── class-mahan-courses.php           # course/lesson structure + meta keys + topics
+│   ├── class-mahan-seed.php              # starter-content installer (idempotent)
 │   ├── class-mahan-gamification.php      # XP, levels, streaks, level titles
 │   ├── class-mahan-badges.php            # achievements
 │   ├── class-mahan-emails.php            # notification emails + daily cron
@@ -43,6 +44,9 @@ mahan-academy/
 └── assets/
     ├── js/{app.js, admin.js, course-builder.js, ai-author.js, path-admin.js}
     └── css/{app.css, admin.css, course-builder.css}
+└── includes/data/                # curated starter-content library (loaded by Mahan_Seed)
+    ├── course-*.php              # one file per seed course (returns a course array)
+    └── bundles.php               # specialization bundles (return an array of paths)
 ```
 
 ---
@@ -58,8 +62,22 @@ mahan-academy/
 - `mahan_lesson` — a lesson, linked to its course by meta.
   Keys: `M_COURSE_ID`, `M_UNIT`, `M_UNIT_ORDER`, `M_ORDER`, `M_XP`, `M_EST_MIN`,
   `M_TYPE`, `M_EXERCISES` (JSON array of exercise definitions).
-- `mahan_path` — a learning path. Meta (on `Mahan_Paths`): `M_COURSES` (ordered
-  course IDs), `M_SUBTITLE`.
+- `mahan_path` — a learning path / **bundle** (Coursera-style specialization).
+  Meta (on `Mahan_Paths`): `M_COURSES` (ordered course IDs), `M_SUBTITLE`.
+
+**Taxonomies** (`Mahan_CPT`): `mahan_category` (`CAT`, hierarchical, on courses —
+the Coursera-style domain) and `mahan_topic` (`TOPIC`, flat, on **courses and
+lessons** — concept-level "مباحث"/skills that the AI tutor and question generator
+key off). `Mahan_Courses::course_topics()` / `lesson_topics()` read them; the
+lesson's topics are named to the tutor in its lesson-context block.
+
+**Starter content** (`Mahan_Seed`) turns the curated `includes/data/` library into
+real posts on demand: it creates the category + topic terms, inserts each course
+with its units, lessons (HTML + exercises + topics) and unit quizzes, and wires
+the courses into bundles. Every seeded post carries a `_mahan_seed_key` marker,
+so `Mahan_Seed::install()` is idempotent — re-running skips existing content and
+only relinks bundle membership. Triggered from the admin dashboard
+(`admin_post_mahan_seed_install`). Ships **no** new tables and no schema bump.
 
 **Dynamic per-user data** lives in eight custom tables (see `Mahan_DB`):
 `enrollments`, `progress`, `attempts`, `stats`, `chat`, `ai_cache`,

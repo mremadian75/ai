@@ -214,12 +214,14 @@ class Mahan_Exercises {
 
 		if ( 'prompt_task' === $type ) {
 			$system = 'You are an expert evaluator of AI prompts in a course that teaches people to use AI at work. '
-				. 'Evaluate the prompt the student wrote for the given task. Judge clarity, context, specificity, '
-				. 'constraints, and desired output format. Be encouraging but honest.';
+				. 'Evaluate the prompt the student wrote for the given task. Judge clarity, role, context, specificity, '
+				. 'constraints, and desired output format. Be encouraging but honest, and teach as you grade — your '
+				. 'feedback should leave the student knowing exactly how to make the prompt better.';
 			$user_msg = "TASK THE STUDENT WAS GIVEN:\n{$task}\n\n";
 		} else {
 			$system = 'You are a strict but encouraging grader for a course that teaches people to use AI at work. '
-				. 'Grade the student\'s answer against the rubric.';
+				. 'Grade the student\'s answer against the rubric, and teach as you grade so the student learns from '
+				. 'the feedback, not just the score.';
 			$user_msg = "QUESTION:\n{$question}\n\n";
 		}
 		if ( '' !== trim( $rubric ) ) {
@@ -227,7 +229,9 @@ class Mahan_Exercises {
 		}
 		$user_msg .= "STUDENT'S ANSWER:\n{$answer_str}\n\n";
 		$user_msg .= "CONTEXT: {$profile_ctx}\n\n";
-		$user_msg .= 'Respond ONLY with a JSON object: {"correct": true|false, "score": <0-100>, "feedback": "<under 70 words, friendly, specific, actionable>"}. '
+		$user_msg .= 'Respond ONLY with a JSON object: {"correct": true|false, "score": <0-100>, "feedback": "<under 70 words>"}. '
+			. 'In "feedback": name the one thing they did well, then the single most important thing to improve and one '
+			. 'concrete way to do it. Be friendly, specific, and actionable — no generic praise. '
 			. 'Mark "correct" true when the score is ' . self::PASS_SCORE . ' or above.';
 
 		$res = Mahan_AI::complete(

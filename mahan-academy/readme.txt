@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.10.0
+Stable tag: 1.11.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -17,10 +17,13 @@ Mahan Academy is a self-contained learning plugin built to teach people how to u
 **Key features:**
 
 * Standalone courses & lessons (no Tutor LMS, LearnDash, etc. required)
+* One-click Starter Content Library — install a ready-made catalog of professionally written courses across Prompt Engineering, Machine Learning, Generative AI, and AI for Productivity, organized into categories and Coursera-style bundles (specializations), each with interactive exercises and unit quizzes
+* Concept "topics" (مباحث): a shared vocabulary tagged on courses and lessons that also tells the AI tutor and question generator exactly which concepts each lesson covers
+* Category filter + bundle discovery right in the catalog (Coursera/Duolingo-style domains and specializations)
 * Visual drag-and-drop Course Builder — build the whole curriculum on one screen
 * AI authoring assistant — generate outcomes, draft lessons, and create exercises
 * Beautiful single-page application front-end (Coursera structure + Duolingo energy)
-* Real-time streaming AI tutor via Server-Sent Events (Anthropic / OpenAI / Google)
+* Real-time streaming AI tutor via Server-Sent Events (Anthropic / OpenAI / Google) — with a structured teaching playbook (diagnose → explain at your level with a worked example from your world → check understanding → point to the next step) and misconception-aware, difficulty-tuned practice questions
 * Five exercise types: multiple choice, true/false, fill-in-the-blank, short answer, and prompt-writing (open answers graded by AI)
 * Adaptive personalization engine: a professional onboarding intake builds a rich learner profile that (with a live progress + difficulty signal) tailors the tutor, AI grading, and generated practice questions to each learner's role, level, and goals
 * Gamification: XP with a full audit log, streak XP multipliers, linear or RPG-style progressive levels & titles, daily XP goals, streaks with earned streak freezes, weekly activity dots, 21 tiered achievements with live unlock notifications and progress bars, and weekly + all-time leaderboards
@@ -53,7 +56,13 @@ No. Everything happens inside WordPress.
 = Can I customize the profile questions? =
 Yes — *Settings → Profile Form* takes a JSON schema. The placeholders you define there flow into the tutor's system prompt automatically.
 
+= How do I get started fast with real courses? =
+Open *Mahan Academy → Dashboard* and click **Install starter courses**. It creates a full catalog — Prompt Engineering, Machine Learning, Generative AI, and AI for Productivity — grouped into categories and Coursera-style bundles, with interactive exercises and unit quizzes. The install is idempotent (safe to re-run) and never touches courses you made yourself. Edit or delete any of it like normal WordPress content.
+
 == Changelog ==
+
+= 1.11.0 =
+Curriculum Library — a one-click Starter Content installer that ships professionally written courses across four categories, grouped into Coursera-style bundles; a new concept-"topics" taxonomy on courses and lessons; category + bundle discovery in the catalog; and a smarter tutor (structured teaching playbook) with misconception-aware, difficulty-tuned practice questions. No new tables — DB stays v4. Seed data validated by a standalone schema+answer-key checker; catalog verified in a headless browser.
 
 = 1.10.0 =
 Adaptive personalization — the tutor, AI grading, and generated practice questions now tailor themselves to each learner, and onboarding is a richer professional intake. New personalization engine backed by logic tests; onboarding verified by rendering in a headless browser.

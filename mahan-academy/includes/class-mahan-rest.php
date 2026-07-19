@@ -194,10 +194,41 @@ class Mahan_REST {
 				return ( ! empty( $b['featured'] ) ? 1 : 0 ) <=> ( ! empty( $a['featured'] ) ? 1 : 0 );
 			}
 		);
+
+		// Category facets (Coursera-style domains) with course counts, so the
+		// catalog can render a filter row and section headers.
+		$cat_counts = array();
+		foreach ( $items as $it ) {
+			foreach ( (array) $it['categories'] as $cat ) {
+				$cat = (string) $cat;
+				if ( '' === $cat ) {
+					continue;
+				}
+				$cat_counts[ $cat ] = isset( $cat_counts[ $cat ] ) ? $cat_counts[ $cat ] + 1 : 1;
+			}
+		}
+		ksort( $cat_counts );
+		$categories = array();
+		foreach ( $cat_counts as $name => $count ) {
+			$categories[] = array( 'name' => $name, 'count' => (int) $count );
+		}
+
+		// Bundles (specializations) — the learning paths, surfaced right in the
+		// catalog so the Coursera-style programs are discoverable up front.
+		$bundles = array();
+		foreach ( Mahan_Paths::get_paths() as $path ) {
+			$summary = Mahan_Paths::summary( $path, $user_id );
+			if ( $summary && $summary['course_count'] > 0 ) {
+				$bundles[] = $summary;
+			}
+		}
+
 		return rest_ensure_response( array(
-			'ok'        => true,
-			'courses'   => $items,
-			'logged_in' => (bool) $user_id,
+			'ok'         => true,
+			'courses'    => $items,
+			'categories' => $categories,
+			'bundles'    => $bundles,
+			'logged_in'  => (bool) $user_id,
 		) );
 	}
 
@@ -356,6 +387,7 @@ class Mahan_REST {
 			'course_pct'   => $enrolled ? Mahan_Progress::course_progress_pct( $user_id, $course_id ) : 0,
 			'unit_quiz'    => $unit_quiz,
 			'content'      => apply_filters( 'the_content', $lesson->post_content ),
+			'topics'       => Mahan_Courses::lesson_topics( $lesson_id ),
 			'type'         => Mahan_Utils::meta_str( $lesson_id, Mahan_Courses::M_TYPE, 'reading' ),
 			'est_min'      => Mahan_Utils::meta_int( $lesson_id, Mahan_Courses::M_EST_MIN, 0 ),
 			'xp'           => Mahan_Courses::lesson_xp( $lesson_id ),

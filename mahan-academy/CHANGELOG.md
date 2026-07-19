@@ -4,6 +4,67 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.11.0]
+
+Curriculum Library. This release fills the academy with real content and makes
+the teaching smarter. It adds a **one-click Starter Content installer**, a
+concept-level **topics** taxonomy, **category + bundle discovery** in the
+catalog, and a **structured teaching playbook** for the tutor plus
+misconception-aware practice questions. **No new tables — DB stays v4.** The
+curated curriculum is validated by a standalone schema + answer-key checker
+(every marked answer proven in range) and the catalog was rendered in a headless
+browser.
+
+### Content model — topics ("مباحث")
+
+- New `mahan_topic` taxonomy (`Mahan_CPT::TOPIC`), flat, registered on **both
+  courses and lessons**. Categories (`mahan_category`) stay the Coursera-style
+  domain; topics are the specific concepts inside them (Few-shot examples,
+  Overfitting, Next-token prediction, …).
+- `Mahan_Courses::course_topics()` / `lesson_topics()` read them; topics are
+  surfaced in `course_summary` and the `/lesson` payload.
+
+### Starter Content installer — `includes/class-mahan-seed.php`
+
+- A curated data library in `includes/data/` (`course-*.php` + `bundles.php`)
+  is turned into real posts on demand: category + topic terms, courses with
+  units, lessons (HTML + exercises + topics), unit quizzes, and the bundles that
+  group them.
+- **Idempotent.** Every seeded post carries a `_mahan_seed_key` marker;
+  re-running skips existing content and only relinks bundle membership. Nothing
+  the owner authored by hand is ever touched.
+- Triggered from the admin Dashboard (a "Starter content library" card →
+  `admin_post_mahan_seed_install`, nonce + capability checked).
+- Ships **three bundles** — *Prompt Engineering Specialization*, *Machine
+  Learning Foundations*, *Generative AI Essentials* — plus a standalone
+  *AI for Everyday Productivity* course, across four categories (Prompt
+  Engineering, Machine Learning, Generative AI, AI at Work). In total:
+  **9 courses, 36 lessons, 144 exercises, 18 unit quizzes (71 questions), and
+  36 topics.** Every answer key was adversarially verified and a WP-mocked
+  end-to-end install simulation confirmed the seeder is idempotent.
+
+### Catalog v2 — categories + bundles (Coursera / Duolingo)
+
+- `/catalog` now returns `categories` (name + course count) and `bundles` (the
+  learning-path specializations).
+- `app.js` renders a **bundles strip** at the top of the catalog and a
+  **category filter** chip row (shown when the catalog spans more than one
+  category), both URL-synced; search now also matches topics. New `allTopics` /
+  `pathBadge` i18n strings, and `.mahan-bundle-*` / `.mahan-chips-cat` styles.
+
+### Smarter teaching & question design
+
+- **Tutor** (`Mahan_Settings::default_tutor_prompt`) rewritten as a structured
+  teaching loop: diagnose → explain at their level → show one worked example
+  from their world → scaffold (hint before answer) → check understanding →
+  point to the next step. The current lesson's **topics** are now named to the
+  tutor in its lesson-context block (`Mahan_AI_Stream`).
+- **Question generation** (`Mahan_Reviews::generate_variant`) is now
+  misconception-aware: distractors target the specific mistakes a learner who
+  doesn't grasp the concept would make, with exactly one clearly-correct answer.
+- **AI grading** (`Mahan_Exercises::grade_ai`) teaches as it grades — feedback
+  names one strength, the single most important gap, and one concrete fix.
+
 ## [1.10.0]
 
 Adaptive personalization. A new `Mahan_Personalization` engine turns the learner

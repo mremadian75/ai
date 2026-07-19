@@ -11,6 +11,11 @@
 .mahan-card-label { color: #6b7280; font-size: 13px; }
 .mahan-card .button { width: fit-content; margin-top: 6px; }
 
+.mahan-seed-box { background: #fff; border: 1px solid #e7e9f0; border-radius: 12px; padding: 18px 20px; margin: 6px 0 26px; box-shadow: 0 2px 8px rgba(20,23,40,.04); max-width: 860px; }
+.mahan-seed-box h2 { margin-top: 4px; }
+.mahan-seed-box .description { max-width: 70ch; }
+.mahan-seed-box .mahan-ok { color: #16a34a; }
+
 .mahan-steps { line-height: 1.8; }
 
 /* Tabs */

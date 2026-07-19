@@ -182,6 +182,8 @@ class Mahan_Front {
 			'error'            => __( 'Something went wrong. Please try again.', 'mahan-academy' ),
 			'levelUp'          => __( 'Level up!', 'mahan-academy' ),
 			'allLevels'        => __( 'All levels', 'mahan-academy' ),
+			'allTopics'        => __( 'All topics', 'mahan-academy' ),
+			'pathBadge'        => __( 'Path', 'mahan-academy' ),
 			'beginner'         => __( 'Beginner', 'mahan-academy' ),
 			'intermediate'     => __( 'Intermediate', 'mahan-academy' ),
 			'advanced'         => __( 'Advanced', 'mahan-academy' ),

@@ -77,12 +77,36 @@ class Mahan_Courses {
 			'level'        => Mahan_Utils::meta_str( $id, self::M_LEVEL, 'beginner' ),
 			'est_hours'    => Mahan_Utils::meta_int( $id, self::M_EST_HOURS, 0 ),
 			'categories'   => is_wp_error( $terms ) ? array() : array_values( $terms ),
+			'topics'       => self::course_topics( $id ),
 			'image'        => get_the_post_thumbnail_url( $id, 'large' ) ?: '',
 			'lesson_count' => count( self::get_course_lessons( $id ) ),
 			'featured'     => (bool) Mahan_Utils::meta_int( $id, self::M_FEATURED, 0 ),
 			'certificate'  => (bool) Mahan_Utils::meta_int( $id, self::M_CERTIFICATE, 0 ),
 			'permalink'    => get_permalink( $id ),
 		);
+	}
+
+	/**
+	 * Topic ("مباحث") names attached to a course.
+	 *
+	 * @param int $course_id Course id.
+	 * @return string[]
+	 */
+	public static function course_topics( $course_id ) {
+		$terms = wp_get_post_terms( (int) $course_id, Mahan_CPT::TOPIC, array( 'fields' => 'names' ) );
+		return is_wp_error( $terms ) ? array() : array_values( $terms );
+	}
+
+	/**
+	 * Topic names attached to a lesson (concept tags the AI tutor / question
+	 * generator can key off).
+	 *
+	 * @param int $lesson_id Lesson id.
+	 * @return string[]
+	 */
+	public static function lesson_topics( $lesson_id ) {
+		$terms = wp_get_post_terms( (int) $lesson_id, Mahan_CPT::TOPIC, array( 'fields' => 'names' ) );
+		return is_wp_error( $terms ) ? array() : array_values( $terms );
 	}
 
 	/**

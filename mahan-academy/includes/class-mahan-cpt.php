@@ -15,6 +15,7 @@ class Mahan_CPT {
 	const LESSON = 'mahan_lesson';
 	const PATH   = 'mahan_path';
 	const CAT    = 'mahan_category';
+	const TOPIC  = 'mahan_topic';
 
 	public static function init() {
 		add_action( 'init', array( __CLASS__, 'register' ), 5 );
@@ -113,6 +114,34 @@ class Mahan_CPT {
 				'show_in_rest' => true,
 				'hierarchical' => true,
 				'rewrite'      => array( 'slug' => 'course-category' ),
+			)
+		);
+
+		// Topics ("مباحث") — a flat, concept-level vocabulary shared across
+		// courses AND lessons. Categories are the Coursera-style domain
+		// (Prompt Engineering, Machine Learning); topics are the specific
+		// skills/concepts inside them (Few-shot examples, Overfitting, …), and
+		// they feed the AI tutor / question generator so it knows what a lesson
+		// is actually about.
+		register_taxonomy(
+			self::TOPIC,
+			array( self::COURSE, self::LESSON ),
+			array(
+				'labels'       => array(
+					'name'          => __( 'Topics', 'mahan-academy' ),
+					'singular_name' => __( 'Topic', 'mahan-academy' ),
+					'menu_name'     => __( 'Topics', 'mahan-academy' ),
+					'search_items'  => __( 'Search Topics', 'mahan-academy' ),
+					'all_items'     => __( 'All Topics', 'mahan-academy' ),
+					'edit_item'     => __( 'Edit Topic', 'mahan-academy' ),
+					'add_new_item'  => __( 'Add New Topic', 'mahan-academy' ),
+					'new_item_name' => __( 'New Topic Name', 'mahan-academy' ),
+				),
+				'public'       => true,
+				'show_in_rest' => true,
+				'show_in_menu' => true,
+				'hierarchical' => false,
+				'rewrite'      => array( 'slug' => 'topic' ),
 			)
 		);
 	}

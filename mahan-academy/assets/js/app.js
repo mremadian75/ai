@@ -891,6 +891,12 @@
 			]);
 			wrap.appendChild(hero);
 
+			// Topics this course covers (the مباحث).
+			if (c.topics && c.topics.length) {
+				wrap.appendChild(h('div', { class: 'mahan-topic-chips mahan-course-topics', 'aria-label': t('topics', 'Topics') },
+					c.topics.map(function (tp) { return h('span', { class: 'mahan-topic-chip', text: tp }); })));
+			}
+
 			// Prerequisite note.
 			if (j.prerequisite) {
 				wrap.appendChild(h('div', { class: 'mahan-note' }, [
@@ -1264,6 +1270,11 @@
 			// Main column.
 			var col = h('div', { class: 'mahan-lesson-col' });
 			col.appendChild(h('h1', { class: 'mahan-lesson-title', text: L.title }));
+			// Concept topics for this lesson (the مباحث it covers).
+			if (L.topics && L.topics.length) {
+				col.appendChild(h('div', { class: 'mahan-topic-chips', 'aria-label': t('topics', 'Topics') },
+					L.topics.map(function (tp) { return h('span', { class: 'mahan-topic-chip', text: tp }); })));
+			}
 			col.appendChild(h('article', { class: 'mahan-prose', html: L.content || '' }));
 
 			// Exercises.
@@ -1272,6 +1283,10 @@
 				L.exercises.forEach(function (ex) { exWrap.appendChild(exerciseCard(ex, L)); });
 				col.appendChild(exWrap);
 			}
+
+			// Smart practice — on-demand AI-generated questions for this lesson.
+			var practice = practicePanel(L);
+			if (practice) { col.appendChild(practice); }
 
 			// Footer nav.
 			col.appendChild(lessonFooter(L));
@@ -1489,6 +1504,118 @@
 			}
 		}).catch(function () {
 			restore(oldLabel);
+			toast(t('error', 'Something went wrong.'), 'error');
+		});
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Smart practice (on-demand AI-generated questions)                   */
+	/* ------------------------------------------------------------------ */
+
+	// A "generate fresh practice" panel, shown only when the learner is
+	// enrolled and the AI provider is available (the questions are AI-authored).
+	function practicePanel(L) {
+		if (!L.enrolled || !D.aiReady || !L.tutor_ready) { return null; }
+		var section = h('section', { class: 'mahan-practice' });
+		section.appendChild(h('div', { class: 'mahan-practice-head' }, [
+			h('h2', { text: '✨ ' + t('smartPractice', 'Smart practice') }),
+			h('p', { class: 'mahan-practice-sub', text: t('smartPracticeSub', 'Generate fresh questions tuned to this lesson and your level.') })
+		]));
+		var list = h('div', { class: 'mahan-practice-list' });
+		var genBtn = h('button', { class: 'mahan-btn mahan-btn-primary', type: 'button', text: '✨ ' + t('generatePractice', 'Generate practice'),
+			onClick: function () { generatePractice(genBtn, list, L); } });
+		section.appendChild(list);
+		section.appendChild(h('div', { class: 'mahan-practice-bar' }, [genBtn]));
+		return section;
+	}
+
+	function generatePractice(btn, list, L) {
+		var old = btn.innerHTML;
+		var restore = setBusy(btn);
+		api('/practice', 'POST', { lesson_id: L.id }).then(function (r) {
+			restore(old);
+			if (!r || !r.ok || !r.questions || !r.questions.length) {
+				toast(esc(t('practiceFailed', "Couldn't generate practice right now — please try again.")), 'error');
+				return;
+			}
+			list.innerHTML = '';
+			r.questions.forEach(function (q) { list.appendChild(practiceCard(q, r.token)); });
+			btn.innerHTML = '✨ ' + esc(t('generateMore', 'Generate more'));
+			if (list.firstChild && list.firstChild.scrollIntoView) { list.firstChild.scrollIntoView({ block: 'nearest' }); }
+		}).catch(function (e) {
+			restore(old);
+			if (e && e.status === 403) { toast(esc(t('notEnrolled', 'Enroll in this course to access its lessons.')), 'info'); return; }
+			toast(esc(t('practiceFailed', "Couldn't generate practice right now — please try again.")), 'error');
+		});
+	}
+
+	function practiceCard(q, token) {
+		var card = h('div', { class: 'mahan-ex mahan-practice-card' });
+		card.appendChild(h('div', { class: 'mahan-ex-q', html: mdToHtml(q.question || '') }));
+		var feedback = h('div', { class: 'mahan-ex-feedback', style: 'display:none', role: 'status' });
+		var checkBtn, getAnswer, opts = null;
+
+		if ((q.type === 'multiple_choice' || q.type === 'true_false') && q.options) {
+			var chosen = { i: -1 };
+			opts = h('div', { class: 'mahan-ex-options' + (q.type === 'true_false' ? ' mahan-ex-tf' : '') }, q.options.map(function (o, i) {
+				return h('button', { class: 'mahan-ex-option', type: 'button', text: o, 'aria-pressed': 'false',
+					onClick: function (e) {
+						if (card.classList.contains('is-solved')) { return; }
+						opts.querySelectorAll('.mahan-ex-option').forEach(function (b) { b.classList.remove('is-chosen'); b.setAttribute('aria-pressed', 'false'); });
+						e.currentTarget.classList.add('is-chosen');
+						e.currentTarget.setAttribute('aria-pressed', 'true');
+						chosen.i = i;
+						checkBtn.disabled = false;
+					} });
+			}));
+			card.appendChild(opts);
+			getAnswer = function () { return chosen.i; };
+			checkBtn = h('button', { class: 'mahan-btn mahan-btn-primary mahan-ex-check', type: 'button', text: t('check', 'Check'), disabled: true,
+				onClick: function () { submitPractice(token, q, getAnswer(), card, feedback, checkBtn, opts); } });
+		} else { // fill_blank
+			var inp = h('input', { class: 'mahan-ex-input mahan-ex-blank', type: 'text', placeholder: t('typeAnswer', 'Type your answer…'), 'aria-label': t('typeAnswer', 'Type your answer…') });
+			card.appendChild(inp);
+			getAnswer = function () { return inp.value; };
+			checkBtn = h('button', { class: 'mahan-btn mahan-btn-primary mahan-ex-check', type: 'button', text: t('check', 'Check'),
+				onClick: function () { submitPractice(token, q, getAnswer(), card, feedback, checkBtn, null); } });
+			inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); checkBtn.click(); } });
+		}
+
+		card.appendChild(h('div', { class: 'mahan-ex-bar' }, [h('span', {}), checkBtn]));
+		card.appendChild(feedback);
+		return card;
+	}
+
+	function submitPractice(token, q, answer, card, feedback, btn, opts) {
+		var isChoice = (q.type === 'multiple_choice' || q.type === 'true_false');
+		if ((isChoice && (answer === -1 || answer === '')) || (!isChoice && !String(answer).trim())) {
+			toast(esc(t('pickAnswer', 'Pick an answer first.')), 'info');
+			return;
+		}
+		var old = btn.innerHTML;
+		var restore = setBusy(btn);
+		api('/practice/grade', 'POST', { token: token, index: q.index, answer: answer }).then(function (r) {
+			restore(old);
+			feedback.style.display = 'block';
+			feedback.className = 'mahan-ex-feedback ' + (r.is_correct ? 'is-correct' : 'is-incorrect');
+			var head = r.is_correct ? '✓ ' + tv('correctVariants', 'correct', 'Correct!') : '✕ ' + tv('incorrectVariants', 'incorrect', 'Not quite');
+			var extra = '';
+			if (!r.is_correct) {
+				if (opts && typeof r.correct_index === 'number') {
+					var btns = opts.querySelectorAll('.mahan-ex-option');
+					if (btns[r.correct_index]) { btns[r.correct_index].classList.add('is-correct'); }
+				} else if (r.correct_text) {
+					extra = '<div>' + esc(t('answerWas', 'Answer:')) + ' <strong>' + esc(r.correct_text) + '</strong></div>';
+				}
+			}
+			feedback.innerHTML = '<strong>' + head + '</strong>' + extra;
+			card.classList.add('is-solved');
+			if (opts) { opts.querySelectorAll('.mahan-ex-option').forEach(function (b) { b.disabled = true; }); }
+			else { var fillInp = card.querySelector('.mahan-ex-input'); if (fillInp) { fillInp.disabled = true; } }
+			btn.disabled = true;
+			if (r.is_correct) { celebrateXp(r); }
+		}).catch(function () {
+			restore(old);
 			toast(t('error', 'Something went wrong.'), 'error');
 		});
 	}

@@ -29,6 +29,7 @@ mahan-academy/
 │   ├── class-mahan-exercises.php         # grading (instant + AI)
 │   ├── class-mahan-quizzes.php           # end-of-unit quizzes
 │   ├── class-mahan-reviews.php           # adaptive review (spaced repetition + AI variants)
+│   ├── class-mahan-practice.php          # on-demand AI practice generator + grading
 │   ├── class-mahan-paths.php             # learning paths
 │   ├── class-mahan-ai-stream.php         # SSE tutor + non-streaming fallback
 │   ├── class-mahan-rest.php              # mahan/v1 REST API

@@ -190,6 +190,13 @@ class Mahan_Front {
 			'whatYouLearn'     => __( "What you'll learn", 'mahan-academy' ),
 			'courseContent'    => __( 'Course content', 'mahan-academy' ),
 			'practice'         => __( 'Practice', 'mahan-academy' ),
+			'topics'           => __( 'Topics', 'mahan-academy' ),
+			// Smart practice (on-demand AI-generated questions).
+			'smartPractice'    => __( 'Smart practice', 'mahan-academy' ),
+			'smartPracticeSub' => __( 'Generate fresh questions tuned to this lesson and your level.', 'mahan-academy' ),
+			'generatePractice' => __( 'Generate practice', 'mahan-academy' ),
+			'generateMore'     => __( 'Generate more', 'mahan-academy' ),
+			'practiceFailed'   => __( "Couldn't generate practice right now — please try again.", 'mahan-academy' ),
 			'reading'          => __( 'Reading', 'mahan-academy' ),
 			'locked'           => __( 'Complete the previous lesson to unlock', 'mahan-academy' ),
 			'featured'         => __( 'Featured', 'mahan-academy' ),

@@ -4,6 +4,46 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.12.0]
+
+Smart Practice. An on-demand AI practice generator, plus concept-topic chips in
+the learner UI. **No new tables — DB stays v4** (generated sets live in a
+short-lived per-user transient; wrong answers reuse the existing review queue).
+Backend logic covered by a 17-assertion standalone test; the whole panel was
+driven end-to-end in headless Chromium (generate → answer → grade) with zero JS
+errors.
+
+### On-demand AI practice — `includes/class-mahan-practice.php`
+
+- `Mahan_Practice::generate($user_id, $lesson_id, $count)` asks the active
+  provider for fresh questions that test the lesson's concepts (its
+  `mahan_topic`s), tuned to the learner's **adaptive difficulty** and written
+  with **misconception-targeting distractors**. Only deterministic types
+  (multiple choice, true/false, fill-blank) are produced, so every question is
+  graded instantly and can re-enter spaced repetition.
+- Access is gated exactly like the tutor/lesson: enrolled + unlocked only, so
+  practice can never leak locked material. The set (with answers) is stashed in
+  a 30-minute per-user transient keyed by an opaque token; the browser only sees
+  answer-stripped questions.
+- `grade($user_id, $token, $index, $answer)` grades one item via the existing
+  `Mahan_Reviews::grade_question`, awards review XP **once per question** (stash
+  tracks graded indices, so it can't be farmed), and feeds wrong answers into
+  the `Mahan_Reviews` queue (`source = practice`) so they come back later.
+- New REST routes `POST /practice` and `POST /practice/grade` (logged-in +
+  nonce; 403 for not-enrolled/locked, 404 for unknown token).
+
+### Learner UI (`app.js` + `app.css`)
+
+- A **Smart practice** panel on the lesson (shown when enrolled and the AI is
+  configured): "Generate practice" → answer-and-check cards reusing the existing
+  option/blank rendering and XP celebration → "Generate more". Grades against
+  `/practice/grade`, revealing the correct answer on a miss.
+- **Topic chips** ("مباحث") now render under the lesson title and on the course
+  landing header, from `lesson_topics()` / `course_topics()`. New i18n:
+  `topics`, `smartPractice`, `smartPracticeSub`, `generatePractice`,
+  `generateMore`, `practiceFailed`; `.mahan-practice-*` / `.mahan-topic-chip*`
+  styles.
+
 ## [1.11.0]
 
 Curriculum Library. This release fills the academy with real content and makes

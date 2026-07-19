@@ -214,6 +214,19 @@ a.mahan-lesson-row:hover { border-color: var(--m-primary); background: color-mix
 /* Exercises */
 .mahan-exercises { margin-top: 34px; padding-top: 22px; border-top: 2px dashed var(--m-border); }
 .mahan-exercises > h2 { font-size: 22px; margin: 0 0 16px; }
+
+/* Lesson topic chips (the concepts / مباحث a lesson covers) */
+.mahan-topic-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 18px; }
+.mahan-topic-chip { font-size: 12px; font-weight: 600; color: var(--m-primary); background: color-mix(in srgb, var(--m-primary) 10%, var(--m-surface)); border: 1px solid color-mix(in srgb, var(--m-primary) 22%, var(--m-border)); border-radius: 999px; padding: 3px 11px; }
+.mahan-course-topics { margin-top: -10px; margin-bottom: 22px; }
+
+/* Smart practice (on-demand AI questions) */
+.mahan-practice { margin-top: 30px; padding: 22px; border: 2px solid color-mix(in srgb, var(--m-primary) 22%, var(--m-border)); border-radius: var(--m-radius); background: color-mix(in srgb, var(--m-primary) 4%, var(--m-surface)); }
+.mahan-practice-head h2 { font-size: 20px; margin: 0 0 4px; }
+.mahan-practice-sub { color: var(--m-muted); font-size: 14px; margin: 0 0 16px; max-width: 60ch; }
+.mahan-practice-list:not(:empty) { margin-bottom: 16px; }
+.mahan-practice-card { background: var(--m-surface); }
+.mahan-practice-bar { display: flex; justify-content: center; }
 .mahan-ex { border: 2px solid var(--m-border); border-radius: var(--m-radius); padding: 20px; margin-bottom: 18px; transition: border-color .2s; }
 .mahan-ex.is-solved { border-color: var(--m-accent); background: color-mix(in srgb, var(--m-accent) 5%, transparent); }
 .mahan-ex-q { font-weight: 600; font-size: 16.5px; margin-bottom: 14px; }

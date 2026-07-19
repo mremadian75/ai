@@ -143,6 +143,19 @@ class Mahan_REST {
 			'callback'            => array( __CLASS__, 'review_variant' ),
 			'permission_callback' => $logged_in,
 		) );
+
+		// On-demand AI practice generator (fresh questions for a lesson).
+		register_rest_route( self::NS, '/practice', array(
+			'methods'             => WP_REST_Server::CREATABLE,
+			'callback'            => array( __CLASS__, 'practice' ),
+			'permission_callback' => $logged_in,
+		) );
+
+		register_rest_route( self::NS, '/practice/grade', array(
+			'methods'             => WP_REST_Server::CREATABLE,
+			'callback'            => array( __CLASS__, 'practice_grade' ),
+			'permission_callback' => $logged_in,
+		) );
 	}
 
 	/* ------------------------------------------------------------------ */
@@ -848,6 +861,54 @@ class Mahan_REST {
 		if ( empty( $res['ok'] ) ) {
 			$status = ( 'not_found' === ( isset( $res['error'] ) ? $res['error'] : '' ) ) ? 404 : 422;
 			return new WP_REST_Response( $res, $status );
+		}
+		return rest_ensure_response( $res );
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* On-demand AI practice                                               */
+	/* ------------------------------------------------------------------ */
+
+	/**
+	 * Generate a fresh practice set for a lesson.
+	 */
+	public static function practice( WP_REST_Request $request ) {
+		$user_id   = get_current_user_id();
+		$body      = $request->get_json_params();
+		$lesson_id = isset( $body['lesson_id'] ) ? absint( $body['lesson_id'] ) : 0;
+		$count     = isset( $body['count'] ) ? absint( $body['count'] ) : 0;
+		if ( ! $lesson_id ) {
+			return new WP_REST_Response( array( 'ok' => false, 'error' => 'missing_lesson_id' ), 400 );
+		}
+		$res = Mahan_Practice::generate( $user_id, $lesson_id, $count );
+		if ( empty( $res['ok'] ) ) {
+			$err    = isset( $res['error'] ) ? $res['error'] : '';
+			$status = 422;
+			if ( 'not_found' === $err ) {
+				$status = 404;
+			} elseif ( 'not_enrolled' === $err || 'locked' === $err ) {
+				$status = 403;
+			}
+			return new WP_REST_Response( $res, $status );
+		}
+		return rest_ensure_response( $res );
+	}
+
+	/**
+	 * Grade one answer within a generated practice set.
+	 */
+	public static function practice_grade( WP_REST_Request $request ) {
+		$user_id = get_current_user_id();
+		$body    = $request->get_json_params();
+		$token   = isset( $body['token'] ) ? (string) $body['token'] : '';
+		$index   = isset( $body['index'] ) ? absint( $body['index'] ) : 0;
+		$answer  = isset( $body['answer'] ) ? $body['answer'] : '';
+		if ( '' === $token ) {
+			return new WP_REST_Response( array( 'ok' => false, 'error' => 'missing_token' ), 400 );
+		}
+		$res = Mahan_Practice::grade( $user_id, $token, $index, $answer );
+		if ( empty( $res['ok'] ) ) {
+			return new WP_REST_Response( $res, 404 );
 		}
 		return rest_ensure_response( $res );
 	}

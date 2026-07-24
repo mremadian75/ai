@@ -1289,3 +1289,77 @@ div.mahan-lesson-row:active { transform: translateY(1px); }
 	.mahan-cover-glyph, .mahan-tutor-starter { transition: none; }
 	.mahan-card:hover .mahan-cover-glyph { transform: none; }
 }
+
+/* ==================================================================== */
+/* v1.20.0 — UI layer 2: restraint, rhythm, entrance motion             */
+/* ==================================================================== */
+
+/* --- One dominant block per screen ---------------------------------- */
+/* The dashboard used to stack three full-width banners in three tints —
+   amber review, lavender resume, white stats — so nothing led. Review is
+   still first (it's the time-sensitive task) but as a single-line strip,
+   which leaves "Continue learning" as the one dominant block. */
+.mahan-review-cta {
+	padding: 12px 16px; gap: 12px; margin-bottom: 16px;
+	border-radius: var(--m-radius-sm);
+	background: color-mix(in srgb, var(--m-warning) 8%, var(--m-surface));
+	border-color: color-mix(in srgb, var(--m-warning) 28%, var(--m-border));
+	box-shadow: none;
+	flex-wrap: nowrap;
+}
+.mahan-review-cta-body { gap: 10px; min-width: 0; }
+.mahan-review-cta-icon { font-size: 18px; }
+.mahan-review-cta-title { margin: 0; font-size: 14px; font-weight: 700; line-height: 1.45; }
+.mahan-review-cta-sub { font-weight: 500; color: var(--m-muted); font-size: 14px; }
+@media (max-width: 640px) {
+	.mahan-review-cta { flex-wrap: wrap; }
+	.mahan-review-cta .mahan-btn { width: 100%; }
+}
+
+/* --- Stats: numbers, not a row of emoji ----------------------------- */
+/* Only the streak keeps an icon, because the flame carries state (lit vs.
+   at risk). An emoji above "XP" or "Level" just restated the label below
+   it in a fourth and fifth colour. */
+.mahan-stat-big { justify-content: center; gap: 3px; }
+.mahan-stat-big.is-plain { padding-top: 22px; padding-bottom: 22px; }
+.mahan-stat-big.is-plain .mahan-stat-value { font-size: 30px; }
+.mahan-stat-label { text-align: center; }
+
+/* --- One accent per meter ------------------------------------------- */
+/* The level bar was an indigo-to-green gradient: the loudest element on
+   the page, and the hue shift meant nothing. */
+.mahan-level-bar-track span { background: var(--m-primary); }
+
+/* --- Week strip: filled or not, no shape inside ---------------------- */
+.mahan-week-dot { width: 24px; height: 24px; font-size: 12px; }
+.mahan-week-day.is-active .mahan-week-dot { background: color-mix(in srgb, var(--m-accent) 34%, var(--m-bg)); border-color: color-mix(in srgb, var(--m-accent) 55%, var(--m-border)); }
+.mahan-week-day.is-today .mahan-week-dot { box-shadow: 0 0 0 3px color-mix(in srgb, var(--m-primary) 26%, transparent); }
+
+/* At-risk streak: the same flame, dimmed. Swapping in a candle made the
+   learner decode a new object instead of reading a state change. */
+.mahan-stat-big.is-cold .mahan-stat-icon,
+.mahan-hud-streak.is-cold .mahan-hud-icon { filter: grayscale(.85); opacity: .6; }
+
+/* --- Entrance motion ------------------------------------------------- */
+/* Opt-in only: the class below is added by JS, so content is visible with
+   no JS, no IntersectionObserver, or reduced motion. Transform + opacity
+   only, and the stagger is capped in JS so a long grid's last card is not
+   left waiting. */
+.mahan-reveal {
+	animation: m-reveal 460ms var(--m-ease-out) both;
+	animation-delay: calc(var(--reveal-i, 0) * 55ms);
+}
+@keyframes m-reveal {
+	from { opacity: 0; transform: translate3d(0, 10px, 0); }
+	to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+	.mahan-reveal { animation: none; }
+}
+
+/* --- Section rhythm -------------------------------------------------- */
+/* Headings that introduce a block sat the same distance from what came
+   before as from what they label. */
+.mahan-dash-h2 { margin-top: 34px; margin-bottom: 14px; }
+.mahan-dash-h2 + .mahan-badges-sub { margin-top: -8px; }
+.mahan-strip-title { margin-bottom: 14px; }

@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.19.0
+Stable tag: 1.20.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -75,6 +75,9 @@ You don't have to do anything — the starter catalog installs automatically on 
 Each course lists the authoritative references it is grounded in under "Further reading & sources" on the course page — peer-reviewed papers, standards and institutional guidance (NIST AI Risk Management Framework, EU AI Act, UNESCO, OECD, OWASP, C2PA), textbooks, and official provider documentation.
 
 == Changelog ==
+
+= 1.20.0 =
+A second UI pass, this one about restraint — 1.19.0 added things, this one takes things away so what's left can lead. The dashboard stacked three full-width banners in three tints and nothing led; the review CTA is now a single-line strip, which makes "Continue learning" the one primary action again. Stats lost their emoji hats (the flame stays, because it carries state — an at-risk streak is now a dimmed flame instead of a cryptic candle), the level meter went from a two-hue gradient to one flat accent, and week dots are simply filled or not. Card grids now lift in as they scroll into view — strictly opt-in, so no JS, no IntersectionObserver, or reduced motion means the content is just there. Fixes: grids loaded after the page (the recommendations strip) never animated, and uncategorised courses all shared one cover colour. Front-end only, no new tables.
 
 = 1.19.0 =
 UI pass. Every course now has real cover art — CSS gradients with the hue set by category (so a category reads as a colour family) and the angle and tone varied by title (so four courses on one ladder don't look identical); the old placeholder was a flat block with one letter that was effectively invisible in dark mode. Search moved into the hero, where you can actually see it — it used to sit a screen below the fold. The course hero now shows where you stand (percent, "2 of 4 lessons", progress bar) right above Resume, and gets a cover of its own. Cards, heroes and panels finally have real depth in dark mode. The tutor opens with three questions built from the lesson instead of a blank box, avatars fall back to initials instead of a broken image, and the HUD reads as separate stats. Front-end only, no new tables.

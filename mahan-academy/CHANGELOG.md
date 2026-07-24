@@ -4,6 +4,66 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.20.0]
+
+A second UI pass, this one about **restraint**. 1.19.0 added things; this one
+takes things away so what's left can lead. Front-end only — **no new tables, DB
+stays v4**.
+
+### One dominant block per screen
+
+The dashboard stacked three full-width banners in three different tints — amber
+review, lavender resume, white stats — so nothing led and the page had no answer
+to "what do I do now?".
+
+- The review CTA is now a **single-line strip**. It still comes first (it's the
+  time-sensitive task) but it no longer competes for the eye.
+- "Continue learning" is therefore the page's **one primary button** again,
+  instead of being demoted to a ghost whenever a review was due.
+
+### Fewer colours doing less work
+
+- **Stats lost their emoji hats.** 🔥 stays on the streak, because the flame
+  carries state; ⚡ ◆ ❄️ only restated the label directly beneath them, in three
+  more colours, rendered differently on every OS.
+- **The at-risk streak is a dimmed flame, not a candle.** Swapping in a
+  different object made the learner decode a new symbol instead of reading a
+  state change.
+- **The level meter is one flat accent.** It was an indigo→green gradient: the
+  loudest element on the page, and the hue shift meant nothing.
+- **Week dots are filled or not.** The old ring-with-a-`·`-inside was a shape,
+  not information. A goal-met day still gets a tick.
+
+### Entrance motion
+
+Card grids now lift in as they scroll into view — 460ms, transform and opacity
+only, a 55ms stagger capped at 8 so a long grid's last card isn't left waiting.
+
+It is strictly **opt-in**: the animating class is added by JS, never by CSS, so
+with no JS, no `IntersectionObserver`, or `prefers-reduced-motion: reduce`, the
+content is simply there. Nothing is ever hidden and then revealed.
+
+### Fixed
+
+- **Grids injected after mount never animated.** The recommendations strip loads
+  async and is the most prominent grid on the catalog — it was the one thing
+  that never moved. `revealGroups()` now arms late-arriving content too.
+- **Uncategorised courses all shared one cover colour**, so a grid of them came
+  out monochrome. They now seed off their own title instead.
+
+### Verification
+
+- 14-assertion headless run: the async above-the-fold grid revealing with no
+  scrolling (the case that used to be missed), scrolling revealing the rest,
+  stagger indices and the cap, the animation always settling fully opaque,
+  **reduced motion skipping it entirely**, **no-JS hiding nothing**, the review
+  strip being materially shorter than the resume block, exactly one dominant
+  primary button, one stat icon and three plain stats, a flat level meter,
+  labelled week days with ticks only where earned, the dimmed-flame cold state,
+  and uncategorised covers still differing.
+- All nine earlier render harnesses still pass; `php -l` and `node --check`
+  clean.
+
 ## [1.19.0]
 
 A UI pass, driven by actually looking at the thing in both themes. Front-end

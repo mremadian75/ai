@@ -280,6 +280,16 @@ and `--cover-tone` so siblings in one category still differ. Keep it a pure
 function of the category name — a course opened directly, with no catalog
 loaded, must render the same cover it had on the card. Covers are `aria-hidden`.
 
+**Entrance motion.** `armReveals(main)` runs from `mount()` and observes card
+grids (`.mahan-grid`, `.mahan-bundle-row`, `.mahan-badges`) with an
+`IntersectionObserver`, adding `.mahan-reveal` plus a capped `--reveal-i`
+stagger as each group scrolls in. Anything that injects a grid *after* mount
+must call `revealGroups(container)` — the recommendations strip loads async and
+would otherwise be the one grid that never animates. The animating class is only
+ever added by JS, never by CSS, so with no JS, no `IntersectionObserver`, or
+`prefers-reduced-motion: reduce` the content is simply visible; never hide
+content in CSS and reveal it in JS.
+
 **Keyboard layer.** A single delegated `keydown` handler implements `/` (search),
 `←`/`→` (previous/next lesson), `C` (continue), `?` (shortcut sheet) and `Esc`
 (clear filters). It reads view-scoped handles — `catalogSearchInput`,

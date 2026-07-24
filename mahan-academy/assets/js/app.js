@@ -390,7 +390,7 @@
 			var cold = hudStreakCold(s);
 			right = h('div', { class: 'mahan-hud' }, [
 				h('div', { class: 'mahan-hud-item mahan-hud-streak' + (cold ? ' is-cold' : ''), title: t('streak', 'day streak') + ((s.freezes || 0) > 0 ? ' · ' + s.freezes + ' ' + t('freezes', 'streak freezes') : '') }, [
-					h('span', { class: 'mahan-hud-icon', id: 'hud-streak-icon', text: cold ? '🕯️' : '🔥' }), h('span', { id: 'hud-streak', text: String(s.streak || 0) }),
+					h('span', { class: 'mahan-hud-icon', id: 'hud-streak-icon', text: '🔥' }), h('span', { id: 'hud-streak', text: String(s.streak || 0) }),
 					h('span', { class: 'mahan-hud-freeze', id: 'hud-freeze', text: (s.freezes || 0) > 0 ? '❄️' + s.freezes : '' })]),
 				(s.daily_goal > 0) ? h('div', { class: 'mahan-hud-item mahan-hud-goal' + (goalDone ? ' is-done' : ''), id: 'hud-goal', title: t('dailyGoal', 'Daily goal') }, [
 					h('span', { class: 'mahan-hud-icon', text: goalDone ? '✅' : '🎯' }),
@@ -483,7 +483,10 @@
 			var cold = hudStreakCold(stats);
 			streakItem.classList.toggle('is-cold', cold);
 			var sIcon = el('hud-streak-icon');
-			if (sIcon) { sIcon.textContent = cold ? '🕯️' : '🔥'; }
+			// The at-risk state is carried by the .is-cold class (a dimmed
+			// flame), not by swapping in a different object entirely — a
+			// candle was a puzzle, not a warning.
+			if (sIcon) { sIcon.textContent = '🔥'; }
 		}
 		// Reviews-due badge on the nav (desktop + mobile), patched in place.
 		var due = (stats.reviews && stats.reviews.due) || 0;
@@ -571,6 +574,52 @@
 	var unmountHooks = [];
 	function onUnmount(fn) { unmountHooks.push(fn); }
 
+	// Entrance motion for card grids: a short, staggered lift as each grid
+	// scrolls in. Deliberately restrained — one class, one group at a time, no
+	// per-element choreography.
+	//
+	// The animation is opt-IN via the `.is-revealing` class that only this
+	// function adds, so if JS never runs (or IntersectionObserver is missing)
+	// the content is simply visible. Nothing is ever hidden by CSS alone.
+	var revealObserver = null;
+	var REVEAL_GROUPS = '.mahan-grid, .mahan-bundle-row, .mahan-badges';
+
+	function armReveals(scope) {
+		revealObserver = null;
+		if (!window.IntersectionObserver) { return; }
+		if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) { return; }
+		revealObserver = new IntersectionObserver(function (entries, io) {
+			entries.forEach(function (entry) {
+				if (!entry.isIntersecting) { return; }
+				io.unobserve(entry.target);
+				var kids = entry.target.children;
+				for (var i = 0; i < kids.length; i++) {
+					// Cap the stagger so a long grid's last card isn't left
+					// waiting seconds for its turn.
+					kids[i].style.setProperty('--reveal-i', String(Math.min(i, 7)));
+					kids[i].classList.add('mahan-reveal');
+				}
+				entry.target.classList.add('is-revealing');
+			});
+		}, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });
+		onUnmount(function () {
+			if (revealObserver) { revealObserver.disconnect(); }
+			revealObserver = null;
+		});
+		revealGroups(scope);
+	}
+
+	// Also called by anything that injects a grid *after* mount (the
+	// recommendations strip loads async, and it's the most prominent grid on
+	// the catalog) — otherwise those cards are the one thing that never
+	// animates in.
+	function revealGroups(scope) {
+		if (!revealObserver || !scope || !scope.querySelectorAll) { return; }
+		Array.prototype.forEach.call(scope.querySelectorAll(REVEAL_GROUPS), function (g) {
+			revealObserver.observe(g);
+		});
+	}
+
 	function mount(content) {
 		unmountHooks.splice(0).forEach(function (fn) { try { fn(); } catch (e) { /* teardown must not break a paint */ } });
 		// View-scoped handles the shortcut layer reads; the next view sets its own.
@@ -593,6 +642,9 @@
 		root.appendChild(liveRegion);
 		overlays.forEach(function (o) { root.appendChild(o); });
 		var isSkeleton = !!main.querySelector('.mahan-skeleton');
+		// Wired after the view is in the DOM (and never on a skeleton, which
+		// would animate placeholders and then animate the real cards again).
+		if (!isSkeleton) { armReveals(main); }
 		// Restore the saved scroll position once real content (not a
 		// skeleton) is on screen — back/forward lands where the user was.
 		if (pendingScroll !== null && !isSkeleton) {
@@ -747,6 +799,8 @@
 			var grid = h('div', { class: 'mahan-grid mahan-rec-grid' });
 			r.recommended.slice(0, 3).forEach(function (c) { grid.appendChild(courseCard(c)); });
 			container.appendChild(grid);
+			// This grid arrives after mount() armed the reveal observer.
+			revealGroups(container);
 		}).catch(function () { /* recommendations are a bonus — fail silently */ });
 	}
 
@@ -1124,10 +1178,15 @@
 					onLoad: function (e) { e.currentTarget.classList.add('is-loaded'); } })
 			]);
 		}
-		var cat = (c.categories && c.categories[0]) || t('aiSkills', 'AI Skills');
 		var title = c.title || '?';
+		var hasCat = !!(c.categories && c.categories[0]);
+		var cat = hasCat ? c.categories[0] : t('aiSkills', 'AI Skills');
+		// Uncategorised courses seed off their own title instead — otherwise
+		// every one of them lands on the same colour and a grid of them comes
+		// out monochrome.
+		var variant = hasCat ? coverVariant(cat) : hashBucket(title, COVER_VARIANTS);
 		var node = h('div', {
-			class: 'mahan-cover mahan-cover-gen mahan-cover-' + coverVariant(cat) + (opts.wide ? ' is-wide' : ''),
+			class: 'mahan-cover mahan-cover-gen mahan-cover-' + variant + (opts.wide ? ' is-wide' : ''),
 			'aria-hidden': 'true'
 		}, [
 			h('span', { class: 'mahan-cover-glyph', text: title.trim().charAt(0).toUpperCase() }),
@@ -2439,8 +2498,10 @@
 				var cls = 'mahan-week-day' + (d.goal_met ? ' is-goal' : (d.active ? ' is-active' : '')) + (d.today ? ' is-today' : '');
 				var st = d.goal_met ? t('weekGoalMet', 'goal met') : (d.active ? t('weekStudied', 'studied') : t('weekNoActivity', 'no activity'));
 				var aria = d.label + ': ' + st + (d.today ? ', ' + t('today', 'today') : '');
+				// A goal-met day gets a tick; a studied day is simply filled.
+				// The old "·" inside a ring was a shape, not information.
 				return h('div', { class: cls, role: 'img', 'aria-label': aria }, [
-					h('span', { class: 'mahan-week-dot', 'aria-hidden': 'true', text: d.goal_met ? '✓' : (d.active ? '·' : '') }),
+					h('span', { class: 'mahan-week-dot', 'aria-hidden': 'true', text: d.goal_met ? '✓' : '' }),
 					h('span', { class: 'mahan-week-name', 'aria-hidden': 'true', text: d.label })
 				]);
 			}))
@@ -2465,11 +2526,14 @@
 			var wrap = h('div', { class: 'mahan-dash' });
 			wrap.appendChild(h('h1', { class: 'mahan-dash-title', text: (t('dashboard', 'My Learning')) }));
 			var hero = h('div', { class: 'mahan-dash-hero' }, [
+				// One icon, not four. The flame carries state (lit / at risk),
+				// so it earns its place; an emoji on top of "XP" or "Level"
+				// only repeated the label underneath in a fifth colour.
 				h('div', { class: 'mahan-dash-stats' }, [
-					statBig(streakCold ? '🕯️' : '🔥', s.streak || 0, streakSub, streakCold ? 'is-cold' : ''),
-					statBig('⚡', s.xp || 0, 'XP'),
-					statBig('◆', s.level || 1, s.level_title || t('level', 'Level')),
-					(s.freezes || 0) > 0 ? statBig('❄️', s.freezes, t('freezes', 'streak freezes')) : null
+					statBig('🔥', s.streak || 0, streakSub, streakCold ? 'is-cold' : ''),
+					statBig('', s.xp || 0, 'XP'),
+					statBig('', s.level || 1, s.level_title || t('level', 'Level')),
+					(s.freezes || 0) > 0 ? statBig('', s.freezes, t('freezes', 'streak freezes')) : null
 				]),
 				weekDots(s.week),
 				h('div', { class: 'mahan-level-bar' }, [
@@ -2485,16 +2549,20 @@
 
 			// Adaptive review first — it's the time-sensitive task (due items
 			// fade from memory unless refreshed on schedule).
+			// Compact strip, not a second full-height banner: the page can only
+			// have one dominant block, and that's "what to study next" below.
+			// This still leads because review is the time-sensitive task.
 			if (hasReview) {
 				wrap.appendChild(h('div', { class: 'mahan-review-cta' }, [
 					h('div', { class: 'mahan-review-cta-body' }, [
-						h('span', { class: 'mahan-review-cta-icon', text: '🎯' }),
-						h('div', {}, [
-							h('h2', { class: 'mahan-review-cta-title', text: t('reviewTitle', 'Practice your mistakes') }),
-							h('p', { class: 'mahan-review-cta-sub', text: fmt(t('reviewFading', '%s fading — a 2-minute review locks them in'), rv.due) + (rv.mastered ? ' · ' + rv.mastered + ' ' + t('reviewMastered', 'mastered') : '') })
+						h('span', { class: 'mahan-review-cta-icon', 'aria-hidden': 'true', text: '🎯' }),
+						h('p', { class: 'mahan-review-cta-title' }, [
+							h('strong', { text: t('reviewTitle', 'Practice your mistakes') }),
+							h('span', { class: 'mahan-review-cta-sub',
+								text: ' — ' + fmt(t('reviewFading', '%s fading — a 2-minute review locks them in'), rv.due) + (rv.mastered ? ' · ' + rv.mastered + ' ' + t('reviewMastered', 'mastered') : '') })
 						])
 					]),
-					h('button', { class: 'mahan-btn mahan-btn-primary mahan-btn-lg', text: t('reviewNow', 'Review now'),
+					h('button', { class: 'mahan-btn mahan-btn-sm mahan-btn-primary', text: t('reviewNow', 'Review now'),
 						onClick: function () { go('review'); } })
 				]));
 			}
@@ -2516,7 +2584,9 @@
 							h('span', { class: 'mahan-progress-label', text: (jb.progress_pct || 0) + '%' })
 						])
 					]),
-					h('button', { class: 'mahan-btn mahan-btn-lg ' + (hasReview ? 'mahan-btn-ghost' : 'mahan-btn-primary'), text: t('continueLearning', 'Continue learning'),
+					// Always the primary action now — the review strip above is
+					// no longer a competing block, so this one can lead.
+					h('button', { class: 'mahan-btn mahan-btn-lg mahan-btn-primary', text: t('continueLearning', 'Continue learning'),
 						onClick: function () { go('lesson', { course: jb.id, lesson: jb.next_lesson_id }); } })
 				]));
 			}
@@ -2780,8 +2850,8 @@
 	}
 
 	function statBig(icon, value, label, extraClass) {
-		return h('div', { class: 'mahan-stat-big' + (extraClass ? ' ' + extraClass : '') }, [
-			h('span', { class: 'mahan-stat-icon', text: icon }),
+		return h('div', { class: 'mahan-stat-big' + (extraClass ? ' ' + extraClass : '') + (icon ? '' : ' is-plain') }, [
+			icon ? h('span', { class: 'mahan-stat-icon', 'aria-hidden': 'true', text: icon }) : null,
 			h('span', { class: 'mahan-stat-value', text: String(value) }),
 			h('span', { class: 'mahan-stat-label', text: label })
 		]);

@@ -20,6 +20,7 @@ mahan-academy/
 │   ├── class-mahan-profile.php           # schema-driven learner profile (user meta)
 │   ├── class-mahan-courses.php           # course/lesson structure + meta keys + topics
 │   ├── class-mahan-seed.php              # starter-content installer (idempotent)
+│   ├── class-mahan-variants.php          # level ladders (tracks) + department field variants
 │   ├── class-mahan-recommend.php         # personalized course/bundle fit scoring
 │   ├── class-mahan-gamification.php      # XP, levels, streaks, level titles
 │   ├── class-mahan-badges.php            # achievements
@@ -61,10 +62,12 @@ mahan-academy/
   `M_SUBTITLE`, `M_LEVEL`, `M_EST_HOURS`, `M_OUTCOMES`, `M_FEATURED`,
   `M_PROMO_VIDEO`, `M_PREREQ`, `M_CERTIFICATE`, `M_UNIT_QUIZZES` (per-unit
   quizzes keyed by unit title), `M_REFERENCES` (further-reading sources:
-  `{ title, source, url }`, read via `Mahan_Courses::course_references()`).
+  `{ title, source, url }`, read via `Mahan_Courses::course_references()`), plus
+  `Mahan_Variants::M_TRACK` / `M_LEVEL_RANK` (the level-ladder position).
 - `mahan_lesson` — a lesson, linked to its course by meta.
   Keys: `M_COURSE_ID`, `M_UNIT`, `M_UNIT_ORDER`, `M_ORDER`, `M_XP`, `M_EST_MIN`,
-  `M_TYPE`, `M_EXERCISES` (JSON array of exercise definitions).
+  `M_TYPE`, `M_EXERCISES` (JSON array of exercise definitions), `M_VARIANTS`
+  (per-department blocks, read via `Mahan_Courses::lesson_variants()`).
 - `mahan_path` — a learning path / **bundle** (Coursera-style specialization).
   Meta (on `Mahan_Paths`): `M_COURSES` (ordered course IDs), `M_SUBTITLE`.
 
@@ -84,6 +87,27 @@ only relinks bundle membership. Triggered from the admin dashboard
 `Mahan_Seed::maybe_autoseed()` — on activation and as a one-time `init` catch-up
 (atomic `add_option` gate; only seeds an empty site, never re-imposes). Ships
 **no** new tables and no schema bump.
+
+**Levels & department variants** (`Mahan_Variants`) run on two deliberately
+different axes, so 15 subjects × 4 levels × 6 departments doesn't become 360
+courses to maintain:
+
+- **Level = a real course.** Each rung is its own published course sharing
+  `M_TRACK` with its siblings and ordered by `M_LEVEL_RANK` (1–4, from `LEVELS`:
+  `beginner`, `intermediate`, `advanced`, `expert`). `track_ladder($track)`
+  returns the published rungs in order — the data behind the ladder UI on the
+  course page. `normalize_level()` / `level_rank()` are case-insensitive and
+  resolve anything unknown to `beginner`.
+- **Field = a render-time overlay.** `M_VARIANTS` holds
+  `field => { title, body }` blocks on the *lesson*; nothing is duplicated.
+  `field_for_user()` maps the profile role to a `FIELDS` entry (via `ROLE_FIELD`
+  — e.g. `founder` → `management`), `pick()` resolves it (exact match → `general`
+  → nothing), and `apply()` merges the block into the body, returning
+  `{ content, applied }`. **`applied` is the field that actually matched**, so a
+  `general` fallback never renders as "Tailored for Marketing". `/lesson` returns
+  it as `field` + `field_label`, and the badge shows only on a real match. A
+  subject with no hand-written blocks still specializes through
+  `Mahan_Personalization::for_you()`.
 
 **Per-lesson personalization.** Lesson bodies resolve `{{profile placeholders}}`
 per reader via `Mahan_Profile::personalize_content()` (natural fallbacks for
@@ -147,8 +171,12 @@ fields) is `Mahan_Settings::default_schema()`. No new tables.
 | Method & route | Auth | Purpose |
 | --- | --- | --- |
 | `GET /catalog` | public | Course cards (featured first). |
-| `GET /course/{id}` | public | Course detail: outcomes, description, units, promo video, prerequisite, certificate, progress. |
-| `GET /lesson/{id}` | logged-in | Lesson content, exercises (answers stripped), siblings, stats, `position` (index/total/unit), `course_pct`, and `unit_quiz` (when the lesson closes a unit that has a quiz). |
+| `GET /course/{id}` | public | Course detail: outcomes, description, units, promo video, prerequisite, certificate, progress, `references`, and `ladder` (the track's level rungs). |
+| `GET /lesson/{id}` | logged-in | Lesson content (placeholders resolved + department variant merged), exercises (answers stripped), siblings, stats, `position` (index/total/unit), `course_pct`, `topics`, `field`/`field_label`, and `unit_quiz` (when the lesson closes a unit that has a quiz). |
+| `POST /lesson/personalize` | logged-in | AI "how this lesson applies to your work" note (cached per profile signature). |
+| `POST /practice` | logged-in | Generate fresh AI practice questions for a lesson, tuned to its concepts and the learner's difficulty. |
+| `POST /practice/grade` | logged-in | Grade a generated practice answer; misses go into the review queue (XP daily-capped). |
+| `GET /recommendations` | logged-in | "Recommended for you" courses + best-fit bundle, with the reason. |
 | `POST /enroll` | logged-in | Enroll in a course. |
 | `POST /progress` | logged-in | Mark a lesson complete (awards XP, recomputes course %). |
 | `POST /exercise` | logged-in | Grade a submitted answer. |

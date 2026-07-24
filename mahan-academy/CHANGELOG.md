@@ -4,6 +4,77 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.17.0]
+
+Levels & department variants. A course is no longer one-size-fits-all: subjects
+now climb a **four-rung ladder** (Beginner → Intermediate → Advanced → Expert),
+and inside a lesson the material **specializes to the learner's department**
+(marketing, sales, finance, HR, management, …). **No new tables — DB stays v4.**
+
+### The two-axis design
+
+Levels and fields are handled on *different* axes on purpose, because authoring
+15 subjects × 4 levels × 6 departments as separate courses would mean 360
+courses to maintain:
+
+- **Level = a real course.** Each rung is its own published course sharing a
+  `track` with its siblings, ordered by `level_rank` (1–4). Learners see the
+  whole ladder and move between rungs.
+- **Field = a render-time overlay.** One course body, plus per-department blocks
+  attached to the lesson, merged when the lesson is served. Nothing is
+  duplicated, and a subject without hand-written blocks still specializes
+  through the existing AI personalization layer.
+
+### New — `includes/class-mahan-variants.php`
+
+- `LEVELS` / `FIELDS` vocabularies, `normalize_level()` and `level_rank()`
+  (case-insensitive; anything unknown resolves to `beginner`).
+- `track_ladder($track)` returns the published courses on a track sorted by
+  rank — the data behind the ladder UI.
+- `field_for_user()` maps the profile's role to a department (`founder` →
+  management, and so on), so nobody has to pick their field twice.
+- `pick()` resolves a field to a block: exact match, else the `general` block,
+  else nothing. `apply()` merges the block into the lesson body and reports
+  **which** field actually applied — so a `general` fallback never renders as
+  "Tailored for Marketing". That honesty is covered by the test suite.
+
+### The ChatGPT ladder — the worked example
+
+- `course-tool-chatgpt.php` becomes rung 1 of the `chatgpt` track, joined by
+  three new courses: **ChatGPT at Work** (intermediate), **ChatGPT for
+  Professionals** (advanced), and **ChatGPT Mastery** (expert).
+- Every lesson in the three new rungs ships **five department variants**
+  (marketing, sales, finance, HR, management) — **60 hand-written blocks** in
+  all — so a finance learner and an HR learner reading the same lesson get
+  different worked examples, metrics, and cautions.
+- New **ChatGPT Mastery Track** bundle collects all four rungs into one program.
+
+### Learner-facing
+
+- The course page shows the **level ladder** for its track: the current rung is
+  marked and the others are one click away.
+- A lesson carrying a matched block shows a **"🎯 Tailored for <field>"** badge
+  and renders the department section inline; the badge appears only on a real
+  match.
+- Onboarding's AI-experience question is now a **four-tier** scale with
+  descriptive labels that line up with the ladder, and **management** joins the
+  role list.
+- `/lesson` returns `field` + `field_label`; `/course` returns `ladder`.
+
+### Library
+
+- **18 courses, 72 lessons, 277 exercises, 36 quizzes (137 questions), 68
+  topics, 73 references, 60 department-variant blocks**, across 6 categories and
+  5 bundles.
+
+### Verification
+
+- 18-assertion variants logic test (level normalization, ladder ordering, role→
+  field mapping, exact/general/no-match resolution, fallback reporting); seed
+  validator extended to check the 4th level tier and every variant field/body;
+  the ladder, the tailored badge, and the variant block were driven in headless
+  Chromium with zero console errors.
+
 ## [1.16.0]
 
 Reference-grounded curriculum. Every course now carries the **authoritative

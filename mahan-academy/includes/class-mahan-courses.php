@@ -34,6 +34,19 @@ class Mahan_Courses {
 	const M_EST_MIN    = '_mahan_est_min';
 	const M_TYPE       = '_mahan_type';
 	const M_EXERCISES  = '_mahan_exercises';
+	const M_VARIANTS   = '_mahan_variants';
+
+	/**
+	 * Per-field ("department") variant blocks stored on a lesson.
+	 *
+	 * @param int $lesson_id Lesson id.
+	 * @return array field => { heading?, body, example? }
+	 */
+	public static function lesson_variants( $lesson_id ) {
+		$raw = get_post_meta( (int) $lesson_id, self::M_VARIANTS, true );
+		$map = is_array( $raw ) ? $raw : json_decode( (string) $raw, true );
+		return is_array( $map ) ? $map : array();
+	}
 
 	/* ------------------------------------------------------------------ */
 	/* Course-level                                                        */

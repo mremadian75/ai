@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.16.0
+Stable tag: 1.17.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -18,6 +18,8 @@ Mahan Academy is a self-contained learning plugin built to teach people how to u
 
 * Standalone courses & lessons (no Tutor LMS, LearnDash, etc. required)
 * Built-in Starter Content Library — 15 professionally written courses across Prompt Engineering, Machine Learning, Generative AI, AI for Productivity, hands-on AI Tools (ChatGPT, Claude, Gemini, image generation), and Responsible AI, organized into categories and Coursera-style bundles with interactive exercises and unit quizzes. Installs automatically so the academy is never empty
+* Level ladders: subjects climb four rungs — Beginner → Intermediate → Advanced → Expert — as real, separate courses on a shared track, with the whole ladder shown on the course page so learners can move up (or drop back) at any time
+* Department-specific lessons: the same lesson specializes to the learner's field (marketing, sales, finance, HR, management, …) with its own worked examples, metrics, and cautions, marked by a "Tailored for X" badge — mapped automatically from the profile role, and dropped silently rather than faked when there is no match for that field
 * Reference-grounded: every course cites the authoritative sources it is built on — peer-reviewed papers, standards bodies (NIST AI RMF, EU AI Act, UNESCO, OWASP, C2PA), textbooks, and official documentation — shown as "Further reading" on the course page
 * Every lesson is personalized — lesson text adapts to your role, goal, and tools via {{placeholders}}, plus an AI "For you" note on how each lesson applies to your own work
 * "Recommended for you" — the catalog leads with the courses that fit your role, goal, and level, with a plain-language reason why
@@ -68,6 +70,9 @@ You don't have to do anything — the starter catalog installs automatically on 
 Each course lists the authoritative references it is grounded in under "Further reading & sources" on the course page — peer-reviewed papers, standards and institutional guidance (NIST AI Risk Management Framework, EU AI Act, UNESCO, OECD, OWASP, C2PA), textbooks, and official provider documentation.
 
 == Changelog ==
+
+= 1.17.0 =
+Levels & department variants — subjects now climb a four-rung ladder (Beginner → Intermediate → Advanced → Expert) shown on the course page, and lessons specialize to the learner's department (marketing, sales, finance, HR, management) with a "Tailored for X" badge. The ChatGPT track ships all four rungs with 60 hand-written department blocks, plus a new ChatGPT Mastery Track bundle; onboarding gains a four-tier experience scale and a management role. Library is now 18 courses / 72 lessons / 277 exercises / 36 quizzes / 73 references. No new tables.
 
 = 1.16.0 =
 Reference-grounded curriculum — every course now cites the authoritative sources it is built on (papers, NIST/EU AI Act/UNESCO/OWASP/C2PA, textbooks, official docs), shown as "Further reading" on the course page, and all 13 existing courses were upgraded with 4 references each. Two new courses: Responsible AI & Governance (new Responsible AI category, built on the NIST AI RMF and EU AI Act risk tiers) and Grounding AI in Your Own Knowledge (RAG). The library is now 15 courses / 60 lessons / 235 exercises / 30 quizzes / 61 references. No new tables.

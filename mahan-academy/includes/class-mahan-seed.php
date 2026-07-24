@@ -231,6 +231,17 @@ class Mahan_Seed {
 		update_post_meta( $post_id, Mahan_Courses::M_FEATURED, ! empty( $c['featured'] ) ? 1 : 0 );
 		update_post_meta( $post_id, Mahan_Courses::M_CERTIFICATE, ! empty( $c['certificate'] ) ? 1 : 0 );
 
+		// Level ladder: which subject track this course belongs to, and its rung.
+		if ( ! empty( $c['track'] ) ) {
+			$level = isset( $c['level'] ) ? (string) $c['level'] : 'beginner';
+			update_post_meta( $post_id, Mahan_Variants::M_TRACK, sanitize_title( (string) $c['track'] ) );
+			update_post_meta(
+				$post_id,
+				Mahan_Variants::M_LEVEL_RANK,
+				isset( $c['level_rank'] ) ? max( 1, (int) $c['level_rank'] ) : Mahan_Variants::level_rank( $level )
+			);
+		}
+
 		// Further reading: the authoritative sources the course is grounded in.
 		if ( ! empty( $c['references'] ) && is_array( $c['references'] ) ) {
 			$refs = array();
@@ -346,6 +357,29 @@ class Mahan_Seed {
 		$exercises = self::normalize_exercises( isset( $lesson['exercises'] ) ? $lesson['exercises'] : array() );
 		if ( ! empty( $exercises ) ) {
 			update_post_meta( $lesson_id, Mahan_Courses::M_EXERCISES, $exercises );
+		}
+
+		// Per-field ("department") variant blocks, applied at render time.
+		if ( ! empty( $lesson['variants'] ) && is_array( $lesson['variants'] ) ) {
+			$variants = array();
+			foreach ( $lesson['variants'] as $field => $block ) {
+				$field = sanitize_key( (string) $field );
+				if ( ! in_array( $field, Mahan_Variants::FIELDS, true ) || ! is_array( $block ) ) {
+					continue;
+				}
+				$body = isset( $block['body'] ) ? wp_kses_post( (string) $block['body'] ) : '';
+				if ( '' === trim( $body ) ) {
+					continue;
+				}
+				$variants[ $field ] = array(
+					'heading' => isset( $block['heading'] ) ? sanitize_text_field( (string) $block['heading'] ) : '',
+					'body'    => $body,
+					'example' => isset( $block['example'] ) ? wp_kses_post( (string) $block['example'] ) : '',
+				);
+			}
+			if ( ! empty( $variants ) ) {
+				update_post_meta( $lesson_id, Mahan_Courses::M_VARIANTS, $variants );
+			}
 		}
 
 		return (int) $lesson_id;

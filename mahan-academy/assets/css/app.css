@@ -141,6 +141,25 @@
 .mahan-cat-section-all { border: none; background: none; color: var(--m-primary); font-weight: 600; font-size: 14px; cursor: pointer; padding: 4px; white-space: nowrap; }
 .mahan-cat-section-all:hover { text-decoration: underline; }
 
+/* Level ladder (beginner → expert on one subject) */
+.mahan-ladder { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: -6px 0 22px; }
+.mahan-ladder-label { font-size: 13px; font-weight: 600; color: var(--m-muted); }
+.mahan-ladder-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.mahan-ladder-rung { display: inline-flex; align-items: center; gap: 7px; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--m-border); background: var(--m-surface); color: var(--m-muted); font-size: 13px; font-weight: 600; text-decoration: none; }
+a.mahan-ladder-rung:hover { border-color: var(--m-primary); color: var(--m-primary); }
+.mahan-ladder-rung.is-current { background: var(--m-primary); border-color: var(--m-primary); color: #fff; }
+.mahan-ladder-rank { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: color-mix(in srgb, currentColor 18%, transparent); font-size: 11px; font-weight: 700; }
+
+/* "Tailored for <department>" badge */
+.mahan-tailored { display: inline-flex; align-items: center; gap: 2px; font-size: 12px; font-weight: 700; color: color-mix(in srgb, var(--m-accent) 62%, var(--m-text)); background: color-mix(in srgb, var(--m-accent) 12%, var(--m-surface)); border: 1px solid color-mix(in srgb, var(--m-accent) 26%, var(--m-border)); border-radius: 999px; padding: 4px 12px; margin-bottom: 12px; }
+
+/* Department ("field") variant block inside lesson prose */
+.mahan-field-variant { margin: 22px 0; padding: 16px 18px; border-left: 3px solid var(--m-primary); border-radius: 0 var(--m-radius-sm) var(--m-radius-sm) 0; background: color-mix(in srgb, var(--m-primary) 6%, var(--m-surface)); }
+.mahan-field-variant-title { font-size: 15px; margin: 0 0 6px; color: var(--m-primary); }
+.mahan-field-variant p { margin: 0 0 8px; }
+.mahan-field-variant p:last-child { margin-bottom: 0; }
+.mahan-field-variant-example { font-size: 14px; color: var(--m-muted); }
+
 /* Further reading / references */
 .mahan-refs-note { color: var(--m-muted); font-size: 14px; margin: -6px 0 14px; }
 .mahan-ref-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }

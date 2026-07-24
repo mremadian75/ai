@@ -192,6 +192,10 @@ class Mahan_Front {
 			'beginner'         => __( 'Beginner', 'mahan-academy' ),
 			'intermediate'     => __( 'Intermediate', 'mahan-academy' ),
 			'advanced'         => __( 'Advanced', 'mahan-academy' ),
+			'expert'           => __( 'Expert', 'mahan-academy' ),
+			'chooseLevel'      => __( 'Choose your level', 'mahan-academy' ),
+			/* translators: %s is the learner's department, e.g. Marketing. */
+			'tailoredFor'      => __( 'Tailored for %s', 'mahan-academy' ),
 			'whatYouLearn'     => __( "What you'll learn", 'mahan-academy' ),
 			'furtherReading'   => __( 'Further reading & sources', 'mahan-academy' ),
 			'furtherReadingNote' => __( 'This course is grounded in these references — go deeper any time.', 'mahan-academy' ),

@@ -59,4 +59,14 @@ return array(
 		'order'       => 4,
 		'courses'     => array( 'tool-chatgpt', 'tool-claude', 'tool-gemini', 'tool-image-gen' ),
 	),
+	array(
+		'seed_key'    => 'bundle-chatgpt-mastery',
+		'title'       => 'ChatGPT Mastery Path',
+		'slug'        => 'chatgpt-mastery-path',
+		'subtitle'    => 'The full ChatGPT ladder — beginner to expert, with every lesson tailored to your department.',
+		'description' => '<p>Four levels on one subject, so you can start exactly where you are: everyday basics, then reliable repeatable results, then advanced multi-step workflows, and finally leading adoption across a team.</p>'
+			. '<p>From the second level on, every lesson also carries department-specific guidance — marketing, sales, finance, HR, and management each see examples and practice drawn from their own work.</p>',
+		'order'       => 5,
+		'courses'     => array( 'tool-chatgpt', 'chatgpt-l2', 'chatgpt-l3', 'chatgpt-l4' ),
+	),
 );

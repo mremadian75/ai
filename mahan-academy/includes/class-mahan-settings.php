@@ -221,6 +221,7 @@ class Mahan_Settings {
 						array( 'value' => 'engineering', 'label' => 'Engineering' ),
 						array( 'value' => 'hr', 'label' => 'HR / People' ),
 						array( 'value' => 'finance', 'label' => 'Finance' ),
+						array( 'value' => 'management', 'label' => 'Management / Leadership' ),
 						array( 'value' => 'founder', 'label' => 'Founder / CEO' ),
 						array( 'value' => 'student', 'label' => 'Student' ),
 						array( 'value' => 'other', 'label' => 'Other' ),
@@ -245,9 +246,10 @@ class Mahan_Settings {
 					'type'     => 'select',
 					'required' => true,
 					'options'  => array(
-						array( 'value' => 'beginner', 'label' => 'Beginner' ),
-						array( 'value' => 'intermediate', 'label' => 'Intermediate' ),
-						array( 'value' => 'advanced', 'label' => 'Advanced' ),
+						array( 'value' => 'beginner', 'label' => 'Beginner — new to AI tools' ),
+						array( 'value' => 'intermediate', 'label' => 'Intermediate — I use them regularly' ),
+						array( 'value' => 'advanced', 'label' => 'Advanced — I get reliable results' ),
+						array( 'value' => 'expert', 'label' => 'Expert — I design AI workflows for others' ),
 					),
 				),
 				array(

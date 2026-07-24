@@ -22,6 +22,9 @@ return array(
 	'description' => '<p>Almost everyone has typed a question into ChatGPT. The gap between a novelty and a genuine daily tool is knowing <strong>how to work with it</strong> — as a conversation you steer, not a vending machine you poke once and walk away from.</p>'
 		. '<p>This short course gets you productive fast. You will learn to talk to ChatGPT in back-and-forth, set custom instructions so it already knows your context, and put it to work on the everyday jobs it does best — drafting, summarising, and rewriting — while staying clear-eyed about its limits around accuracy and privacy. No coding required.</p>',
 	'category'    => 'AI Tools',
+	// Rung 1 of the ChatGPT level ladder (beginner → intermediate → advanced → expert).
+	'track'       => 'chatgpt',
+	'level_rank'  => 1,
 	'level'       => 'beginner',
 	'est_hours'   => 2,
 	'featured'    => true,

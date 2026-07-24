@@ -34,6 +34,8 @@ class Mahan_Personalization {
 			$base = 2;
 		} elseif ( 'advanced' === $ai_level ) {
 			$base = 4;
+		} elseif ( 'expert' === $ai_level ) {
+			$base = 5;
 		}
 		// As the learner racks up levels, lift the floor a notch.
 		if ( (int) $level >= 8 ) {

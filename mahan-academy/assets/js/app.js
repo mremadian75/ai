@@ -961,7 +961,10 @@
 	}
 
 	function levelLabel(lv) {
-		return lv === 'advanced' ? t('advanced', 'Advanced') : lv === 'intermediate' ? t('intermediate', 'Intermediate') : t('beginner', 'Beginner');
+		if (lv === 'expert') { return t('expert', 'Expert'); }
+		if (lv === 'advanced') { return t('advanced', 'Advanced'); }
+		if (lv === 'intermediate') { return t('intermediate', 'Intermediate'); }
+		return t('beginner', 'Beginner');
 	}
 
 	// Resolve the course view's back link from state.from (set by whichever
@@ -1010,6 +1013,29 @@
 				c.image ? h('div', { class: 'mahan-course-hero-media', style: 'background-image:url(' + esc(c.image) + ')' }) : null
 			]);
 			wrap.appendChild(hero);
+
+			// Level ladder — the other rungs of this subject, so a learner can
+			// jump to the level that fits them.
+			if (j.ladder && j.ladder.length > 1) {
+				var ladder = h('div', { class: 'mahan-ladder', 'aria-label': t('chooseLevel', 'Choose your level') });
+				ladder.appendChild(h('span', { class: 'mahan-ladder-label', text: t('chooseLevel', 'Choose your level') + ':' }));
+				var row = h('div', { class: 'mahan-ladder-row' });
+				j.ladder.forEach(function (rung) {
+					var isCurrent = rung.id === c.id;
+					row.appendChild(h(isCurrent ? 'span' : 'a', {
+						class: 'mahan-ladder-rung' + (isCurrent ? ' is-current' : ''),
+						href: isCurrent ? null : urlFor('course', { course: rung.id }),
+						'aria-current': isCurrent ? 'true' : null,
+						title: rung.title,
+						onClick: isCurrent ? null : function (e) { e.preventDefault(); go('course', { course: rung.id }); }
+					}, [
+						h('span', { class: 'mahan-ladder-rank', text: String(rung.level_rank) }),
+						h('span', { class: 'mahan-ladder-level', text: levelLabel(rung.level) })
+					]));
+				});
+				ladder.appendChild(row);
+				wrap.appendChild(ladder);
+			}
 
 			// Topics this course covers (the مباحث) — clickable to browse other
 			// courses on the same concept.
@@ -1412,6 +1438,15 @@
 			// Main column.
 			var col = h('div', { class: 'mahan-lesson-col' });
 			col.appendChild(h('h1', { class: 'mahan-lesson-title', text: L.title }));
+			// "Tailored for <department>" — only shown when a real field variant
+			// was applied for this learner (never for the generic fallback).
+			if (L.field && L.field_label) {
+				col.appendChild(h('div', { class: 'mahan-tailored' }, [
+					h('span', { 'aria-hidden': 'true', text: '🎯 ' }),
+					h('span', { text: fmt(t('tailoredFor', 'Tailored for %s'), L.field_label) })
+				]));
+			}
+
 			// Concept topics for this lesson (the مباحث it covers).
 			if (L.topics && L.topics.length) {
 				col.appendChild(h('div', { class: 'mahan-topic-chips', 'aria-label': t('topics', 'Topics') },

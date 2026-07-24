@@ -336,6 +336,9 @@ class Mahan_REST {
 			'course'       => $summary,
 			'outcomes'     => Mahan_Courses::course_outcomes( $course_id ),
 			'references'   => Mahan_Courses::course_references( $course_id ),
+			// Level ladder: the other rungs of this subject (beginner → expert),
+			// so a learner can jump to the level that fits them.
+			'ladder'       => Mahan_Variants::track_ladder( Mahan_Utils::meta_str( $course_id, Mahan_Variants::M_TRACK, '' ) ),
 			'description'  => apply_filters( 'the_content', get_post_field( 'post_content', $course_id ) ),
 			'promo_video'  => Mahan_Courses::promo_video( $course_id ),
 			'prerequisite' => Mahan_Courses::prerequisite( $course_id ),
@@ -390,6 +393,14 @@ class Mahan_REST {
 		$siblings = Mahan_Courses::lesson_siblings( $lesson_id );
 		$position = Mahan_Courses::lesson_position( $lesson_id );
 
+		// Personalize (profile placeholders) then apply the learner's department
+		// variant, so one lesson serves every field without duplicating it.
+		$lesson_body = Mahan_Variants::apply(
+			Mahan_Profile::personalize_content( $lesson->post_content, $user_id ),
+			Mahan_Courses::lesson_variants( $lesson_id ),
+			Mahan_Variants::field_for_user( $user_id )
+		);
+
 		// When this is the last lesson of a unit that has a quiz, tell the app
 		// so the complete-lesson flow can route the learner into the quiz.
 		$unit_quiz = null;
@@ -422,8 +433,13 @@ class Mahan_REST {
 			'unit_quiz'    => $unit_quiz,
 			// Personalize the lesson body: {{profile placeholders}} resolve to the
 			// reader (with natural fallbacks) so every lesson adapts, not just the
-			// tutor.
-			'content'      => apply_filters( 'the_content', Mahan_Profile::personalize_content( $lesson->post_content, $user_id ) ),
+			// tutor — then overlay the department ("field") variant when the
+			// lesson has one for this learner.
+			'content'      => apply_filters( 'the_content', $lesson_body['content'] ),
+			// Which department variant was applied ('' when none) so the UI can
+			// only claim tailoring when it's actually true.
+			'field'        => $lesson_body['applied'],
+			'field_label'  => '' !== $lesson_body['applied'] ? Mahan_Variants::field_label( $lesson_body['applied'] ) : '',
 			'topics'       => Mahan_Courses::lesson_topics( $lesson_id ),
 			// Whether a per-lesson AI "For you" note can be generated for this
 			// learner (AI configured + a profile to personalize from).

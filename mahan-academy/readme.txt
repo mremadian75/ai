@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.18.0
+Stable tag: 1.19.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -30,6 +30,8 @@ Mahan Academy is a self-contained learning plugin built to teach people how to u
 * Visual drag-and-drop Course Builder — build the whole curriculum on one screen
 * AI authoring assistant — generate outcomes, draft lessons, and create exercises
 * Beautiful single-page application front-end (Coursera structure + Duolingo energy)
+* Automatic course cover art: every course gets a generated CSS gradient cover — hue by category so a subject area reads as a colour family, angle and tone by title so sibling courses stay distinguishable. No uploads, no image requests, and it looks right in both light and dark themes
+* Designed for dark mode, not just recoloured for it: cards, heroes, panels and dialogs carry real elevation on dark surfaces
 * Real-time streaming AI tutor via Server-Sent Events (Anthropic / OpenAI / Google) — with a structured teaching playbook (diagnose → explain at your level with a worked example from your world → check understanding → point to the next step) and misconception-aware, difficulty-tuned practice questions
 * Five exercise types: multiple choice, true/false, fill-in-the-blank, short answer, and prompt-writing (open answers graded by AI)
 * Adaptive personalization engine: a professional onboarding intake builds a rich learner profile that (with a live progress + difficulty signal) tailors the tutor, AI grading, and generated practice questions to each learner's role, level, and goals
@@ -73,6 +75,9 @@ You don't have to do anything — the starter catalog installs automatically on 
 Each course lists the authoritative references it is grounded in under "Further reading & sources" on the course page — peer-reviewed papers, standards and institutional guidance (NIST AI Risk Management Framework, EU AI Act, UNESCO, OECD, OWASP, C2PA), textbooks, and official provider documentation.
 
 == Changelog ==
+
+= 1.19.0 =
+UI pass. Every course now has real cover art — CSS gradients with the hue set by category (so a category reads as a colour family) and the angle and tone varied by title (so four courses on one ladder don't look identical); the old placeholder was a flat block with one letter that was effectively invisible in dark mode. Search moved into the hero, where you can actually see it — it used to sit a screen below the fold. The course hero now shows where you stand (percent, "2 of 4 lessons", progress bar) right above Resume, and gets a cover of its own. Cards, heroes and panels finally have real depth in dark mode. The tutor opens with three questions built from the lesson instead of a blank box, avatars fall back to initials instead of a broken image, and the HUD reads as separate stats. Front-end only, no new tables.
 
 = 1.18.0 =
 UX pass on finding and not losing your place. The catalog now states how many courses you're looking at and why ("Showing 3 of 18"), with a removable pill for every active filter and one Clear-all; level chips are built from the catalog itself, so Expert courses became filterable (they weren't). Cards on a level ladder show which rung they are ("Step 2 of 4"). Inside a lesson, a Contents button opens the course outline so you can jump lessons without backing out, and a hairline tracks how far through the lesson you've read. Keyboard shortcuts throughout: / search, ← → lesson, C continue, ? help, Esc clear. Front-end only, no new tables.

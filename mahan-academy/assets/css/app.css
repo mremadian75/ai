@@ -1181,3 +1181,111 @@ div.mahan-lesson-row:active { transform: translateY(1px); }
 }
 
 @media (prefers-reduced-motion: reduce) { .mahan-read-progress span { transition: none; } }
+
+/* ==================================================================== */
+/* v1.19.0 — UI layer: covers, hierarchy, depth                         */
+/* ==================================================================== */
+
+/* --- Course covers -------------------------------------------------- */
+/* Every course gets real cover art. The old placeholder was a flat block
+   with one oversized letter — it read as a missing image in light mode and
+   was nearly invisible in dark. These are six saturated gradients picked
+   deterministically from the course itself, so a course always looks like
+   itself, white type keeps its contrast in both themes, and no image is
+   ever fetched. */
+.mahan-cover { position: relative; height: 148px; overflow: hidden; background: var(--m-surface-2); }
+.mahan-cover.is-wide { height: 100%; min-height: 190px; border-radius: var(--m-radius-sm); }
+.mahan-cover-img { background-size: cover; background-position: center; }
+
+.mahan-cover-gen { display: flex; flex-direction: column; justify-content: flex-end; padding: 14px 16px; }
+/* Soft light source + a faint grid, so the gradient reads as a surface
+   rather than a colour swatch. */
+.mahan-cover-gen::before {
+	content: ''; position: absolute; inset: 0;
+	background:
+		radial-gradient(120% 90% at 12% 0%, rgba(255, 255, 255, .34), transparent 62%),
+		repeating-linear-gradient(115deg, rgba(255, 255, 255, .07) 0 2px, transparent 2px 22px);
+}
+.mahan-cover-glyph {
+	position: absolute; right: -6px; top: -34px; z-index: 0;
+	font-size: 132px; font-weight: 800; line-height: 1;
+	color: rgba(255, 255, 255, .19); letter-spacing: -.05em; user-select: none;
+}
+.mahan-cover-cat {
+	position: relative; z-index: 1;
+	font-size: 11px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+	color: rgba(255, 255, 255, .96); text-shadow: 0 1px 2px rgba(0, 0, 0, .22);
+}
+/* Hue = category (a category reads as a colour family); angle and tone come
+   from the course title, so siblings in one category still differ. */
+.mahan-cover-gen { filter: hue-rotate(var(--cover-tone, 0deg)); }
+.mahan-cover-0 { background: linear-gradient(var(--cover-angle, 135deg), #4f46e5, #7c3aed 55%, #a855f7); }
+.mahan-cover-1 { background: linear-gradient(var(--cover-angle, 135deg), #0e7490, #0891b2 50%, #22d3ee); }
+.mahan-cover-2 { background: linear-gradient(var(--cover-angle, 135deg), #15803d, #16a34a 55%, #4ade80); }
+.mahan-cover-3 { background: linear-gradient(var(--cover-angle, 135deg), #b45309, #ea580c 55%, #fbbf24); }
+.mahan-cover-4 { background: linear-gradient(var(--cover-angle, 135deg), #be123c, #e11d48 55%, #fb7185); }
+.mahan-cover-5 { background: linear-gradient(var(--cover-angle, 135deg), #1e3a8a, #3730a3 55%, #6366f1); }
+/* Dark mode: same hues, lower luminance so a wall of cards doesn't glare. */
+.mahan-theme-dark .mahan-cover-gen { filter: hue-rotate(var(--cover-tone, 0deg)) saturate(.92) brightness(.86); }
+
+.mahan-card:hover .mahan-cover-glyph { transform: scale(1.04); }
+.mahan-cover-glyph { transition: transform var(--m-dur-3) var(--m-ease-out); }
+
+/* --- Hero: search belongs here -------------------------------------- */
+.mahan-hero { padding: 22px 0 30px; }
+.mahan-hero h1 { font-size: clamp(26px, 4vw, 38px); }
+.mahan-hero-sub { font-size: 17px; margin: 0 auto 22px; max-width: 54ch; }
+.mahan-hero .mahan-search { margin: 0 auto; }
+
+/* --- Course hero ---------------------------------------------------- */
+.mahan-course-hero-media { min-height: 190px; padding: 0; background: none; }
+/* Where you actually stand in the course, next to the CTA that resumes it. */
+.mahan-course-standing { margin: 4px 0 18px; max-width: 340px; }
+.mahan-course-standing-top { display: flex; align-items: baseline; gap: 8px; margin-bottom: 7px; }
+.mahan-course-standing-pct { font-size: 20px; font-weight: 800; color: var(--m-accent-text); }
+.mahan-course-standing-label { font-size: 13px; font-weight: 600; color: var(--m-muted); }
+
+/* --- Depth: cards need to lift off the page, in dark mode too -------- */
+/* Dark surfaces sit close to the background, so a 1px border does almost
+   nothing. A hairline top highlight is what actually separates them. */
+.mahan-theme-dark .mahan-card,
+.mahan-theme-dark .mahan-course-hero,
+.mahan-theme-dark .mahan-section,
+.mahan-theme-dark .mahan-tutor,
+.mahan-theme-dark .mahan-bundle-card,
+.mahan-theme-dark .mahan-modal {
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 1px 2px rgba(0, 0, 0, .4), 0 10px 28px rgba(0, 0, 0, .34);
+}
+.mahan-theme-dark .mahan-card:hover { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1), 0 3px 8px rgba(0, 0, 0, .45), 0 18px 44px rgba(0, 0, 0, .46); }
+.mahan-theme-dark .mahan-topbar { box-shadow: 0 1px 0 rgba(255, 255, 255, .05), 0 4px 20px rgba(0, 0, 0, .4); }
+
+/* --- HUD: a stat cluster, not one run-on string ---------------------- */
+.mahan-hud { gap: 4px; }
+.mahan-hud-item { padding: 5px 9px; border-radius: 999px; }
+.mahan-hud-item:hover { background: var(--m-surface-2); }
+.mahan-hud-avatar { margin-left: 8px; }
+/* No image? Initials, rather than a broken img leaking its alt text. */
+.mahan-hud-initials {
+	display: inline-flex; align-items: center; justify-content: center;
+	background: color-mix(in srgb, var(--m-primary) 16%, var(--m-surface));
+	color: var(--m-primary-text); font-weight: 800; font-size: 13px; letter-spacing: .02em;
+}
+
+/* --- Tutor: openers instead of a blank box -------------------------- */
+.mahan-tutor-starters { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; padding: 2px 0 4px; }
+.mahan-tutor-starters-label { font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--m-muted); }
+.mahan-tutor-starter {
+	max-width: 100%; text-align: left;
+	border: 1px solid color-mix(in srgb, var(--m-primary) 26%, var(--m-border));
+	background: color-mix(in srgb, var(--m-primary) 7%, var(--m-surface));
+	color: var(--m-primary-text);
+	padding: 8px 13px; border-radius: 999px; font-size: 13px; font-weight: 600; cursor: pointer;
+	transition: background var(--m-dur-1) var(--m-ease), transform var(--m-dur-1) var(--m-ease);
+}
+.mahan-tutor-starter:hover { background: color-mix(in srgb, var(--m-primary) 14%, var(--m-surface)); }
+.mahan-tutor-starter:active { transform: translateY(1px); }
+
+@media (prefers-reduced-motion: reduce) {
+	.mahan-cover-glyph, .mahan-tutor-starter { transition: none; }
+	.mahan-card:hover .mahan-cover-glyph { transform: none; }
+}

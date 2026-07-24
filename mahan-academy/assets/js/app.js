@@ -399,7 +399,7 @@
 					h('span', { class: 'mahan-hud-icon', text: '⚡' }), h('span', { id: 'hud-xp', text: String(s.xp || 0) })]),
 				h('div', { class: 'mahan-hud-item mahan-hud-level', title: s.level_title || t('level', 'Level') }, [
 					h('span', { class: 'mahan-hud-icon', text: '◆' }), h('span', { id: 'hud-level', text: String(s.level || 1) })]),
-				state.me.user ? h('img', { class: 'mahan-hud-avatar', src: state.me.user.avatar, alt: state.me.user.name }) : null
+				avatarNode(state.me.user)
 			]);
 		} else if (D.loggedIn) {
 			// Logged in but /me hasn't resolved yet — placeholder, not a
@@ -424,6 +424,31 @@
 		bar.appendChild(nav);
 		bar.appendChild(right);
 		return bar;
+	}
+
+	// Avatar, or the learner's initials when there is no image. A broken <img>
+	// spilling its alt text into the top bar is worse than no avatar at all.
+	function avatarNode(user) {
+		if (!user) { return null; }
+		var name = (user.name || '').trim();
+		if (user.avatar) {
+			return h('img', {
+				class: 'mahan-hud-avatar', src: user.avatar, alt: name,
+				onError: function (e) {
+					var el2 = e.currentTarget;
+					if (el2.parentNode) { el2.parentNode.replaceChild(initialsNode(name), el2); }
+				}
+			});
+		}
+		return initialsNode(name);
+	}
+
+	function initialsNode(name) {
+		var parts = String(name || '').split(/\s+/).filter(Boolean);
+		var ini = parts.length
+			? (parts[0].charAt(0) + (parts.length > 1 ? parts[parts.length - 1].charAt(0) : '')).toUpperCase()
+			: '?';
+		return h('span', { class: 'mahan-hud-avatar mahan-hud-initials', title: name, 'aria-label': name, text: ini });
 	}
 
 	// The at-risk signal: a running streak that today's activity hasn't
@@ -732,9 +757,24 @@
 			var cats = j.categories || [];
 			var bundles = j.bundles || [];
 			var wrap = h('div', { class: 'mahan-catalog' });
+
+			// Search lives in the hero. It used to sit below the recommended and
+			// bundle strips, roughly a screen down — the one control most people
+			// reach for first was the last thing they could see.
+			var search = h('input', {
+				class: 'mahan-search-input', type: 'search',
+				placeholder: t('searchCourses', 'Search courses…'),
+				'aria-label': t('searchCourses', 'Search courses…')
+			});
+			search.value = state.q || '';
+
 			wrap.appendChild(h('div', { class: 'mahan-hero' }, [
 				h('h1', { text: D.heroTitle || 'Learn to use AI at work' }),
-				h('p', { class: 'mahan-hero-sub', text: D.heroSub || 'Structured courses. Hands-on practice. A tutor that answers in real time.' })
+				h('p', { class: 'mahan-hero-sub', text: D.heroSub || 'Structured courses. Hands-on practice. A tutor that answers in real time.' }),
+				h('div', { class: 'mahan-search' }, [
+					h('span', { class: 'mahan-search-icon', text: '🔍', 'aria-hidden': 'true' }),
+					search
+				])
 			]));
 
 			// Personalized "Recommended for you" strip — filled async from the
@@ -765,18 +805,6 @@
 				strip.appendChild(srow);
 				wrap.appendChild(strip);
 			}
-
-			// Search + level filter — both client-side and instant.
-			var search = h('input', {
-				class: 'mahan-search-input', type: 'search',
-				placeholder: t('searchCourses', 'Search courses…'),
-				'aria-label': t('searchCourses', 'Search courses…')
-			});
-			search.value = state.q || '';
-			wrap.appendChild(h('div', { class: 'mahan-search' }, [
-				h('span', { class: 'mahan-search-icon', text: '🔍', 'aria-hidden': 'true' }),
-				search
-			]));
 
 			// Level facets are derived from the catalog itself, not hardcoded: a
 			// level nobody teaches never shows a dead chip, and a level added to
@@ -1044,15 +1072,78 @@
 			.then(function () { delete prefetching[path]; });
 	}
 
+	// Deterministic 0..N-1 bucket from a string. Same course always gets the
+	// same cover, on every device, with no stored state.
+	function hashBucket(str, buckets) {
+		var s = String(str || ''), n = 0;
+		for (var i = 0; i < s.length; i++) { n = ((n << 5) - n + s.charCodeAt(i)) | 0; }
+		return Math.abs(n) % buckets;
+	}
+
+	var COVER_VARIANTS = 6;
+
+	// Cover art for a course with no featured image. A flat block with one
+	// giant letter read as "missing image" — and in dark mode the letter was
+	// nearly invisible. This is a real cover: a saturated gradient with a soft
+	// pattern and white type that keeps its contrast in both themes.
+	//
+	// The hue comes from the **category**, not the title, so a category reads as
+	// a colour family and two courses shown side by side are never accidentally
+	// identical twins. The title then shifts the gradient angle and nudges the
+	// hue, so siblings within one category still look like different courses.
+	var COVER_ANGLES = ['118deg', '135deg', '152deg', '196deg'];
+	var COVER_TONES = ['-14deg', '0deg', '14deg'];
+
+	// category name -> cover variant. Hand-assigned for the categories the
+	// plugin ships, because hashing six names into six buckets collides
+	// essentially every time (two categories would share a colour). Custom
+	// categories fall back to the hash.
+	//
+	// It has to be a pure function of the name, not of position in the catalog:
+	// a course opened directly, with no catalog loaded, must get the same cover
+	// it had on the card the learner tapped.
+	var COVER_BY_CATEGORY = {
+		'Prompt Engineering': 0,
+		'Machine Learning': 1,
+		'AI at Work': 2,
+		'AI Tools': 3,
+		'Responsible AI': 4,
+		'Generative AI': 5
+	};
+	function coverVariant(cat) {
+		return Object.prototype.hasOwnProperty.call(COVER_BY_CATEGORY, cat)
+			? COVER_BY_CATEGORY[cat]
+			: hashBucket(cat, COVER_VARIANTS);
+	}
+
+	function courseCover(c, opts) {
+		opts = opts || {};
+		if (c.image) {
+			return h('div', { class: 'mahan-cover mahan-cover-img' + (opts.wide ? ' is-wide' : '') }, [
+				h('img', { class: 'mahan-card-img', src: c.image, alt: '', loading: 'lazy', decoding: 'async',
+					onLoad: function (e) { e.currentTarget.classList.add('is-loaded'); } })
+			]);
+		}
+		var cat = (c.categories && c.categories[0]) || t('aiSkills', 'AI Skills');
+		var title = c.title || '?';
+		var node = h('div', {
+			class: 'mahan-cover mahan-cover-gen mahan-cover-' + coverVariant(cat) + (opts.wide ? ' is-wide' : ''),
+			'aria-hidden': 'true'
+		}, [
+			h('span', { class: 'mahan-cover-glyph', text: title.trim().charAt(0).toUpperCase() }),
+			// The card already names the category right below the cover; only
+			// the wide hero cover needs to say it.
+			opts.wide ? h('span', { class: 'mahan-cover-cat', text: cat }) : null
+		]);
+		node.style.setProperty('--cover-angle', COVER_ANGLES[hashBucket(title, COVER_ANGLES.length)]);
+		node.style.setProperty('--cover-tone', COVER_TONES[hashBucket(title + '~', COVER_TONES.length)]);
+		return node;
+	}
+
 	function courseCard(c, from) {
 		var nav = { course: c.id };
 		if (from) { nav.from = from; }
-		var media = c.image
-			? h('div', { class: 'mahan-card-media' }, [
-				h('img', { class: 'mahan-card-img', src: c.image, alt: '', loading: 'lazy', decoding: 'async',
-					onLoad: function (e) { e.currentTarget.classList.add('is-loaded'); } })
-			])
-			: h('div', { class: 'mahan-card-media mahan-card-media-ph' }, [h('span', { text: (c.title || '?').charAt(0) })]);
+		var media = courseCover(c);
 
 		var foot = c.enrolled
 			? h('div', { class: 'mahan-progress' }, [
@@ -1127,6 +1218,21 @@
 			// Hero. Back link points at wherever the learner arrived from
 			// (dashboard, a path, or the catalog).
 			var back = courseBackLink();
+			// Enrolled learners get their standing next to the CTA — "Resume"
+			// on its own never said resume *what*, or how far in.
+			var pct = Math.max(0, Math.min(100, j.progress_pct || 0));
+			var done = Math.round((pct / 100) * (c.lesson_count || 0));
+			var standing = (j.enrolled && c.lesson_count)
+				? h('div', { class: 'mahan-course-standing' }, [
+					h('div', { class: 'mahan-course-standing-top' }, [
+						h('span', { class: 'mahan-course-standing-pct', text: pct + '%' }),
+						h('span', { class: 'mahan-course-standing-label',
+							text: fmt(t('lessonsDone', '%1$s of %2$s lessons'), done, c.lesson_count) })
+					]),
+					h('div', { class: 'mahan-progress-bar' }, [h('span', { style: 'width:' + pct + '%' })])
+				])
+				: null;
+
 			var hero = h('div', { class: 'mahan-course-hero' }, [
 				h('div', { class: 'mahan-course-hero-text' }, [
 					h('a', { class: 'mahan-back', href: back.href, onClick: function (e) { e.preventDefault(); back.go(); }, text: '← ' + back.label }),
@@ -1135,11 +1241,15 @@
 					h('div', { class: 'mahan-course-meta' }, [
 						h('span', { class: 'mahan-tag', text: levelLabel(c.level) }),
 						h('span', { class: 'mahan-tag mahan-tag-soft', text: c.lesson_count + ' ' + t('lessons', 'lessons') }),
-						c.est_hours ? h('span', { class: 'mahan-tag mahan-tag-soft', text: '~' + c.est_hours + 'h' }) : null
+						c.est_hours ? h('span', { class: 'mahan-tag mahan-tag-soft', text: '~' + c.est_hours + 'h' }) : null,
+						c.certificate ? h('span', { class: 'mahan-tag mahan-tag-soft', text: '🎓 ' + t('certificate', 'Certificate') }) : null
 					]),
+					standing,
 					courseCta(j)
 				]),
-				c.image ? h('div', { class: 'mahan-course-hero-media', style: 'background-image:url(' + esc(c.image) + ')' }) : null
+				// Every course gets a cover now, not only the ones with an
+				// uploaded image.
+				h('div', { class: 'mahan-course-hero-media' }, [courseCover(c, { wide: true })])
 			]);
 			wrap.appendChild(hero);
 
@@ -2109,6 +2219,33 @@
 		}
 	}
 
+	// Opening questions for the tutor, grounded in this lesson: the first is
+	// about the concept it actually teaches, the rest are the asks that come up
+	// on every lesson. They disappear as soon as the conversation starts.
+	function tutorStarters(L) {
+		var topic = (L.topics && L.topics.length) ? L.topics[0] : null;
+		var qs = [];
+		if (topic) { qs.push(fmt(t('askExplainTopic', 'Explain %s in simple terms'), topic)); }
+		qs.push(t('askExample', 'Give me an example from my job'));
+		qs.push(t('askWhy', 'Why does this matter?'));
+
+		var box = h('div', { class: 'mahan-tutor-starters' }, [
+			h('span', { class: 'mahan-tutor-starters-label', text: t('tryAsking', 'Try asking') })
+		]);
+		qs.forEach(function (q) {
+			box.appendChild(h('button', {
+				class: 'mahan-tutor-starter', type: 'button', text: q,
+				onClick: function () {
+					var input = document.querySelector('.mahan-tutor-input');
+					if (!input) { return; }
+					input.value = q;
+					sendToTutor(L.id, input);
+				}
+			}));
+		});
+		return box;
+	}
+
 	function tutorPanel(L) {
 		var panel = h('aside', { class: 'mahan-tutor', 'aria-label': t('tutorTitle', 'AI Tutor') });
 		var ready = D.aiReady && L.tutor_ready;
@@ -2126,6 +2263,10 @@
 			log.appendChild(tutorBubble('assistant', t('tutorOffline', 'The AI tutor is not configured yet.')));
 		} else {
 			log.appendChild(tutorBubble('assistant', t('tutorIntro', 'Hi! Ask me anything about this lesson.')));
+			// A blank panel below the greeting asked the learner to think of a
+			// question cold. These are openers built from what the lesson is
+			// actually about; tapping one sends it.
+			log.appendChild(tutorStarters(L));
 		}
 		panel.appendChild(log);
 		// Streamed replies rewrite the bubble per token; announce the finished
@@ -2176,6 +2317,10 @@
 		input.value = '';
 		input.style.height = '';
 		var log = el('mahan-tutor-log');
+		// The starter questions were scaffolding for an empty panel — once
+		// there's a real conversation they're just clutter.
+		var starters = log.querySelector('.mahan-tutor-starters');
+		if (starters) { starters.remove(); }
 		log.appendChild(tutorBubble('user', msg));
 		var bubble = tutorBubble('assistant', '');
 		bubble.classList.add('is-streaming');

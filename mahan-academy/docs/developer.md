@@ -270,6 +270,16 @@ painting the next view. The corollary matters: register hooks **after** calling
 `mount()`, or the teardown you are about to trigger will eat them. That is why
 `readingProgress()` returns `{ node, start }` instead of wiring itself up.
 
+**Course covers.** `courseCover(course, { wide })` returns the card/hero cover.
+With a featured image it's the image; otherwise it's a generated CSS gradient —
+no request, no upload. The variant (`.mahan-cover-0..5`) comes from the
+**category** via `COVER_BY_CATEGORY` (hand-assigned for the shipped categories,
+since hashing six names into six buckets collides almost every time; unknown
+categories fall back to `hashBucket`), and the **title** sets `--cover-angle`
+and `--cover-tone` so siblings in one category still differ. Keep it a pure
+function of the category name — a course opened directly, with no catalog
+loaded, must render the same cover it had on the card. Covers are `aria-hidden`.
+
 **Keyboard layer.** A single delegated `keydown` handler implements `/` (search),
 `←`/`→` (previous/next lesson), `C` (continue), `?` (shortcut sheet) and `Esc`
 (clear filters). It reads view-scoped handles — `catalogSearchInput`,

@@ -4,6 +4,68 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.19.0]
+
+A UI pass, driven by actually looking at the thing in both themes. Front-end
+only — **no new tables, DB stays v4**.
+
+### Course covers
+
+Courses without a featured image got a flat block with one oversized letter. In
+light mode it read as a *missing* image; in dark mode the letter was indigo on
+navy and effectively invisible. Every course now has real cover art:
+
+- Six saturated gradients with a soft light source and a faint diagonal weave,
+  drawn entirely in CSS — no image is fetched, nothing to upload.
+- **Hue comes from the category**, so a category reads as a colour family. It is
+  a hand-assigned map for the six categories the plugin ships, because hashing
+  six names into six buckets collides essentially every time.
+- **The title varies the gradient angle and nudges the hue**, so four sibling
+  courses on one ladder don't look like the same card four times.
+- It's a pure function of the category name, not of position in the catalog: a
+  course opened directly shows the same cover it had on the card you tapped.
+- Covers are `aria-hidden` — decoration, not information. Cards don't repeat the
+  category on the cover (it's already in the card body); the wide hero cover does.
+
+### Hierarchy
+
+- **Search moved into the hero.** It used to sit below the recommended and
+  bundle strips — roughly a screen down at 1280×800. The control most people
+  reach for first was the last one they could see. The hero title and subtitle
+  were scaled back to make room.
+- **The course hero now shows where you stand**: percent, `2 of 4 lessons`, and
+  a progress bar directly above the CTA. "Resume" on its own never said resume
+  *what*, or how far in. Certificate courses show a tag for it.
+- Every course hero gets a cover, not only ones with an uploaded image.
+
+### Depth, in dark mode too
+
+Dark surfaces sit close to the background, so the 1px border that carried the
+whole card in light mode did almost nothing. Cards, heroes, sections, the tutor
+panel, modals and the top bar now get a hairline top highlight plus a real
+two-layer shadow in dark.
+
+### Smaller things
+
+- **Avatar falls back to initials.** A user with no avatar rendered a broken
+  `<img>` leaking its alt text into the top bar. Also recovers on image error.
+- **The HUD reads as a cluster**, not one run-on string: each stat gets its own
+  padded, hoverable pill.
+- **The tutor is no longer a tall blank box.** It opens with three questions
+  built from the lesson's own topics; tapping one sends it, and they clear as
+  soon as there's a real conversation.
+
+### Verification
+
+- 15-assertion headless run: search above the fold, initials fallback with no
+  `<img>` avatar left, covers on every card with no legacy placeholder, covers
+  hidden from assistive tech, **each category exactly one colour and no two
+  categories sharing one**, siblings still varying, course-page cover matching
+  the catalog card, standing meter values, tutor openers sending and clearing,
+  and real dark-mode elevation. Zero JS errors.
+- All eight earlier render harnesses still pass; seed validator and the four
+  logic suites (variants 18, recommend 9, personalize 15, practice 19) unchanged.
+
 ## [1.18.0]
 
 A UX pass on the two things six feature releases made harder: **finding the

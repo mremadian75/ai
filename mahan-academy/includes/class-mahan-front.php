@@ -208,6 +208,15 @@ class Mahan_Front {
 			'scContinue'       => __( 'Continue learning', 'mahan-academy' ),
 			'scClear'          => __( 'Clear filters / close', 'mahan-academy' ),
 			'scHelp'           => __( 'Show this list', 'mahan-academy' ),
+			// Cover art + course standing.
+			'aiSkills'         => __( 'AI Skills', 'mahan-academy' ),
+			'lessonsDone'      => __( '%1$s of %2$s lessons', 'mahan-academy' ),
+			'certificate'      => __( 'Certificate', 'mahan-academy' ),
+			// Tutor opening questions.
+			'tryAsking'        => __( 'Try asking', 'mahan-academy' ),
+			'askExplainTopic'  => __( 'Explain %s in simple terms', 'mahan-academy' ),
+			'askExample'       => __( 'Give me an example from my job', 'mahan-academy' ),
+			'askWhy'           => __( 'Why does this matter?', 'mahan-academy' ),
 			'viewAll'          => __( 'View all', 'mahan-academy' ),
 			'otherCourses'     => __( 'More courses', 'mahan-academy' ),
 			'pathBadge'        => __( 'Path', 'mahan-academy' ),

@@ -20,6 +20,7 @@ mahan-academy/
 │   ├── class-mahan-profile.php           # schema-driven learner profile (user meta)
 │   ├── class-mahan-courses.php           # course/lesson structure + meta keys + topics
 │   ├── class-mahan-seed.php              # starter-content installer (idempotent)
+│   ├── class-mahan-recommend.php         # personalized course/bundle fit scoring
 │   ├── class-mahan-gamification.php      # XP, levels, streaks, level titles
 │   ├── class-mahan-badges.php            # achievements
 │   ├── class-mahan-emails.php            # notification emails + daily cron

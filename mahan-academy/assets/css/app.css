@@ -141,6 +141,13 @@
 .mahan-cat-section-all { border: none; background: none; color: var(--m-primary); font-weight: 600; font-size: 14px; cursor: pointer; padding: 4px; white-space: nowrap; }
 .mahan-cat-section-all:hover { text-decoration: underline; }
 
+/* Recommended-for-you strip */
+.mahan-rec:empty { display: none; }
+.mahan-rec { margin: 6px 0 26px; padding: 18px 20px; border: 1px solid color-mix(in srgb, var(--m-primary) 20%, var(--m-border)); border-radius: var(--m-radius); background: color-mix(in srgb, var(--m-primary) 5%, var(--m-surface)); }
+.mahan-rec-head { margin-bottom: 14px; }
+.mahan-rec-reason { color: var(--m-muted); font-size: 14px; margin: 2px 0 0; }
+.mahan-rec-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+
 /* Bundles (specializations) strip */
 .mahan-bundle-strip { margin: 6px 0 26px; }
 .mahan-strip-title { font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--m-muted); margin: 0 0 12px; }

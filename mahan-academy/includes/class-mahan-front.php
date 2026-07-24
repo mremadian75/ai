@@ -184,6 +184,7 @@ class Mahan_Front {
 			'allLevels'        => __( 'All levels', 'mahan-academy' ),
 			'allTopics'        => __( 'All topics', 'mahan-academy' ),
 			'browseByTopic'    => __( 'Browse by topic', 'mahan-academy' ),
+			'recommendedForYou' => __( 'Recommended for you', 'mahan-academy' ),
 			'topicFilterLabel' => __( 'Topic:', 'mahan-academy' ),
 			'viewAll'          => __( 'View all', 'mahan-academy' ),
 			'otherCourses'     => __( 'More courses', 'mahan-academy' ),

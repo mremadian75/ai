@@ -665,6 +665,23 @@
 	/* View: Catalog                                                       */
 	/* ------------------------------------------------------------------ */
 
+	// Fill the "Recommended for you" strip from the learner's profile fit.
+	// Silent no-op when the learner has no profile signal (the catalog's own
+	// bundles/featured already cover the generic case).
+	function loadRecommendations(container) {
+		api('/recommendations').then(function (r) {
+			if (!r || !r.ok || !r.has_profile || !r.recommended || !r.recommended.length) { return; }
+			container.innerHTML = '';
+			container.appendChild(h('div', { class: 'mahan-rec-head' }, [
+				h('h2', { class: 'mahan-strip-title', text: '✨ ' + t('recommendedForYou', 'Recommended for you') }),
+				r.reason ? h('p', { class: 'mahan-rec-reason', text: r.reason }) : null
+			]));
+			var grid = h('div', { class: 'mahan-grid mahan-rec-grid' });
+			r.recommended.slice(0, 3).forEach(function (c) { grid.appendChild(courseCard(c)); });
+			container.appendChild(grid);
+		}).catch(function () { /* recommendations are a bonus — fail silently */ });
+	}
+
 	function renderCatalog() {
 		setTitle(t('catalog', 'Explore'));
 		cachedApi('/catalog', 'cards', function (j) {
@@ -676,6 +693,14 @@
 				h('h1', { text: D.heroTitle || 'Learn to use AI at work' }),
 				h('p', { class: 'mahan-hero-sub', text: D.heroSub || 'Structured courses. Hands-on practice. A tutor that answers in real time.' })
 			]));
+
+			// Personalized "Recommended for you" strip — filled async from the
+			// learner's profile (hidden when there's no profile signal).
+			if (D.loggedIn) {
+				var recWrap = h('div', { class: 'mahan-rec' });
+				wrap.appendChild(recWrap);
+				loadRecommendations(recWrap);
+			}
 
 			// Bundles (specializations) strip — Coursera-style programs, surfaced
 			// up front so multi-course paths are discoverable from the catalog.

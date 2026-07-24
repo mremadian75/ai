@@ -163,6 +163,13 @@ class Mahan_REST {
 			'callback'            => array( __CLASS__, 'lesson_personalize' ),
 			'permission_callback' => $logged_in,
 		) );
+
+		// Personalized "Recommended for you" courses/bundle.
+		register_rest_route( self::NS, '/recommendations', array(
+			'methods'             => WP_REST_Server::READABLE,
+			'callback'            => array( __CLASS__, 'recommendations' ),
+			'permission_callback' => $logged_in,
+		) );
 	}
 
 	/* ------------------------------------------------------------------ */
@@ -962,5 +969,28 @@ class Mahan_REST {
 			return rest_ensure_response( $res );
 		}
 		return rest_ensure_response( $res );
+	}
+
+	/**
+	 * Personalized recommendations for the current learner.
+	 */
+	public static function recommendations( WP_REST_Request $request ) {
+		$user_id = get_current_user_id();
+		$limit   = absint( $request->get_param( 'limit' ) );
+		$res     = Mahan_Recommend::for_user( $user_id, $limit > 0 ? $limit : 6 );
+
+		// Attach enrollment/progress so cards render consistently with the catalog.
+		foreach ( $res['recommended'] as &$course ) {
+			$course['enrolled']     = false;
+			$course['progress_pct'] = 0;
+			$enr = Mahan_Enrollment::get( $user_id, $course['id'] );
+			if ( $enr ) {
+				$course['enrolled']     = true;
+				$course['progress_pct'] = (int) $enr['progress_pct'];
+			}
+		}
+		unset( $course );
+
+		return rest_ensure_response( array_merge( array( 'ok' => true ), $res ) );
 	}
 }

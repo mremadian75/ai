@@ -4,6 +4,37 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.15.0]
+
+Personalized discovery. The catalog now leads with **"Recommended for you"** —
+the courses that fit this learner's role, goal, and level — so the
+personalization work pays off at the moment of choosing what to learn.
+**No new tables, no AI call — DB stays v4.** Scoring is pure and deterministic
+(9-assertion test) and the strip was driven in headless Chromium.
+
+### New — `includes/class-mahan-recommend.php`
+
+- `prefs($profile)` maps the profile to a preference vector (goal→categories,
+  role→categories, level), and `has_signal()` reports whether there's anything
+  to personalize on.
+- `score_course($course, $prefs)` — a pure fit score: rank-weighted category
+  matches for the learner's **goal** and **role**, a **level-fit** bonus, and a
+  gentle featured tiebreak (only once there's signal, so a blank profile scores
+  0 everywhere and cleanly falls back to catalog order).
+- `for_user($user_id, $limit)` ranks every published course (skipping ones the
+  learner is already enrolled in), picks the **best-fit bundle**, and returns a
+  human `reason` ("Based on your role in Marketing and your goal to…").
+- New REST route `GET /recommendations` (logged-in + nonce), which also attaches
+  enrollment/progress so cards render exactly like the catalog's.
+
+### Learner UI
+
+- A **"✨ Recommended for you"** strip at the top of the catalog with the reason
+  line and up to three fitted course cards, loaded asynchronously and hidden
+  entirely when the learner has no profile signal (or the request fails) — the
+  catalog never regresses for anonymous or profile-less visitors.
+- New `recommendedForYou` i18n string and `.mahan-rec*` styles.
+
 ## [1.14.0]
 
 Default content, per-lesson personalization, more AI-tool courses, and a

@@ -89,6 +89,10 @@ class Mahan_Courses {
 			'subtitle'     => Mahan_Utils::meta_str( $id, self::M_SUBTITLE ),
 			'excerpt'      => wp_strip_all_tags( get_the_excerpt( $id ) ),
 			'level'        => Mahan_Utils::meta_str( $id, self::M_LEVEL, 'beginner' ),
+			// Level-ladder position, so a catalog card can say which rung of a
+			// multi-level subject it is. Empty track = a standalone course.
+			'track'        => Mahan_Utils::meta_str( $id, Mahan_Variants::M_TRACK, '' ),
+			'level_rank'   => Mahan_Utils::meta_int( $id, Mahan_Variants::M_LEVEL_RANK, 0 ),
 			'est_hours'    => Mahan_Utils::meta_int( $id, self::M_EST_HOURS, 0 ),
 			'categories'   => is_wp_error( $terms ) ? array() : array_values( $terms ),
 			'topics'       => self::course_topics( $id ),

@@ -186,6 +186,28 @@ class Mahan_Front {
 			'browseByTopic'    => __( 'Browse by topic', 'mahan-academy' ),
 			'recommendedForYou' => __( 'Recommended for you', 'mahan-academy' ),
 			'topicFilterLabel' => __( 'Topic:', 'mahan-academy' ),
+			// Catalog filter summary: result count + one removable pill per
+			// active filter.
+			'showingCount'     => __( 'Showing %1$s of %2$s courses', 'mahan-academy' ),
+			'courseOne'        => __( 'course', 'mahan-academy' ),
+			'courseMany'       => __( 'courses', 'mahan-academy' ),
+			'filterSearch'     => __( 'Search', 'mahan-academy' ),
+			'filterLevel'      => __( 'Level', 'mahan-academy' ),
+			'filterCategory'   => __( 'Category', 'mahan-academy' ),
+			'filterTopic'      => __( 'Topic', 'mahan-academy' ),
+			'removeFilter'     => __( 'Remove filter: %s', 'mahan-academy' ),
+			'stepOfTrack'      => __( 'Step %1$s of %2$s', 'mahan-academy' ),
+			// Lesson contents drawer.
+			'contents'         => __( 'Contents', 'mahan-academy' ),
+			'youAreHere'       => __( 'You are here', 'mahan-academy' ),
+			'emptyCourse'      => __( 'No lessons yet.', 'mahan-academy' ),
+			// Keyboard shortcuts.
+			'keyboardShortcuts' => __( 'Keyboard shortcuts', 'mahan-academy' ),
+			'scSearch'         => __( 'Search courses', 'mahan-academy' ),
+			'scLesson'         => __( 'Previous / next lesson', 'mahan-academy' ),
+			'scContinue'       => __( 'Continue learning', 'mahan-academy' ),
+			'scClear'          => __( 'Clear filters / close', 'mahan-academy' ),
+			'scHelp'           => __( 'Show this list', 'mahan-academy' ),
 			'viewAll'          => __( 'View all', 'mahan-academy' ),
 			'otherCourses'     => __( 'More courses', 'mahan-academy' ),
 			'pathBadge'        => __( 'Path', 'mahan-academy' ),

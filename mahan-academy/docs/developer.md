@@ -63,7 +63,8 @@ mahan-academy/
   `M_PROMO_VIDEO`, `M_PREREQ`, `M_CERTIFICATE`, `M_UNIT_QUIZZES` (per-unit
   quizzes keyed by unit title), `M_REFERENCES` (further-reading sources:
   `{ title, source, url }`, read via `Mahan_Courses::course_references()`), plus
-  `Mahan_Variants::M_TRACK` / `M_LEVEL_RANK` (the level-ladder position).
+  `Mahan_Variants::M_TRACK` / `M_LEVEL_RANK` (the level-ladder position, also
+  surfaced on `course_summary()` so a catalog card can say "Step 2 of 4").
 - `mahan_lesson` — a lesson, linked to its course by meta.
   Keys: `M_COURSE_ID`, `M_UNIT`, `M_UNIT_ORDER`, `M_ORDER`, `M_XP`, `M_EST_MIN`,
   `M_TYPE`, `M_EXERCISES` (JSON array of exercise definitions), `M_VARIANTS`
@@ -261,6 +262,21 @@ add_action( 'mahan_course_completed', function ( $user_id, $course_id ) {
 Config + i18n are injected via `wp_localize_script` as `window.MahanData`. Theme
 colors are CSS variables (`--mahan-primary`, `--mahan-accent`) set inline from
 settings.
+
+**View teardown.** `mount()` clears the app root, so anything a view wires up
+*outside* its own DOM (window `scroll`/`resize` listeners, timers) must be
+registered with `onUnmount(fn)`; `mount()` runs and drains those hooks before
+painting the next view. The corollary matters: register hooks **after** calling
+`mount()`, or the teardown you are about to trigger will eat them. That is why
+`readingProgress()` returns `{ node, start }` instead of wiring itself up.
+
+**Keyboard layer.** A single delegated `keydown` handler implements `/` (search),
+`←`/`→` (previous/next lesson), `C` (continue), `?` (shortcut sheet) and `Esc`
+(clear filters). It reads view-scoped handles — `catalogSearchInput`,
+`clearCatalogFilters`, `currentLesson` — that each view sets after `mount()` and
+`mount()` nulls; a null handle means "this shortcut doesn't apply here". The
+handler bails on any modifier, while `modalStack` is non-empty, and whenever
+focus is in an input, textarea, select, or contenteditable.
 
 The stylesheet (`assets/css/app.css`) is token-driven. `.mahan-app` defines the
 design tokens — surfaces, `--m-muted`/`--m-border`, a **semantic colour system**

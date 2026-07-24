@@ -184,6 +184,25 @@
 	var state = { view: 'catalog', courseId: 0, lessonId: 0, me: null, profile: null, levelFilter: '', catFilter: '', topicFilter: '' };
 	var root = el('mahan-app');
 
+	// The level ladder, lowest rung first. Shared by the catalog's level facets
+	// and by levelLabel().
+	var LEVEL_ORDER = ['beginner', 'intermediate', 'advanced', 'expert'];
+
+	// How many courses each level track holds, filled by the catalog. Lets a
+	// card say "Step 2 of 4" without another round-trip; empty elsewhere, in
+	// which case cards simply don't show a rung.
+	var trackSizes = {};
+
+	// View-scoped handles for the keyboard layer, set while the matching view is
+	// mounted and cleared by mount(). Null means "that shortcut doesn't apply
+	// here", which is exactly what the handler checks.
+	var catalogSearchInput = null;   // the catalog's search box  → `/`
+	var clearCatalogFilters = null;  // the catalog's clear-all   → Esc
+	var currentLesson = null;        // the lesson on screen      → ← / →
+	// Set when `/` is pressed off-catalog: focus the search box as soon as the
+	// catalog finishes painting.
+	var pendingSearchFocus = false;
+
 	// --- Keyboard / screen-reader infrastructure (persists across mount()) ---
 	// A skip link (first tabbable element) + a polite live region that announces
 	// each SPA view change. Both are re-attached on every mount() because
@@ -270,7 +289,11 @@
 		pendingFocus = true;
 		// From the first user navigation on, announce view changes to AT.
 		announceRoutes = true;
-		if (!samePlace) { window.history.pushState({ view: view, params: params }, '', url); }
+		// A rejected pushState (exotic hosting, sandboxed document) must not
+		// take the navigation down with it — the view still has to change.
+		if (!samePlace) {
+			try { window.history.pushState({ view: view, params: params }, '', url); } catch (e) { /* URL stays put */ }
+		}
 		window.scrollTo(0, 0);
 		render();
 	}
@@ -387,6 +410,15 @@
 				h('a', { class: 'mahan-btn mahan-btn-sm mahan-btn-primary', href: loginHref(), text: t('login', 'Log in') })
 			]);
 		}
+
+		// Shortcuts are only discoverable if something points at them. Pointer
+		// devices only — there is no keyboard to shortcut on a touch screen.
+		right.insertBefore(h('button', {
+			class: 'mahan-kbd-btn', type: 'button',
+			title: t('keyboardShortcuts', 'Keyboard shortcuts') + ' (?)',
+			'aria-label': t('keyboardShortcuts', 'Keyboard shortcuts'),
+			onClick: function () { showShortcuts(); }
+		}, [h('span', { 'aria-hidden': 'true', text: '⌨' })]), right.firstChild);
 
 		bar.appendChild(brand);
 		bar.appendChild(nav);
@@ -508,7 +540,18 @@
 	/* Loading / shells                                                    */
 	/* ------------------------------------------------------------------ */
 
+	// Teardown for anything a view wires up outside its own DOM (window
+	// listeners, timers). mount() clears root, so without this a departed view
+	// would keep reacting to scroll and keystrokes forever.
+	var unmountHooks = [];
+	function onUnmount(fn) { unmountHooks.push(fn); }
+
 	function mount(content) {
+		unmountHooks.splice(0).forEach(function (fn) { try { fn(); } catch (e) { /* teardown must not break a paint */ } });
+		// View-scoped handles the shortcut layer reads; the next view sets its own.
+		catalogSearchInput = null;
+		clearCatalogFilters = null;
+		currentLesson = null;
 		// Keep any open dialog alive across repaints (e.g. a quiz opened
 		// while a stale-while-revalidate refresh was still in flight).
 		var overlays = Array.prototype.slice.call(root.querySelectorAll('.mahan-modal-overlay'));
@@ -735,11 +778,29 @@
 				search
 			]));
 
-			var levels = [['', t('allLevels', 'All levels')], ['beginner', t('beginner', 'Beginner')], ['intermediate', t('intermediate', 'Intermediate')], ['advanced', t('advanced', 'Advanced')]];
+			// Level facets are derived from the catalog itself, not hardcoded: a
+			// level nobody teaches never shows a dead chip, and a level added to
+			// the library later (Expert) becomes filterable with no code change.
+			var levelCount = {};
+			courses.forEach(function (c) { var lv = c.level || 'beginner'; levelCount[lv] = (levelCount[lv] || 0) + 1; });
+			var levels = [];
+			LEVEL_ORDER.forEach(function (lv) { if (levelCount[lv]) { levels.push([lv, levelLabel(lv)]); } });
+			// Anything outside the known ladder still gets a chip rather than
+			// leaving those courses unreachable by filter.
+			Object.keys(levelCount).sort().forEach(function (lv) {
+				if (LEVEL_ORDER.indexOf(lv) < 0) { levels.push([lv, lv]); }
+			});
+			if (levels.length > 1) { levels.unshift(['', t('allLevels', 'All levels')]); } else { levels = []; }
+
+			// How many rungs each level ladder has, so a card can say which step
+			// of a multi-level subject it is.
+			trackSizes = {};
+			courses.forEach(function (c) { if (c.track) { trackSizes[c.track] = (trackSizes[c.track] || 0) + 1; } });
+
 			// Category (domain) filter — Coursera/Duolingo-style domains,
 			// only shown when the catalog spans more than one category.
 			var catArea = (cats.length > 1) ? h('div', { class: 'mahan-chips mahan-chips-cat' }) : null;
-			var chipsArea = h('div', { class: 'mahan-chips' });
+			var chipsArea = levels.length ? h('div', { class: 'mahan-chips' }) : null;
 
 			// Distinct topics across the catalog (with course counts) — powers a
 			// "Browse by topic" (مباحث) panel and topic-based filtering.
@@ -761,10 +822,20 @@
 				topicPanel = h('div', { class: 'mahan-topic-panel' }, [topicToggle, topicChipsBox]);
 			}
 
+			// One place that always answers "what am I looking at, and why is it
+			// only this many?" — result count + a removable pill per active
+			// filter. Replaces the old topic-only banner.
+			// The count line is created once and only ever has its text swapped:
+			// a live region that is torn down and rebuilt on each repaint is not
+			// reliably announced.
+			var countLine = h('p', { class: 'mahan-filter-count', role: 'status', 'aria-live': 'polite' });
+			var pillsArea = h('div', { class: 'mahan-filter-pills', hidden: 'hidden' });
+			var summaryArea = h('div', { class: 'mahan-filter-summary' }, [countLine, pillsArea]);
 			var listArea = h('div', { class: 'mahan-catalog-list' });
 			if (catArea) { wrap.appendChild(catArea); }
-			wrap.appendChild(chipsArea);
+			if (chipsArea) { wrap.appendChild(chipsArea); }
 			if (topicPanel) { wrap.appendChild(topicPanel); }
+			wrap.appendChild(summaryArea);
 			wrap.appendChild(listArea);
 
 			function anyFilter() {
@@ -790,7 +861,7 @@
 						text: tp, 'aria-pressed': state.topicFilter === tp ? 'true' : 'false',
 						onClick: function () {
 							state.topicFilter = (state.topicFilter === tp) ? '' : tp;
-							paintTopics(); paintList(); syncUrl();
+							paintTopics(); paintSummary(); paintList(); syncUrl();
 						}
 					}));
 				});
@@ -802,32 +873,82 @@
 				catArea.appendChild(h('button', {
 					class: 'mahan-chip' + (state.catFilter === '' ? ' is-active' : ''),
 					text: t('allTopics', 'All topics'), 'aria-pressed': state.catFilter === '' ? 'true' : 'false',
-					onClick: function () { state.catFilter = ''; paintCats(); paintList(); syncUrl(); }
+					onClick: function () { state.catFilter = ''; paintCats(); paintSummary(); paintList(); syncUrl(); }
 				}));
 				cats.forEach(function (cat) {
 					catArea.appendChild(h('button', {
 						class: 'mahan-chip' + (state.catFilter === cat.name ? ' is-active' : ''),
 						text: cat.name + ' (' + cat.count + ')', 'aria-pressed': state.catFilter === cat.name ? 'true' : 'false',
-						onClick: function () { state.catFilter = cat.name; paintCats(); paintList(); syncUrl(); }
+						onClick: function () { state.catFilter = cat.name; paintCats(); paintSummary(); paintList(); syncUrl(); }
 					}));
 				});
 			}
 
 			function paintChips() {
+				if (!chipsArea) { return; }
 				chipsArea.innerHTML = '';
 				levels.forEach(function (lv) {
 					chipsArea.appendChild(h('button', {
 						class: 'mahan-chip' + (state.levelFilter === lv[0] ? ' is-active' : ''),
 						text: lv[1], 'aria-pressed': state.levelFilter === lv[0] ? 'true' : 'false',
-						onClick: function () { state.levelFilter = lv[0]; paintChips(); paintList(); syncUrl(); }
+						onClick: function () { state.levelFilter = lv[0]; paintChips(); paintSummary(); paintList(); syncUrl(); }
 					}));
 				});
 			}
 
+			function repaint() { paintCats(); paintChips(); paintTopics(); paintSummary(); paintList(); syncUrl(); }
+
 			function clearAll() {
 				state.q = ''; state.levelFilter = ''; state.catFilter = ''; state.topicFilter = '';
 				search.value = '';
-				paintCats(); paintChips(); paintTopics(); paintList(); syncUrl();
+				repaint();
+			}
+
+			// Result count + one removable pill per active filter. Every filter
+			// is represented here, including the ones whose own control is off
+			// screen (a collapsed topic panel, a scrolled-past chip row), so a
+			// short result list is never unexplained.
+			function paintSummary() {
+				if (!courses.length) { summaryArea.setAttribute('hidden', 'hidden'); return; }
+				summaryArea.removeAttribute('hidden');
+				var shown = courses.filter(matches).length;
+				var pills = [];
+				var q = (state.q || '').trim();
+				if (q) {
+					pills.push([t('filterSearch', 'Search') + ': “' + q + '”', function () { state.q = ''; search.value = ''; }]);
+				}
+				if (state.levelFilter) {
+					pills.push([t('filterLevel', 'Level') + ': ' + levelLabel(state.levelFilter), function () { state.levelFilter = ''; }]);
+				}
+				if (state.catFilter) {
+					pills.push([t('filterCategory', 'Category') + ': ' + state.catFilter, function () { state.catFilter = ''; }]);
+				}
+				if (state.topicFilter) {
+					pills.push([t('filterTopic', 'Topic') + ': ' + state.topicFilter, function () { state.topicFilter = ''; }]);
+				}
+
+				// Announce the new count when filters change, so a screen reader
+				// hears the result of its own action.
+				countLine.textContent = pills.length
+					? fmt(t('showingCount', 'Showing %1$s of %2$s courses'), shown, courses.length)
+					: plural(courses.length, 'courseOne', 'courseMany', 'course', 'courses');
+
+				pillsArea.innerHTML = '';
+				if (!pills.length) { pillsArea.setAttribute('hidden', 'hidden'); return; }
+				pillsArea.removeAttribute('hidden');
+				pills.forEach(function (p) {
+					pillsArea.appendChild(h('button', {
+						class: 'mahan-filter-pill', type: 'button',
+						'aria-label': fmt(t('removeFilter', 'Remove filter: %s'), p[0]),
+						onClick: function () { p[1](); repaint(); }
+					}, [
+						h('span', { text: p[0] }),
+						h('span', { class: 'mahan-filter-pill-x', 'aria-hidden': 'true', text: '✕' })
+					]));
+				});
+				pillsArea.appendChild(h('button', {
+					class: 'mahan-filter-clear', type: 'button', text: t('clearFilters', 'Clear filters'), onClick: clearAll
+				}));
 			}
 
 			function paintList() {
@@ -838,17 +959,6 @@
 						h('p', { text: t('emptyCatalog', 'No courses available yet.') })
 					]));
 					return;
-				}
-
-				// Active topic filter banner (topics have no chip row of their own
-				// when the panel is collapsed, so show what's being filtered).
-				if (state.topicFilter) {
-					listArea.appendChild(h('div', { class: 'mahan-active-filter' }, [
-						h('span', { text: t('topicFilterLabel', 'Topic:') + ' ' }),
-						h('strong', { text: state.topicFilter }),
-						h('button', { class: 'mahan-active-filter-x', type: 'button', 'aria-label': t('clearFilters', 'Clear filters'), text: '✕',
-							onClick: function () { state.topicFilter = ''; paintTopics(); paintList(); syncUrl(); } })
-					]));
 				}
 
 				var filtered = courses.filter(matches);
@@ -873,7 +983,7 @@
 						section.appendChild(h('div', { class: 'mahan-cat-section-head' }, [
 							h('h2', { class: 'mahan-cat-section-title', text: cat.name }),
 							h('button', { class: 'mahan-cat-section-all', type: 'button', text: t('viewAll', 'View all') + ' →',
-								onClick: function () { state.catFilter = cat.name; paintCats(); paintChips(); paintTopics(); paintList(); syncUrl(); } })
+								onClick: function () { state.catFilter = cat.name; repaint(); } })
 						]));
 						var g = h('div', { class: 'mahan-grid' });
 						inCat.forEach(function (c) { g.appendChild(courseCard(c)); });
@@ -902,15 +1012,24 @@
 
 			var syncT;
 			search.addEventListener('input', function () {
-				state.q = search.value; paintList();
+				state.q = search.value; paintSummary(); paintList();
 				clearTimeout(syncT); syncT = setTimeout(syncUrl, 350);
 			});
 
 			paintCats();
 			paintChips();
 			paintTopics();
+			paintSummary();
 			paintList();
 			mount(wrap);
+			// Hand the keyboard layer this view's affordances (mount() cleared
+			// the previous view's).
+			catalogSearchInput = search;
+			clearCatalogFilters = function () { if (anyFilter()) { clearAll(); return true; } return false; };
+			if (pendingSearchFocus) {
+				pendingSearchFocus = false;
+				try { search.focus(); search.select(); } catch (e) { /* ok */ }
+			}
 		}, renderCatalog);
 	}
 
@@ -952,7 +1071,14 @@
 			c.featured ? h('span', { class: 'mahan-ribbon', text: '★ ' + t('featured', 'Featured') }) : null,
 			media,
 			h('div', { class: 'mahan-card-body' }, [
-				h('span', { class: 'mahan-card-cat', text: (c.categories && c.categories[0]) || 'AI Skills' }),
+				h('div', { class: 'mahan-card-kicker' }, [
+					h('span', { class: 'mahan-card-cat', text: (c.categories && c.categories[0]) || 'AI Skills' }),
+					// Rung marker for courses that are one level of a ladder, so
+					// four sibling cards read as a progression, not duplicates.
+					(c.track && c.level_rank && (trackSizes[c.track] || 0) > 1)
+						? h('span', { class: 'mahan-card-rung', text: fmt(t('stepOfTrack', 'Step %1$s of %2$s'), c.level_rank, trackSizes[c.track]) })
+						: null
+				]),
 				h('h3', { class: 'mahan-card-title', text: c.title }),
 				h('p', { class: 'mahan-card-sub', text: c.subtitle || c.excerpt || '' }),
 				foot
@@ -960,7 +1086,10 @@
 		]);
 	}
 
+	// Human label for a ladder rung. Anything off the ladder is shown verbatim
+	// rather than silently relabelled "Beginner".
 	function levelLabel(lv) {
+		if (lv && LEVEL_ORDER.indexOf(lv) < 0) { return lv; }
 		if (lv === 'expert') { return t('expert', 'Expert'); }
 		if (lv === 'advanced') { return t('advanced', 'Advanced'); }
 		if (lv === 'intermediate') { return t('intermediate', 'Intermediate'); }
@@ -1426,7 +1555,16 @@
 						pos.unit ? h('span', { class: 'mahan-lesson-pos-unit', text: pos.unit + ' · ' }) : null,
 						h('span', { text: t('lesson', 'Lesson') + ' ' + pos.index + ' ' + t('of', 'of') + ' ' + pos.total }),
 						(L.est_min > 0) ? h('span', { text: ' · ~' + L.est_min + ' ' + t('minShort', 'min') }) : null
-					]) : null
+					]) : null,
+					// Jump anywhere in the course without backing out of the
+					// lesson — the outline opens over the reader.
+					h('button', {
+						class: 'mahan-contents-btn', type: 'button', 'aria-haspopup': 'dialog',
+						onClick: function () { openContents(L); }
+					}, [
+						h('span', { 'aria-hidden': 'true', text: '☰ ' }),
+						h('span', { text: t('contents', 'Contents') })
+					])
 				]),
 				(L.enrolled && pos.total > 0) ? h('div', { class: 'mahan-lesson-course-bar', title: (L.course_pct || 0) + '%' }, [
 					h('span', { style: 'width:' + (L.course_pct || 0) + '%' })
@@ -1456,7 +1594,12 @@
 			// own work (lazy-loaded + server-cached; hidden if unavailable).
 			var forYou = forYouCard(L);
 			if (forYou) { col.appendChild(forYou); }
-			col.appendChild(h('article', { class: 'mahan-prose', html: L.content || '' }));
+			var article = h('article', { class: 'mahan-prose', html: L.content || '' });
+			col.appendChild(article);
+			// How far through *this* lesson you are. (The bar in the header
+			// above tracks the whole course; this one tracks the reading.)
+			var reading = readingProgress(article);
+			wrap.appendChild(reading.node);
 
 			// Exercises.
 			if (L.exercises && L.exercises.length) {
@@ -1491,8 +1634,124 @@
 			// from a previous lesson's stream so this lesson's history loads.
 			tutorBusy = false;
 			mount(wrap);
+			// Everything below runs *after* mount(), because mount() is what
+			// tears down the previous view's out-of-DOM listeners — wiring any
+			// of it earlier would hand the new view's hooks to that teardown.
+			reading.start();
+			// ← / → move between lessons from anywhere on the page.
+			currentLesson = L;
 			loadChat(L.id);
 		}
+	}
+
+	// A hairline at the top of the viewport showing how far through the lesson
+	// body the reader is. Silent when the lesson fits on one screen — a bar
+	// that can only ever read 0% or 100% is noise.
+	//
+	// Returns { node, start } rather than wiring itself up: the listeners must
+	// be registered *after* mount(), which is where the previous view's
+	// teardown runs.
+	function readingProgress(article) {
+		var bar = h('div', { class: 'mahan-read-progress', hidden: 'hidden', 'aria-hidden': 'true' }, [h('span')]);
+		var fill = bar.firstChild;
+		function update() {
+			var box = article.getBoundingClientRect();
+			var vh = window.innerHeight || document.documentElement.clientHeight || 0;
+			var scrollable = box.height - vh;
+			if (scrollable < 24) { bar.setAttribute('hidden', 'hidden'); return; }
+			bar.removeAttribute('hidden');
+			fill.style.width = Math.max(0, Math.min(100, (-box.top / scrollable) * 100)) + '%';
+		}
+		return {
+			node: bar,
+			start: function () {
+				window.addEventListener('scroll', update, { passive: true });
+				window.addEventListener('resize', update);
+				// Images and the "For you" card land after paint and change the height.
+				var settle = setTimeout(update, 400);
+				onUnmount(function () {
+					window.removeEventListener('scroll', update);
+					window.removeEventListener('resize', update);
+					clearTimeout(settle);
+				});
+				update();
+			}
+		};
+	}
+
+	// The course outline, over the lesson. Uses the cached /course payload when
+	// there is one (there usually is — the learner came through it).
+	function openContents(L) {
+		var key = '/course/' + L.course_id;
+		var body = h('div', { class: 'mahan-contents-body' }, [
+			h('p', { class: 'mahan-contents-status', text: t('loading', 'Loading…') })
+		]);
+		var modal;
+		var dialog = h('div', { class: 'mahan-modal mahan-contents' }, [
+			h('h2', { class: 'mahan-contents-title', text: L.course_title || t('courseContent', 'Course content') }),
+			body,
+			h('div', { class: 'mahan-modal-actions' }, [
+				h('button', { class: 'mahan-btn mahan-btn-ghost', text: t('close', 'Close'), onClick: function () { modal.close(true); } })
+			])
+		]);
+		modal = openModal(dialog, { label: t('contents', 'Contents') });
+
+		function paint(j) {
+			body.innerHTML = '';
+			var units = j.units || [];
+			if (!units.length) {
+				body.appendChild(h('p', { class: 'mahan-contents-status', text: t('emptyCourse', 'No lessons yet.') }));
+				return;
+			}
+			units.forEach(function (unit) {
+				body.appendChild(h('h3', { class: 'mahan-unit-title', text: unit.title }));
+				var list = h('ul', { class: 'mahan-lesson-list' });
+				unit.lessons.forEach(function (ls) {
+					list.appendChild(contentsRow(ls, ls.id === L.id, j.enrolled, function () {
+						modal.close(true);
+						go('lesson', { course: L.course_id, lesson: ls.id });
+					}));
+				});
+				body.appendChild(list);
+			});
+			var here = body.querySelector('.is-current');
+			if (here && here.scrollIntoView) {
+				try { here.scrollIntoView({ block: 'center' }); } catch (e) { here.scrollIntoView(); }
+			}
+		}
+
+		if (apiCache[key] && apiCache[key].ok) {
+			paint(apiCache[key]);
+		} else {
+			api(key).then(function (j) {
+				if (!j || !j.ok) { throw new Error('bad payload'); }
+				apiCache[key] = j;
+				paint(j);
+			}).catch(function () {
+				body.innerHTML = '';
+				body.appendChild(h('p', { class: 'mahan-contents-status', text: t('error', 'Something went wrong.') }));
+			});
+		}
+	}
+
+	function contentsRow(ls, isCurrent, enrolled, onGo) {
+		var clickable = enrolled && !ls.locked && !isCurrent;
+		var cls = 'mahan-lesson-row mahan-contents-row';
+		if (ls.status === 'completed') { cls += ' is-done'; }
+		if (ls.locked) { cls += ' is-locked'; }
+		if (isCurrent) { cls += ' is-current'; }
+		return h(clickable ? 'a' : 'div', {
+			class: cls,
+			href: clickable ? urlFor('lesson', { course: state.courseId, lesson: ls.id }) : null,
+			'aria-current': isCurrent ? 'true' : null,
+			'aria-disabled': (!clickable && !isCurrent) ? 'true' : null,
+			title: ls.locked ? t('locked', 'Complete the previous lesson to unlock') : '',
+			onClick: clickable ? function (e) { e.preventDefault(); onGo(); } : null
+		}, [
+			h('span', { class: 'mahan-lesson-icon', text: ls.locked ? '🔒' : (ls.status === 'completed' ? '✓' : (isCurrent ? '▸' : '·')) }),
+			h('span', { class: 'mahan-lesson-name', text: ls.title }),
+			isCurrent ? h('span', { class: 'mahan-lesson-meta', text: t('youAreHere', 'You are here') }) : null
+		]);
 	}
 
 	// Course-completion celebration: a real moment, not a 2.6s toast.
@@ -2959,6 +3218,107 @@
 			: dir[e.key] === 'end' ? opts[opts.length - 1]
 			: opts[(i + dir[e.key] + opts.length) % opts.length];
 		if (next) { try { next.focus(); } catch (er) { /* ok */ } }
+	});
+
+	/* ------------------------------------------------------------------ */
+	/* Keyboard shortcuts                                                  */
+	/* ------------------------------------------------------------------ */
+
+	// The next lesson of the most recent in-progress course — the same target
+	// the dashboard's "Jump back in" offers, reachable from anywhere.
+	function resumeTarget() {
+		var courses = (state.me && state.me.courses) || [];
+		for (var i = 0; i < courses.length; i++) {
+			var c = courses[i];
+			if (c.next_lesson_id && (c.progress_pct || 0) < 100) {
+				return { course: c.id, lesson: c.next_lesson_id, title: c.next_lesson_title || c.title };
+			}
+		}
+		return null;
+	}
+
+	function SHORTCUTS() {
+		return [
+			['/', t('scSearch', 'Search courses')],
+			['←  →', t('scLesson', 'Previous / next lesson')],
+			['C', t('scContinue', 'Continue learning')],
+			['Esc', t('scClear', 'Clear filters / close')],
+			['?', t('scHelp', 'Show this list')]
+		];
+	}
+
+	function showShortcuts() {
+		var modal;
+		var list = h('dl', { class: 'mahan-sc-list' });
+		SHORTCUTS().forEach(function (row) {
+			list.appendChild(h('dt', {}, [h('kbd', { text: row[0] })]));
+			list.appendChild(h('dd', { text: row[1] }));
+		});
+		var dialog = h('div', { class: 'mahan-modal mahan-sc' }, [
+			h('h2', { text: t('keyboardShortcuts', 'Keyboard shortcuts') }),
+			list,
+			h('div', { class: 'mahan-modal-actions' }, [
+				h('button', { class: 'mahan-btn mahan-btn-ghost', text: t('close', 'Close'), onClick: function () { modal.close(true); } })
+			])
+		]);
+		modal = openModal(dialog, { label: t('keyboardShortcuts', 'Keyboard shortcuts') });
+	}
+
+	// Deliberately conservative: never with a modifier held, never while a
+	// dialog owns the keyboard, and never while the learner is typing — the
+	// tutor input and every answer box must keep every character.
+	document.addEventListener('keydown', function (e) {
+		if (e.altKey || e.ctrlKey || e.metaKey) { return; }
+		if (modalStack.length) { return; }
+		var tgt = e.target;
+		var tag = (tgt && tgt.tagName) ? tgt.tagName.toLowerCase() : '';
+		if (tag === 'input' || tag === 'textarea' || tag === 'select' || (tgt && tgt.isContentEditable)) {
+			// One exception: Escape lets go of the search box.
+			if (e.key === 'Escape' && tgt === catalogSearchInput) { tgt.blur(); }
+			return;
+		}
+
+		switch (e.key) {
+			case '/':
+				e.preventDefault();
+				if (catalogSearchInput) {
+					try { catalogSearchInput.focus(); catalogSearchInput.select(); } catch (er) { /* ok */ }
+				} else {
+					pendingSearchFocus = true;
+					go('catalog');
+				}
+				return;
+			case '?':
+				e.preventDefault();
+				showShortcuts();
+				return;
+			case 'Escape':
+				// Only claims the key when there is actually a filter to drop.
+				if (clearCatalogFilters && clearCatalogFilters()) { e.preventDefault(); }
+				return;
+			case 'ArrowLeft':
+				if (currentLesson && currentLesson.siblings && currentLesson.siblings.prev) {
+					e.preventDefault();
+					go('lesson', { course: currentLesson.course_id, lesson: currentLesson.siblings.prev.id });
+				}
+				return;
+			case 'ArrowRight':
+				if (currentLesson && currentLesson.siblings && currentLesson.siblings.next) {
+					e.preventDefault();
+					go('lesson', { course: currentLesson.course_id, lesson: currentLesson.siblings.next.id });
+				}
+				return;
+			default:
+				break;
+		}
+
+		if (e.key === 'c' || e.key === 'C') {
+			if (!D.loggedIn) { return; }
+			var target = resumeTarget();
+			e.preventDefault();
+			if (target) { go('lesson', { course: target.course, lesson: target.lesson }); }
+			else { go('dashboard'); }
+		}
 	});
 
 	function boot() {

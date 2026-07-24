@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.17.0
+Stable tag: 1.18.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -35,6 +35,9 @@ Mahan Academy is a self-contained learning plugin built to teach people how to u
 * Adaptive personalization engine: a professional onboarding intake builds a rich learner profile that (with a live progress + difficulty signal) tailors the tutor, AI grading, and generated practice questions to each learner's role, level, and goals
 * Gamification: XP with a full audit log, streak XP multipliers, linear or RPG-style progressive levels & titles, daily XP goals, streaks with earned streak freezes, weekly activity dots, 21 tiered achievements with live unlock notifications and progress bars, and weekly + all-time leaderboards
 * Polished learner UX: instant catalog search, "Jump back in" resume, lesson wayfinding (unit · lesson X of Y), confetti course-completion celebrations, offline-aware errors, and instant back/forward navigation
+* Filters that explain themselves: a live result count ("Showing 3 of 18 courses") with a removable pill for every active filter — search, level, category, topic — and one Clear all
+* In-lesson Contents drawer: jump to any lesson in the course without backing out, with your current lesson marked; plus a hairline showing how far through the lesson you've read
+* Keyboard shortcuts: / to search, ← → to move between lessons, C to continue where you left off, ? for the list, Esc to clear
 * Adaptive review: wrong answers are re-asked at the end of the lesson and again on later days (spaced repetition), with an optional AI "ask it a different way" from another model
 * End-of-unit quizzes with instant grading and a passing score
 * Learning paths — group courses into a guided, ordered program
@@ -70,6 +73,9 @@ You don't have to do anything — the starter catalog installs automatically on 
 Each course lists the authoritative references it is grounded in under "Further reading & sources" on the course page — peer-reviewed papers, standards and institutional guidance (NIST AI Risk Management Framework, EU AI Act, UNESCO, OECD, OWASP, C2PA), textbooks, and official provider documentation.
 
 == Changelog ==
+
+= 1.18.0 =
+UX pass on finding and not losing your place. The catalog now states how many courses you're looking at and why ("Showing 3 of 18"), with a removable pill for every active filter and one Clear-all; level chips are built from the catalog itself, so Expert courses became filterable (they weren't). Cards on a level ladder show which rung they are ("Step 2 of 4"). Inside a lesson, a Contents button opens the course outline so you can jump lessons without backing out, and a hairline tracks how far through the lesson you've read. Keyboard shortcuts throughout: / search, ← → lesson, C continue, ? help, Esc clear. Front-end only, no new tables.
 
 = 1.17.0 =
 Levels & department variants — subjects now climb a four-rung ladder (Beginner → Intermediate → Advanced → Expert) shown on the course page, and lessons specialize to the learner's department (marketing, sales, finance, HR, management) with a "Tailored for X" badge. The ChatGPT track ships all four rungs with 60 hand-written department blocks, plus a new ChatGPT Mastery Track bundle; onboarding gains a four-tier experience scale and a management role. Library is now 18 courses / 72 lessons / 277 exercises / 36 quizzes / 73 references. No new tables.

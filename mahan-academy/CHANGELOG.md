@@ -4,6 +4,69 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.18.0]
+
+A UX pass on the two things six feature releases made harder: **finding the
+right course**, and **not losing your place inside one**. Front-end only —
+**no new tables, DB stays v4**.
+
+### Filters that explain themselves
+
+Six releases each added a way to narrow the catalog (search, level, category,
+topic) and none of them said what was active or how much was left.
+
+- A live **result count** — `18 courses` unfiltered, `Showing 3 of 18 courses`
+  once anything is on. It's a persistent `role="status"` region whose text is
+  swapped in place (a live region rebuilt on each repaint doesn't announce).
+- **One removable pill per active filter**, including the ones whose own control
+  is off screen — a collapsed topic panel, a scrolled-past chip row — plus a
+  single **Clear all**. This replaces the topic-only banner, which explained one
+  filter out of four.
+- **Level chips are derived from the catalog**, not hardcoded. This fixes a real
+  gap from 1.17.0: the list stopped at Advanced, so the new **Expert** courses
+  could not be filtered for at all. Levels nobody teaches no longer show a dead
+  chip, and a level added later needs no code change.
+
+### Wayfinding
+
+- Catalog cards on a level ladder now show **which rung they are** — `Step 2 of
+  4` — so four sibling courses read as a progression instead of near-duplicates.
+  `course_summary()` carries `track` + `level_rank`; the client counts the rungs.
+- A **Contents** button in the lesson header opens the course outline over the
+  reader: units, lesson states (done / locked), the current lesson marked **You
+  are here** and deliberately not a link. Jump anywhere without backing out.
+  It reuses the cached `/course` payload when there is one.
+- A **reading-progress hairline** for the lesson body — the bar in the header
+  tracks the whole course, this one answers "how much of *this* is left?". It
+  hides itself when the lesson fits on one screen.
+
+### Keyboard
+
+- `/` search · `←` `→` previous / next lesson · `C` continue where you left off
+  (from any view) · `?` the shortcut sheet · `Esc` clear filters / close.
+- Deliberately conservative: never with a modifier, never while a dialog owns
+  the keyboard, and never while the learner is typing — the tutor input and
+  every answer box keep every character. `Esc` only claims the key when there is
+  actually a filter to drop.
+- A `⌨` hint in the top bar makes them discoverable, hidden on touch.
+
+### Fixed
+
+- `go()` no longer dies on a rejected `pushState` (sandboxed or exotically
+  hosted documents) — the URL stays put but the view still changes.
+- New: view teardown (`onUnmount`) for listeners a view attaches outside its own
+  DOM, so a departed view stops reacting to scroll and resize.
+
+### Verification
+
+- 20-assertion headless run over every new surface — data-driven level chips,
+  count text, pill add/remove/clear, rung tags, `/` focus, `?` sheet, `Esc`
+  clear, live reading bar, contents drawer (both units, current marked and
+  unlinked, jump navigates), `←`/`→`, and `C` resume — plus a second pass at
+  390px and in dark mode checking no horizontal overflow and that the shortcut
+  hint is hidden on touch. Zero JS errors. All six earlier render harnesses
+  still pass.
+
 ## [1.17.0]
 
 Levels & department variants. A course is no longer one-size-fits-all: subjects

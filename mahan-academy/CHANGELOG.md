@@ -4,6 +4,31 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.13.0]
+
+Browse by subject & topic. The catalog becomes a real discovery surface —
+Coursera-style **category sections** by default and **topic-based browsing**.
+**Front-end only (`app.js` + `app.css`) + i18n — no PHP behaviour, DB stays v4.**
+Runs entirely on the `categories` + per-course `topics` the `/catalog` endpoint
+already returns (v1.11.0). Verified end-to-end in headless Chromium.
+
+- **Category sections.** With no active filter or search, the catalog renders
+  grouped into per-category sections (a titled section + course grid each), with
+  a "View all" that switches to that category. Any uncategorised courses fall
+  under a "More courses" section. Applying any filter/search returns the flat
+  filtered grid.
+- **Browse by topic (مباحث).** A collapsible "Browse by topic" panel lists every
+  concept present in the catalog (deduped from courses' `topics`, ranked by how
+  many courses cover it) as clickable chips. Selecting one filters the catalog to
+  courses covering that concept, with an active-filter banner (`Topic: … ✕`) to
+  clear it. The filter is URL-synced (`?topic=`) so a filtered view is
+  shareable/bookmarkable.
+- **Clickable course topics.** The topic chips on a course page are now buttons
+  that jump to the catalog filtered by that concept — so you can pivot from one
+  course to everything else on the same topic.
+- New i18n: `browseByTopic`, `topicFilterLabel`, `viewAll`, `otherCourses`;
+  `.mahan-topic-panel` / `.mahan-cat-section` / `.mahan-active-filter` styles.
+
 ## [1.12.0]
 
 Smart Practice. An on-demand AI practice generator, plus concept-topic chips in

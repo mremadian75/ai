@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.12.0
+Stable tag: 1.13.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -21,6 +21,7 @@ Mahan Academy is a self-contained learning plugin built to teach people how to u
 * Concept "topics" (مباحث): a shared vocabulary tagged on courses and lessons — shown as chips in the learner UI — that also tells the AI tutor and question generator exactly which concepts each lesson covers
 * Smart Practice: a one-tap "Generate practice" on any lesson that asks AI for fresh questions tuned to the lesson's concepts and your level (with misconception-targeting distractors), grades them instantly, and feeds anything you miss into spaced repetition
 * Category filter + bundle discovery right in the catalog (Coursera/Duolingo-style domains and specializations)
+* Browse by subject & topic: the catalog groups courses into category sections and offers a "Browse by topic" panel to filter by any concept (مباحث); course topic chips are clickable to pivot to everything on the same topic
 * Visual drag-and-drop Course Builder — build the whole curriculum on one screen
 * AI authoring assistant — generate outcomes, draft lessons, and create exercises
 * Beautiful single-page application front-end (Coursera structure + Duolingo energy)
@@ -61,6 +62,9 @@ Yes — *Settings → Profile Form* takes a JSON schema. The placeholders you de
 Open *Mahan Academy → Dashboard* and click **Install starter courses**. It creates a full catalog — Prompt Engineering, Machine Learning, Generative AI, and AI for Productivity — grouped into categories and Coursera-style bundles, with interactive exercises and unit quizzes. The install is idempotent (safe to re-run) and never touches courses you made yourself. Edit or delete any of it like normal WordPress content.
 
 == Changelog ==
+
+= 1.13.0 =
+Browse by subject & topic — the catalog now groups courses into Coursera-style category sections and adds a "Browse by topic" panel to filter by any concept (مباحث); course topic chips are clickable. Front-end only, no new tables. Verified in a headless browser.
 
 = 1.12.0 =
 Smart Practice — a one-tap AI practice generator on every lesson that writes fresh, concept- and difficulty-matched questions (misconception-aware, instantly graded, fed into spaced repetition), plus concept-topic chips in the learner UI. No new tables — DB stays v4. Backend covered by a standalone logic test; the panel was driven end-to-end (generate → grade) in a headless browser.

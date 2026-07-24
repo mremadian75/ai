@@ -122,6 +122,25 @@
 .mahan-chip { border: 1px solid var(--m-border); background: var(--m-surface); color: var(--m-muted); padding: 7px 16px; border-radius: 999px; font-weight: 600; font-size: 14px; cursor: pointer; }
 .mahan-chip.is-active { background: var(--m-primary); color: #fff; border-color: var(--m-primary); }
 
+/* Browse by topic (مباحث) */
+.mahan-topic-panel { text-align: center; margin: -8px 0 22px; }
+.mahan-topic-toggle { border: 1px solid var(--m-border); background: var(--m-surface); color: var(--m-muted); padding: 6px 14px; border-radius: 999px; font-weight: 600; font-size: 13px; cursor: pointer; }
+.mahan-topic-toggle[aria-expanded="true"] .mahan-topic-caret { transform: rotate(180deg); }
+.mahan-topic-caret { display: inline-block; transition: transform .15s ease; }
+.mahan-topic-browse { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; margin-top: 12px; }
+.mahan-topic-browse[hidden] { display: none; }
+.mahan-chip-topic { font-size: 13px; padding: 5px 13px; }
+.mahan-active-filter { display: inline-flex; align-items: center; gap: 6px; background: color-mix(in srgb, var(--m-primary) 10%, var(--m-surface)); border: 1px solid color-mix(in srgb, var(--m-primary) 22%, var(--m-border)); color: var(--m-text); border-radius: 999px; padding: 5px 8px 5px 14px; font-size: 13px; margin-bottom: 16px; }
+.mahan-active-filter-x { border: none; background: color-mix(in srgb, var(--m-primary) 16%, transparent); color: var(--m-text); width: 22px; height: 22px; border-radius: 50%; cursor: pointer; line-height: 1; font-size: 12px; }
+.mahan-active-filter-x:hover { background: var(--m-primary); color: #fff; }
+
+/* Category sections (browse by subject) */
+.mahan-cat-section { margin-bottom: 34px; }
+.mahan-cat-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 16px; }
+.mahan-cat-section-title { font-size: 20px; margin: 0; letter-spacing: -.01em; }
+.mahan-cat-section-all { border: none; background: none; color: var(--m-primary); font-weight: 600; font-size: 14px; cursor: pointer; padding: 4px; white-space: nowrap; }
+.mahan-cat-section-all:hover { text-decoration: underline; }
+
 /* Bundles (specializations) strip */
 .mahan-bundle-strip { margin: 6px 0 26px; }
 .mahan-strip-title { font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--m-muted); margin: 0 0 12px; }
@@ -219,6 +238,8 @@ a.mahan-lesson-row:hover { border-color: var(--m-primary); background: color-mix
 .mahan-topic-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 18px; }
 .mahan-topic-chip { font-size: 12px; font-weight: 600; color: var(--m-primary); background: color-mix(in srgb, var(--m-primary) 10%, var(--m-surface)); border: 1px solid color-mix(in srgb, var(--m-primary) 22%, var(--m-border)); border-radius: 999px; padding: 3px 11px; }
 .mahan-course-topics { margin-top: -10px; margin-bottom: 22px; }
+.mahan-topic-chip-link { cursor: pointer; font: inherit; font-size: 12px; font-weight: 600; }
+.mahan-topic-chip-link:hover { background: color-mix(in srgb, var(--m-primary) 18%, var(--m-surface)); border-color: var(--m-primary); }
 
 /* Smart practice (on-demand AI questions) */
 .mahan-practice { margin-top: 30px; padding: 22px; border: 2px solid color-mix(in srgb, var(--m-primary) 22%, var(--m-border)); border-radius: var(--m-radius); background: color-mix(in srgb, var(--m-primary) 4%, var(--m-surface)); }

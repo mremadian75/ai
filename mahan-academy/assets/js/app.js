@@ -181,7 +181,7 @@
 	/* State & routing                                                     */
 	/* ------------------------------------------------------------------ */
 
-	var state = { view: 'catalog', courseId: 0, lessonId: 0, me: null, profile: null, levelFilter: '', catFilter: '' };
+	var state = { view: 'catalog', courseId: 0, lessonId: 0, me: null, profile: null, levelFilter: '', catFilter: '', topicFilter: '' };
 	var root = el('mahan-app');
 
 	// --- Keyboard / screen-reader infrastructure (persists across mount()) ---
@@ -215,6 +215,7 @@
 		state.q = p.get('q') || '';
 		state.levelFilter = p.get('level') || '';
 		state.catFilter = p.get('cat') || '';
+		state.topicFilter = p.get('topic') || '';
 		state.lbPeriod = p.get('period') || state.lbPeriod || 'week';
 	}
 
@@ -234,8 +235,8 @@
 	function syncUrl() {
 		var u = new URL(window.location.href);
 		function set(k, v) { if (v) { u.searchParams.set(k, v); } else { u.searchParams.delete(k); } }
-		if (state.view === 'catalog') { set('q', state.q); set('level', state.levelFilter); set('cat', state.catFilter); }
-		else { u.searchParams.delete('q'); u.searchParams.delete('level'); u.searchParams.delete('cat'); }
+		if (state.view === 'catalog') { set('q', state.q); set('level', state.levelFilter); set('cat', state.catFilter); set('topic', state.topicFilter); }
+		else { u.searchParams.delete('q'); u.searchParams.delete('level'); u.searchParams.delete('cat'); u.searchParams.delete('topic'); }
 		if (state.view === 'leaderboard') { set('period', state.lbPeriod === 'all' ? 'all' : ''); }
 		try { window.history.replaceState(window.history.state, '', u.pathname + u.search); } catch (e) { /* ignore */ }
 	}
@@ -710,22 +711,64 @@
 			]));
 
 			var levels = [['', t('allLevels', 'All levels')], ['beginner', t('beginner', 'Beginner')], ['intermediate', t('intermediate', 'Intermediate')], ['advanced', t('advanced', 'Advanced')]];
-			// Category (domain) filter — Coursera/Duolingo-style topic sections,
+			// Category (domain) filter — Coursera/Duolingo-style domains,
 			// only shown when the catalog spans more than one category.
 			var catArea = (cats.length > 1) ? h('div', { class: 'mahan-chips mahan-chips-cat' }) : null;
 			var chipsArea = h('div', { class: 'mahan-chips' });
+
+			// Distinct topics across the catalog (with course counts) — powers a
+			// "Browse by topic" (مباحث) panel and topic-based filtering.
+			var topicCount = {};
+			courses.forEach(function (c) { (c.topics || []).forEach(function (tp) { topicCount[tp] = (topicCount[tp] || 0) + 1; }); });
+			var topicNames = Object.keys(topicCount).sort(function (a, b) { return topicCount[b] - topicCount[a] || a.localeCompare(b); });
+
+			var topicPanel = null, topicChipsBox = null, topicToggle = null;
+			if (topicNames.length) {
+				topicChipsBox = h('div', { class: 'mahan-topic-browse', hidden: state.topicFilter ? null : 'hidden' });
+				topicToggle = h('button', {
+					class: 'mahan-topic-toggle', type: 'button', 'aria-expanded': state.topicFilter ? 'true' : 'false',
+					onClick: function () {
+						var open = topicChipsBox.hasAttribute('hidden');
+						if (open) { topicChipsBox.removeAttribute('hidden'); } else { topicChipsBox.setAttribute('hidden', 'hidden'); }
+						topicToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+					}
+				}, [document.createTextNode('🏷️ ' + t('browseByTopic', 'Browse by topic') + ' '), h('span', { class: 'mahan-topic-caret', 'aria-hidden': 'true', text: '▾' })]);
+				topicPanel = h('div', { class: 'mahan-topic-panel' }, [topicToggle, topicChipsBox]);
+			}
+
 			var listArea = h('div', { class: 'mahan-catalog-list' });
 			if (catArea) { wrap.appendChild(catArea); }
 			wrap.appendChild(chipsArea);
+			if (topicPanel) { wrap.appendChild(topicPanel); }
 			wrap.appendChild(listArea);
+
+			function anyFilter() {
+				return !!((state.q || '').trim() || state.levelFilter || state.catFilter || state.topicFilter);
+			}
 
 			function matches(c) {
 				if (state.levelFilter && c.level !== state.levelFilter) { return false; }
 				if (state.catFilter && (c.categories || []).indexOf(state.catFilter) < 0) { return false; }
+				if (state.topicFilter && (c.topics || []).indexOf(state.topicFilter) < 0) { return false; }
 				var q = (state.q || '').toLowerCase().trim();
 				if (!q) { return true; }
 				var hay = [c.title, c.subtitle, c.excerpt, (c.categories || []).join(' '), (c.topics || []).join(' ')].join(' ').toLowerCase();
 				return hay.indexOf(q) >= 0;
+			}
+
+			function paintTopics() {
+				if (!topicChipsBox) { return; }
+				topicChipsBox.innerHTML = '';
+				topicNames.forEach(function (tp) {
+					topicChipsBox.appendChild(h('button', {
+						class: 'mahan-chip mahan-chip-topic' + (state.topicFilter === tp ? ' is-active' : ''),
+						text: tp, 'aria-pressed': state.topicFilter === tp ? 'true' : 'false',
+						onClick: function () {
+							state.topicFilter = (state.topicFilter === tp) ? '' : tp;
+							paintTopics(); paintList(); syncUrl();
+						}
+					}));
+				});
 			}
 
 			function paintCats() {
@@ -756,6 +799,12 @@
 				});
 			}
 
+			function clearAll() {
+				state.q = ''; state.levelFilter = ''; state.catFilter = ''; state.topicFilter = '';
+				search.value = '';
+				paintCats(); paintChips(); paintTopics(); paintList(); syncUrl();
+			}
+
 			function paintList() {
 				listArea.innerHTML = '';
 				if (!courses.length) {
@@ -765,16 +814,61 @@
 					]));
 					return;
 				}
+
+				// Active topic filter banner (topics have no chip row of their own
+				// when the panel is collapsed, so show what's being filtered).
+				if (state.topicFilter) {
+					listArea.appendChild(h('div', { class: 'mahan-active-filter' }, [
+						h('span', { text: t('topicFilterLabel', 'Topic:') + ' ' }),
+						h('strong', { text: state.topicFilter }),
+						h('button', { class: 'mahan-active-filter-x', type: 'button', 'aria-label': t('clearFilters', 'Clear filters'), text: '✕',
+							onClick: function () { state.topicFilter = ''; paintTopics(); paintList(); syncUrl(); } })
+					]));
+				}
+
 				var filtered = courses.filter(matches);
 				if (!filtered.length) {
 					listArea.appendChild(h('div', { class: 'mahan-empty' }, [
 						h('div', { class: 'mahan-empty-icon', 'aria-hidden': 'true', text: '🔍' }),
 						h('p', { text: t('noResults', 'No courses match your search.') }),
-						h('button', { class: 'mahan-btn mahan-btn-ghost', text: t('clearFilters', 'Clear filters'),
-							onClick: function () { state.q = ''; state.levelFilter = ''; state.catFilter = ''; search.value = ''; paintCats(); paintChips(); paintList(); syncUrl(); } })
+						h('button', { class: 'mahan-btn mahan-btn-ghost', text: t('clearFilters', 'Clear filters'), onClick: clearAll })
 					]));
 					return;
 				}
+
+				// Coursera-style "browse by subject": with no active filter and more
+				// than one category, group courses into per-category sections.
+				if (!anyFilter() && cats.length > 1) {
+					var seen = {};
+					cats.forEach(function (cat) {
+						var inCat = filtered.filter(function (c) { return (c.categories || []).indexOf(cat.name) >= 0; });
+						if (!inCat.length) { return; }
+						inCat.forEach(function (c) { seen[c.id] = true; });
+						var section = h('section', { class: 'mahan-cat-section' });
+						section.appendChild(h('div', { class: 'mahan-cat-section-head' }, [
+							h('h2', { class: 'mahan-cat-section-title', text: cat.name }),
+							h('button', { class: 'mahan-cat-section-all', type: 'button', text: t('viewAll', 'View all') + ' →',
+								onClick: function () { state.catFilter = cat.name; paintCats(); paintChips(); paintTopics(); paintList(); syncUrl(); } })
+						]));
+						var g = h('div', { class: 'mahan-grid' });
+						inCat.forEach(function (c) { g.appendChild(courseCard(c)); });
+						section.appendChild(g);
+						listArea.appendChild(section);
+					});
+					// Anything with no (known) category → an "Other" section.
+					var rest = filtered.filter(function (c) { return !seen[c.id]; });
+					if (rest.length) {
+						var other = h('section', { class: 'mahan-cat-section' }, [
+							h('div', { class: 'mahan-cat-section-head' }, [h('h2', { class: 'mahan-cat-section-title', text: t('otherCourses', 'More courses') })])
+						]);
+						var og = h('div', { class: 'mahan-grid' });
+						rest.forEach(function (c) { og.appendChild(courseCard(c)); });
+						other.appendChild(og);
+						listArea.appendChild(other);
+					}
+					return;
+				}
+
 				listArea.appendChild(h('h2', { class: 'mahan-sr-only', text: t('coursesHeading', 'Courses') }));
 				var grid = h('div', { class: 'mahan-grid' });
 				filtered.forEach(function (c) { grid.appendChild(courseCard(c)); });
@@ -789,6 +883,7 @@
 
 			paintCats();
 			paintChips();
+			paintTopics();
 			paintList();
 			mount(wrap);
 		}, renderCatalog);
@@ -891,10 +986,15 @@
 			]);
 			wrap.appendChild(hero);
 
-			// Topics this course covers (the مباحث).
+			// Topics this course covers (the مباحث) — clickable to browse other
+			// courses on the same concept.
 			if (c.topics && c.topics.length) {
 				wrap.appendChild(h('div', { class: 'mahan-topic-chips mahan-course-topics', 'aria-label': t('topics', 'Topics') },
-					c.topics.map(function (tp) { return h('span', { class: 'mahan-topic-chip', text: tp }); })));
+					c.topics.map(function (tp) {
+						return h('button', { class: 'mahan-topic-chip mahan-topic-chip-link', type: 'button',
+							title: t('browseByTopic', 'Browse by topic'), text: tp,
+							onClick: function () { state.topicFilter = tp; state.catFilter = ''; state.levelFilter = ''; state.q = ''; go('catalog'); syncUrl(); } });
+					})));
 			}
 
 			// Prerequisite note.

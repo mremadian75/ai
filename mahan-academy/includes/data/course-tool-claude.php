@@ -33,6 +33,28 @@ return array(
 		'Request output in a specific shape — bullets, a table, or JSON',
 		'Apply responsible-use habits that keep AI work trustworthy',
 	),
+	'references'  => array(
+		array(
+			'title'  => 'Claude documentation',
+			'source' => 'Anthropic',
+			'url'    => 'https://docs.anthropic.com/',
+		),
+		array(
+			'title'  => 'Prompt engineering overview',
+			'source' => 'Anthropic — Claude documentation',
+			'url'    => 'https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview',
+		),
+		array(
+			'title'  => 'Constitutional AI: Harmlessness from AI Feedback',
+			'source' => 'Bai et al., 2022 — arXiv:2212.08073',
+			'url'    => 'https://arxiv.org/abs/2212.08073',
+		),
+		array(
+			'title'  => 'Anthropic\'s Responsible Scaling Policy',
+			'source' => 'Anthropic',
+			'url'    => 'https://www.anthropic.com/news/anthropics-responsible-scaling-policy',
+		),
+	),
 	'units'       => array(
 
 		/* ---- Unit 1 ------------------------------------------------------ */

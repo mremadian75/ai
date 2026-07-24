@@ -141,6 +141,16 @@
 .mahan-cat-section-all { border: none; background: none; color: var(--m-primary); font-weight: 600; font-size: 14px; cursor: pointer; padding: 4px; white-space: nowrap; }
 .mahan-cat-section-all:hover { text-decoration: underline; }
 
+/* Further reading / references */
+.mahan-refs-note { color: var(--m-muted); font-size: 14px; margin: -6px 0 14px; }
+.mahan-ref-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.mahan-ref { padding-left: 20px; position: relative; font-size: 15px; line-height: 1.5; }
+.mahan-ref::before { content: '📄'; position: absolute; left: 0; top: 0; font-size: 13px; }
+.mahan-ref-link { color: var(--m-primary); font-weight: 600; text-decoration: none; }
+.mahan-ref-link:hover { text-decoration: underline; }
+.mahan-ref-title { font-weight: 600; }
+.mahan-ref-source { color: var(--m-muted); font-size: 14px; }
+
 /* Recommended-for-you strip */
 .mahan-rec:empty { display: none; }
 .mahan-rec { margin: 6px 0 26px; padding: 18px 20px; border: 1px solid color-mix(in srgb, var(--m-primary) 20%, var(--m-border)); border-radius: var(--m-radius); background: color-mix(in srgb, var(--m-primary) 5%, var(--m-surface)); }

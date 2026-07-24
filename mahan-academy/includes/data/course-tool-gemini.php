@@ -33,6 +33,28 @@ return array(
 		'Use Gemini to draft, summarise, brainstorm, and speed up daily tasks',
 		'Verify its answers and keep private data safe before you rely on them',
 	),
+	'references'  => array(
+		array(
+			'title'  => 'Gemini API documentation',
+			'source' => 'Google AI for Developers',
+			'url'    => 'https://ai.google.dev/gemini-api/docs',
+		),
+		array(
+			'title'  => 'Google AI Principles',
+			'source' => 'Google',
+			'url'    => 'https://ai.google/responsibility/principles/',
+		),
+		array(
+			'title'  => 'Introduction to Large Language Models',
+			'source' => 'Google — Machine Learning Education',
+			'url'    => 'https://developers.google.com/machine-learning/resources/intro-llms',
+		),
+		array(
+			'title'  => 'Secure AI Framework (SAIF)',
+			'source' => 'Google',
+			'url'    => 'https://safety.google/cybersecurity-advancements/saif/',
+		),
+	),
 	'units'       => array(
 
 		/* ---- Unit 1 ------------------------------------------------------ */

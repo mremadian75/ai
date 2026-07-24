@@ -36,6 +36,28 @@ return array(
 		'Fence off pasted data with delimiters to block prompt injection',
 		'Tell a model how to handle unknown fields and out-of-scope input',
 	),
+	'references'  => array(
+		array(
+			'title'  => 'Chain-of-Thought Prompting Elicits Reasoning in Large Language Models',
+			'source' => 'Wei et al., 2022 — arXiv:2201.11903',
+			'url'    => 'https://arxiv.org/abs/2201.11903',
+		),
+		array(
+			'title'  => 'Language Models are Few-Shot Learners (GPT-3)',
+			'source' => 'Brown et al., 2020 — arXiv:2005.14165',
+			'url'    => 'https://arxiv.org/abs/2005.14165',
+		),
+		array(
+			'title'  => 'Prompt engineering techniques',
+			'source' => 'Anthropic — Claude documentation',
+			'url'    => 'https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview',
+		),
+		array(
+			'title'  => 'OWASP Top 10 for Large Language Model Applications',
+			'source' => 'OWASP Foundation',
+			'url'    => 'https://owasp.org/www-project-top-10-for-large-language-model-applications/',
+		),
+	),
 	'units'       => array(
 
 		/* ---- Unit 1 ------------------------------------------------------ */

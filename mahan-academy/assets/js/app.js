@@ -1061,6 +1061,23 @@
 				]));
 			}
 
+			// Further reading — the authoritative sources this course draws on.
+			if (j.references && j.references.length) {
+				wrap.appendChild(h('section', { class: 'mahan-section mahan-refs' }, [
+					h('h2', { text: t('furtherReading', 'Further reading & sources') }),
+					h('p', { class: 'mahan-refs-note', text: t('furtherReadingNote', 'This course is grounded in these references — go deeper any time.') }),
+					h('ul', { class: 'mahan-ref-list' }, j.references.map(function (ref) {
+						var titleNode = ref.url
+							? h('a', { class: 'mahan-ref-link', href: ref.url, target: '_blank', rel: 'noopener noreferrer', text: ref.title })
+							: h('span', { class: 'mahan-ref-title', text: ref.title });
+						return h('li', { class: 'mahan-ref' }, [
+							titleNode,
+							ref.source ? h('span', { class: 'mahan-ref-source', text: ' — ' + ref.source }) : null
+						]);
+					}))
+				]));
+			}
+
 			// Description.
 			if (j.description && j.description.trim()) {
 				wrap.appendChild(h('section', { class: 'mahan-section mahan-prose', html: j.description }));

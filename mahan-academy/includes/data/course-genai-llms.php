@@ -36,6 +36,28 @@ return array(
 		'Adjust temperature to make output focused or creative for the task',
 		'Choose between a system prompt, retrieval, and fine-tuning to shape behaviour',
 	),
+	'references'  => array(
+		array(
+			'title'  => 'Attention Is All You Need (the Transformer)',
+			'source' => 'Vaswani et al., 2017 — arXiv:1706.03762',
+			'url'    => 'https://arxiv.org/abs/1706.03762',
+		),
+		array(
+			'title'  => 'Language Models are Few-Shot Learners (GPT-3)',
+			'source' => 'Brown et al., 2020 — arXiv:2005.14165',
+			'url'    => 'https://arxiv.org/abs/2005.14165',
+		),
+		array(
+			'title'  => 'Training language models to follow instructions with human feedback (InstructGPT/RLHF)',
+			'source' => 'Ouyang et al., 2022 — arXiv:2203.02155',
+			'url'    => 'https://arxiv.org/abs/2203.02155',
+		),
+		array(
+			'title'  => 'Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks',
+			'source' => 'Lewis et al., 2020 — arXiv:2005.11401',
+			'url'    => 'https://arxiv.org/abs/2005.11401',
+		),
+	),
 	'units'       => array(
 
 		/* ---- Unit 1 ------------------------------------------------------ */

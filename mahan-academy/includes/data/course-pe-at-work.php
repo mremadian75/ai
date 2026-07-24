@@ -35,6 +35,28 @@ return array(
 		'Debug a misbehaving prompt by changing one thing at a time',
 		'Set up a shared prompt library your team can trust and maintain',
 	),
+	'references'  => array(
+		array(
+			'title'  => 'Prompt engineering guide',
+			'source' => 'OpenAI — API documentation',
+			'url'    => 'https://platform.openai.com/docs/guides/prompt-engineering',
+		),
+		array(
+			'title'  => 'Use prompt templates and variables',
+			'source' => 'Anthropic — Claude documentation',
+			'url'    => 'https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview',
+		),
+		array(
+			'title'  => 'Generative AI and the future of work',
+			'source' => 'McKinsey Global Institute',
+			'url'    => 'https://www.mckinsey.com/mgi/our-research',
+		),
+		array(
+			'title'  => 'AI Risk Management Framework (AI RMF 1.0)',
+			'source' => 'NIST, 2023',
+			'url'    => 'https://www.nist.gov/itl/ai-risk-management-framework',
+		),
+	),
 	'units'       => array(
 
 		/* ---- Unit 1 ------------------------------------------------------ */

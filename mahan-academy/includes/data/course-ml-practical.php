@@ -35,6 +35,28 @@ return array(
 		'Build a simple baseline and tune a model without cheating on your test set',
 		'Deploy a model responsibly and monitor it for drift, fairness, and degradation',
 	),
+	'references'  => array(
+		array(
+			'title'  => 'Rules of Machine Learning: Best Practices for ML Engineering',
+			'source' => 'Google',
+			'url'    => 'https://developers.google.com/machine-learning/guides/rules-of-ml',
+		),
+		array(
+			'title'  => 'Hidden Technical Debt in Machine Learning Systems',
+			'source' => 'Sculley et al., NeurIPS 2015',
+			'url'    => 'https://papers.nips.cc/paper/2015/hash/86df7dcfd896fcaf2674f757a2463eba-Abstract.html',
+		),
+		array(
+			'title'  => 'Model Cards for Model Reporting',
+			'source' => 'Mitchell et al., 2019 — arXiv:1810.03993',
+			'url'    => 'https://arxiv.org/abs/1810.03993',
+		),
+		array(
+			'title'  => 'AI Risk Management Framework (AI RMF 1.0)',
+			'source' => 'NIST, 2023',
+			'url'    => 'https://www.nist.gov/itl/ai-risk-management-framework',
+		),
+	),
 	'units'       => array(
 
 		/* ---- Unit 1 ------------------------------------------------------ */

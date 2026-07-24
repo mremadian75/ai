@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.15.0
+Stable tag: 1.16.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -17,7 +17,8 @@ Mahan Academy is a self-contained learning plugin built to teach people how to u
 **Key features:**
 
 * Standalone courses & lessons (no Tutor LMS, LearnDash, etc. required)
-* Built-in Starter Content Library — a ready-made catalog of professionally written courses across Prompt Engineering, Machine Learning, Generative AI, AI for Productivity, and hands-on AI Tools (ChatGPT, Claude, Gemini, image generation), organized into categories and Coursera-style bundles with interactive exercises and unit quizzes. Installs automatically so the academy is never empty
+* Built-in Starter Content Library — 15 professionally written courses across Prompt Engineering, Machine Learning, Generative AI, AI for Productivity, hands-on AI Tools (ChatGPT, Claude, Gemini, image generation), and Responsible AI, organized into categories and Coursera-style bundles with interactive exercises and unit quizzes. Installs automatically so the academy is never empty
+* Reference-grounded: every course cites the authoritative sources it is built on — peer-reviewed papers, standards bodies (NIST AI RMF, EU AI Act, UNESCO, OWASP, C2PA), textbooks, and official documentation — shown as "Further reading" on the course page
 * Every lesson is personalized — lesson text adapts to your role, goal, and tools via {{placeholders}}, plus an AI "For you" note on how each lesson applies to your own work
 * "Recommended for you" — the catalog leads with the courses that fit your role, goal, and level, with a plain-language reason why
 * Concept "topics" (مباحث): a shared vocabulary tagged on courses and lessons — shown as chips in the learner UI — that also tells the AI tutor and question generator exactly which concepts each lesson covers
@@ -61,9 +62,15 @@ No. Everything happens inside WordPress.
 Yes — *Settings → Profile Form* takes a JSON schema. The placeholders you define there flow into the tutor's system prompt automatically.
 
 = How do I get started fast with real courses? =
-Open *Mahan Academy → Dashboard* and click **Install starter courses**. It creates a full catalog — Prompt Engineering, Machine Learning, Generative AI, and AI for Productivity — grouped into categories and Coursera-style bundles, with interactive exercises and unit quizzes. The install is idempotent (safe to re-run) and never touches courses you made yourself. Edit or delete any of it like normal WordPress content.
+You don't have to do anything — the starter catalog installs automatically on activation, so the academy is never empty. It covers Prompt Engineering, Machine Learning, Generative AI, AI for Productivity, AI Tools, and Responsible AI, grouped into categories and Coursera-style bundles, with interactive exercises, unit quizzes, and cited sources. You can also re-run it any time from *Mahan Academy → Dashboard*; the install is idempotent, never duplicates, and never touches courses you made yourself. Edit or delete any of it like normal WordPress content.
+
+= Where does the course content come from? =
+Each course lists the authoritative references it is grounded in under "Further reading & sources" on the course page — peer-reviewed papers, standards and institutional guidance (NIST AI Risk Management Framework, EU AI Act, UNESCO, OECD, OWASP, C2PA), textbooks, and official provider documentation.
 
 == Changelog ==
+
+= 1.16.0 =
+Reference-grounded curriculum — every course now cites the authoritative sources it is built on (papers, NIST/EU AI Act/UNESCO/OWASP/C2PA, textbooks, official docs), shown as "Further reading" on the course page, and all 13 existing courses were upgraded with 4 references each. Two new courses: Responsible AI & Governance (new Responsible AI category, built on the NIST AI RMF and EU AI Act risk tiers) and Grounding AI in Your Own Knowledge (RAG). The library is now 15 courses / 60 lessons / 235 exercises / 30 quizzes / 61 references. No new tables.
 
 = 1.15.0 =
 Personalized discovery — the catalog now leads with a "Recommended for you" strip matched to your role, goal, and level (with the reason shown), plus a best-fit learning path. Pure deterministic scoring, no AI call, no new tables. Covered by a scoring test and a headless render.

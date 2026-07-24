@@ -35,6 +35,28 @@ return array(
 		'Protect private data when using public AI tools',
 		'Apply responsible-use habits like human oversight and giving credit',
 	),
+	'references'  => array(
+		array(
+			'title'  => 'Introduction to Large Language Models',
+			'source' => 'Google — Machine Learning Education',
+			'url'    => 'https://developers.google.com/machine-learning/resources/intro-llms',
+		),
+		array(
+			'title'  => 'On the Dangers of Stochastic Parrots: Can Language Models Be Too Big?',
+			'source' => 'Bender, Gebru et al., FAccT 2021',
+			'url'    => 'https://dl.acm.org/doi/10.1145/3442188.3445922',
+		),
+		array(
+			'title'  => 'Recommendation on the Ethics of Artificial Intelligence',
+			'source' => 'UNESCO, 2021',
+			'url'    => 'https://www.unesco.org/en/artificial-intelligence/recommendation-ethics',
+		),
+		array(
+			'title'  => 'AI Index Report',
+			'source' => 'Stanford HAI',
+			'url'    => 'https://aiindex.stanford.edu/report/',
+		),
+	),
 	'units'       => array(
 
 		/* ---- Unit 1 ------------------------------------------------------ */

@@ -36,6 +36,28 @@ return array(
 		'Weigh precision against recall based on which mistake costs more',
 		'Detect overfitting with a held-out test set and balance it against underfitting',
 	),
+	'references'  => array(
+		array(
+			'title'  => 'The Elements of Statistical Learning',
+			'source' => 'Hastie, Tibshirani & Friedman — Springer',
+			'url'    => 'https://hastie.su.domains/ElemStatLearn/',
+		),
+		array(
+			'title'  => 'An Introduction to Statistical Learning',
+			'source' => 'James, Witten, Hastie & Tibshirani — Springer',
+			'url'    => 'https://www.statlearning.com/',
+		),
+		array(
+			'title'  => 'Classification: Accuracy, Precision and Recall',
+			'source' => 'Google — Machine Learning Crash Course',
+			'url'    => 'https://developers.google.com/machine-learning/crash-course/classification/accuracy-precision-recall',
+		),
+		array(
+			'title'  => 'scikit-learn: model evaluation',
+			'source' => 'scikit-learn user guide',
+			'url'    => 'https://scikit-learn.org/stable/modules/model_evaluation.html',
+		),
+	),
 	'units'       => array(
 
 		/* ---- Unit 1 ------------------------------------------------------ */

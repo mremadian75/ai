@@ -60,7 +60,8 @@ mahan-academy/
 - `mahan_course` — the course. Meta keys (constants on `Mahan_Courses`):
   `M_SUBTITLE`, `M_LEVEL`, `M_EST_HOURS`, `M_OUTCOMES`, `M_FEATURED`,
   `M_PROMO_VIDEO`, `M_PREREQ`, `M_CERTIFICATE`, `M_UNIT_QUIZZES` (per-unit
-  quizzes keyed by unit title).
+  quizzes keyed by unit title), `M_REFERENCES` (further-reading sources:
+  `{ title, source, url }`, read via `Mahan_Courses::course_references()`).
 - `mahan_lesson` — a lesson, linked to its course by meta.
   Keys: `M_COURSE_ID`, `M_UNIT`, `M_UNIT_ORDER`, `M_ORDER`, `M_XP`, `M_EST_MIN`,
   `M_TYPE`, `M_EXERCISES` (JSON array of exercise definitions).

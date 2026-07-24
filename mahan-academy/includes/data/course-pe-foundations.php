@@ -20,6 +20,8 @@
  *   order       int     menu_order in the catalog.
  *   topics      string[] Course-level concept tags (mahan_topic).
  *   outcomes    string[] "What you'll learn" bullets.
+ *   references  array of { title, source, url? } — the authoritative sources the
+ *               course is grounded in, shown as "Further reading" (optional).
  *   units       array of {
  *       title    string  Unit title (also the quiz key).
  *       lessons  array of {
@@ -72,6 +74,28 @@ return array(
 		'Control the tone, length, and structure of an answer',
 		'Fix a weak prompt by adding the one thing it was missing',
 		'Iterate quickly instead of restarting from scratch',
+	),
+	'references'  => array(
+		array(
+			'title'  => 'Prompt engineering overview',
+			'source' => 'Anthropic — Claude documentation',
+			'url'    => 'https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview',
+		),
+		array(
+			'title'  => 'Prompt engineering guide',
+			'source' => 'OpenAI — API documentation',
+			'url'    => 'https://platform.openai.com/docs/guides/prompt-engineering',
+		),
+		array(
+			'title'  => 'Language Models are Few-Shot Learners (GPT-3)',
+			'source' => 'Brown et al., 2020 — arXiv:2005.14165',
+			'url'    => 'https://arxiv.org/abs/2005.14165',
+		),
+		array(
+			'title'  => 'Introduction to Large Language Models',
+			'source' => 'Google — Machine Learning Education',
+			'url'    => 'https://developers.google.com/machine-learning/resources/intro-llms',
+		),
 	),
 	'units'       => array(
 

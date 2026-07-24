@@ -88,6 +88,7 @@ class Mahan_Seed {
 			'Generative AI'      => __( 'Understand and use generative AI and large language models with confidence.', 'mahan-academy' ),
 			'AI at Work'         => __( 'Practical, safe ways to use AI to get everyday work done faster.', 'mahan-academy' ),
 			'AI Tools'           => __( 'Hands-on guides to popular AI tools — ChatGPT, Claude, Gemini, and image generators.', 'mahan-academy' ),
+			'Responsible AI'     => __( 'Use AI in ways you can defend — risk, fairness, transparency, and the rules that apply.', 'mahan-academy' ),
 		);
 	}
 
@@ -229,6 +230,24 @@ class Mahan_Seed {
 		update_post_meta( $post_id, Mahan_Courses::M_OUTCOMES, isset( $c['outcomes'] ) && is_array( $c['outcomes'] ) ? implode( "\n", array_map( 'strval', $c['outcomes'] ) ) : '' );
 		update_post_meta( $post_id, Mahan_Courses::M_FEATURED, ! empty( $c['featured'] ) ? 1 : 0 );
 		update_post_meta( $post_id, Mahan_Courses::M_CERTIFICATE, ! empty( $c['certificate'] ) ? 1 : 0 );
+
+		// Further reading: the authoritative sources the course is grounded in.
+		if ( ! empty( $c['references'] ) && is_array( $c['references'] ) ) {
+			$refs = array();
+			foreach ( $c['references'] as $ref ) {
+				if ( ! is_array( $ref ) || empty( $ref['title'] ) ) {
+					continue;
+				}
+				$refs[] = array(
+					'title'  => sanitize_text_field( (string) $ref['title'] ),
+					'source' => isset( $ref['source'] ) ? sanitize_text_field( (string) $ref['source'] ) : '',
+					'url'    => isset( $ref['url'] ) ? esc_url_raw( (string) $ref['url'] ) : '',
+				);
+			}
+			if ( ! empty( $refs ) ) {
+				update_post_meta( $post_id, Mahan_Courses::M_REFERENCES, $refs );
+			}
+		}
 
 		// Category (Coursera-style domain).
 		if ( ! empty( $c['category'] ) ) {

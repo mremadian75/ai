@@ -335,6 +335,7 @@ class Mahan_REST {
 			'ok'           => true,
 			'course'       => $summary,
 			'outcomes'     => Mahan_Courses::course_outcomes( $course_id ),
+			'references'   => Mahan_Courses::course_references( $course_id ),
 			'description'  => apply_filters( 'the_content', get_post_field( 'post_content', $course_id ) ),
 			'promo_video'  => Mahan_Courses::promo_video( $course_id ),
 			'prerequisite' => Mahan_Courses::prerequisite( $course_id ),

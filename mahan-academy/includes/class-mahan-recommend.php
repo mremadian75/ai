@@ -24,7 +24,7 @@ class Mahan_Recommend {
 		'automate' => array( 'AI at Work', 'AI Tools', 'Prompt Engineering' ),
 		'content'  => array( 'Prompt Engineering', 'AI Tools', 'AI at Work' ),
 		'analysis' => array( 'Machine Learning', 'AI at Work', 'Prompt Engineering' ),
-		'support'  => array( 'AI Tools', 'Prompt Engineering', 'AI at Work' ),
+		'support'  => array( 'AI Tools', 'Prompt Engineering', 'Responsible AI' ),
 		'coding'   => array( 'Prompt Engineering', 'Machine Learning', 'Generative AI' ),
 		'learning' => array( 'Generative AI', 'AI Tools', 'Prompt Engineering' ),
 	);
@@ -38,9 +38,9 @@ class Mahan_Recommend {
 		'marketing'   => array( 'Prompt Engineering', 'AI Tools', 'AI at Work' ),
 		'sales'       => array( 'AI Tools', 'Prompt Engineering', 'AI at Work' ),
 		'operations'  => array( 'AI at Work', 'AI Tools', 'Prompt Engineering' ),
-		'hr'          => array( 'AI at Work', 'AI Tools', 'Prompt Engineering' ),
-		'finance'     => array( 'AI at Work', 'Machine Learning', 'AI Tools' ),
-		'founder'     => array( 'Generative AI', 'AI at Work', 'AI Tools' ),
+		'hr'          => array( 'AI at Work', 'Responsible AI', 'AI Tools' ),
+		'finance'     => array( 'AI at Work', 'Responsible AI', 'Machine Learning' ),
+		'founder'     => array( 'Generative AI', 'AI at Work', 'Responsible AI' ),
 		'student'     => array( 'Generative AI', 'Machine Learning', 'Prompt Engineering' ),
 	);
 

@@ -193,6 +193,8 @@ class Mahan_Front {
 			'intermediate'     => __( 'Intermediate', 'mahan-academy' ),
 			'advanced'         => __( 'Advanced', 'mahan-academy' ),
 			'whatYouLearn'     => __( "What you'll learn", 'mahan-academy' ),
+			'furtherReading'   => __( 'Further reading & sources', 'mahan-academy' ),
+			'furtherReadingNote' => __( 'This course is grounded in these references — go deeper any time.', 'mahan-academy' ),
 			'courseContent'    => __( 'Course content', 'mahan-academy' ),
 			'practice'         => __( 'Practice', 'mahan-academy' ),
 			'topics'           => __( 'Topics', 'mahan-academy' ),

@@ -36,6 +36,28 @@ return array(
 		'Explain why data quality sets the ceiling on model performance',
 		'Explain why a model must be tested on unseen data',
 	),
+	'references'  => array(
+		array(
+			'title'  => 'An Introduction to Statistical Learning',
+			'source' => 'James, Witten, Hastie & Tibshirani — Springer',
+			'url'    => 'https://www.statlearning.com/',
+		),
+		array(
+			'title'  => 'Machine Learning Crash Course',
+			'source' => 'Google — Machine Learning Education',
+			'url'    => 'https://developers.google.com/machine-learning/crash-course',
+		),
+		array(
+			'title'  => 'Artificial Intelligence: A Modern Approach',
+			'source' => 'Russell & Norvig — Pearson',
+			'url'    => 'https://aima.cs.berkeley.edu/',
+		),
+		array(
+			'title'  => 'Rules of Machine Learning: Best Practices for ML Engineering',
+			'source' => 'Google',
+			'url'    => 'https://developers.google.com/machine-learning/guides/rules-of-ml',
+		),
+	),
 	'units'       => array(
 
 		/* ---- Unit 1 ------------------------------------------------------ */

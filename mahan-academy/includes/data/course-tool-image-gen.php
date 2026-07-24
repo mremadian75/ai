@@ -33,6 +33,28 @@ return array(
 		'Iterate from a rough first draft to a finished image using variations and editing',
 		'Use AI images responsibly by checking rights, avoiding likenesses, and disclosing when expected',
 	),
+	'references'  => array(
+		array(
+			'title'  => 'High-Resolution Image Synthesis with Latent Diffusion Models (Stable Diffusion)',
+			'source' => 'Rombach et al., 2022 — arXiv:2112.10752',
+			'url'    => 'https://arxiv.org/abs/2112.10752',
+		),
+		array(
+			'title'  => 'Denoising Diffusion Probabilistic Models',
+			'source' => 'Ho, Jain & Abbeel, 2020 — arXiv:2006.11239',
+			'url'    => 'https://arxiv.org/abs/2006.11239',
+		),
+		array(
+			'title'  => 'Content Credentials (C2PA) — provenance for AI-generated media',
+			'source' => 'Coalition for Content Provenance and Authenticity',
+			'url'    => 'https://c2pa.org/',
+		),
+		array(
+			'title'  => 'Copyright and Artificial Intelligence',
+			'source' => 'U.S. Copyright Office',
+			'url'    => 'https://www.copyright.gov/ai/',
+		),
+	),
 	'units'       => array(
 
 		/* ---- Unit 1 ------------------------------------------------------ */

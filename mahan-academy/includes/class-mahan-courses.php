@@ -23,6 +23,7 @@ class Mahan_Courses {
 	const M_PREREQ       = '_mahan_prereq';
 	const M_CERTIFICATE  = '_mahan_certificate';
 	const M_UNIT_QUIZZES = '_mahan_unit_quizzes';
+	const M_REFERENCES   = '_mahan_references';
 
 	// Lesson meta.
 	const M_COURSE_ID  = '_mahan_course_id';
@@ -84,6 +85,33 @@ class Mahan_Courses {
 			'certificate'  => (bool) Mahan_Utils::meta_int( $id, self::M_CERTIFICATE, 0 ),
 			'permalink'    => get_permalink( $id ),
 		);
+	}
+
+	/**
+	 * Further-reading references for a course: the authoritative sources the
+	 * material is grounded in (standards, papers, textbooks, official docs).
+	 *
+	 * @param int $course_id Course id.
+	 * @return array[] list of { title, source, url }.
+	 */
+	public static function course_references( $course_id ) {
+		$raw = get_post_meta( (int) $course_id, self::M_REFERENCES, true );
+		$list = is_array( $raw ) ? $raw : json_decode( (string) $raw, true );
+		if ( ! is_array( $list ) ) {
+			return array();
+		}
+		$out = array();
+		foreach ( $list as $ref ) {
+			if ( ! is_array( $ref ) || empty( $ref['title'] ) ) {
+				continue;
+			}
+			$out[] = array(
+				'title'  => (string) $ref['title'],
+				'source' => isset( $ref['source'] ) ? (string) $ref['source'] : '',
+				'url'    => isset( $ref['url'] ) ? esc_url_raw( (string) $ref['url'] ) : '',
+			);
+		}
+		return $out;
 	}
 
 	/**

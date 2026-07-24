@@ -4,6 +4,47 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.16.0]
+
+Reference-grounded curriculum. Every course now carries the **authoritative
+sources** it is built on, shown as "Further reading" — and the library grows with
+two new reference-led courses. **No new tables — DB stays v4.**
+
+### References layer
+
+- New `references` field in the course data contract (`{ title, source, url? }`),
+  stored by `Mahan_Seed` as `_mahan_references` and read via
+  `Mahan_Courses::course_references()`; exposed on `/course`.
+- The course page renders a **"Further reading & sources"** section. External
+  links open in a new tab with `rel="noopener noreferrer"`; a reference without a
+  URL renders as plain text, so citation-only sources (books) work too.
+
+### Every existing course upgraded
+
+- All 13 previously shipped courses now cite **4 authoritative references each**
+  — peer-reviewed papers (*Attention Is All You Need*, GPT-3, InstructGPT/RLHF,
+  RAG, Stochastic Parrots, Latent Diffusion, DDPM, Model Cards, Hidden Technical
+  Debt), standards and institutions (**NIST AI RMF**, **UNESCO**, **OWASP LLM
+  Top 10**, **C2PA**, **U.S. Copyright Office**, **Stanford HAI AI Index**),
+  textbooks (*ISLR*, *ESL*, *AIMA*), and official vendor documentation.
+
+### Two new courses
+
+- **Responsible AI & Governance** (new **Responsible AI** category) — govern /
+  map / measure / manage from the **NIST AI Risk Management Framework**, where
+  bias enters and what reduces it, transparency and human oversight, and
+  risk-tiered governance in the spirit of the **EU AI Act**, with the **OECD**
+  and **UNESCO** principles as the backdrop.
+- **Grounding AI in Your Own Knowledge (RAG)** (Generative AI) — why ungrounded
+  models invent answers, the retrieve-then-generate loop, embeddings and hybrid
+  search, chunking and source hygiene, and how to evaluate citations and
+  refusals. Grounded in **Lewis et al. (2020)** and **Karpukhin et al. (2020)**.
+- The library now ships **15 courses, 60 lessons, 235 exercises, 30 quizzes
+  (116 questions), 58 topics, 61 references** across **6 categories** and
+  **4 bundles**; RAG joins the Generative AI Essentials bundle, and the
+  recommendation engine routes HR/finance/founder and support-goal learners
+  toward Responsible AI.
+
 ## [1.15.0]
 
 Personalized discovery. The catalog now leads with **"Recommended for you"** —

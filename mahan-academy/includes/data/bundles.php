@@ -45,9 +45,9 @@ return array(
 		'title'       => 'Generative AI Essentials',
 		'slug'        => 'generative-ai-essentials',
 		'subtitle'    => 'What generative AI is, how large language models work under the hood, and how to use both wisely.',
-		'description' => '<p>Two courses that give you a clear mental model of modern generative AI. Understand the families of tools and their limits, then look inside large language models to see why they behave — and misbehave — the way they do.</p>',
+		'description' => '<p>Three courses that give you a clear mental model of modern generative AI. Understand the families of tools and their limits, look inside large language models to see why they behave — and misbehave — the way they do, then learn how to ground them in your own documents.</p>',
 		'order'       => 3,
-		'courses'     => array( 'genai-foundations', 'genai-llms' ),
+		'courses'     => array( 'genai-foundations', 'genai-llms', 'rag-grounding' ),
 	),
 	array(
 		'seed_key'    => 'bundle-ai-tools',

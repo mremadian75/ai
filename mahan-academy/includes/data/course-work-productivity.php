@@ -35,6 +35,28 @@ return array(
 		'Spot what should never be pasted into a public AI tool',
 		'Anonymise sensitive information so you can get AI help safely',
 	),
+	'references'  => array(
+		array(
+			'title'  => 'AI Risk Management Framework (AI RMF 1.0)',
+			'source' => 'NIST, 2023',
+			'url'    => 'https://www.nist.gov/itl/ai-risk-management-framework',
+		),
+		array(
+			'title'  => 'Generative AI and the future of work',
+			'source' => 'McKinsey Global Institute',
+			'url'    => 'https://www.mckinsey.com/mgi/our-research',
+		),
+		array(
+			'title'  => 'Prompt engineering guide',
+			'source' => 'OpenAI — API documentation',
+			'url'    => 'https://platform.openai.com/docs/guides/prompt-engineering',
+		),
+		array(
+			'title'  => 'Recommendation on the Ethics of Artificial Intelligence',
+			'source' => 'UNESCO, 2021',
+			'url'    => 'https://www.unesco.org/en/artificial-intelligence/recommendation-ethics',
+		),
+	),
 	'units'       => array(
 
 		/* ---- Unit 1 ------------------------------------------------------ */

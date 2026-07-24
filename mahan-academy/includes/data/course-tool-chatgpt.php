@@ -35,6 +35,28 @@ return array(
 		'Recognise hallucinations and a knowledge cutoff, and verify facts before you rely on them',
 		'Keep sensitive data safe by knowing what should never be pasted into a consumer AI account',
 	),
+	'references'  => array(
+		array(
+			'title'  => 'Prompt engineering guide',
+			'source' => 'OpenAI — API documentation',
+			'url'    => 'https://platform.openai.com/docs/guides/prompt-engineering',
+		),
+		array(
+			'title'  => 'OpenAI usage policies',
+			'source' => 'OpenAI',
+			'url'    => 'https://openai.com/policies/usage-policies/',
+		),
+		array(
+			'title'  => 'Language Models are Few-Shot Learners (GPT-3)',
+			'source' => 'Brown et al., 2020 — arXiv:2005.14165',
+			'url'    => 'https://arxiv.org/abs/2005.14165',
+		),
+		array(
+			'title'  => 'AI Risk Management Framework (AI RMF 1.0)',
+			'source' => 'NIST, 2023',
+			'url'    => 'https://www.nist.gov/itl/ai-risk-management-framework',
+		),
+	),
 	'units'       => array(
 
 		/* ---- Unit 1 ------------------------------------------------------ */

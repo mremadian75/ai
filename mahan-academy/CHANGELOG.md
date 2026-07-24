@@ -4,6 +4,55 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.14.0]
+
+Default content, per-lesson personalization, more AI-tool courses, and a
+bug-fix pass. **No new tables — DB stays v4.** Seed data validated (13 courses),
+personalization logic covered by a 15-assertion test, grader fixes by a
+19-assertion test, and the lesson/catalog UI driven end-to-end in headless
+Chromium.
+
+### Courses ship by default
+
+- `Mahan_Seed::maybe_autoseed()` installs the starter catalog automatically — on
+  activation **and** as a one-time catch-up on upgrade (atomic `add_option`
+  gate; only seeds when the site has no seeded courses, and never re-imposes if
+  the owner later removes it). The academy is no longer empty on first visit.
+- **New "AI Tools" category + bundle** — *ChatGPT for Everyday Work*, *Working
+  with Claude*, *Google Gemini at Work*, and *AI Image Generation*. The library
+  now ships **13 courses, 52 lessons, 206 exercises, 26 quizzes, 50 topics**
+  across **5 categories** and **4 bundles**.
+
+### Every lesson is personalized
+
+- Lesson bodies now resolve `{{role}}` / `{{primary_goal}}` / `{{daily_tools}}`
+  (and the rest of the profile) per reader, with natural fallbacks for blanks —
+  `Mahan_Profile::personalize_content()` / `content_map()`, applied in `/lesson`.
+- A per-lesson **"✨ For you"** card (`Mahan_Personalization::for_you()`, new
+  `POST /lesson/personalize`) generates a short, learner-specific note on how the
+  lesson applies to their job — server-cached per (lesson, profile) via a profile
+  `signature()`, lazily loaded, and hidden when there's no profile / no AI key.
+- Seed lessons weave placeholders in so the personalization is visible by default.
+
+### Bug fixes (from an adversarial review pass)
+
+- **Quiz XP re-awarded on every pass** — `Mahan_Quizzes::best()` selected a bare
+  non-grouped column alongside `MAX()`, which errors under MySQL
+  `ONLY_FULL_GROUP_BY` (default on 5.7.5+/8), so `best()` returned null and the
+  "already passed" guard never fired. Now a pure aggregate query.
+- **Wrong option graded correct** — `Mahan_Practice` / `Mahan_Reviews` filtered
+  out blank AI options *before* clamping the answer index, silently shifting the
+  correct answer onto a different option. Blank options are now dropped while the
+  answer index is remapped (and a question whose correct option is blank/out of
+  range is rejected).
+- **Lesson-completion XP/streak farming & double-award** — `complete_lesson()`
+  now awards XP and bumps the streak only on the actual transition to completed
+  (conditional UPDATE / INSERT-race check), so re-completing a finished lesson is
+  a no-op and a concurrent duplicate request can't double-award.
+- **Practice XP farmable** — added a per-day practice-XP cap (`review_xp × 10`).
+- Draft courses/paths no longer served by `/course` and `/path`; `enroll()`
+  rejects non-published courses; `maybe_autoseed()` is race-safe.
+
 ## [1.13.0]
 
 Browse by subject & topic. The catalog becomes a real discovery surface —

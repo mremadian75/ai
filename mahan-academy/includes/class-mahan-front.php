@@ -195,6 +195,9 @@ class Mahan_Front {
 			'courseContent'    => __( 'Course content', 'mahan-academy' ),
 			'practice'         => __( 'Practice', 'mahan-academy' ),
 			'topics'           => __( 'Topics', 'mahan-academy' ),
+			// Per-lesson "For you" personalization.
+			'foryouTitle'      => __( 'For you', 'mahan-academy' ),
+			'foryouLoading'    => __( 'Personalizing this lesson for you…', 'mahan-academy' ),
 			// Smart practice (on-demand AI-generated questions).
 			'smartPractice'    => __( 'Smart practice', 'mahan-academy' ),
 			'smartPracticeSub' => __( 'Generate fresh questions tuned to this lesson and your level.', 'mahan-academy' ),

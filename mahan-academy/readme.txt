@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.13.0
+Stable tag: 1.14.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -17,7 +17,8 @@ Mahan Academy is a self-contained learning plugin built to teach people how to u
 **Key features:**
 
 * Standalone courses & lessons (no Tutor LMS, LearnDash, etc. required)
-* One-click Starter Content Library — install a ready-made catalog of professionally written courses across Prompt Engineering, Machine Learning, Generative AI, and AI for Productivity, organized into categories and Coursera-style bundles (specializations), each with interactive exercises and unit quizzes
+* Built-in Starter Content Library — a ready-made catalog of professionally written courses across Prompt Engineering, Machine Learning, Generative AI, AI for Productivity, and hands-on AI Tools (ChatGPT, Claude, Gemini, image generation), organized into categories and Coursera-style bundles with interactive exercises and unit quizzes. Installs automatically so the academy is never empty
+* Every lesson is personalized — lesson text adapts to your role, goal, and tools via {{placeholders}}, plus an AI "For you" note on how each lesson applies to your own work
 * Concept "topics" (مباحث): a shared vocabulary tagged on courses and lessons — shown as chips in the learner UI — that also tells the AI tutor and question generator exactly which concepts each lesson covers
 * Smart Practice: a one-tap "Generate practice" on any lesson that asks AI for fresh questions tuned to the lesson's concepts and your level (with misconception-targeting distractors), grades them instantly, and feeds anything you miss into spaced repetition
 * Category filter + bundle discovery right in the catalog (Coursera/Duolingo-style domains and specializations)
@@ -62,6 +63,9 @@ Yes — *Settings → Profile Form* takes a JSON schema. The placeholders you de
 Open *Mahan Academy → Dashboard* and click **Install starter courses**. It creates a full catalog — Prompt Engineering, Machine Learning, Generative AI, and AI for Productivity — grouped into categories and Coursera-style bundles, with interactive exercises and unit quizzes. The install is idempotent (safe to re-run) and never touches courses you made yourself. Edit or delete any of it like normal WordPress content.
 
 == Changelog ==
+
+= 1.14.0 =
+Courses now ship by default (auto-installed, incl. a new AI Tools bundle — ChatGPT, Claude, Gemini, image generation), every lesson is personalized (profile placeholders + an AI "For you" note), and a bug-fix pass hardens grading and XP (quiz-XP re-award under ONLY_FULL_GROUP_BY, a blank-option answer-index shift, lesson-completion double-award/farming, and a practice-XP cap). No new tables. Verified with logic tests + headless render.
 
 = 1.13.0 =
 Browse by subject & topic — the catalog now groups courses into Coursera-style category sections and adds a "Browse by topic" panel to filter by any concept (مباحث); course topic chips are clickable. Front-end only, no new tables. Verified in a headless browser.

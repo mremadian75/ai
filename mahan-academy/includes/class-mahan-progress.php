@@ -98,27 +98,38 @@ class Mahan_Progress {
 		$already_done  = $existing && 'completed' === $existing['status'];
 		$lesson_xp     = $already_done ? 0 : Mahan_Courses::lesson_xp( $lesson_id );
 
-		if ( $existing ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-			$wpdb->update(
-				Mahan_DB::progress(),
-				array(
-					'status'       => 'completed',
-					'xp_awarded'   => (int) $existing['xp_awarded'] + $lesson_xp,
-					'completed_at' => $already_done ? $existing['completed_at'] : $now,
-					'updated_at'   => $now,
-				),
-				array(
-					'user_id'   => $user_id,
-					'lesson_id' => $lesson_id,
-				),
-				array( '%s', '%d', '%s', '%s' ),
-				array( '%d', '%d' )
+		// Did THIS call actually transition the lesson to completed? Only then do
+		// we award XP / bump the streak — so re-completing a finished lesson is a
+		// no-op, and a concurrent duplicate request can't double-award.
+		$did_transition = false;
+		$progress_table = Mahan_DB::progress();
+
+		if ( $already_done ) {
+			// Nothing to do — keep the completed row as-is.
+			$did_transition = false;
+		} elseif ( $existing ) {
+			// in_progress -> completed, but only if it isn't already completed
+			// (guards the concurrent double-update race). rows_affected tells us
+			// whether we won the transition.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wpdb->query(
+				$wpdb->prepare(
+					"UPDATE {$progress_table} SET status = 'completed', xp_awarded = xp_awarded + %d, completed_at = %s, updated_at = %s
+					 WHERE user_id = %d AND lesson_id = %d AND status <> 'completed'",
+					$lesson_xp,
+					$now,
+					$now,
+					$user_id,
+					$lesson_id
+				)
 			);
+			$did_transition = ( (int) $wpdb->rows_affected > 0 );
 		} else {
+			// First time: INSERT can lose the UNIQUE (user_id, lesson_id) race to
+			// a concurrent request — only the winner (insert succeeded) awards.
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-			$wpdb->insert(
-				Mahan_DB::progress(),
+			$inserted = $wpdb->insert(
+				$progress_table,
 				array(
 					'user_id'      => $user_id,
 					'lesson_id'    => $lesson_id,
@@ -131,12 +142,16 @@ class Mahan_Progress {
 				),
 				array( '%d', '%d', '%d', '%s', '%d', '%s', '%s', '%s' )
 			);
+			$did_transition = ( false !== $inserted && (int) $inserted > 0 );
 		}
 
-		// record_activity() first so the streak reflects today before add_xp()
-		// computes its streak bonus (and a lapsed streak is reset first).
-		Mahan_Gamification::record_activity( $user_id );
-		$award = Mahan_Gamification::add_xp( $user_id, $lesson_xp, 'lesson', $lesson_id );
+		// Award XP + bump the streak only on a genuine completion. record_activity()
+		// first so the streak reflects today before add_xp() computes its bonus.
+		$award = array( 'awarded' => 0, 'leveled_up' => false );
+		if ( $did_transition ) {
+			Mahan_Gamification::record_activity( $user_id );
+			$award = Mahan_Gamification::add_xp( $user_id, $lesson_xp, 'lesson', $lesson_id );
+		}
 
 		// Was the course already finished before this call? (so we don't
 		// re-fire completion — e.g. duplicate completion emails.)

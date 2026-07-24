@@ -630,13 +630,26 @@ class Mahan_Reviews {
 			'question' => sanitize_textarea_field( (string) $data['question'] ),
 		);
 		if ( 'multiple_choice' === $type ) {
-			$opts = ( isset( $data['options'] ) && is_array( $data['options'] ) ) ? array_values( array_map( 'sanitize_text_field', $data['options'] ) ) : array();
-			$opts = array_values( array_filter( $opts, function ( $o ) { return '' !== trim( $o ); } ) );
-			if ( count( $opts ) < 2 ) {
+			$raw    = ( isset( $data['options'] ) && is_array( $data['options'] ) ) ? array_map( 'sanitize_text_field', array_values( $data['options'] ) ) : array();
+			$answer = isset( $data['answer'] ) ? (int) $data['answer'] : 0;
+			// Drop blank options while REMAPPING the answer index (filtering then
+			// clamping would shift the correct answer onto a different option).
+			$opts       = array();
+			$new_answer = -1;
+			foreach ( $raw as $i => $opt ) {
+				if ( '' === trim( $opt ) ) {
+					continue;
+				}
+				if ( $i === $answer ) {
+					$new_answer = count( $opts );
+				}
+				$opts[] = $opt;
+			}
+			if ( count( $opts ) < 2 || $new_answer < 0 ) {
 				return null;
 			}
 			$q['options'] = $opts;
-			$q['answer']  = isset( $data['answer'] ) ? max( 0, min( count( $opts ) - 1, (int) $data['answer'] ) ) : 0;
+			$q['answer']  = $new_answer;
 		} elseif ( 'true_false' === $type ) {
 			$q['options'] = array( __( 'True', 'mahan-academy' ), __( 'False', 'mahan-academy' ) );
 			$q['answer']  = ( isset( $data['answer'] ) && 1 === (int) $data['answer'] ) ? 1 : 0;

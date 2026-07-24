@@ -22,6 +22,13 @@ class Mahan_Plugin {
 
 		// Make the CPT permalinks work right away.
 		Mahan_CPT::register();
+
+		// Ship the starter catalog by default, so the academy is never empty on
+		// first visit (idempotent + one-time; never re-imposes if later removed).
+		if ( class_exists( 'Mahan_Seed' ) ) {
+			Mahan_Seed::maybe_autoseed();
+		}
+
 		flush_rewrite_rules();
 	}
 
@@ -84,6 +91,11 @@ class Mahan_Plugin {
 		Mahan_REST::init();
 		Mahan_AI_Stream::init();
 		Mahan_Front::init();
+
+		// Catch-up for sites that were already active before this version shipped
+		// the starter catalog. Runs after the CPTs/taxonomies register (priority
+		// 20 > CPT's 5) and self-guards to run its work at most once.
+		add_action( 'init', array( 'Mahan_Seed', 'maybe_autoseed' ), 20 );
 
 		if ( is_admin() ) {
 			Mahan_Admin::init();

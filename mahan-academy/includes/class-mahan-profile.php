@@ -177,6 +177,87 @@ class Mahan_Profile {
 		return Mahan_Utils::render_placeholders( (string) $template, self::placeholder_map( (int) $user_id ) );
 	}
 
+	/**
+	 * Fallback phrasing for each profile placeholder, so a personalized lesson
+	 * still reads naturally for a learner who left a field blank (or isn't
+	 * logged in). Used instead of the AI-prompt map's "(not provided)".
+	 *
+	 * @return array
+	 */
+	private static function content_fallbacks() {
+		return array(
+			'name'              => '',
+			'email'             => '',
+			'role'              => __( 'your role', 'mahan-academy' ),
+			'company_type'      => __( 'your organization', 'mahan-academy' ),
+			'seniority'         => __( 'your level', 'mahan-academy' ),
+			'ai_level'          => __( 'your current level', 'mahan-academy' ),
+			'primary_goal'      => __( 'your goals', 'mahan-academy' ),
+			'learning_style'    => __( 'the way you like to learn', 'mahan-academy' ),
+			'daily_tools'       => __( 'the tools you use', 'mahan-academy' ),
+			'biggest_challenge' => __( 'your current challenges', 'mahan-academy' ),
+		);
+	}
+
+	/**
+	 * A placeholder map for rendering into learner-facing CONTENT (lesson bodies):
+	 * real profile labels where set, graceful neutral phrasing where blank.
+	 *
+	 * @param int $user_id User id.
+	 * @return array
+	 */
+	public static function content_map( $user_id ) {
+		$map       = self::placeholder_map( (int) $user_id );
+		$fallbacks = self::content_fallbacks();
+		foreach ( $fallbacks as $key => $fallback ) {
+			$val = isset( $map[ $key ] ) ? trim( (string) $map[ $key ] ) : '';
+			if ( '' === $val || '(not provided)' === $val ) {
+				$map[ $key ] = $fallback;
+			}
+		}
+		return $map;
+	}
+
+	/**
+	 * Personalize learner-facing content by resolving {{placeholders}} against
+	 * the profile, with natural fallbacks for blanks. Makes every lesson body
+	 * adapt to the reader when the author uses placeholders.
+	 *
+	 * @param string $content Content (HTML/text) possibly containing {{tokens}}.
+	 * @param int    $user_id User id.
+	 * @return string
+	 */
+	public static function personalize_content( $content, $user_id ) {
+		$content = (string) $content;
+		if ( false === strpos( $content, '{{' ) ) {
+			return $content; // Nothing to personalize — skip the work.
+		}
+		return Mahan_Utils::render_placeholders( $content, self::content_map( (int) $user_id ) );
+	}
+
+	/**
+	 * A compact, stable signature of the personalization-relevant profile fields,
+	 * so AI output can be cached per (lesson, profile-state) and regenerated when
+	 * the learner updates their profile.
+	 *
+	 * @param int $user_id User id.
+	 * @return string 12-char hash, or '' when there's nothing to personalize with.
+	 */
+	public static function signature( $user_id ) {
+		$profile = self::get_profile( (int) $user_id );
+		$keys    = array( 'role', 'company_type', 'seniority', 'ai_level', 'primary_goal', 'learning_style', 'daily_tools', 'biggest_challenge' );
+		$parts   = array();
+		foreach ( $keys as $k ) {
+			$v = isset( $profile[ $k ] ) ? $profile[ $k ] : '';
+			$parts[ $k ] = is_array( $v ) ? implode( ',', $v ) : (string) $v;
+		}
+		$filled = array_filter( $parts, function ( $v ) { return '' !== trim( (string) $v ); } );
+		if ( empty( $filled ) ) {
+			return '';
+		}
+		return substr( md5( wp_json_encode( $parts ) ), 0, 12 );
+	}
+
 	private static function option_labels( $field ) {
 		$labels = array();
 		if ( empty( $field['options'] ) || ! is_array( $field['options'] ) ) {

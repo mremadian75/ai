@@ -31,6 +31,9 @@ class Mahan_Practice {
 	const DEFAULT_COUNT = 3;
 	const TTL           = 1800; // 30 minutes.
 
+	/** Daily practice-XP cap = review_xp × this (anti-farm; practice is a bonus). */
+	const DAILY_XP_MULTIPLIER = 10;
+
 	/* ------------------------------------------------------------------ */
 	/* Generation                                                          */
 	/* ------------------------------------------------------------------ */
@@ -193,13 +196,27 @@ class Mahan_Practice {
 		$q = array( 'type' => $type, 'question' => $question );
 
 		if ( 'multiple_choice' === $type ) {
-			$opts = ( isset( $data['options'] ) && is_array( $data['options'] ) ) ? array_values( array_map( 'sanitize_text_field', $data['options'] ) ) : array();
-			$opts = array_values( array_filter( $opts, function ( $o ) { return '' !== trim( $o ); } ) );
-			if ( count( $opts ) < 2 ) {
-				return null;
+			$raw    = ( isset( $data['options'] ) && is_array( $data['options'] ) ) ? array_map( 'sanitize_text_field', array_values( $data['options'] ) ) : array();
+			$answer = isset( $data['answer'] ) ? (int) $data['answer'] : 0;
+			// Drop blank options while REMAPPING the answer index — filtering
+			// first and clamping later would silently shift the correct answer
+			// onto the wrong option.
+			$opts       = array();
+			$new_answer = -1;
+			foreach ( $raw as $i => $opt ) {
+				if ( '' === trim( $opt ) ) {
+					continue;
+				}
+				if ( $i === $answer ) {
+					$new_answer = count( $opts );
+				}
+				$opts[] = $opt;
+			}
+			if ( count( $opts ) < 2 || $new_answer < 0 ) {
+				return null; // Too few options, or the correct one was blank/out of range.
 			}
 			$q['options'] = $opts;
-			$q['answer']  = isset( $data['answer'] ) ? max( 0, min( count( $opts ) - 1, (int) $data['answer'] ) ) : 0;
+			$q['answer']  = $new_answer;
 		} elseif ( 'true_false' === $type ) {
 			$q['options'] = array( __( 'True', 'mahan-academy' ), __( 'False', 'mahan-academy' ) );
 			$q['answer']  = ( isset( $data['answer'] ) && 1 === (int) $data['answer'] ) ? 1 : 0;
@@ -213,6 +230,25 @@ class Mahan_Practice {
 			$q['case_sensitive'] = 0;
 		}
 		return $q;
+	}
+
+	/**
+	 * Total practice XP already awarded to a user today (site timezone).
+	 *
+	 * @param int $user_id User id.
+	 * @return int
+	 */
+	private static function xp_today( $user_id ) {
+		global $wpdb;
+		$table = Mahan_DB::xp_log();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		return (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COALESCE( SUM( amount ), 0 ) FROM {$table} WHERE user_id = %d AND reason = 'practice' AND DATE( created_at ) = %s",
+				(int) $user_id,
+				Mahan_Utils::today()
+			)
+		);
 	}
 
 	/**
@@ -270,12 +306,18 @@ class Mahan_Practice {
 			$stash['graded'][ $index ] = true;
 			set_transient( $key, $stash, self::TTL );
 
+			// Award XP for a correct answer, but cap total practice XP per day so
+			// regenerating fresh sets can't farm it. Practice is bonus reinforcement,
+			// not the main progression, so the cap is modest.
 			if ( $correct ) {
-				$xp = max( 1, (int) Mahan_Settings::get( 'review_xp', 5 ) );
-				Mahan_Gamification::record_activity( $user_id );
-				$award      = Mahan_Gamification::add_xp( $user_id, $xp, 'practice', (int) $stash['lesson_id'] );
-				$awarded    = (int) $award['awarded'];
-				$leveled_up = ! empty( $award['leveled_up'] );
+				$per_xp   = max( 1, (int) Mahan_Settings::get( 'review_xp', 5 ) );
+				$day_cap  = $per_xp * self::DAILY_XP_MULTIPLIER;
+				if ( self::xp_today( $user_id ) < $day_cap ) {
+					Mahan_Gamification::record_activity( $user_id );
+					$award      = Mahan_Gamification::add_xp( $user_id, $per_xp, 'practice', (int) $stash['lesson_id'] );
+					$awarded    = (int) $award['awarded'];
+					$leveled_up = ! empty( $award['leveled_up'] );
+				}
 			}
 
 			// Wrong practice answers join the spaced-repetition queue so they

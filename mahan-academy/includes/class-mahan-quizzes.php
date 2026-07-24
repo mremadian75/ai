@@ -321,9 +321,12 @@ class Mahan_Quizzes {
 		$table = Mahan_DB::attempts();
 		$key   = self::key_for( $unit );
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		// Pure aggregate query (no bare non-grouped column) so it stays valid
+		// under MySQL's ONLY_FULL_GROUP_BY — otherwise the query errors, best()
+		// returns null, and quiz XP is re-awarded on every pass.
 		$row = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT is_correct, MAX(score) AS score, MAX(is_correct) AS ever_passed
+				"SELECT MAX(score) AS score, MAX(is_correct) AS ever_passed
 				 FROM {$table} WHERE user_id = %d AND course_id = %d AND exercise_key = %s",
 				(int) $user_id,
 				(int) $course_id,

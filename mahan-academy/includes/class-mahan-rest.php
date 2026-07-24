@@ -156,6 +156,13 @@ class Mahan_REST {
 			'callback'            => array( __CLASS__, 'practice_grade' ),
 			'permission_callback' => $logged_in,
 		) );
+
+		// Per-lesson AI "For you" personalization note.
+		register_rest_route( self::NS, '/lesson/personalize', array(
+			'methods'             => WP_REST_Server::CREATABLE,
+			'callback'            => array( __CLASS__, 'lesson_personalize' ),
+			'permission_callback' => $logged_in,
+		) );
 	}
 
 	/* ------------------------------------------------------------------ */
@@ -248,6 +255,12 @@ class Mahan_REST {
 	public static function course( WP_REST_Request $request ) {
 		$user_id   = get_current_user_id();
 		$course_id = (int) $request['id'];
+
+		// Never expose unpublished (draft/pending/private) course content on a
+		// public endpoint.
+		if ( 'publish' !== get_post_status( $course_id ) ) {
+			return new WP_REST_Response( array( 'ok' => false, 'error' => 'not_found' ), 404 );
+		}
 
 		$summary = Mahan_Courses::course_summary( $course_id );
 		if ( ! $summary ) {
@@ -399,8 +412,14 @@ class Mahan_REST {
 			'position'     => $position,
 			'course_pct'   => $enrolled ? Mahan_Progress::course_progress_pct( $user_id, $course_id ) : 0,
 			'unit_quiz'    => $unit_quiz,
-			'content'      => apply_filters( 'the_content', $lesson->post_content ),
+			// Personalize the lesson body: {{profile placeholders}} resolve to the
+			// reader (with natural fallbacks) so every lesson adapts, not just the
+			// tutor.
+			'content'      => apply_filters( 'the_content', Mahan_Profile::personalize_content( $lesson->post_content, $user_id ) ),
 			'topics'       => Mahan_Courses::lesson_topics( $lesson_id ),
+			// Whether a per-lesson AI "For you" note can be generated for this
+			// learner (AI configured + a profile to personalize from).
+			'personalize'  => ( Mahan_Settings::ai_ready() && '' !== Mahan_Profile::signature( $user_id ) ),
 			'type'         => Mahan_Utils::meta_str( $lesson_id, Mahan_Courses::M_TYPE, 'reading' ),
 			'est_min'      => Mahan_Utils::meta_int( $lesson_id, Mahan_Courses::M_EST_MIN, 0 ),
 			'xp'           => Mahan_Courses::lesson_xp( $lesson_id ),
@@ -762,6 +781,10 @@ class Mahan_REST {
 	public static function path( WP_REST_Request $request ) {
 		$user_id = get_current_user_id();
 		$path_id = (int) $request['id'];
+		// Don't expose unpublished learning paths on a public endpoint.
+		if ( 'publish' !== get_post_status( $path_id ) ) {
+			return new WP_REST_Response( array( 'ok' => false, 'error' => 'not_found' ), 404 );
+		}
 		$detail  = Mahan_Paths::detail( $path_id, $user_id );
 		if ( ! $detail ) {
 			return new WP_REST_Response( array( 'ok' => false, 'error' => 'not_found' ), 404 );
@@ -909,6 +932,34 @@ class Mahan_REST {
 		$res = Mahan_Practice::grade( $user_id, $token, $index, $answer );
 		if ( empty( $res['ok'] ) ) {
 			return new WP_REST_Response( $res, 404 );
+		}
+		return rest_ensure_response( $res );
+	}
+
+	/**
+	 * Generate (or return cached) the per-lesson "how this applies to your work"
+	 * personalization note.
+	 */
+	public static function lesson_personalize( WP_REST_Request $request ) {
+		$user_id   = get_current_user_id();
+		$body      = $request->get_json_params();
+		$lesson_id = isset( $body['lesson_id'] ) ? absint( $body['lesson_id'] ) : 0;
+		if ( ! $lesson_id ) {
+			return new WP_REST_Response( array( 'ok' => false, 'error' => 'missing_lesson_id' ), 400 );
+		}
+		// Only for enrolled, unlocked lessons — mirrors the tutor/practice gate.
+		$course_id = Mahan_Courses::get_lesson_course_id( $lesson_id );
+		if ( ! $course_id || ! Mahan_Enrollment::is_enrolled( $user_id, $course_id ) ) {
+			return new WP_REST_Response( array( 'ok' => false, 'reason' => 'not_enrolled' ), 403 );
+		}
+		if ( Mahan_Courses::lesson_locked( $user_id, $lesson_id ) ) {
+			return new WP_REST_Response( array( 'ok' => false, 'reason' => 'locked' ), 403 );
+		}
+		$res = Mahan_Personalization::for_you( $user_id, $lesson_id );
+		if ( empty( $res['ok'] ) ) {
+			// A missing profile or unconfigured AI isn't an error — the SPA just
+			// hides the card. Use 200 so it isn't logged as a failure.
+			return rest_ensure_response( $res );
 		}
 		return rest_ensure_response( $res );
 	}

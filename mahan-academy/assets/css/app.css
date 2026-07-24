@@ -241,6 +241,12 @@ a.mahan-lesson-row:hover { border-color: var(--m-primary); background: color-mix
 .mahan-topic-chip-link { cursor: pointer; font: inherit; font-size: 12px; font-weight: 600; }
 .mahan-topic-chip-link:hover { background: color-mix(in srgb, var(--m-primary) 18%, var(--m-surface)); border-color: var(--m-primary); }
 
+/* Per-lesson "For you" personalization card */
+.mahan-foryou { margin: 0 0 22px; padding: 14px 18px; border: 1px solid color-mix(in srgb, var(--m-accent) 26%, var(--m-border)); border-radius: var(--m-radius-sm); background: color-mix(in srgb, var(--m-accent) 7%, var(--m-surface)); }
+.mahan-foryou-head { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: color-mix(in srgb, var(--m-accent) 60%, var(--m-text)); margin-bottom: 4px; }
+.mahan-foryou-body p { margin: 0; color: var(--m-text); font-size: 15px; line-height: 1.55; }
+.mahan-foryou-loading { color: var(--m-muted); font-size: 14px; font-style: italic; }
+
 /* Smart practice (on-demand AI questions) */
 .mahan-practice { margin-top: 30px; padding: 22px; border: 2px solid color-mix(in srgb, var(--m-primary) 22%, var(--m-border)); border-radius: var(--m-radius); background: color-mix(in srgb, var(--m-primary) 4%, var(--m-surface)); }
 .mahan-practice-head h2 { font-size: 20px; margin: 0 0 4px; }

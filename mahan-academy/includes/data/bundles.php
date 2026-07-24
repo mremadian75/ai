@@ -49,4 +49,14 @@ return array(
 		'order'       => 3,
 		'courses'     => array( 'genai-foundations', 'genai-llms' ),
 	),
+	array(
+		'seed_key'    => 'bundle-ai-tools',
+		'title'       => 'AI Tools Starter Kit',
+		'slug'        => 'ai-tools-starter-kit',
+		'subtitle'    => 'Hands-on guides to the AI tools people actually use at work — ChatGPT, Claude, Gemini, and AI image generators.',
+		'description' => '<p>A practical tour of the most popular AI assistants and creative tools. Learn how each one works, what it is best at, and how to fold it into your day — from writing and analysis to generating images — while staying safe and accurate.</p>'
+			. '<p>Start anywhere; each course stands on its own.</p>',
+		'order'       => 4,
+		'courses'     => array( 'tool-chatgpt', 'tool-claude', 'tool-gemini', 'tool-image-gen' ),
+	),
 );

@@ -177,6 +177,85 @@ class Mahan_Personalization {
 			. implode( "\n", $lines );
 	}
 
+	/* ------------------------------------------------------------------ */
+	/* Per-lesson "For you" personalization                                */
+	/* ------------------------------------------------------------------ */
+
+	/**
+	 * A short, learner-specific note that connects a lesson to THIS person's job
+	 * — so every lesson is personalized, not just the tutor. Generated once per
+	 * (lesson, profile-state) and cached in the AI cache; regenerated when the
+	 * learner updates their profile.
+	 *
+	 * @param int $user_id   User id.
+	 * @param int $lesson_id Lesson id.
+	 * @return array { ok:bool, text?:string, reason?:string }
+	 */
+	public static function for_you( $user_id, $lesson_id ) {
+		$user_id   = (int) $user_id;
+		$lesson_id = (int) $lesson_id;
+
+		if ( ! class_exists( 'Mahan_Profile' ) ) {
+			return array( 'ok' => false, 'reason' => 'unavailable' );
+		}
+		$sig = Mahan_Profile::signature( $user_id );
+		if ( '' === $sig ) {
+			// Nothing in the profile to personalize with — nudge to complete it.
+			return array( 'ok' => false, 'reason' => 'no_profile' );
+		}
+		if ( ! Mahan_Settings::ai_ready() ) {
+			return array( 'ok' => false, 'reason' => 'ai_unavailable' );
+		}
+
+		$lesson = get_post( $lesson_id );
+		if ( ! $lesson || Mahan_CPT::LESSON !== $lesson->post_type || 'publish' !== $lesson->post_status ) {
+			return array( 'ok' => false, 'reason' => 'not_found' );
+		}
+
+		$cache_key = md5( 'mahan_foryou:' . $lesson_id . ':' . $sig );
+		$cached    = Mahan_DB::cache_get( $cache_key, 0 );
+		if ( null !== $cached && '' !== trim( (string) $cached ) ) {
+			return array( 'ok' => true, 'text' => (string) $cached, 'cached' => true );
+		}
+
+		$title  = get_the_title( $lesson_id );
+		$topics = Mahan_Courses::lesson_topics( $lesson_id );
+		$plain  = wp_strip_all_tags( (string) $lesson->post_content );
+		$plain  = trim( preg_replace( '/\s+/', ' ', $plain ) );
+		if ( strlen( $plain ) > 1800 ) {
+			$plain = substr( $plain, 0, 1800 ) . '…';
+		}
+
+		$system = 'You connect what a lesson teaches to THIS specific learner\'s job. '
+			. 'In 2–3 short sentences (max ~55 words), tell them concretely how to apply this lesson in their own work — '
+			. 'name their role, a tool they use, or their stated goal where natural. Warm, specific, second person ("you"). '
+			. 'No preamble, no headings, no restating the lesson — just the personal connection. '
+			. 'Write in the same language as the lesson.';
+		$ctx      = self::learner_context( $user_id, array( 'with_difficulty' => false ) );
+		$topics_line = ! empty( $topics ) ? "\nConcepts: " . implode( ', ', $topics ) : '';
+		$user_msg = ( '' !== $ctx ? $ctx . "\n\n" : '' )
+			. "LESSON: {$title}{$topics_line}\n\nLESSON SUMMARY:\n{$plain}\n\n"
+			. 'Write the personalized "how this applies to your work" note now.';
+
+		$res = Mahan_AI::complete(
+			array(
+				array( 'role' => 'system', 'content' => $system ),
+				array( 'role' => 'user', 'content' => $user_msg ),
+			),
+			array( 'max_tokens' => 200, 'temperature' => 0.5 )
+		);
+		if ( empty( $res['ok'] ) || '' === trim( (string) $res['text'] ) ) {
+			return array( 'ok' => false, 'reason' => 'generation_failed' );
+		}
+
+		$text = trim( wp_strip_all_tags( (string) $res['text'] ) );
+		if ( '' === $text ) {
+			return array( 'ok' => false, 'reason' => 'generation_failed' );
+		}
+		Mahan_DB::cache_set( $cache_key, $text );
+		return array( 'ok' => true, 'text' => $text, 'cached' => false );
+	}
+
 	/**
 	 * One-line teaching directive derived from difficulty + learning style,
 	 * appended to generation/grading prompts.

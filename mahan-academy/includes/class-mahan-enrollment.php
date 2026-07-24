@@ -49,7 +49,7 @@ class Mahan_Enrollment {
 		if ( ! $user_id ) {
 			return new WP_Error( 'auth', __( 'You must be logged in.', 'mahan-academy' ) );
 		}
-		if ( ! $course_id || Mahan_CPT::COURSE !== get_post_type( $course_id ) ) {
+		if ( ! $course_id || Mahan_CPT::COURSE !== get_post_type( $course_id ) || 'publish' !== get_post_status( $course_id ) ) {
 			return new WP_Error( 'course', __( 'Course not found.', 'mahan-academy' ) );
 		}
 		$existing = self::get( $user_id, $course_id );

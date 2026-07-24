@@ -26,6 +26,9 @@ class Mahan_Seed {
 	/** Option recording the plugin version that last seeded. */
 	const OPT_DONE = 'mahan_seed_version';
 
+	/** One-time flag: the auto-seed catch-up has run (so it never re-imposes). */
+	const OPT_AUTOSEED = 'mahan_autoseed_done';
+
 	/* ------------------------------------------------------------------ */
 	/* Data library                                                        */
 	/* ------------------------------------------------------------------ */
@@ -84,6 +87,7 @@ class Mahan_Seed {
 			'Machine Learning'   => __( 'How machines learn from data — core concepts through practical, shippable models.', 'mahan-academy' ),
 			'Generative AI'      => __( 'Understand and use generative AI and large language models with confidence.', 'mahan-academy' ),
 			'AI at Work'         => __( 'Practical, safe ways to use AI to get everyday work done faster.', 'mahan-academy' ),
+			'AI Tools'           => __( 'Hands-on guides to popular AI tools — ChatGPT, Claude, Gemini, and image generators.', 'mahan-academy' ),
 		);
 	}
 
@@ -96,6 +100,27 @@ class Mahan_Seed {
 	 */
 	public static function is_installed() {
 		return self::count_installed() > 0;
+	}
+
+	/**
+	 * Ship the starter content by default, exactly once, without re-imposing it.
+	 *
+	 * Runs on activation and (for sites that were already active before this
+	 * version) once via an `init` catch-up. It only seeds when the site has no
+	 * seeded courses yet, then records a permanent flag — so an owner who later
+	 * deletes the demo content is never re-flooded with it.
+	 */
+	public static function maybe_autoseed() {
+		// Atomic one-time gate: add_option only succeeds for the FIRST caller
+		// (wp_options.option_name is unique), so two concurrent init requests on
+		// a fresh site can't both pass the guard and double-seed. It also serves
+		// as the "already ran once" flag on every later request.
+		if ( false === add_option( self::OPT_AUTOSEED, '1', '', 'no' ) ) {
+			return;
+		}
+		if ( 0 === self::count_installed() ) {
+			self::install();
+		}
 	}
 
 	/**
@@ -229,7 +254,11 @@ class Mahan_Seed {
 		$unit_i   = 0;
 		foreach ( $units as $unit ) {
 			$unit_i++;
-			$unit_title = isset( $unit['title'] ) ? (string) $unit['title'] : sprintf( __( 'Unit %d', 'mahan-academy' ), $unit_i );
+			// Sanitize the unit title ONCE and use the same value for the lesson
+			// meta (M_UNIT) and the quiz map key. Mahan_Quizzes::save_all()
+			// re-sanitizes the key, so an unsanitized title here would store a
+			// mismatched lesson unit and silently orphan the unit quiz.
+			$unit_title = sanitize_text_field( isset( $unit['title'] ) ? (string) $unit['title'] : sprintf( __( 'Unit %d', 'mahan-academy' ), $unit_i ) );
 			$order_i    = 0;
 			$unit_lessons = isset( $unit['lessons'] ) && is_array( $unit['lessons'] ) ? $unit['lessons'] : array();
 			foreach ( $unit_lessons as $lesson ) {
@@ -421,7 +450,10 @@ class Mahan_Seed {
 		$ids = get_posts(
 			array(
 				'post_type'      => $post_type,
-				'post_status'    => 'any',
+				// Include 'trash' so re-running the installer never duplicates (or
+				// resurrects) a seed post the owner deliberately trashed — 'any'
+				// would miss it and create a second copy.
+				'post_status'    => array( 'publish', 'pending', 'draft', 'private', 'future', 'trash' ),
 				'posts_per_page' => 1,
 				'fields'         => 'ids',
 				// phpcs:ignore WordPress.DB.SlowDBQuery

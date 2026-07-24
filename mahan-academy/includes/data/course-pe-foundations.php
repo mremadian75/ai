@@ -100,7 +100,7 @@ return array(
 						. '</ul>'
 						. '<p>Same tool, wildly different results — because the second prompt gave the model the facts and constraints it needed to do the job.</p>'
 						. '<h3>Recap</h3>'
-						. '<p>Treat the model like a sharp new colleague on their first day: capable, but only as good as the brief you give them. The rest of this course is about writing a great brief.</p>',
+						. '<p>Treat the model like a sharp new colleague on their first day: capable, but only as good as the brief you give them. Working in {{role}}, your fastest win is to take one real task toward {{primary_goal}} and turn it into a proper brief today. The rest of this course is about writing a great brief.</p>',
 					'exercises' => array(
 						array(
 							'type'     => 'multiple_choice',

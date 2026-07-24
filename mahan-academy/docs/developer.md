@@ -78,7 +78,17 @@ with its units, lessons (HTML + exercises + topics) and unit quizzes, and wires
 the courses into bundles. Every seeded post carries a `_mahan_seed_key` marker,
 so `Mahan_Seed::install()` is idempotent — re-running skips existing content and
 only relinks bundle membership. Triggered from the admin dashboard
-(`admin_post_mahan_seed_install`). Ships **no** new tables and no schema bump.
+(`admin_post_mahan_seed_install`) and **auto-installed by default** via
+`Mahan_Seed::maybe_autoseed()` — on activation and as a one-time `init` catch-up
+(atomic `add_option` gate; only seeds an empty site, never re-imposes). Ships
+**no** new tables and no schema bump.
+
+**Per-lesson personalization.** Lesson bodies resolve `{{profile placeholders}}`
+per reader via `Mahan_Profile::personalize_content()` (natural fallbacks for
+blanks), applied in `/lesson`. `Mahan_Personalization::for_you()`
+(`POST /lesson/personalize`) generates a short "how this applies to your work"
+note, cached in the AI cache per `(lesson, Mahan_Profile::signature())` so it
+regenerates only when the learner updates their profile.
 
 **Dynamic per-user data** lives in eight custom tables (see `Mahan_DB`):
 `enrollments`, `progress`, `attempts`, `stats`, `chat`, `ai_cache`,

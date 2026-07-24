@@ -1375,6 +1375,10 @@
 				col.appendChild(h('div', { class: 'mahan-topic-chips', 'aria-label': t('topics', 'Topics') },
 					L.topics.map(function (tp) { return h('span', { class: 'mahan-topic-chip', text: tp }); })));
 			}
+			// Personalized "For you" note — how this lesson applies to the learner's
+			// own work (lazy-loaded + server-cached; hidden if unavailable).
+			var forYou = forYouCard(L);
+			if (forYou) { col.appendChild(forYou); }
 			col.appendChild(h('article', { class: 'mahan-prose', html: L.content || '' }));
 
 			// Exercises.
@@ -1611,6 +1615,29 @@
 	/* ------------------------------------------------------------------ */
 	/* Smart practice (on-demand AI-generated questions)                   */
 	/* ------------------------------------------------------------------ */
+
+	// A short, AI-written note connecting this lesson to the learner's own work.
+	// Lazy-loaded + server-cached; removes itself when there's nothing to show
+	// (no profile / AI not configured / generation failed).
+	function forYouCard(L) {
+		if (!L.personalize) { return null; }
+		var body = h('div', { class: 'mahan-foryou-body' }, [
+			h('span', { class: 'mahan-foryou-loading', text: t('foryouLoading', 'Personalizing this lesson for you…') })
+		]);
+		var card = h('aside', { class: 'mahan-foryou', 'aria-label': t('foryouTitle', 'For you') }, [
+			h('div', { class: 'mahan-foryou-head' }, [h('span', { 'aria-hidden': 'true', text: '✨ ' }), h('strong', { text: t('foryouTitle', 'For you') })]),
+			body
+		]);
+		api('/lesson/personalize', 'POST', { lesson_id: L.id }).then(function (r) {
+			if (r && r.ok && r.text) {
+				body.innerHTML = '';
+				body.appendChild(h('p', { text: r.text }));
+			} else {
+				card.remove();
+			}
+		}).catch(function () { card.remove(); });
+		return card;
+	}
 
 	// A "generate fresh practice" panel, shown only when the learner is
 	// enrolled and the AI provider is available (the questions are AI-authored).

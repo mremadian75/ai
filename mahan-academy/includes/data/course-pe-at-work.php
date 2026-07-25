@@ -22,7 +22,9 @@ return array(
 	'description' => '<p>You already know how to write a decent prompt. This course is about what comes next at work: turning that skill into <strong>workflows</strong> you and your team can rely on every day, instead of reinventing a good prompt every time you need one.</p>'
 		. '<p>You will build fill-in-the-blanks templates, learn dependable patterns for summarising and rewriting long documents, follow a calm diagnostic loop for fixing prompts that misbehave, and set up a shared prompt library with light rules everyone can actually follow. Practical, tool-agnostic, and ready to use on Monday morning.</p>',
 	'category'    => 'Prompt Engineering',
-	'level'       => 'intermediate',
+	'track'       => 'prompt-engineering',
+	'level_rank'  => 3,
+	'level'       => 'advanced',
 	'est_hours'   => 4,
 	'featured'    => false,
 	'certificate' => true,

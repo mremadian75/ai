@@ -23,6 +23,8 @@ return array(
 	'description' => '<p>Once you can write a clear prompt, the next leap is <strong>reliability</strong> — getting the same high quality every time, in a shape you can actually use. That comes from a small set of named <em>patterns</em> that experienced prompt engineers reach for again and again.</p>'
 		. '<p>This intermediate course teaches four of the most valuable: teaching by example (few-shot), asking the model to reason step by step (chain-of-thought), forcing machine-ready output (JSON, tables, and lists), and fencing off your data with delimiters and guardrails. Each is practical, tool-agnostic, and something you can apply to real work the same day.</p>',
 	'category'    => 'Prompt Engineering',
+	'track'       => 'prompt-engineering',
+	'level_rank'  => 2,
 	'level'       => 'intermediate',
 	'est_hours'   => 4,
 	'featured'    => false,

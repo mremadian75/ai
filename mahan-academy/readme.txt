@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.22.0
+Stable tag: 1.23.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -45,7 +45,7 @@ Mahan Academy is a self-contained learning plugin built to teach people how to u
 * End-of-unit quizzes with instant grading and a passing score
 * Learning paths — group courses into a guided, ordered program
 * Email notifications (welcome, completion, achievement, streak reminder)
-* Admin reports & analytics with CSV export
+* Admin reports & analytics with CSV export — including a register of every issued certificate (serial, recipient, course, date) and a breakdown of what level your learners actually placed at
 * Placement test: a short assessment that measures where a learner actually is and starts them on the matching rung of every course ladder. Authored questions and arithmetic scoring — no API key needed, same answer twice. Options are shuffled per sitting, so guessing the same slot every time gets you nowhere
 * Verifiable certificates: issued automatically the moment a course is completed, with the date actually earned and a unique serial. Anyone can check a serial at the public verification page without logging in, and it reveals only who completed what, and when
 * Featured courses, promo videos, prerequisites, and printable completion certificates
@@ -78,6 +78,9 @@ You don't have to do anything — the starter catalog installs automatically on 
 Each course lists the authoritative references it is grounded in under "Further reading & sources" on the course page — peer-reviewed papers, standards and institutional guidance (NIST AI Risk Management Framework, EU AI Act, UNESCO, OECD, OWASP, C2PA), textbooks, and official provider documentation.
 
 == Changelog ==
+
+= 1.23.0 =
+Finishes what 1.22.0 started. The placement test could measure your level but then point you at only one subject, because only the ChatGPT family was wired as a ladder. Prompt Engineering, Machine Learning and Generative AI are now real three-rung tracks too (Foundations -> Patterns/Supervised/LLMs -> At Work/Practical/RAG), so ladders, "Step 2 of 3" card tags and the placement result work across the catalog. Also fixes an upgrade path that would otherwise have been silently missed: the seeder skips courses that already exist, which meant metadata added in a later version could never reach a site that had already installed — every existing site would have kept a flat catalog forever. A structural refresh now updates only what the plugin owns (ladder wiring), never your edited content, once per version. For operators: the admin Reports screen now lists issued certificates with a CSV export, plus a placement-level breakdown of your audience. No schema change.
 
 = 1.22.0 =
 Placement tests and real certificates. A new 12-question placement test works out which rung of each ladder a learner should start on before they pick anything — authored questions and arithmetic scoring, so it works with no API key and gives the same answer twice. You place at the highest tier you actually demonstrated (two-thirds right, and every tier below it cleared), not on a total, so one lucky expert answer can't call a beginner an expert. Certificates are now genuine credentials: issued automatically when a course is completed, recorded with the date actually earned and a serial like MA-2026-7F3KQX92, and publicly verifiable at ?view=verify with no login. The old certificate was a card the browser drew on demand stamped with today's date, recorded nowhere and checkable by nobody. Anyone who already finished a course is back-filled once. First schema change in eleven releases: DB goes to v5.

@@ -62,6 +62,8 @@ return array(
 	'description' => '<p>Everyone can type a question into an AI chat box. <strong>Prompting</strong> is the skill of getting a genuinely useful answer — reliably, and without three rounds of back-and-forth.</p>'
 		. '<p>This course starts from zero. You will learn how a language model actually reads your request, the four parts every strong prompt shares, and simple moves that turn a vague reply into exactly what you needed. No coding, no jargon — just practical technique you can use in any AI tool today.</p>',
 	'category'    => 'Prompt Engineering',
+	'track'       => 'prompt-engineering',
+	'level_rank'  => 1,
 	'level'       => 'beginner',
 	'est_hours'   => 3,
 	'featured'    => true,

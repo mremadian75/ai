@@ -22,7 +22,9 @@ return array(
 	'description' => '<p>Great machine learning is far more than picking a clever algorithm. The teams that succeed are the ones who <strong>frame the problem well, prepare honest data, and ship responsibly</strong> — and this course walks you through that whole journey with practical, example-driven steps.</p>'
 		. '<p>Starting from a vague ask like "reduce churn", you will define a real prediction target, hunt down the data problems that quietly wreck models, beat a simple baseline, and deploy something you can actually monitor over time. No heavy math — just the working judgment that separates a demo from a model people rely on.</p>',
 	'category'    => 'Machine Learning',
-	'level'       => 'intermediate',
+	'track'       => 'machine-learning',
+	'level_rank'  => 3,
+	'level'       => 'advanced',
 	'est_hours'   => 4,
 	'featured'    => false,
 	'certificate' => true,

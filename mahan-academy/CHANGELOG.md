@@ -4,6 +4,83 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.23.0]
+
+Finishes what 1.22.0 started. The placement test could measure a learner's
+level, then point them at exactly **one** subject — because only the ChatGPT
+family was wired as a ladder. Now four subjects are. **No schema change —
+DB stays v5.**
+
+### Three more ladders
+
+Prompt Engineering, Machine Learning and Generative AI were already
+progressions in everything but metadata. They're now real tracks:
+
+| Track | 1 · Beginner | 2 · Intermediate | 3 · Advanced |
+| --- | --- | --- | --- |
+| `prompt-engineering` | Prompting Foundations | Prompt Patterns & Techniques | Prompt Engineering at Work |
+| `machine-learning` | ML Foundations | Supervised Learning Essentials | Practical ML: Idea to Model |
+| `generative-ai` | Generative AI, Explained | How LLMs Work | Grounding AI (RAG) |
+
+Each third rung moved from `intermediate` to `advanced` — the level now matches
+the rung, which the ladder UI and the placement result both read. The AI Tools
+courses (Claude, Gemini, image generation) are deliberately **not** a track:
+they're different tools, not levels of one subject.
+
+Everything that keys off tracks now works across the catalog rather than for
+one subject: level ladders on four course pages, "Step 2 of 3" on cards, and a
+placement result that names a starting point in every subject.
+
+### The upgrade path that would have been missed
+
+`Mahan_Seed::install()` skips courses that already exist — correctly, because
+the site owner may have edited them. But "don't touch the content" was
+implemented as "skip entirely", which means **metadata added in a later version
+could never reach a site that had already seeded**. Every existing install would
+have kept a flat catalog forever, and the ladders above would only have appeared
+on brand-new sites.
+
+- New `refresh_course_meta()` updates only what the plugin owns — ladder track,
+  rung, and the level the rung implies — and never title, body, lessons or
+  exercises.
+- References are filled in only when absent, so a curated set is never
+  overwritten.
+- `maybe_refresh_structure()` runs the sweep once per version, claimed with an
+  atomic per-version `add_option` (no separate lock that a fatal mid-sweep could
+  strand, blocking every future refresh).
+
+### Operator visibility
+
+An operator handed a serial by a candidate had no way to look it up — the admin
+never showed certificates at all.
+
+- **Certificates issued** table in Reports (serial, recipient, course, date)
+  with a total count and a **CSV export**, run through the same
+  formula-injection guard as the existing export.
+- **Placement levels** table showing how the audience actually splits across
+  the four tiers — the answer to "is my catalog pitched at the people I have?".
+
+### Validator
+
+The seed validator now checks ladder coherence, which is exactly the class of
+mistake made by hand above: duplicate rungs on a track, a level that disagrees
+with its rank, a rank outside 1–4, `level_rank` with no track, and gaps in a
+ladder (a gap silently drops a learner placed at the missing level to a lower
+rung). A single-rung track warns rather than errors. All five failure modes were
+confirmed to actually fire against injected bad data — a validator that never
+fails is worthless.
+
+### Verification
+
+- Seed validator PASS, now printing all four ladders; its five new checks
+  negative-tested against deliberately broken fixtures.
+- **15-assertion refresh suite**: an existing course picking up track/rung/level,
+  owner-edited fields and post content left alone, missing references filled but
+  curated ones preserved, no track meaning no level rewrite, idempotence,
+  invalid ids writing nothing, and the atomic per-version gate.
+- All seven logic suites and all twelve render harnesses still pass; `php -l`
+  and `node --check` clean.
+
 ## [1.22.0]
 
 Two things a learning platform needs and this one didn't have: a way to find

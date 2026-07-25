@@ -159,8 +159,99 @@ class Mahan_Reports {
 	}
 
 	/* ------------------------------------------------------------------ */
+	/* Certificates & placement                                            */
+	/* ------------------------------------------------------------------ */
+
+	/**
+	 * Recently issued certificates.
+	 *
+	 * An operator handed a serial by a candidate needs to be able to look it
+	 * up, which means the admin has to show them at all.
+	 *
+	 * @param int $limit How many.
+	 * @return array[] { serial, user, course, issued_at }
+	 */
+	public static function certificates( $limit = 50 ) {
+		global $wpdb;
+		$table = Mahan_DB::certificates();
+		$rows  = $wpdb->get_results(
+			$wpdb->prepare( "SELECT user_id, course_id, serial, issued_at FROM {$table} WHERE revoked = 0 ORDER BY issued_at DESC, id DESC LIMIT %d", max( 1, (int) $limit ) ), // phpcs:ignore WordPress.DB
+			ARRAY_A
+		);
+		$out = array();
+		foreach ( (array) $rows as $r ) {
+			$u = get_userdata( (int) $r['user_id'] );
+			$out[] = array(
+				'serial'    => (string) $r['serial'],
+				'user'      => $u ? $u->display_name : __( '(deleted user)', 'mahan-academy' ),
+				'course'    => get_the_title( (int) $r['course_id'] ),
+				'issued_at' => (string) $r['issued_at'],
+			);
+		}
+		return $out;
+	}
+
+	/**
+	 * How many certificates exist in total (the list above is capped).
+	 */
+	public static function certificate_count() {
+		global $wpdb;
+		$table = Mahan_DB::certificates();
+		return (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table} WHERE revoked = 0" ); // phpcs:ignore WordPress.DB
+	}
+
+	/**
+	 * Placement level distribution — tells an operator whether the catalog is
+	 * pitched at the audience it actually has.
+	 *
+	 * @return array level => count, plus 'untested'.
+	 */
+	public static function placement_spread() {
+		global $wpdb;
+		$out = array( 'beginner' => 0, 'intermediate' => 0, 'advanced' => 0, 'expert' => 0 );
+		$rows = $wpdb->get_col( $wpdb->prepare( "SELECT meta_value FROM {$wpdb->usermeta} WHERE meta_key = %s", Mahan_Placement::META ) ); // phpcs:ignore WordPress.DB
+		$tested = 0;
+		foreach ( (array) $rows as $raw ) {
+			$v = maybe_unserialize( $raw );
+			if ( ! is_array( $v ) || empty( $v['level'] ) ) {
+				continue;
+			}
+			$level = (string) $v['level'];
+			if ( isset( $out[ $level ] ) ) {
+				$out[ $level ]++;
+				$tested++;
+			}
+		}
+		$out['tested'] = $tested;
+		return $out;
+	}
+
+	/* ------------------------------------------------------------------ */
 	/* CSV export (per-course)                                             */
 	/* ------------------------------------------------------------------ */
+
+	/**
+	 * Every issued certificate, as CSV — the register an operator can keep.
+	 */
+	public static function export_certificates_csv() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Forbidden', 'mahan-academy' ) );
+		}
+		check_admin_referer( 'mahan_export_certs' );
+
+		$rows = self::certificates( 100000 );
+		nocache_headers();
+		header( 'Content-Type: text/csv; charset=utf-8' );
+		header( 'Content-Disposition: attachment; filename=mahan-certificates-' . gmdate( 'Ymd' ) . '.csv' );
+
+		$fh = fopen( 'php://output', 'w' );
+		fputcsv( $fh, array( 'Serial', 'Recipient', 'Course', 'Issued' ) );
+		foreach ( $rows as $r ) {
+			fputcsv( $fh, array( self::csv_safe( $r['serial'] ), self::csv_safe( $r['user'] ), self::csv_safe( $r['course'] ), $r['issued_at'] ) );
+		}
+		fclose( $fh );
+		exit;
+	}
 
 	public static function export_csv() {
 		if ( ! current_user_can( 'manage_options' ) ) {

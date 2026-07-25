@@ -22,6 +22,8 @@ return array(
 	'description' => '<p>Generative AI went from a curiosity to an everyday tool almost overnight, and the hype makes it hard to tell what it actually does. This course cuts through the noise with a clear, jargon-free explanation of what these tools really are.</p>'
 		. '<p>You will learn how generative AI differs from the AI that came before it, meet the main families of tools for text, images, audio, and code, and — most importantly — understand where they fail so you can use them confidently and safely at work and at home.</p>',
 	'category'    => 'Generative AI',
+	'track'       => 'generative-ai',
+	'level_rank'  => 1,
 	'level'       => 'beginner',
 	'est_hours'   => 3,
 	'featured'    => true,

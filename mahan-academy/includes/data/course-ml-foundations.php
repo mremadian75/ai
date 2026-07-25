@@ -23,6 +23,8 @@ return array(
 	'description' => '<p>Everyone has heard the phrase <strong>machine learning</strong>, but few can say what it actually means. This course clears that up in plain language — no maths, no code, no jargon — using everyday examples like spam filters, product recommendations, and house prices.</p>'
 		. '<p>You will learn how machine learning differs from ordinary programming, the three main types and when each is used, and the workflow every project follows: data, features and labels, and the all-important train/test split. By the end you will understand what people mean when they talk about ML — and be ready to go deeper with confidence.</p>',
 	'category'    => 'Machine Learning',
+	'track'       => 'machine-learning',
+	'level_rank'  => 1,
 	'level'       => 'beginner',
 	'est_hours'   => 3,
 	'featured'    => true,

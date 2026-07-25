@@ -22,7 +22,9 @@ return array(
 	'description' => '<p>Ask a general AI assistant about your company\'s refund policy and it will answer confidently — and probably wrongly. It has never seen your policy. The fix has a name: <strong>retrieval-augmented generation</strong>, or RAG.</p>'
 		. '<p>This course explains RAG without the jargon: why grounding beats memorising, how a system finds the right passage to hand the model, and how to tell whether an answer is genuinely sourced. You will finish able to judge and specify AI-over-your-documents tools rather than just trusting them.</p>',
 	'category'    => 'Generative AI',
-	'level'       => 'intermediate',
+	'track'       => 'generative-ai',
+	'level_rank'  => 3,
+	'level'       => 'advanced',
 	'est_hours'   => 3,
 	'featured'    => false,
 	'certificate' => true,

@@ -81,12 +81,29 @@ lessons** — concept-level "مباحث"/skills that the AI tutor and question g
 key off). `Mahan_Courses::course_topics()` / `lesson_topics()` read them; the
 lesson's topics are named to the tutor in its lesson-context block.
 
+**Ladders.** Four subject tracks ship wired: `chatgpt` (4 rungs),
+`prompt-engineering`, `machine-learning` and `generative-ai` (3 each). A rung's
+`level` must match its `level_rank` (1 beginner, 2 intermediate, 3 advanced,
+4 expert) — the ladder UI and the placement result both read it, and the seed
+validator errors on a mismatch, a duplicate rung, a rank outside 1–4, a
+`level_rank` with no track, or a gap in a ladder. The AI Tools courses (Claude,
+Gemini, image generation) are deliberately not a track: different tools, not
+levels of one subject.
+
 **Starter content** (`Mahan_Seed`) turns the curated `includes/data/` library into
 real posts on demand: it creates the category + topic terms, inserts each course
 with its units, lessons (HTML + exercises + topics) and unit quizzes, and wires
 the courses into bundles. Every seeded post carries a `_mahan_seed_key` marker,
 so `Mahan_Seed::install()` is idempotent — re-running skips existing content and
-only relinks bundle membership. Triggered from the admin dashboard
+only relinks bundle membership — but it does refresh *structural* metadata on
+those skipped courses via `refresh_course_meta()` (ladder track/rung/level, and
+references only when absent). That distinction matters: "skip" must mean "don't
+touch the owner's content", not "never learn anything new", or metadata added in
+a later version could never reach a site that already seeded.
+`maybe_refresh_structure()` runs that sweep once per version, claimed with an
+atomic per-version `add_option` — deliberately not a separate lock option, which
+a fatal mid-sweep could strand and thereby block every future refresh.
+Triggered from the admin dashboard
 (`admin_post_mahan_seed_install`) and **auto-installed by default** via
 `Mahan_Seed::maybe_autoseed()` — on activation and as a one-time `init` catch-up
 (atomic `add_option` gate; only seeds an empty site, never re-imposes). Ships

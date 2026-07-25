@@ -117,6 +117,11 @@ class Mahan_Plugin {
 		// 20 > CPT's 5) and self-guards to run its work at most once.
 		add_action( 'init', array( 'Mahan_Seed', 'maybe_autoseed' ), 20 );
 
+		// Sites that seeded before a later version added ladder wiring keep
+		// their content but pick up the structural metadata. Runs after the
+		// CPTs/taxonomies register, and self-guards to run once per version.
+		add_action( 'init', array( 'Mahan_Seed', 'maybe_refresh_structure' ), 21 );
+
 		if ( is_admin() ) {
 			Mahan_Admin::init();
 		}

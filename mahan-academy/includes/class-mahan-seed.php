@@ -176,6 +176,13 @@ class Mahan_Seed {
 			if ( $existing ) {
 				$map[ $seed_key ] = $existing;
 				$result['skipped']++;
+				// Skipped means "don't touch the content" — the site owner may
+				// have edited it. It must not mean "never learn anything new":
+				// structural wiring the plugin owns (ladder position, sources)
+				// is added in later versions, and without this refresh every
+				// site that seeded before a ladder existed would keep a flat
+				// catalog forever.
+				self::refresh_course_meta( $existing, $course );
 				continue;
 			}
 			$made = self::install_course( $course, $result );
@@ -200,6 +207,97 @@ class Mahan_Seed {
 	/* ------------------------------------------------------------------ */
 	/* Course                                                              */
 	/* ------------------------------------------------------------------ */
+
+	/**
+	 * Bring an already-installed course's *structural* metadata up to date.
+	 *
+	 * The boundary is deliberate: once a course is installed, its prose is the
+	 * site owner's — title, description, lessons and exercises are never
+	 * touched here. Ladder position and cited sources are the plugin's, and
+	 * they change between versions.
+	 *
+	 * Only fills what the current data actually declares, so a later version
+	 * dropping a field can't silently blank a site's metadata.
+	 *
+	 * @param int   $post_id Existing course post id.
+	 * @param array $c       Course data from the library.
+	 */
+	private static function refresh_course_meta( $post_id, $c ) {
+		$post_id = (int) $post_id;
+		if ( $post_id < 1 ) {
+			return;
+		}
+
+		if ( ! empty( $c['track'] ) ) {
+			$level = isset( $c['level'] ) ? (string) $c['level'] : 'beginner';
+			update_post_meta( $post_id, Mahan_Variants::M_TRACK, sanitize_title( (string) $c['track'] ) );
+			update_post_meta(
+				$post_id,
+				Mahan_Variants::M_LEVEL_RANK,
+				isset( $c['level_rank'] ) ? max( 1, (int) $c['level_rank'] ) : Mahan_Variants::level_rank( $level )
+			);
+			// The rung and the level have to agree or the ladder mislabels
+			// itself, so a course that joined a track also takes its level.
+			update_post_meta( $post_id, Mahan_Courses::M_LEVEL, $level );
+		}
+
+		if ( ! empty( $c['references'] ) && is_array( $c['references'] ) ) {
+			$existing = get_post_meta( $post_id, Mahan_Courses::M_REFERENCES, true );
+			// Don't overwrite references an owner curated themselves.
+			if ( empty( $existing ) ) {
+				$refs = self::clean_references( $c['references'] );
+				if ( ! empty( $refs ) ) {
+					update_post_meta( $post_id, Mahan_Courses::M_REFERENCES, $refs );
+				}
+			}
+		}
+	}
+
+	/**
+	 * @param array $list Raw references.
+	 * @return array[] { title, source, url }
+	 */
+	private static function clean_references( $list ) {
+		$refs = array();
+		foreach ( (array) $list as $ref ) {
+			if ( ! is_array( $ref ) || empty( $ref['title'] ) ) {
+				continue;
+			}
+			$refs[] = array(
+				'title'  => sanitize_text_field( (string) $ref['title'] ),
+				'source' => isset( $ref['source'] ) ? sanitize_text_field( (string) $ref['source'] ) : '',
+				'url'    => isset( $ref['url'] ) ? esc_url_raw( (string) $ref['url'] ) : '',
+			);
+		}
+		return $refs;
+	}
+
+	/**
+	 * One-time structural refresh for sites that seeded before this version.
+	 *
+	 * Separate from maybe_autoseed(), which only ever seeds an *empty* site —
+	 * the sites that need this are precisely the ones that already have
+	 * content. Keyed on the version so it runs once per release that needs it,
+	 * and gated atomically so two concurrent requests can't both sweep.
+	 */
+	public static function maybe_refresh_structure() {
+		// One option per version, claimed with add_option — atomic, and with
+		// no separate lock that could be stranded by a fatal mid-sweep and
+		// block every future refresh.
+		if ( false === add_option( 'mahan_seed_struct_' . MAHAN_VERSION, '1', '', 'no' ) ) {
+			return;
+		}
+
+		foreach ( self::courses_data() as $course ) {
+			if ( empty( $course['seed_key'] ) ) {
+				continue;
+			}
+			$existing = self::find_by_seed_key( Mahan_CPT::COURSE, (string) $course['seed_key'] );
+			if ( $existing ) {
+				self::refresh_course_meta( $existing, $course );
+			}
+		}
+	}
 
 	/**
 	 * @param array $c      Course data.
@@ -244,17 +342,7 @@ class Mahan_Seed {
 
 		// Further reading: the authoritative sources the course is grounded in.
 		if ( ! empty( $c['references'] ) && is_array( $c['references'] ) ) {
-			$refs = array();
-			foreach ( $c['references'] as $ref ) {
-				if ( ! is_array( $ref ) || empty( $ref['title'] ) ) {
-					continue;
-				}
-				$refs[] = array(
-					'title'  => sanitize_text_field( (string) $ref['title'] ),
-					'source' => isset( $ref['source'] ) ? sanitize_text_field( (string) $ref['source'] ) : '',
-					'url'    => isset( $ref['url'] ) ? esc_url_raw( (string) $ref['url'] ) : '',
-				);
-			}
+			$refs = self::clean_references( $c['references'] );
 			if ( ! empty( $refs ) ) {
 				update_post_meta( $post_id, Mahan_Courses::M_REFERENCES, $refs );
 			}

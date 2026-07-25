@@ -23,6 +23,8 @@ return array(
 	'description' => '<p>Large language models can write, summarise, and reason — but most people use them with no idea of what is happening under the hood. That gap is exactly why prompts misfire and why a confident answer can be quietly wrong.</p>'
 		. '<p>This course opens the black box without a single equation. You will see how an LLM builds an answer one token at a time, why training on huge amounts of text makes it fluent but not infallible, and how simple controls like temperature, system prompts, retrieval, and fine-tuning let you shape what it does. Practical intuition you can use in any AI tool today.</p>',
 	'category'    => 'Generative AI',
+	'track'       => 'generative-ai',
+	'level_rank'  => 2,
 	'level'       => 'intermediate',
 	'est_hours'   => 4,
 	'featured'    => false,

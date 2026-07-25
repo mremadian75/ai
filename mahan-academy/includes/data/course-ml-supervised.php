@@ -23,6 +23,8 @@ return array(
 	'description' => '<p><strong>Supervised learning</strong> is where most real-world machine learning lives — from forecasting sales to flagging fraud to sorting support tickets. If you can frame a problem as "here are examples with the right answers, now predict the answer for new cases", this is the toolkit you reach for.</p>'
 		. '<p>This course gives you the working mental models behind the two core tasks — regression and classification — and, just as important, how to tell whether a trained model is genuinely good. You will learn why accuracy alone can lie, what precision and recall really measure, and how to catch a model that has memorised instead of learned. No heavy maths, just the intuition practitioners actually use.</p>',
 	'category'    => 'Machine Learning',
+	'track'       => 'machine-learning',
+	'level_rank'  => 2,
 	'level'       => 'intermediate',
 	'est_hours'   => 4,
 	'featured'    => false,

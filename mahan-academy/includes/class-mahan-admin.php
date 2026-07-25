@@ -17,6 +17,7 @@ class Mahan_Admin {
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'assets' ) );
 		add_action( 'wp_ajax_mahan_test_ai', array( __CLASS__, 'ajax_test_ai' ) );
 		add_action( 'admin_post_mahan_export_csv', array( 'Mahan_Reports', 'export_csv' ) );
+		add_action( 'admin_post_mahan_export_certs', array( 'Mahan_Reports', 'export_certificates_csv' ) );
 		add_action( 'admin_post_mahan_seed_install', array( __CLASS__, 'handle_seed_install' ) );
 
 		Mahan_Course_Meta::init();
@@ -499,6 +500,10 @@ class Mahan_Admin {
 		$recent  = Mahan_Reports::recent( 15 );
 		$top     = Mahan_Reports::top_learners( 10 );
 		$export  = wp_nonce_url( admin_url( 'admin-post.php?action=mahan_export_csv' ), 'mahan_export' );
+		$certs      = Mahan_Reports::certificates( 25 );
+		$cert_total = Mahan_Reports::certificate_count();
+		$placement  = Mahan_Reports::placement_spread();
+		$cert_export = wp_nonce_url( admin_url( 'admin-post.php?action=mahan_export_certs' ), 'mahan_export_certs' );
 
 		$cards = array(
 			array( __( 'Learners', 'mahan-academy' ), number_format_i18n( $o['learners'] ) ),
@@ -594,6 +599,64 @@ class Mahan_Admin {
 					</table>
 				</div>
 			</div>
+
+			<h2><?php esc_html_e( 'Placement levels', 'mahan-academy' ); ?></h2>
+			<p class="mahan-muted">
+				<?php
+				printf(
+					/* translators: %s: number of learners who have taken the placement test. */
+					esc_html__( '%s learners have taken the placement test. This is who your catalog is actually being read by.', 'mahan-academy' ),
+					esc_html( number_format_i18n( (int) $placement['tested'] ) )
+				);
+				?>
+			</p>
+			<table class="widefat striped" style="max-width:520px">
+				<thead><tr><th><?php esc_html_e( 'Level', 'mahan-academy' ); ?></th><th><?php esc_html_e( 'Learners', 'mahan-academy' ); ?></th></tr></thead>
+				<tbody>
+					<?php
+					$level_labels = array(
+						'beginner'     => __( 'Beginner', 'mahan-academy' ),
+						'intermediate' => __( 'Intermediate', 'mahan-academy' ),
+						'advanced'     => __( 'Advanced', 'mahan-academy' ),
+						'expert'       => __( 'Expert', 'mahan-academy' ),
+					);
+					foreach ( $level_labels as $key => $label ) :
+						?>
+						<tr>
+							<td><?php echo esc_html( $label ); ?></td>
+							<td><?php echo esc_html( number_format_i18n( (int) $placement[ $key ] ) ); ?></td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+
+			<h2 style="margin-top:26px">
+				<?php esc_html_e( 'Certificates issued', 'mahan-academy' ); ?>
+				<span class="mahan-muted">(<?php echo esc_html( number_format_i18n( $cert_total ) ); ?>)</span>
+			</h2>
+			<p>
+				<a class="button" href="<?php echo esc_url( $cert_export ); ?>"><?php esc_html_e( 'Export certificates (CSV)', 'mahan-academy' ); ?></a>
+			</p>
+			<table class="widefat striped">
+				<thead><tr>
+					<th><?php esc_html_e( 'Serial', 'mahan-academy' ); ?></th>
+					<th><?php esc_html_e( 'Recipient', 'mahan-academy' ); ?></th>
+					<th><?php esc_html_e( 'Course', 'mahan-academy' ); ?></th>
+					<th><?php esc_html_e( 'Issued', 'mahan-academy' ); ?></th>
+				</tr></thead>
+				<tbody>
+					<?php if ( empty( $certs ) ) : ?>
+						<tr><td colspan="4"><?php esc_html_e( 'No certificates issued yet.', 'mahan-academy' ); ?></td></tr>
+					<?php else : foreach ( $certs as $c ) : ?>
+						<tr>
+							<td><code><?php echo esc_html( $c['serial'] ); ?></code></td>
+							<td><?php echo esc_html( $c['user'] ); ?></td>
+							<td><?php echo esc_html( $c['course'] ); ?></td>
+							<td><?php echo esc_html( $c['issued_at'] ); ?></td>
+						</tr>
+					<?php endforeach; endif; ?>
+				</tbody>
+			</table>
 		</div>
 		<?php
 	}

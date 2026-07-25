@@ -16,6 +16,7 @@ mahan-academy/
 │   ├── class-mahan-utils.php            # time, meta, JSON, placeholder helpers
 │   ├── class-mahan-db.php                # 9 custom tables + AI cache
 │   ├── class-mahan-settings.php          # options + defaults + profile schema
+│   ├── class-mahan-i18n.php              # language resolution, learner preference, catalogs
 │   ├── class-mahan-cpt.php               # mahan_course / mahan_lesson + taxonomy
 │   ├── class-mahan-profile.php           # schema-driven learner profile (user meta)
 │   ├── class-mahan-courses.php           # course/lesson structure + meta keys + topics
@@ -53,6 +54,12 @@ mahan-academy/
     ├── course-*.php              # one file per seed course (returns a course array)
     ├── bundles.php               # specialization bundles (return an array of paths)
     └── placement.php             # placement question bank (tier-tagged)
+└── languages/                    # gettext catalogs
+    ├── mahan-academy.pot         # template, regenerated from source
+    ├── mahan-academy-es_ES.po    # Spanish, generated from the dictionary
+    └── mahan-academy-es_ES.mo    # compiled — the one WordPress loads
+└── tools/                        # translation toolchain (see "Translations")
+    ├── make-pot.php  i18n-es.php  make-po.php  po2mo.php
 ```
 
 ---
@@ -227,6 +234,7 @@ fields) is `Mahan_Settings::default_schema()`. No new tables.
 | `POST /placement` | logged-in | Grade a sitting, store the level, return where to start on each ladder. |
 | `GET /certificates` | logged-in | The caller's issued certificates. |
 | `GET /certificate/{serial}` | **public** | Verify a serial. Public by design; returns only who/what/when. |
+| `POST /language` | public† | Record the reader's language. Public so guests can switch before signing up (†still requires the REST nonce, so no other site can flip a learner's language). |
 | `POST /enroll` | logged-in | Enroll in a course. |
 | `POST /progress` | logged-in | Mark a lesson complete (awards XP, recomputes course %). |
 | `POST /exercise` | logged-in | Grade a submitted answer. |
@@ -486,6 +494,63 @@ UX behaviors (1.8.0):
 
 Quiz attempts reuse the `attempts` table (`type = 'quiz'`, `lesson_id = 0`,
 `exercise_key = 'quiz:<md5(unit)>'`), so v1.2.0 still adds no tables.
+
+---
+
+## Translations
+
+The plugin ships English (source) and Spanish, and the whole toolchain is in
+`tools/` because `xgettext` / `msgfmt` / WP-CLI are not present everywhere, and
+a translation that only exists as a `.po` is a translation WordPress ignores.
+
+Adding or updating a language:
+
+```bash
+php tools/make-pot.php              # rescan source → languages/mahan-academy.pot
+# edit tools/i18n-<lang>.php  (msgid => translation; an array supplies plurals)
+php tools/make-po.php es_ES         # merge dictionary + template → .po
+php tools/po2mo.php languages/mahan-academy-es_ES.po   # → .mo
+```
+
+`make-po` reports two things worth acting on: strings with no translation yet
+(they fall back to English), and **orphans** — dictionary entries matching no
+source string, which is almost always a source string that changed underneath a
+translation, leaving it silently doing nothing.
+
+`po2mo` deliberately omits untranslated entries. Writing them would make gettext
+return the empty string as the "translation" and blank the UI, which is worse
+than falling back to English.
+
+### How a locale is chosen
+
+`Mahan_I18n` filters `plugin_locale` for this textdomain only — nothing else on
+the page changes language, which is what makes it safe to let a learner choose.
+Resolution order on the front end:
+
+1. The learner's stored preference (user meta `mahan_lang`), or for signed-out
+   visitors the `mahan_lang` cookie. A signed-in account always outranks a
+   leftover guest cookie.
+2. `default_language` from settings, when the site pins one.
+3. WordPress's own locale, mapped to the nearest catalog in the same language
+   family — so `es_MX` gets Spanish rather than falling back to English.
+
+wp-admin is excluded and keeps WordPress's rules: an editor's admin screens
+should not switch because they once read a course in Spanish. `admin-ajax` is
+ruled back in by hand — it reports `is_admin()` while serving the front end.
+
+To render in another learner's language (background jobs, notifications), use
+`Mahan_I18n::with_user( $user_id, $callback )`. It swaps only this plugin's
+catalog and restores it even if the callback throws — `switch_to_locale()` would
+move the entire site, which is far more than a background job needs.
+
+### What is not translated
+
+Course prose, lesson bodies, quiz questions and email templates are rows in the
+database written by the site owner. Gettext does not reach them, and the plugin
+does not pretend otherwise. `Mahan_Front::strings()` is the boundary: everything
+the SPA renders comes through it, wrapped in `__()`, resolved server-side at
+boot. The app does no client-side translation — switching language reloads the
+document rather than re-rendering, because the strings live on the server.
 
 ---
 

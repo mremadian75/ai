@@ -65,6 +65,19 @@ class Mahan_Front {
 		$user_id = get_current_user_id();
 		$user    = $user_id ? wp_get_current_user() : null;
 
+		// Offer the switcher only when there is a real choice to make and the
+		// site hasn't taken it away.
+		$languages = Mahan_I18n::available();
+		$can_switch = count( $languages ) > 1 && (int) Mahan_Settings::get( 'learner_language', 1 );
+		$lang_list  = array();
+		foreach ( $languages as $locale => $meta ) {
+			$lang_list[] = array(
+				'locale' => $locale,
+				'native' => $meta['native'],
+				'short'  => $meta['short'],
+			);
+		}
+
 		wp_localize_script(
 			'mahan-app',
 			'MahanData',
@@ -95,6 +108,9 @@ class Mahan_Front {
 				// Catalog hero copy — admin-configurable, translatable default.
 				'heroTitle'    => (string) Mahan_Settings::get( 'hero_title', '' ) ?: __( 'Learn to use AI at work', 'mahan-academy' ),
 				'heroSub'      => (string) Mahan_Settings::get( 'hero_subtitle', '' ) ?: __( 'Structured courses. Hands-on practice. A tutor that answers in real time.', 'mahan-academy' ),
+				'lang'         => Mahan_I18n::current(),
+				'langDir'      => Mahan_I18n::direction(),
+				'languages'    => $can_switch ? $lang_list : array(),
 				'i18n'         => self::strings(),
 			)
 		);
@@ -119,7 +135,7 @@ class Mahan_Front {
 		$initial = is_singular() ? esc_attr( get_the_title( get_the_ID() ) ) : '';
 		ob_start();
 		?>
-		<div id="mahan-app" class="mahan-app mahan-theme-<?php echo esc_attr( 'dark' === Mahan_Settings::get( 'theme', 'light' ) ? 'dark' : 'light' ); ?>" data-initial-title="<?php echo $initial; ?>">
+		<div id="mahan-app" class="mahan-app mahan-theme-<?php echo esc_attr( 'dark' === Mahan_Settings::get( 'theme', 'light' ) ? 'dark' : 'light' ); ?>" lang="<?php echo esc_attr( str_replace( '_', '-', Mahan_I18n::current() ) ); ?>" dir="<?php echo esc_attr( Mahan_I18n::direction() ); ?>" data-initial-title="<?php echo $initial; ?>">
 			<div class="mahan-boot">
 				<div class="mahan-boot-spinner" aria-hidden="true"></div>
 				<p><?php esc_html_e( 'Loading the academy…', 'mahan-academy' ); ?></p>
@@ -203,6 +219,8 @@ class Mahan_Front {
 			'emptyCourse'      => __( 'No lessons yet.', 'mahan-academy' ),
 			// Keyboard shortcuts.
 			'keyboardShortcuts' => __( 'Keyboard shortcuts', 'mahan-academy' ),
+			'language'         => __( 'Language', 'mahan-academy' ),
+			'languageSaved'    => __( 'Language updated', 'mahan-academy' ),
 			'scSearch'         => __( 'Search courses', 'mahan-academy' ),
 			'scLesson'         => __( 'Previous / next lesson', 'mahan-academy' ),
 			'scContinue'       => __( 'Continue learning', 'mahan-academy' ),

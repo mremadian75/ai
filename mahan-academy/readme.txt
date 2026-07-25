@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.23.0
+Stable tag: 1.24.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -49,7 +49,8 @@ Mahan Academy is a self-contained learning plugin built to teach people how to u
 * Placement test: a short assessment that measures where a learner actually is and starts them on the matching rung of every course ladder. Authored questions and arithmetic scoring — no API key needed, same answer twice. Options are shuffled per sitting, so guessing the same slot every time gets you nowhere
 * Verifiable certificates: issued automatically the moment a course is completed, with the date actually earned and a unique serial. Anyone can check a serial at the public verification page without logging in, and it reveals only who completed what, and when
 * Featured courses, promo videos, prerequisites, and printable completion certificates
-* English UI, fully translatable
+* Bilingual interface — English and Spanish, shipped compiled and ready. Each learner picks their own language from the top bar and reads the academy in it while the rest of the site stays in its own; the AI tutor answers in that language too. Course text and email templates are yours and stay as you wrote them
+* Fully translatable, with the gettext toolchain (POT extractor, PO merger, MO compiler) included so you can add a language without installing gettext binaries
 * Lightweight: vanilla JS, no build step, no external runtime dependencies
 
 == Installation ==
@@ -78,6 +79,9 @@ You don't have to do anything — the starter catalog installs automatically on 
 Each course lists the authoritative references it is grounded in under "Further reading & sources" on the course page — peer-reviewed papers, standards and institutional guidance (NIST AI Risk Management Framework, EU AI Act, UNESCO, OECD, OWASP, C2PA), textbooks, and official provider documentation.
 
 == Changelog ==
+
+= 1.24.0 =
+The academy is now bilingual: English and Spanish. All 650 interface strings are translated — learner app, admin screens, editors, badges, reports and settings. Course prose, quiz questions and email templates are deliberately NOT translated: those are your rows in your database, and the plugin says so on screen rather than half-doing the job. A language picker in the top bar lets each learner (and each signed-out visitor) read the academy in their own language, while the rest of the site stays in its own — the switch is scoped to this plugin's textdomain, so nothing else on the page moves. A guest's choice follows them onto their account when they register. Spanish variants like es_MX and es_AR now resolve to the Spanish catalog instead of falling back to English. The AI tutor, grader and question writer answer in the learner's language, and dates format in it too. Translation tooling (POT extractor, dictionary, PO merger, MO compiler) ships with the plugin, so the academy stays translatable without depending on gettext binaries being installed. Also fixes translations loading before `init` (flagged by WordPress 6.7) and a plural that used the singular form in both slots. No schema change.
 
 = 1.23.0 =
 Finishes what 1.22.0 started. The placement test could measure your level but then point you at only one subject, because only the ChatGPT family was wired as a ladder. Prompt Engineering, Machine Learning and Generative AI are now real three-rung tracks too (Foundations -> Patterns/Supervised/LLMs -> At Work/Practical/RAG), so ladders, "Step 2 of 3" card tags and the placement result work across the catalog. Also fixes an upgrade path that would otherwise have been silently missed: the seeder skips courses that already exist, which meant metadata added in a later version could never reach a site that had already installed — every existing site would have kept a flat catalog forever. A structural refresh now updates only what the plugin owns (ladder wiring), never your edited content, once per version. For operators: the admin Reports screen now lists issued certificates with a CSV export, plus a placement-level breakdown of your audience. No schema change.

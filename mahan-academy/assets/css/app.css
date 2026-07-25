@@ -1162,6 +1162,20 @@ div.mahan-lesson-row:active { transform: translateY(1px); }
 .mahan-read-progress[hidden] { display: none; }
 .mahan-read-progress span { display: block; height: 100%; width: 0; background: var(--m-primary); }
 
+/* Language switcher. Stays visible on small screens — unlike the keyboard
+   hint, a reader on a phone needs this one more, not less. */
+.mahan-lang { display: inline-flex; align-items: center; gap: 4px; }
+.mahan-lang-icon { font-size: 13px; line-height: 1; opacity: .7; }
+.mahan-lang-select {
+	appearance: none; -webkit-appearance: none;
+	border: 1px solid var(--m-border); background: var(--m-surface); color: var(--m-muted);
+	border-radius: 999px; padding: 5px 10px; font: inherit; font-size: 13px; line-height: 1;
+	cursor: pointer; max-width: 120px;
+}
+.mahan-lang-select:hover:not(:disabled) { color: var(--m-text); border-color: color-mix(in srgb, var(--m-primary) 40%, var(--m-border)); }
+.mahan-lang-select:disabled { opacity: .6; cursor: progress; }
+@media (max-width: 720px) { .mahan-lang-icon { display: none; } .mahan-lang-select { max-width: 84px; padding: 5px 8px; } }
+
 /* Keyboard shortcuts: the topbar hint + the help sheet. */
 .mahan-kbd-btn {
 	border: 1px solid var(--m-border); background: var(--m-surface); color: var(--m-muted);

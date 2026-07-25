@@ -192,6 +192,31 @@ groups several courses in a recommended order.
   learner's first lesson. The answers fill `{{placeholders}}` in the tutor's
   system prompt (Settings → AI Provider), personalizing every conversation.
 
+### Language
+
+At the bottom of **Settings → Appearance**:
+
+- **Academy language** — what a learner sees before they choose anything.
+  "Follow the site language" is the default; pick English or Spanish to pin it
+  regardless of what WordPress is set to.
+- **Learner choice** — leave on to show a language picker in the academy's top
+  bar. Each learner's choice applies to the academy only; the rest of your site
+  stays in its own language. Signed-out visitors can switch too, and their
+  choice follows them onto their account when they register.
+
+You can also see and change any individual learner's language on their
+WordPress user profile, under **Mahan Academy → Academy language**.
+
+**What gets translated:** the interface — every button, label, heading,
+message and admin screen the plugin renders. The AI tutor also answers in the
+learner's language.
+
+**What doesn't:** your course text, lesson bodies, quiz questions and the email
+templates on the Emails tab. Those are your words, stored in your database, and
+the plugin leaves them exactly as you wrote them. If you want a Spanish course,
+write a Spanish course — the starter catalog is English, and you can edit or
+duplicate it like any other WordPress content.
+
 ---
 
 ## 10. Go live

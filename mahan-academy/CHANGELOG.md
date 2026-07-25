@@ -4,6 +4,88 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.24.0]
+
+The academy speaks Spanish. **No schema change — DB stays v5.**
+
+### What is bilingual, and what isn't
+
+Every string the plugin itself renders — all 650 of them, across the learner
+app, the admin screens, the course and lesson editors, badges, emails chrome,
+reports and settings — now has a Spanish translation. That is the interface.
+
+What is **not** translated, and won't pretend to be: course prose, lesson
+bodies, quiz questions, and the email templates in Settings. Those are rows in
+your database, written by whoever runs the site. The plugin has no business
+rewriting them, and saying so plainly is better than a feature that quietly
+does half a job. The admin Language panel says the same thing on screen.
+
+### The switch is the learner's, and it is narrow
+
+WordPress already has a site locale, and since 4.7 a per-user locale — but that
+one only applies inside wp-admin. Neither covers the case an academy actually
+has: a learner reading in Spanish on a site whose theme, admin, and every other
+plugin stay in English.
+
+So the switch is scoped to this plugin's textdomain via the `plugin_locale`
+filter. Nothing else on the page changes language, and that narrowness is
+exactly what makes it safe to hand the control to the learner instead of
+reserving it for an administrator:
+
+- A **language picker in the top bar**, on every view, for signed-in learners
+  and signed-out visitors alike — a visitor browsing the catalog can read it in
+  their own language before deciding to sign up.
+- Each language is listed **in its own name** ("Español", not "Spanish"):
+  someone hunting for their language can't read the English word for it.
+- A guest's choice lives in a cookie and is **adopted onto their account** the
+  first time they sign in, so registering doesn't reset them to English.
+- The picker **doesn't appear at all** on a site with one language. An inert
+  control offering a single option is worse than no control.
+- Operators can see and fix a learner's language on the WordPress user profile,
+  and can turn learner choice off entirely in *Settings → Appearance → Language*.
+
+`es_MX`, `es_AR` and every other Spanish variant now resolve to the Spanish
+catalog rather than falling all the way back to English, which is what those
+sites were plainly asking for.
+
+### The tutor answers in your language
+
+Translating the buttons around a tutor that only replies in English is a
+half-finished job — the part of the product a learner actually talks to has to
+answer them back. The language instruction rides in the shared learner-context
+block, so the tutor, the AI grader and the question writer all pick it up at
+once. Dates follow the academy's language too: a Spanish certificate no longer
+reads "June 2, 2026" because the reader's laptop happens to be set to English.
+
+### Translation tooling, committed
+
+There is no `xgettext`, no `msgfmt` and no WP-CLI in every environment, and a
+translation that exists only as a `.po` is a translation WordPress ignores. So
+the toolchain ships with the plugin rather than being assumed:
+
+| Tool | What it does |
+| --- | --- |
+| `tools/make-pot.php` | Extracts translatable strings via `token_get_all()` — literals only, our domain only |
+| `tools/i18n-es.php` | The Spanish dictionary, keyed by source string and reviewable as plain PHP |
+| `tools/make-po.php` | Merges the two, reporting coverage **and orphans** — entries matching no source string, i.e. translations quietly doing nothing |
+| `tools/po2mo.php` | Compiles the binary `.mo` WordPress loads |
+
+`po2mo` deliberately omits untranslated entries: gettext would otherwise return
+the empty string as the "translation" and blank the UI, which is worse than
+falling back to English.
+
+### Fixed along the way
+
+- **Translations loaded too early.** `load_plugin_textdomain()` ran on
+  `plugins_loaded`; WordPress 6.7 flags that, and anything translated before
+  `init` is frozen in whatever locale was current at that moment. It now runs on
+  `init` priority 0, ahead of the CPT labels and the settings defaults that
+  depend on it.
+- **A plural translated as a singular.** "Install %d starter courses" was
+  getting the singular form in both slots — correct at one course, broken
+  Spanish at two. The dictionary now supplies both forms, and the test suite
+  fails any plural entry whose two forms are identical.
+
 ## [1.23.0]
 
 Finishes what 1.22.0 started. The placement test could measure a learner's

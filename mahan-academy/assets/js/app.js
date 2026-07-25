@@ -425,10 +425,54 @@
 			onClick: function () { showShortcuts(); }
 		}, [h('span', { 'aria-hidden': 'true', text: '⌨' })]), right.firstChild);
 
+		var picker = languagePicker();
+		if (picker) { right.insertBefore(picker, right.firstChild); }
+
 		bar.appendChild(brand);
 		bar.appendChild(nav);
 		bar.appendChild(right);
 		return bar;
+	}
+
+	// Language switcher. Absent unless the site actually ships more than one
+	// language and still lets learners choose — an inert control that offers a
+	// single option is worse than no control.
+	function languagePicker() {
+		var list = D.languages || [];
+		if (list.length < 2) { return null; }
+
+		var sel = h('select', {
+			class: 'mahan-lang-select',
+			'aria-label': t('language', 'Language'),
+			title: t('language', 'Language')
+		}, list.map(function (l) {
+			return h('option', {
+				value: l.locale, text: l.native,
+				selected: l.locale === D.lang ? 'selected' : null
+			});
+		}));
+		sel.value = D.lang;
+
+		sel.addEventListener('change', function () {
+			var next = sel.value;
+			if (next === D.lang) { return; }
+			sel.disabled = true;
+			api('/language', 'POST', { locale: next }).then(function () {
+				// Every string in the app is handed down by the server at boot,
+				// so the new language arrives with the next document — not by
+				// re-rendering what's already on screen.
+				window.location.reload();
+			}).catch(function () {
+				sel.disabled = false;
+				sel.value = D.lang;
+				toast(t('error', 'Something went wrong. Please try again.'), 'error');
+			});
+		});
+
+		return h('div', { class: 'mahan-lang' }, [
+			h('span', { class: 'mahan-lang-icon', 'aria-hidden': 'true', text: '🌐' }),
+			sel
+		]);
 	}
 
 	// Avatar, or the learner's initials when there is no image. A broken <img>
@@ -3094,11 +3138,18 @@
 	}
 
 	// Certificates carry the date they were earned, so render that, not "now".
+	// Dates follow the academy's language, not the browser's. A learner reading
+	// a Spanish certificate should not find "June 2, 2026" printed on it
+	// because their laptop happens to be set to English.
+	function dateLocale() {
+		return D.lang ? String(D.lang).replace('_', '-') : undefined;
+	}
+
 	function shortDate(sql) {
 		if (!sql) { return ''; }
 		var d = new Date(String(sql).replace(' ', 'T') + 'Z');
 		if (isNaN(d.getTime())) { return String(sql); }
-		return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+		return d.toLocaleDateString(dateLocale(), { year: 'numeric', month: 'long', day: 'numeric' });
 	}
 
 	function showCertificate(course, cert) {

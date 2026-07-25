@@ -111,7 +111,7 @@ class Mahan_Admin {
 		// filter runs, so we must NOT unslash again (it would strip
 		// backslashes the admin actually typed).
 		$int_keys  = array( 'max_tokens', 'xp_per_lesson', 'xp_per_exercise', 'level_curve', 'hearts_max', 'ai_cache_ttl', 'app_page_id', 'xp_streak_bonus', 'daily_goal_default', 'freeze_earn_days', 'freeze_max', 'review_xp' );
-		$bool_keys = array( 'gate_enabled', 'streak_enabled', 'hearts_enabled', 'debug', 'badges_enabled', 'leaderboard_enabled', 'certificate_enabled', 'emails_enabled', 'email_welcome', 'email_complete', 'email_badge', 'email_streak', 'streak_freeze_enabled', 'review_enabled' );
+		$bool_keys = array( 'gate_enabled', 'streak_enabled', 'hearts_enabled', 'debug', 'badges_enabled', 'leaderboard_enabled', 'certificate_enabled', 'emails_enabled', 'email_welcome', 'email_complete', 'email_badge', 'email_streak', 'streak_freeze_enabled', 'review_enabled', 'learner_language' );
 
 		if ( in_array( $key, $int_keys, true ) ) {
 			return absint( $value );
@@ -137,6 +137,10 @@ class Mahan_Admin {
 				return 'progressive' === $value ? 'progressive' : 'linear';
 			case 'theme':
 				return 'dark' === $value ? 'dark' : 'light';
+			case 'default_language':
+				// '' is a real answer here: follow whatever locale the site is
+				// set to. Anything we can't actually serve resolves to that too.
+				return Mahan_I18n::is_supported( $value ) ? (string) $value : '';
 			case 'primary_color':
 			case 'accent_color':
 				$c = sanitize_hex_color( (string) $value );
@@ -959,6 +963,35 @@ class Mahan_Admin {
 						<tr>
 							<th scope="row"><label for="mahan_custom_css"><?php esc_html_e( 'Custom CSS', 'mahan-academy' ); ?></label></th>
 							<td><textarea id="mahan_custom_css" name="mahan_custom_css" rows="7" class="large-text code"><?php echo esc_textarea( $g( 'custom_css' ) ); ?></textarea></td>
+						</tr>
+					</table>
+
+					<h3><?php esc_html_e( 'Language', 'mahan-academy' ); ?></h3>
+					<p class="description">
+						<?php esc_html_e( 'The academy interface ships in English and Spanish. Only the interface is translated — course text, quiz questions, and email templates stay exactly as they were written.', 'mahan-academy' ); ?>
+					</p>
+					<table class="form-table" role="presentation">
+						<tr>
+							<th scope="row"><label for="mahan_default_language"><?php esc_html_e( 'Academy language', 'mahan-academy' ); ?></label></th>
+							<td>
+								<select id="mahan_default_language" name="mahan_default_language">
+									<option value="" <?php selected( $g( 'default_language' ), '' ); ?>><?php esc_html_e( 'Follow the site language', 'mahan-academy' ); ?></option>
+									<?php foreach ( Mahan_I18n::available() as $locale => $meta ) : ?>
+										<option value="<?php echo esc_attr( $locale ); ?>" <?php selected( $g( 'default_language' ), $locale ); ?>>
+											<?php echo esc_html( $meta['native'] ); ?>
+										</option>
+									<?php endforeach; ?>
+								</select>
+								<p class="description"><?php esc_html_e( 'What a learner sees before they choose anything.', 'mahan-academy' ); ?></p>
+							</td>
+						</tr>
+						<tr>
+							<th scope="row"><?php esc_html_e( 'Learner choice', 'mahan-academy' ); ?></th>
+							<td>
+								<input type="hidden" name="mahan_learner_language" value="0" />
+								<label><input type="checkbox" name="mahan_learner_language" value="1" <?php checked( (int) $g( 'learner_language' ), 1 ); ?> /> <?php esc_html_e( 'Show a language switcher so learners can pick their own', 'mahan-academy' ); ?></label>
+								<p class="description"><?php esc_html_e( 'Each learner\'s choice applies to the academy only — the rest of the site stays in its own language.', 'mahan-academy' ); ?></p>
+							</td>
 						</tr>
 					</table>
 				</div>

@@ -93,10 +93,20 @@ class Mahan_Plugin {
 	/* ------------------------------------------------------------------ */
 
 	public static function init() {
-		load_plugin_textdomain( 'mahan-academy', false, dirname( MAHAN_BASENAME ) . '/languages' );
+		// Registers the `plugin_locale` filter, so it is in place before
+		// anything asks for a translation.
+		Mahan_I18n::init();
+
+		// Translations must not load before `init` — WordPress 6.7 flags an
+		// earlier load, and anything translated before then would be frozen in
+		// whatever locale was current at that moment.
+		add_action( 'init', array( __CLASS__, 'load_textdomain' ), 0 );
 
 		Mahan_DB::maybe_upgrade();
-		Mahan_Settings::install_defaults();
+
+		// Defaults contain translatable prompt and email copy, so installing
+		// them has to wait for the catalog.
+		add_action( 'init', array( 'Mahan_Settings', 'install_defaults' ), 1 );
 
 		Mahan_CPT::init();
 		Mahan_Badges::init();
@@ -125,5 +135,9 @@ class Mahan_Plugin {
 		if ( is_admin() ) {
 			Mahan_Admin::init();
 		}
+	}
+
+	public static function load_textdomain() {
+		load_plugin_textdomain( 'mahan-academy', false, dirname( MAHAN_BASENAME ) . '/languages' );
 	}
 }

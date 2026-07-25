@@ -199,6 +199,14 @@ class Mahan_REST {
 			'callback'            => array( __CLASS__, 'certificate_verify' ),
 			'permission_callback' => $public,
 		) );
+
+		// Language. Public on purpose: a visitor browsing the catalog should be
+		// able to read it in their own language before deciding to sign up.
+		register_rest_route( self::NS, '/language', array(
+			'methods'             => WP_REST_Server::CREATABLE,
+			'callback'            => array( __CLASS__, 'set_language' ),
+			'permission_callback' => $public,
+		) );
 	}
 
 	/* ------------------------------------------------------------------ */
@@ -1142,5 +1150,40 @@ class Mahan_REST {
 			return rest_ensure_response( array( 'ok' => true, 'valid' => false ) );
 		}
 		return rest_ensure_response( array_merge( array( 'ok' => true, 'valid' => true ), $cert ) );
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Language                                                            */
+	/* ------------------------------------------------------------------ */
+
+	/**
+	 * Record the reader's language choice.
+	 *
+	 * The route is public so guests can switch too, but the write still needs
+	 * a valid REST nonce — otherwise any page on the internet could quietly
+	 * flip a signed-in learner's academy into a language they can't read.
+	 */
+	public static function set_language( WP_REST_Request $request ) {
+		if ( ! wp_verify_nonce( $request->get_header( 'X-WP-Nonce' ), 'wp_rest' ) ) {
+			return new WP_Error( 'rest_forbidden', __( 'Invalid or missing nonce.', 'mahan-academy' ), array( 'status' => 403 ) );
+		}
+		if ( ! (int) Mahan_Settings::get( 'learner_language', 1 ) ) {
+			return new WP_Error( 'mahan_language_locked', __( 'Language switching is turned off on this site.', 'mahan-academy' ), array( 'status' => 403 ) );
+		}
+
+		$requested = (string) $request->get_param( 'locale' );
+		if ( '' !== $requested && ! Mahan_I18n::is_supported( $requested ) ) {
+			return new WP_Error( 'mahan_language_unsupported', __( 'That language is not available.', 'mahan-academy' ), array( 'status' => 400 ) );
+		}
+
+		$saved = Mahan_I18n::set_preference( get_current_user_id(), $requested );
+
+		return rest_ensure_response(
+			array(
+				'ok'     => true,
+				'locale' => '' !== $saved ? $saved : Mahan_I18n::current(),
+				'saved'  => $saved,
+			)
+		);
 	}
 }

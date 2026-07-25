@@ -71,6 +71,11 @@ class Mahan_Settings {
 			'hero_title'          => '',
 			'hero_subtitle'       => '',
 
+			// Language. An empty default follows the site locale; setting one
+			// makes the academy speak it regardless of what the site does.
+			'learner_language'    => 1,
+			'default_language'    => '',
+
 			// Pages (auto-created on activation).
 			'app_page_id'         => 0,
 

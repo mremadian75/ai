@@ -172,6 +172,16 @@ class Mahan_Personalization {
 			);
 		}
 
+		// Translating the interface around a tutor that only answers in English
+		// is a half-finished job — the part a learner actually talks to has to
+		// answer them back. Last line, so it is the freshest instruction.
+		if ( class_exists( 'Mahan_I18n' ) ) {
+			$language = Mahan_I18n::ai_instruction( $user_id );
+			if ( '' !== $language ) {
+				$lines[] = '- Language: ' . $language;
+			}
+		}
+
 		if ( empty( $lines ) ) {
 			return '';
 		}

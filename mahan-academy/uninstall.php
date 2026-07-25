@@ -60,6 +60,8 @@ $options = array(
 	'mahan_review_enabled', 'mahan_review_xp',
 	// Appearance hero copy (1.8.0).
 	'mahan_hero_title', 'mahan_hero_subtitle',
+	// Language (1.24.0).
+	'mahan_learner_language', 'mahan_default_language',
 	// Emails (1.2.0).
 	'mahan_emails_enabled', 'mahan_email_from_name', 'mahan_email_from_email',
 	'mahan_email_welcome', 'mahan_email_complete', 'mahan_email_badge', 'mahan_email_streak',
@@ -72,8 +74,23 @@ foreach ( $options as $opt ) {
 	delete_option( $opt );
 }
 
-// Delete user meta.
-foreach ( array( 'mahan_profile', 'mahan_badges' ) as $umeta ) {
+// One-time run flags the plugin sets for itself. `mahan_seed_struct_*` is
+// per-version, so it can't be listed by name — it accumulates one row per
+// release and would otherwise be left behind forever.
+// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+$wpdb->query(
+	$wpdb->prepare(
+		"DELETE FROM {$wpdb->options} WHERE option_name = %s OR option_name = %s OR option_name = %s OR option_name LIKE %s",
+		'mahan_seed_version',
+		'mahan_autoseed_done',
+		'mahan_cert_backfill_done',
+		$wpdb->esc_like( 'mahan_seed_struct_' ) . '%'
+	)
+);
+
+// Delete user meta. `mahan_placement` shipped in 1.22.0 and was missed here;
+// `mahan_lang` is 1.24.0's.
+foreach ( array( 'mahan_profile', 'mahan_badges', 'mahan_placement', 'mahan_lang' ) as $umeta ) {
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 	$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->usermeta} WHERE meta_key = %s", $umeta ) );
 }

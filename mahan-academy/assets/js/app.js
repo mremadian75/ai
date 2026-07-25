@@ -236,6 +236,7 @@
 		state.catFilter = p.get('cat') || '';
 		state.topicFilter = p.get('topic') || '';
 		state.lbPeriod = p.get('period') || state.lbPeriod || 'week';
+		state.serial = p.get('serial') || '';
 	}
 
 	function urlFor(view, params) {
@@ -246,6 +247,9 @@
 		if (params && params.lesson) { u.searchParams.set('lesson', params.lesson); }
 		if (params && params.path) { u.searchParams.set('path', params.path); }
 		if (params && params.from) { u.searchParams.set('from', params.from); }
+		// A verification link has to survive being copied into an email or
+		// printed on a certificate, so the serial lives in the URL.
+		if (params && params.serial) { u.searchParams.set('serial', params.serial); }
 		return u.pathname + u.search;
 	}
 
@@ -285,6 +289,7 @@
 		state.lessonId = (params && params.lesson) || 0;
 		state.pathId = (params && params.path) || 0;
 		state.from = (params && params.from) || '';
+		state.serial = (params && params.serial) || '';
 		pendingScroll = null;
 		pendingFocus = true;
 		// From the first user navigation on, announce view changes to AT.
@@ -1391,8 +1396,10 @@
 			if (j.certificate) {
 				wrap.appendChild(h('div', { class: 'mahan-note mahan-note-cert' }, [
 					h('span', { text: '🎓 ' + t('certificate', 'Certificate of completion') }),
-					j.completed ? h('button', { class: 'mahan-btn mahan-btn-sm mahan-btn-ghost', text: t('viewCertificate', 'View certificate'),
-						onClick: function () { showCertificate(j.course); } }) : null
+					// Only offer it once it exists — a button that opens a
+					// "not issued yet" toast is worse than no button.
+					j.my_certificate ? h('button', { class: 'mahan-btn mahan-btn-sm mahan-btn-ghost', text: t('viewCertificate', 'View certificate'),
+						onClick: function () { showCertificate(j.course, j.my_certificate); } }) : null
 				]));
 			}
 
@@ -1947,7 +1954,7 @@
 	}
 
 	// Course-completion celebration: a real moment, not a 2.6s toast.
-	function showCourseComplete(courseId, courseTitle, hasCert) {
+	function showCourseComplete(courseId, courseTitle, cert) {
 		var modal;
 		var confetti = h('div', { class: 'mahan-confetti', 'aria-hidden': 'true' });
 		var colors = ['#f59e0b', '#22c55e', '#4f46e5', '#ec4899', '#06b6d4'];
@@ -1965,10 +1972,10 @@
 			h('h2', { text: '🎉 ' + t('courseCompleteTitle', 'Course complete!') }),
 			h('p', { class: 'mahan-modal-sub', text: t('courseCompleteMsg', 'You finished') + ' “' + (courseTitle || '') + '”' }),
 			h('div', { class: 'mahan-modal-actions mahan-center' }, [
-				hasCert ? h('button', { class: 'mahan-btn mahan-btn-ghost mahan-btn-lg', text: '🎓 ' + t('viewCertificate', 'View certificate'),
+				cert ? h('button', { class: 'mahan-btn mahan-btn-ghost mahan-btn-lg', text: '🎓 ' + t('viewCertificate', 'View certificate'),
 					onClick: function () {
 						modal.close(true);
-						showCertificate({ title: courseTitle || '' });
+						showCertificate({ title: courseTitle || '' }, cert);
 					} }) : null,
 				h('button', { class: 'mahan-btn mahan-btn-primary mahan-btn-lg', text: t('keepLearning', 'Keep learning'),
 					onClick: function () { modal.close(); } })
@@ -2015,7 +2022,7 @@
 						restore('✓ ' + esc(t('completed', 'Completed')));
 						btn.classList.add('is-done');
 						if (r.course_completed) {
-							setTimeout(function () { showCourseComplete(L.course_id, L.course_title, r.certificate); }, 600);
+							setTimeout(function () { showCourseComplete(L.course_id, L.course_title, r.my_certificate); }, 600);
 						} else if ((r.review_pending || 0) > 0) {
 							// "Ask the missed questions at the end": re-drill
 							// this lesson's mistakes before moving on.
@@ -2614,6 +2621,22 @@
 				]));
 			}
 
+			// Never placed? Offer it once, quietly, above the stats — knowing
+			// your level is worth more than knowing your XP.
+			if (!j.placement) {
+				wrap.appendChild(h('div', { class: 'mahan-placement-cta' }, [
+					h('div', { class: 'mahan-placement-cta-body' }, [
+						h('span', { class: 'mahan-placement-cta-icon', 'aria-hidden': 'true', text: '🎯' }),
+						h('p', { class: 'mahan-placement-cta-text' }, [
+							h('strong', { text: t('placementTitle', 'Find your level') }),
+							h('span', { class: 'mahan-review-cta-sub', text: ' — ' + t('placementCta', 'a short test so courses start where you actually are') })
+						])
+					]),
+					h('button', { class: 'mahan-btn mahan-btn-sm mahan-btn-ghost', text: t('placementStart', 'Start'),
+						onClick: function () { go('placement'); } })
+				]));
+			}
+
 			// Stats after the actions: what to DO comes before how it's going.
 			wrap.appendChild(hero);
 
@@ -2628,6 +2651,25 @@
 				var grid = h('div', { class: 'mahan-grid' });
 				courses.forEach(function (c) { c.enrolled = true; grid.appendChild(courseCard(c, 'dashboard')); });
 				wrap.appendChild(grid);
+			}
+
+			// Certificates the learner actually holds, each with its serial.
+			if (j.certificates && j.certificates.length) {
+				wrap.appendChild(h('h2', { class: 'mahan-dash-h2', text: t('certificates', 'Certificates') }));
+				var certList = h('div', { class: 'mahan-cert-list' });
+				j.certificates.forEach(function (c) {
+					certList.appendChild(h('button', {
+						class: 'mahan-cert-item', type: 'button',
+						onClick: function () { showCertificate({ title: c.course_title }, c); }
+					}, [
+						h('span', { class: 'mahan-cert-item-icon', 'aria-hidden': 'true', text: '🎓' }),
+						h('span', { class: 'mahan-cert-item-body' }, [
+							h('span', { class: 'mahan-cert-item-title', text: c.course_title }),
+							h('span', { class: 'mahan-cert-item-meta', text: shortDate(c.issued_at) + ' · ' + c.serial })
+						])
+					]));
+				});
+				wrap.appendChild(certList);
 			}
 
 			// Achievements.
@@ -2847,25 +2889,253 @@
 	/* Certificate (printable)                                             */
 	/* ------------------------------------------------------------------ */
 
-	function showCertificate(course) {
-		var name = (state.me && state.me.user && state.me.user.display_name) || (D.user && D.user.name) || '';
-		var date = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
-		var cert = h('div', { class: 'mahan-cert' }, [
+	/* ------------------------------------------------------------------ */
+	/* View: Placement test                                                */
+	/* ------------------------------------------------------------------ */
+
+	function renderPlacement() {
+		setTitle(t('placementTitle', 'Find your level'));
+		mount(loadingShell('article'));
+		api('/placement').then(function (j) {
+			if (!j || !j.ok || !j.questions || !j.questions.length) { mount(errorBox(renderPlacement)); return; }
+			paintIntro(j);
+		}).catch(function (e) {
+			if (e && e.status === 401) { mount(loginGate()); return; }
+			mount(errorBox(renderPlacement, e));
+		});
+
+		function paintIntro(j) {
+			var wrap = h('div', { class: 'mahan-placement' }, [
+				h('div', { class: 'mahan-placement-intro' }, [
+					h('span', { class: 'mahan-placement-kicker', text: t('placementKicker', 'Before you start') }),
+					h('h1', { text: t('placementTitle', 'Find your level') }),
+					h('p', { class: 'mahan-placement-lead',
+						text: fmt(t('placementLead', '%s quick questions, no time limit. We use them to put you on the right rung of each course ladder — so you are not bored, and not lost.'), j.questions.length) }),
+					h('p', { class: 'mahan-placement-note', text: t('placementNote', 'There is no pass or fail, and you can retake it any time.') }),
+					j.previous ? h('p', { class: 'mahan-placement-prev',
+						text: fmt(t('placementPrev', 'Last time you placed at %s.'), levelLabel(j.previous.level)) }) : null,
+					h('button', { class: 'mahan-btn mahan-btn-primary mahan-btn-lg',
+						text: j.previous ? t('placementRetake', 'Retake the test') : t('placementStart', 'Start'),
+						onClick: function () { paintQuestions(j); } })
+				])
+			]);
+			mount(wrap);
+		}
+
+		function paintQuestions(j) {
+			var answers = {};
+			var i = 0;
+			var wrap = h('div', { class: 'mahan-placement' });
+			var head = h('div', { class: 'mahan-placement-head' });
+			var body = h('div', { class: 'mahan-placement-body' });
+			wrap.appendChild(head);
+			wrap.appendChild(body);
+
+			function paintOne() {
+				var q = j.questions[i];
+				head.innerHTML = '';
+				head.appendChild(h('div', { class: 'mahan-placement-progress' }, [
+					h('div', { class: 'mahan-progress-bar' }, [h('span', { style: 'width:' + Math.round((i / j.questions.length) * 100) + '%' })]),
+					h('span', { class: 'mahan-placement-count', text: fmt(t('questionXofY', 'Question %1$s of %2$s'), i + 1, j.questions.length) })
+				]));
+
+				body.innerHTML = '';
+				var card = h('div', { class: 'mahan-placement-q' }, [
+					q.topic ? h('span', { class: 'mahan-placement-topic', text: q.topic }) : null,
+					h('h2', { class: 'mahan-placement-question', text: q.question })
+				]);
+				var opts = h('div', { class: 'mahan-ex-options' });
+				q.options.forEach(function (o, oi) {
+					opts.appendChild(h('button', {
+						class: 'mahan-ex-option', type: 'button', text: o, 'aria-pressed': 'false',
+						onClick: function () {
+							answers[q.key] = oi;
+							// No right/wrong feedback mid-test: this is a
+							// measurement, and telling people how they're doing
+							// changes how they answer the rest.
+							i++;
+							if (i >= j.questions.length) { submit(); } else { paintOne(); }
+						}
+					}));
+				});
+				card.appendChild(opts);
+				// Skipping is allowed; an unanswered question is simply no
+				// evidence, which the tier rule already handles.
+				card.appendChild(h('button', {
+					class: 'mahan-placement-skip', type: 'button', text: t('skip', 'Skip'),
+					onClick: function () { i++; if (i >= j.questions.length) { submit(); } else { paintOne(); } }
+				}));
+				body.appendChild(card);
+			}
+
+			function submit() {
+				body.innerHTML = '';
+				body.appendChild(h('p', { class: 'mahan-placement-note', text: t('loading', 'Loading…') }));
+				api('/placement', 'POST', { answers: answers, seed: j.seed }).then(function (r) {
+					if (!r || !r.ok) { throw new Error('bad'); }
+					paintResult(r);
+				}).catch(function () {
+					body.innerHTML = '';
+					body.appendChild(errorBox(function () { renderPlacement(); }));
+				});
+			}
+
+			mount(wrap);
+			paintOne();
+		}
+
+		function paintResult(r) {
+			// The profile now carries the measured level, so anything cached
+			// off it (recommendations, the HUD's /me) must be re-fetched.
+			delete apiCache['/me'];
+			delete apiCache['/recommendations'];
+
+			var wrap = h('div', { class: 'mahan-placement' }, [
+				h('div', { class: 'mahan-placement-result' }, [
+					h('span', { class: 'mahan-placement-kicker', text: t('placementResultKicker', 'Your level') }),
+					h('h1', { class: 'mahan-placement-level', text: levelLabel(r.level) }),
+					h('p', { class: 'mahan-placement-score',
+						text: fmt(t('placementScore', '%1$s of %2$s correct'), r.correct, r.total) }),
+					h('p', { class: 'mahan-placement-lead', text: placementBlurb(r.level) }),
+					(r.start && r.start.length) ? h('div', { class: 'mahan-placement-starts' }, [
+						h('h2', { class: 'mahan-placement-starts-title', text: t('placementStartHere', 'Start here') }),
+						h('div', { class: 'mahan-placement-start-list' }, r.start.map(function (rung) {
+							return h('a', {
+								class: 'mahan-placement-start', href: urlFor('course', { course: rung.id }),
+								onClick: function (e) { e.preventDefault(); go('course', { course: rung.id }); }
+							}, [
+								h('span', { class: 'mahan-placement-start-level', text: levelLabel(rung.level) }),
+								h('span', { class: 'mahan-placement-start-title', text: rung.title })
+							]);
+						}))
+					]) : null,
+					h('div', { class: 'mahan-cta-row' }, [
+						h('button', { class: 'mahan-btn mahan-btn-primary mahan-btn-lg', text: t('browseCourses', 'Browse courses'),
+							onClick: function () { go('catalog'); } }),
+						h('button', { class: 'mahan-btn mahan-btn-ghost', text: t('placementRetake', 'Retake the test'),
+							onClick: function () { renderPlacement(); } })
+					])
+				])
+			]);
+			mount(wrap);
+		}
+	}
+
+	function placementBlurb(level) {
+		if (level === 'expert') { return t('placementExpert', 'You know this material well. Start at the top of each ladder and use the courses to fill specific gaps.'); }
+		if (level === 'advanced') { return t('placementAdvanced', 'You have solid working knowledge. The advanced rungs will be the right challenge.'); }
+		if (level === 'intermediate') { return t('placementIntermediate', 'You have the basics down. Start at the intermediate rung and skip the introductions.'); }
+		return t('placementBeginner', 'Start at the beginning — the first rung of each ladder is built for exactly this.');
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* View: Certificate verification (public)                             */
+	/* ------------------------------------------------------------------ */
+
+	function renderVerify() {
+		setTitle(t('verifyTitle', 'Verify a certificate'));
+		var input = h('input', {
+			class: 'mahan-verify-input', type: 'text', value: state.serial || '',
+			placeholder: 'MA-2026-XXXXXXXX', 'aria-label': t('verifySerial', 'Certificate serial')
+		});
+		var out = h('div', { class: 'mahan-verify-out' });
+
+		function check(serial) {
+			serial = (serial || '').trim();
+			if (!serial) { out.innerHTML = ''; return; }
+			out.innerHTML = '';
+			out.appendChild(h('p', { class: 'mahan-placement-note', text: t('loading', 'Loading…') }));
+			api('/certificate/' + encodeURIComponent(serial)).then(function (r) {
+				out.innerHTML = '';
+				if (!r || !r.valid) {
+					out.appendChild(h('div', { class: 'mahan-verify-card is-invalid', role: 'status' }, [
+						h('span', { class: 'mahan-verify-mark', 'aria-hidden': 'true', text: '✕' }),
+						h('div', {}, [
+							h('h2', { text: t('verifyInvalid', 'No certificate found') }),
+							h('p', { text: t('verifyInvalidSub', 'Check the serial and try again.') })
+						])
+					]));
+					return;
+				}
+				out.appendChild(h('div', { class: 'mahan-verify-card is-valid', role: 'status' }, [
+					h('span', { class: 'mahan-verify-mark', 'aria-hidden': 'true', text: '✓' }),
+					h('div', {}, [
+						h('h2', { text: t('verifyValid', 'Verified') }),
+						h('p', { class: 'mahan-verify-line' }, [
+							h('strong', { text: r.recipient }),
+							document.createTextNode(' ' + t('certCompleted', 'has successfully completed') + ' '),
+							h('strong', { text: r.course_title })
+						]),
+						h('p', { class: 'mahan-verify-meta', text: t('certIssued', 'Issued') + ' ' + shortDate(r.issued_at) + ' · ' + r.issuer }),
+						h('p', { class: 'mahan-verify-serial', text: r.serial })
+					])
+				]));
+			}).catch(function () {
+				out.innerHTML = '';
+				out.appendChild(h('p', { class: 'mahan-placement-note', text: t('error', 'Something went wrong.') }));
+			});
+		}
+
+		var form = h('form', { class: 'mahan-verify-form', onSubmit: function (e) { e.preventDefault(); check(input.value); } }, [
+			input,
+			h('button', { class: 'mahan-btn mahan-btn-primary', type: 'submit', text: t('verifyCheck', 'Verify') })
+		]);
+
+		mount(h('div', { class: 'mahan-verify' }, [
+			h('h1', { text: t('verifyTitle', 'Verify a certificate') }),
+			h('p', { class: 'mahan-placement-lead', text: t('verifyLead', 'Enter the serial printed on a certificate to confirm it was issued by this academy.') }),
+			form,
+			out
+		]));
+
+		// A pasted verification link checks itself — the person following it
+		// shouldn't have to retype what's already in the URL.
+		if (state.serial) { check(state.serial); }
+	}
+
+	// Certificates carry the date they were earned, so render that, not "now".
+	function shortDate(sql) {
+		if (!sql) { return ''; }
+		var d = new Date(String(sql).replace(' ', 'T') + 'Z');
+		if (isNaN(d.getTime())) { return String(sql); }
+		return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+	}
+
+	function showCertificate(course, cert) {
+		// `cert` is the issued record. Without one there is nothing to show —
+		// the old code drew a card stamped with today's date whether or not
+		// anything had actually been awarded, which made it decoration.
+		if (!cert || !cert.serial) {
+			toast(esc(t('certPending', 'Your certificate is being issued — finish the course and refresh.')), 'info');
+			return;
+		}
+		var name = cert.recipient || (state.me && state.me.user && state.me.user.name) || (D.user && D.user.name) || '';
+		var verifyUrl = new URL(urlFor('verify', { serial: cert.serial }), window.location.origin).href;
+
+		var card = h('div', { class: 'mahan-cert' }, [
 			h('div', { class: 'mahan-cert-inner' }, [
 				h('div', { class: 'mahan-cert-badge', text: '🎓' }),
 				h('div', { class: 'mahan-cert-brand', text: D.siteName || 'Mahan Academy' }),
 				h('div', { class: 'mahan-cert-line', text: t('certAwarded', 'This certifies that') }),
 				h('div', { class: 'mahan-cert-name', text: name }),
 				h('div', { class: 'mahan-cert-line', text: t('certCompleted', 'has successfully completed') }),
-				h('div', { class: 'mahan-cert-course', text: course.title }),
-				h('div', { class: 'mahan-cert-date', text: date })
+				h('div', { class: 'mahan-cert-course', text: (course && course.title) || cert.course_title || '' }),
+				h('div', { class: 'mahan-cert-date', text: shortDate(cert.issued_at) }),
+				h('div', { class: 'mahan-cert-foot' }, [
+					h('div', { class: 'mahan-cert-serial', text: cert.serial }),
+					h('div', { class: 'mahan-cert-verify', text: t('certVerifyAt', 'Verify at') + ' ' + verifyUrl })
+				])
 			])
 		]);
+
 		var modal;
 		var dialog = h('div', { class: 'mahan-modal mahan-cert-modal' }, [
-			cert,
+			card,
 			h('div', { class: 'mahan-modal-actions' }, [
-				h('button', { class: 'mahan-btn mahan-btn-ghost', text: t('close', 'Close'), onClick: function () { modal.close(); } }),
+				h('button', { class: 'mahan-btn mahan-btn-ghost', text: t('close', 'Close'), onClick: function () { modal.close(true); } }),
+				h('a', { class: 'mahan-btn mahan-btn-ghost', href: urlFor('verify', { serial: cert.serial }),
+					text: t('certVerify', 'Verify'),
+					onClick: function (e) { e.preventDefault(); modal.close(true); go('verify', { serial: cert.serial }); } }),
 				h('button', { class: 'mahan-btn mahan-btn-primary', text: t('print', 'Print / Save as PDF'), onClick: function () { window.print(); } })
 			])
 		]);
@@ -3433,6 +3703,10 @@
 			case 'leaderboard': return D.leaderboard ? renderLeaderboard() : renderCatalog();
 			case 'paths': return renderPaths();
 			case 'path': return renderPath();
+			case 'placement': return D.loggedIn ? renderPlacement() : mount(loginGate());
+			// Verification is public on purpose — the person checking a
+			// credential is usually not the person who earned it.
+			case 'verify': return renderVerify();
 			case 'catalog':
 			default: return renderCatalog();
 		}

@@ -1,7 +1,8 @@
 <?php
 /**
  * Custom tables for the dynamic LMS data: enrollments, lesson progress,
- * exercise attempts, gamification stats, AI chat history, and an AI cache.
+ * exercise attempts, gamification stats, AI chat history, an AI cache, the
+ * spaced-repetition review queue, and issued certificates.
  *
  * CPTs hold the *content* (courses & lessons); these tables hold the
  * relational, per-user, fast-changing data.
@@ -80,6 +81,11 @@ class Mahan_DB {
 		return $wpdb->prefix . 'mahan_reviews';
 	}
 
+	public static function certificates() {
+		global $wpdb;
+		return $wpdb->prefix . 'mahan_certificates';
+	}
+
 	/* ------------------------------------------------------------------ */
 	/* Schema                                                              */
 	/* ------------------------------------------------------------------ */
@@ -98,6 +104,7 @@ class Mahan_DB {
 		$ai_cache    = self::ai_cache();
 		$xp_log      = self::xp_log();
 		$reviews     = self::reviews();
+		$certs       = self::certificates();
 
 		$sql = array();
 
@@ -217,6 +224,24 @@ class Mahan_DB {
 			UNIQUE KEY user_item (user_id, item_key),
 			KEY user_due (user_id, due_at),
 			KEY user_lesson (user_id, lesson_id)
+		) {$charset};";
+
+		// Issued completion certificates. The unique key on (user_id,
+		// course_id) is what makes issuing idempotent under concurrency: a
+		// second completion event loses the insert instead of minting a
+		// duplicate credential. `serial` is unique because it is the public
+		// lookup key.
+		$sql[] = "CREATE TABLE {$certs} (
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			user_id BIGINT UNSIGNED NOT NULL,
+			course_id BIGINT UNSIGNED NOT NULL,
+			serial VARCHAR(32) NOT NULL,
+			issued_at DATETIME NOT NULL,
+			revoked TINYINT(1) NOT NULL DEFAULT 0,
+			PRIMARY KEY  (id),
+			UNIQUE KEY user_course (user_id, course_id),
+			UNIQUE KEY serial (serial),
+			KEY course (course_id)
 		) {$charset};";
 
 		foreach ( $sql as $statement ) {

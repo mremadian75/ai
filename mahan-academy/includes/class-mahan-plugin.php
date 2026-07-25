@@ -75,6 +75,19 @@ class Mahan_Plugin {
 		}
 	}
 
+	/**
+	 * Issue certificates for already-completed courses, once.
+	 *
+	 * Gated with an atomic add_option() rather than a get/set pair, so two
+	 * concurrent requests on a busy site can't both run the sweep.
+	 */
+	public static function maybe_backfill_certificates() {
+		if ( ! add_option( 'mahan_cert_backfill_done', '1', '', 'no' ) ) {
+			return;
+		}
+		Mahan_Certificates::backfill();
+	}
+
 	/* ------------------------------------------------------------------ */
 	/* Runtime                                                             */
 	/* ------------------------------------------------------------------ */
@@ -88,9 +101,16 @@ class Mahan_Plugin {
 		Mahan_CPT::init();
 		Mahan_Badges::init();
 		Mahan_Emails::init();
+		Mahan_Certificates::init();
 		Mahan_REST::init();
 		Mahan_AI_Stream::init();
 		Mahan_Front::init();
+
+		// One-time back-fill for learners who completed courses before
+		// certificates were recorded. Without it their only route to a
+		// credential would be re-taking a course they've already finished.
+		// Runs after the CPTs register so course titles resolve.
+		add_action( 'init', array( __CLASS__, 'maybe_backfill_certificates' ), 20 );
 
 		// Catch-up for sites that were already active before this version shipped
 		// the starter catalog. Runs after the CPTs/taxonomies register (priority

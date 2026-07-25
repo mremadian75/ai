@@ -14,13 +14,15 @@ mahan-academy/
 ├── includes/
 │   ├── class-mahan-logger.php           # debug logging
 │   ├── class-mahan-utils.php            # time, meta, JSON, placeholder helpers
-│   ├── class-mahan-db.php                # 6 custom tables + AI cache
+│   ├── class-mahan-db.php                # 9 custom tables + AI cache
 │   ├── class-mahan-settings.php          # options + defaults + profile schema
 │   ├── class-mahan-cpt.php               # mahan_course / mahan_lesson + taxonomy
 │   ├── class-mahan-profile.php           # schema-driven learner profile (user meta)
 │   ├── class-mahan-courses.php           # course/lesson structure + meta keys + topics
 │   ├── class-mahan-seed.php              # starter-content installer (idempotent)
 │   ├── class-mahan-variants.php          # level ladders (tracks) + department field variants
+│   ├── class-mahan-placement.php         # placement test: bank, sittings, scoring
+│   ├── class-mahan-certificates.php      # issued credentials: serials, verification
 │   ├── class-mahan-recommend.php         # personalized course/bundle fit scoring
 │   ├── class-mahan-gamification.php      # XP, levels, streaks, level titles
 │   ├── class-mahan-badges.php            # achievements
@@ -49,7 +51,8 @@ mahan-academy/
     └── css/{app.css, admin.css, course-builder.css}
 └── includes/data/                # curated starter-content library (loaded by Mahan_Seed)
     ├── course-*.php              # one file per seed course (returns a course array)
-    └── bundles.php               # specialization bundles (return an array of paths)
+    ├── bundles.php               # specialization bundles (return an array of paths)
+    └── placement.php             # placement question bank (tier-tagged)
 ```
 
 ---
@@ -117,13 +120,38 @@ blanks), applied in `/lesson`. `Mahan_Personalization::for_you()`
 note, cached in the AI cache per `(lesson, Mahan_Profile::signature())` so it
 regenerates only when the learner updates their profile.
 
-**Dynamic per-user data** lives in eight custom tables (see `Mahan_DB`):
+**Placement** (`Mahan_Placement`) is authored, not AI-generated: the bank lives
+in `includes/data/placement.php` (32 questions tagged tier 1–4) and scoring is
+arithmetic, so it works with no API key and gives the same answer twice.
+`sitting()` draws an even spread across tiers, easiest-first. `level_from()`
+places you at the **highest tier you demonstrated** — two-thirds correct at that
+tier *and* every tier below it cleared — rather than on a total, so one lucky
+expert answer can't outrank a failed intermediate tier. Options are permuted per
+sitting by `option_order(key, seed)` and mapped back when grading; do **not**
+try to vary answer position in the data, and don't drop the shuffle — the bank
+was authored with the answer at index 1 almost every time. The result lives in
+user meta and syncs into the profile's `ai_level`, which is what the tutor,
+question difficulty and recommendations already read.
+
+**Certificates** (`Mahan_Certificates`) are issued from the
+`mahan_course_completed` action, never from a UI button. `issue()` is idempotent
+and the unique key on `(user_id, course_id)` is the real guard under concurrency.
+Serials are random (not sequential — that would let anyone enumerate every
+credential) and skip 0/O/1/I because they get typed off printouts;
+`normalize_serial()` accepts lower case, missing dashes and stray spaces.
+`verify()` is public and returns **only** serial/recipient/course/date/issuer —
+never a user id. `Mahan_Plugin::maybe_backfill_certificates()` issues once for
+anyone who completed a course before v1.22.
+
+**Dynamic per-user data** lives in nine custom tables (see `Mahan_DB`):
 `enrollments`, `progress`, `attempts`, `stats`, `chat`, `ai_cache`,
 `xp_log` (append-only: every XP award with `amount`, `reason`, `ref_id`,
 `created_at` — powers weekly leaderboards, daily goals, and reports), and
 `reviews` (the adaptive-review queue: one row per missed question with a
 Leitner `box`, `due_at`, `reps`/`lapses`, a JSON `snapshot` of the question,
-and `last_xp_date` — added in DB v3, `last_xp_date` in DB v4). The `stats`
+and `last_xp_date` — added in DB v3, `last_xp_date` in DB v4), and
+`certificates` (issued credentials: `serial`, `issued_at`, `revoked`, unique on
+both `serial` and `(user_id, course_id)` — added in DB v5). The `stats`
 table also carries `freezes` and `daily_goal` (added in DB v2 via `dbDelta`).
 
 > Review XP is capped at once per item per day (`last_xp_date`): a wrong
@@ -178,6 +206,10 @@ fields) is `Mahan_Settings::default_schema()`. No new tables.
 | `POST /practice` | logged-in | Generate fresh AI practice questions for a lesson, tuned to its concepts and the learner's difficulty. |
 | `POST /practice/grade` | logged-in | Grade a generated practice answer; misses go into the review queue (XP daily-capped). |
 | `GET /recommendations` | logged-in | "Recommended for you" courses + best-fit bundle, with the reason. |
+| `GET /placement` | logged-in | A sitting (answer keys stripped) + the seed + any previous result. |
+| `POST /placement` | logged-in | Grade a sitting, store the level, return where to start on each ladder. |
+| `GET /certificates` | logged-in | The caller's issued certificates. |
+| `GET /certificate/{serial}` | **public** | Verify a serial. Public by design; returns only who/what/when. |
 | `POST /enroll` | logged-in | Enroll in a course. |
 | `POST /progress` | logged-in | Mark a lesson complete (awards XP, recomputes course %). |
 | `POST /exercise` | logged-in | Grade a submitted answer. |

@@ -170,6 +170,35 @@ class Mahan_REST {
 			'callback'            => array( __CLASS__, 'recommendations' ),
 			'permission_callback' => $logged_in,
 		) );
+
+		// Placement test: fetch a sitting, submit it for a level.
+		register_rest_route( self::NS, '/placement', array(
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( __CLASS__, 'placement_get' ),
+				'permission_callback' => $logged_in,
+			),
+			array(
+				'methods'             => WP_REST_Server::CREATABLE,
+				'callback'            => array( __CLASS__, 'placement_submit' ),
+				'permission_callback' => $logged_in,
+			),
+		) );
+
+		// The learner's own certificates.
+		register_rest_route( self::NS, '/certificates', array(
+			'methods'             => WP_REST_Server::READABLE,
+			'callback'            => array( __CLASS__, 'certificates_mine' ),
+			'permission_callback' => $logged_in,
+		) );
+
+		// Verification is deliberately public and unauthenticated — a
+		// credential only a logged-in holder can check verifies nothing.
+		register_rest_route( self::NS, '/certificate/(?P<serial>[A-Za-z0-9\-]+)', array(
+			'methods'             => WP_REST_Server::READABLE,
+			'callback'            => array( __CLASS__, 'certificate_verify' ),
+			'permission_callback' => $public,
+		) );
 	}
 
 	/* ------------------------------------------------------------------ */
@@ -342,7 +371,11 @@ class Mahan_REST {
 			'description'  => apply_filters( 'the_content', get_post_field( 'post_content', $course_id ) ),
 			'promo_video'  => Mahan_Courses::promo_video( $course_id ),
 			'prerequisite' => Mahan_Courses::prerequisite( $course_id ),
-			'certificate'  => (bool) $summary['certificate'] && (bool) Mahan_Settings::get( 'certificate_enabled', 1 ),
+			'certificate'  => Mahan_Certificates::offered( $course_id ),
+			// The issued credential, if this learner holds one — so the course
+			// page shows the real serial and issue date instead of drawing a
+			// card stamped with today.
+			'my_certificate' => $user_id ? Mahan_Certificates::for_course( $user_id, $course_id ) : null,
 			'enrolled'     => $enrolled,
 			'progress_pct' => $progress_pct,
 			'completed'    => ( 100 === (int) $progress_pct ),
@@ -497,11 +530,13 @@ class Mahan_REST {
 			return new WP_REST_Response( array( 'ok' => false, 'error' => 'locked' ), 403 );
 		}
 		$res = Mahan_Progress::complete_lesson( $user_id, $lesson_id );
-		// On course completion, tell the app whether a certificate is
-		// available so the celebration can offer it directly.
+		// On course completion, hand back the certificate that was just
+		// issued (the mahan_course_completed action mints it), so the
+		// celebration can show the real credential rather than a placeholder.
 		if ( ! empty( $res['course_completed'] ) ) {
-			$res['certificate'] = (bool) Mahan_Utils::meta_int( $course_id, Mahan_Courses::M_CERTIFICATE, 0 )
-				&& (bool) Mahan_Settings::get( 'certificate_enabled', 1 );
+			$issued             = Mahan_Certificates::for_course( $user_id, $course_id );
+			$res['certificate'] = (bool) $issued;
+			$res['my_certificate'] = $issued;
 		}
 		// How many questions from this lesson are queued for review, so the
 		// app can offer a "review your misses" step before moving on.
@@ -669,6 +704,8 @@ class Mahan_REST {
 			'stats'       => $stats,
 			'courses'     => $courses,
 			'badges'      => Mahan_Badges::for_user( $user_id ),
+			'certificates' => Mahan_Certificates::for_user( $user_id ),
+			'placement'   => Mahan_Placement::get( $user_id ),
 			'leaderboard' => (bool) Mahan_Settings::get( 'leaderboard_enabled', 0 ),
 		) );
 	}
@@ -1012,5 +1049,98 @@ class Mahan_REST {
 		unset( $course );
 
 		return rest_ensure_response( array_merge( array( 'ok' => true ), $res ) );
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Placement                                                           */
+	/* ------------------------------------------------------------------ */
+
+	/**
+	 * A sitting, plus whatever the learner scored last time.
+	 */
+	public static function placement_get( WP_REST_Request $request ) {
+		$user_id = get_current_user_id();
+		// The seed travels with the sitting and comes back on submit: it is
+		// what lets grading reconstruct the option order without the server
+		// keeping any state between the two calls.
+		$seed      = wp_rand( 1, 2000000 );
+		$questions = Mahan_Placement::sitting( Mahan_Placement::LENGTH, $seed );
+
+		return rest_ensure_response( array(
+			'ok'        => true,
+			'seed'      => $seed,
+			'questions' => $questions,
+			'previous'  => Mahan_Placement::get( $user_id ),
+			'levels'    => array_values( Mahan_Placement::TIERS ),
+		) );
+	}
+
+	/**
+	 * Grade a sitting, store the level, and say where to start.
+	 */
+	public static function placement_submit( WP_REST_Request $request ) {
+		$user_id = get_current_user_id();
+		$body    = $request->get_json_params();
+		$answers = isset( $body['answers'] ) && is_array( $body['answers'] ) ? $body['answers'] : array();
+		$seed    = isset( $body['seed'] ) ? absint( $body['seed'] ) : 0;
+
+		if ( empty( $answers ) ) {
+			return new WP_Error( 'mahan_no_answers', __( 'No answers submitted.', 'mahan-academy' ), array( 'status' => 400 ) );
+		}
+
+		$clean = array();
+		foreach ( $answers as $key => $choice ) {
+			$clean[ sanitize_text_field( (string) $key ) ] = (int) $choice;
+		}
+
+		$result = Mahan_Placement::grade( $clean, $seed );
+		$stored = Mahan_Placement::save( $user_id, $result );
+
+		// Where to actually go next: the rung of each ladder that matches the
+		// level we just measured.
+		$starts = array();
+		foreach ( Mahan_Courses::get_courses() as $course ) {
+			$track = Mahan_Utils::meta_str( $course->ID, Mahan_Variants::M_TRACK, '' );
+			if ( '' === $track || isset( $starts[ $track ] ) ) {
+				continue;
+			}
+			$rung = Mahan_Placement::start_rung( $track, $stored['level_rank'] );
+			if ( $rung ) {
+				$starts[ $track ] = $rung;
+			}
+		}
+
+		return rest_ensure_response( array_merge(
+			array( 'ok' => true, 'start' => array_values( $starts ) ),
+			$result,
+			array( 'taken_at' => $stored['taken_at'] )
+		) );
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Certificates                                                        */
+	/* ------------------------------------------------------------------ */
+
+	public static function certificates_mine( WP_REST_Request $request ) {
+		return rest_ensure_response( array(
+			'ok'           => true,
+			'certificates' => Mahan_Certificates::for_user( get_current_user_id() ),
+			'issuer'       => get_bloginfo( 'name' ),
+		) );
+	}
+
+	/**
+	 * Public verification by serial.
+	 *
+	 * Always 200: whether a serial is valid is the answer, not an error, and
+	 * a 404 would let a scraper distinguish "no such certificate" from other
+	 * failures slightly more cheaply.
+	 */
+	public static function certificate_verify( WP_REST_Request $request ) {
+		$cert = Mahan_Certificates::verify( (string) $request->get_param( 'serial' ) );
+		if ( ! $cert ) {
+			return rest_ensure_response( array( 'ok' => true, 'valid' => false ) );
+		}
+		return rest_ensure_response( array_merge( array( 'ok' => true, 'valid' => true ), $cert ) );
 	}
 }

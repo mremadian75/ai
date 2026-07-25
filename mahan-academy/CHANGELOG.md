@@ -4,6 +4,88 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.22.0]
+
+Two things a learning platform needs and this one didn't have: a way to find
+out **where a learner should start**, and a credential at the end that is
+actually **worth something**. **First schema change in eleven releases —
+DB goes to v5** for the certificates table.
+
+### Placement test — `Mahan_Placement`
+
+A 12-question assessment that decides which rung of each ladder a learner
+starts on, before they pick anything.
+
+- **Authored, not AI-generated.** A placement test is the first thing a new
+  learner meets: it has to work on a site with no API key, give the same answer
+  twice, and be reviewable by whoever runs the academy. The bank is data
+  (`includes/data/placement.php` — 32 questions, 8 per tier) and the scoring is
+  arithmetic.
+- **Balanced sittings.** An even spread across the four tiers, served
+  easiest-first — opening an assessment with an expert question makes beginners
+  quit before it can place them.
+- **The level rule is "highest tier you actually demonstrated"**, not a total:
+  you place at the top tier where you got two-thirds right *and* cleared every
+  tier below it. Someone who guesses one expert question right but misses the
+  intermediate ones is not an expert, and a score-based rule would call them one.
+- **No feedback during the test.** Telling people how they're doing changes how
+  they answer the rest.
+- Skipping is allowed — an unanswered question is no evidence, which the tier
+  rule already handles, rather than a wrong answer.
+- The result syncs into the profile's `ai_level`, so the tutor, question
+  difficulty and recommendations all pick it up with no extra wiring, and the
+  result screen links straight to the matching rung of every ladder.
+
+**Caught while writing it:** the bank had the right answer at index 1 on nearly
+every question, so "always pick B" would have scored full marks. Rather than
+hand-shuffling the data (where the same bias would creep back in with the next
+contributor), options are now permuted per sitting from `(question key, seed)`
+and the choice is mapped back when grading. There's a test that asserts
+same-slot guessing fails.
+
+### Certificates that mean something — `Mahan_Certificates`
+
+The old "certificate" was a card the browser drew on demand, stamped with
+*today's* date — reopen it next month and the date changed, nothing was
+recorded, and nobody could check it.
+
+- **Issued automatically** on course completion (hooked to
+  `mahan_course_completed`), not when someone finds a button.
+- **A real record**, with the date it was actually earned and a serial like
+  `MA-2026-7F3KQX92`. Sequential ids would let anyone enumerate every credential
+  the site has issued, so the random part carries the entropy; ambiguous glyphs
+  (0/O, 1/I) are excluded because these get typed off a printout.
+- **Publicly verifiable.** `GET /certificate/{serial}` needs no login — a
+  credential only its holder can check verifies nothing — and returns just who,
+  what and when. No user id, no email, no progress. There's a verification page
+  at `?view=verify`, and a pasted link checks itself.
+- **Idempotent.** Issuing twice returns the same credential; the unique key on
+  `(user_id, course_id)` is the real guard, so two concurrent completions can't
+  mint two serials.
+- Serials normalise on lookup — lower case, missing dashes, stray spaces — so a
+  real holder isn't told their real serial is invalid.
+- **Back-filled once** for everyone who completed a course before this shipped;
+  otherwise their only route to a credential would be re-taking a course they
+  had already finished.
+- The dashboard lists what you hold; the course page shows the issued record
+  rather than drawing a card whether or not anything was awarded.
+
+### Verification
+
+- **27-assertion placement suite**: bank integrity, balanced and
+  easiest-first sittings, the answer key never leaving the server, same-slot
+  guessing failing, a perfect run through the shuffle scoring 12/12,
+  mismatched-seed grading not silently passing, all six level-rule cases,
+  skipping, and profile sync that doesn't wipe the rest of the profile.
+- **25-assertion certificate suite** against a fake `$wpdb` honouring both
+  unique keys: issuing, double-issue returning one row, the per-course and
+  site-wide switches, 200 distinct serials with no ambiguous glyphs,
+  verification exposing no internal ids, four typed-off-paper serial forms,
+  revocation, and listing.
+- **16-assertion headless run** driving both flows end to end.
+- All eleven earlier render harnesses still pass; `php -l`, `node --check` and
+  the seed validator clean.
+
 ## [1.21.0]
 
 **Every course looks like itself.** Until now the whole app was one indigo and

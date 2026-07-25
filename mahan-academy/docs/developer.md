@@ -279,6 +279,26 @@ categories fall back to `hashBucket`), and the **title** sets `--cover-angle`
 and `--cover-tone` so siblings in one category still differ. Keep it a pure
 function of the category name — a course opened directly, with no catalog
 loaded, must render the same cover it had on the card. Covers are `aria-hidden`.
+The title also picks one of six **pattern families** (`.mahan-cover-p0..5`), so
+two courses in one category share a hue without sharing a look.
+
+**Course accent** (`courseThemeClass()`). The course and lesson wrappers carry
+`.mahan-themed .mahan-c0..5`, derived from the same identity as the cover, which
+redefines `--m-course` / `--m-course-text` for everything inside. `/lesson`
+returns `course_categories` so a lesson can paint itself in its course's colour
+without a second request.
+
+Two rules hold this together:
+
+- **Identifying chrome only** — kicker, unit headings, topic chips, meters, the
+  reading hairline, the current ladder rung, the hero tint. **Primary buttons
+  keep the brand colour**: the button you press must not move around the palette
+  from course to course. There's an assertion for this.
+- **`--m-course` is the fill; `--m-course-text` is the AA-legible on-surface
+  shade**, per theme — the same split as `--m-primary` / `--m-primary-text`.
+  Never use the fill as small text, and never put white text on the fill: the
+  cyan/green/amber fills measure 1.8–3.7:1 against white. New accents must be
+  measured (surface, chip tint, rung tint, both themes) before shipping.
 
 **Entrance motion.** `armReveals(main)` runs from `mount()` and observes card
 grids (`.mahan-grid`, `.mahan-bundle-row`, `.mahan-badges`) with an

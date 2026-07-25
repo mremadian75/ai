@@ -143,6 +143,18 @@ class Mahan_Courses {
 	}
 
 	/**
+	 * Category (domain) names on a course. The front-end derives the course's
+	 * cover art and accent colour from the first one.
+	 *
+	 * @param int $course_id Course id.
+	 * @return string[]
+	 */
+	public static function course_categories( $course_id ) {
+		$terms = wp_get_post_terms( (int) $course_id, Mahan_CPT::CAT, array( 'fields' => 'names' ) );
+		return is_wp_error( $terms ) ? array() : array_values( $terms );
+	}
+
+	/**
 	 * Topic names attached to a lesson (concept tags the AI tutor / question
 	 * generator can key off).
 	 *

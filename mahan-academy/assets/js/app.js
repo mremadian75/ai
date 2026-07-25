@@ -1147,6 +1147,10 @@
 	// hue, so siblings within one category still look like different courses.
 	var COVER_ANGLES = ['118deg', '135deg', '152deg', '196deg'];
 	var COVER_TONES = ['-14deg', '0deg', '14deg'];
+	// Structural variety on top of hue: two courses in the same category share
+	// a colour family but not a pattern, so a category section doesn't read as
+	// one card repeated.
+	var COVER_PATTERNS = 6;
 
 	// category name -> cover variant. Hand-assigned for the categories the
 	// plugin ships, because hashing six names into six buckets collides
@@ -1170,6 +1174,20 @@
 			: hashBucket(cat, COVER_VARIANTS);
 	}
 
+	// A course's own accent, the same identity its cover uses. Applied as a
+	// class on the course and lesson wrappers, which redefines `--m-course`
+	// for everything inside — so a course reads as itself all the way down to
+	// its lessons, rather than every page being the same indigo.
+	//
+	// Deliberately scoped to *identifying* chrome (category kicker, unit
+	// headings, topic chips, meters, the current ladder rung). Primary buttons
+	// stay on the brand colour: "the button you press" must not move around
+	// the palette from course to course.
+	function courseThemeClass(categories, title) {
+		var cat = (categories && categories[0]) || '';
+		return 'mahan-c' + (cat ? coverVariant(cat) : hashBucket(title || '', COVER_VARIANTS));
+	}
+
 	function courseCover(c, opts) {
 		opts = opts || {};
 		if (c.image) {
@@ -1186,7 +1204,9 @@
 		// out monochrome.
 		var variant = hasCat ? coverVariant(cat) : hashBucket(title, COVER_VARIANTS);
 		var node = h('div', {
-			class: 'mahan-cover mahan-cover-gen mahan-cover-' + variant + (opts.wide ? ' is-wide' : ''),
+			class: 'mahan-cover mahan-cover-gen mahan-cover-' + variant
+				+ ' mahan-cover-p' + hashBucket(title + '#', COVER_PATTERNS)
+				+ (opts.wide ? ' is-wide' : ''),
 			'aria-hidden': 'true'
 		}, [
 			h('span', { class: 'mahan-cover-glyph', text: title.trim().charAt(0).toUpperCase() }),
@@ -1272,7 +1292,8 @@
 			if (!j.ok) { mount(errorBox(renderCourse)); return; }
 			var c = j.course;
 			setTitle(c.title);
-			var wrap = h('div', { class: 'mahan-course' });
+			// Paint the whole page in this course's own accent.
+			var wrap = h('div', { class: 'mahan-course mahan-themed ' + courseThemeClass(c.categories, c.title) });
 
 			// Hero. Back link points at wherever the learner arrived from
 			// (dashboard, a path, or the catalog).
@@ -1710,7 +1731,9 @@
 				if (!state.me && D.loggedIn) { state.me = { stats: L.stats, user: D.user || null }; }
 				else { refreshHud(L.stats); }
 			}
-			var wrap = h('div', { class: 'mahan-lesson' });
+			// Lessons inherit their course's accent, so a course reads as
+			// itself all the way down rather than every page being brand indigo.
+			var wrap = h('div', { class: 'mahan-lesson mahan-themed ' + courseThemeClass(L.course_categories, L.course_title) });
 
 			// Top: back link + "Unit · Lesson X of Y" + course progress bar,
 			// so the learner always knows where they are in the course.

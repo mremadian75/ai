@@ -428,6 +428,9 @@ class Mahan_REST {
 			'title'        => get_the_title( $lesson_id ),
 			'course_id'    => $course_id,
 			'course_title' => $course_id ? get_the_title( $course_id ) : '',
+			// The lesson carries its course's categories so the front-end can
+			// paint it in that course's colour without a second request.
+			'course_categories' => $course_id ? Mahan_Courses::course_categories( $course_id ) : array(),
 			'position'     => $position,
 			'course_pct'   => $enrolled ? Mahan_Progress::course_progress_pct( $user_id, $course_id ) : 0,
 			'unit_quiz'    => $unit_quiz,

@@ -1363,3 +1363,88 @@ div.mahan-lesson-row:active { transform: translateY(1px); }
 .mahan-dash-h2 { margin-top: 34px; margin-bottom: 14px; }
 .mahan-dash-h2 + .mahan-badges-sub { margin-top: -8px; }
 .mahan-strip-title { margin-bottom: 14px; }
+
+/* ==================================================================== */
+/* v1.21.0 — per-course identity: pattern families + course accent      */
+/* ==================================================================== */
+
+/* --- Cover pattern families ------------------------------------------ */
+/* Hue already comes from the category. These add *structure*, picked from
+   the course title, so two courses in one category share a colour family
+   without looking like the same card printed twice. All six are pure
+   gradients — no images, no extra requests. */
+.mahan-cover-p0::before { background:
+	radial-gradient(120% 90% at 12% 0%, rgba(255,255,255,.34), transparent 62%),
+	repeating-linear-gradient(115deg, rgba(255,255,255,.07) 0 2px, transparent 2px 22px); }
+.mahan-cover-p1::before { background:
+	radial-gradient(120% 90% at 12% 0%, rgba(255,255,255,.32), transparent 62%),
+	radial-gradient(rgba(255,255,255,.14) 1.4px, transparent 1.5px) 0 0 / 16px 16px; }
+.mahan-cover-p2::before { background:
+	radial-gradient(120% 90% at 12% 0%, rgba(255,255,255,.3), transparent 62%),
+	repeating-linear-gradient(0deg, rgba(255,255,255,.08) 0 1px, transparent 1px 20px),
+	repeating-linear-gradient(90deg, rgba(255,255,255,.08) 0 1px, transparent 1px 20px); }
+.mahan-cover-p3::before { background:
+	radial-gradient(120% 90% at 12% 0%, rgba(255,255,255,.3), transparent 62%),
+	repeating-conic-gradient(from 200deg at 88% 112%, rgba(255,255,255,.1) 0 6deg, transparent 6deg 16deg); }
+.mahan-cover-p4::before { background:
+	radial-gradient(120% 90% at 12% 0%, rgba(255,255,255,.3), transparent 62%),
+	repeating-radial-gradient(circle at 92% 108%, transparent 0 20px, rgba(255,255,255,.1) 20px 21px); }
+.mahan-cover-p5::before { background:
+	radial-gradient(120% 90% at 12% 0%, rgba(255,255,255,.32), transparent 62%),
+	repeating-linear-gradient(45deg, rgba(255,255,255,.06) 0 10px, transparent 10px 20px),
+	repeating-linear-gradient(-45deg, rgba(255,255,255,.06) 0 10px, transparent 10px 20px); }
+
+/* --- Course accent --------------------------------------------------- */
+/* One class on the course/lesson wrapper redefines the accent for
+   everything inside it. `--m-course-text` is the AA-legible on-surface
+   shade (the fill is too light as small text on one side of each theme) —
+   same split as --m-primary / --m-primary-text.
+
+   Scope rule: identifying chrome only — category kicker, unit headings,
+   topic chips, meters, the current ladder rung. Primary buttons keep the
+   brand colour, because "the button you press" must not move around the
+   palette from one course to the next. */
+.mahan-themed { --m-course: var(--m-primary); --m-course-text: var(--m-primary-text); }
+.mahan-c0 { --m-course: #4f46e5; --m-course-text: #4338ca; }
+.mahan-c1 { --m-course: #0891b2; --m-course-text: #0e7490; }
+.mahan-c2 { --m-course: #16a34a; --m-course-text: #12692f; }
+.mahan-c3 { --m-course: #ea580c; --m-course-text: #9a4508; }
+.mahan-c4 { --m-course: #e11d48; --m-course-text: #be123c; }
+.mahan-c5 { --m-course: #2563eb; --m-course-text: #1d4ed8; }
+.mahan-theme-dark .mahan-c0 { --m-course: #6366f1; --m-course-text: #a5b4fc; }
+.mahan-theme-dark .mahan-c1 { --m-course: #22d3ee; --m-course-text: #67e8f9; }
+.mahan-theme-dark .mahan-c2 { --m-course: #22c55e; --m-course-text: #86efac; }
+.mahan-theme-dark .mahan-c3 { --m-course: #f59e0b; --m-course-text: #fcd34d; }
+.mahan-theme-dark .mahan-c4 { --m-course: #f43f5e; --m-course-text: #fda4af; }
+.mahan-theme-dark .mahan-c5 { --m-course: #3b82f6; --m-course-text: #93c5fd; }
+
+/* Identifying chrome picks up the course accent. */
+.mahan-themed .mahan-unit-title,
+.mahan-themed .mahan-lesson-pos-unit,
+.mahan-themed .mahan-course-standing-pct,
+.mahan-themed .mahan-jump-kicker { color: var(--m-course-text); }
+.mahan-themed .mahan-topic-chip {
+	color: var(--m-course-text);
+	border-color: color-mix(in srgb, var(--m-course) 34%, var(--m-border));
+	background: color-mix(in srgb, var(--m-course) 9%, transparent);
+}
+.mahan-themed .mahan-progress-bar span,
+.mahan-themed .mahan-lesson-course-bar span,
+.mahan-themed .mahan-read-progress span { background: var(--m-course); }
+.mahan-themed .mahan-read-progress { background: color-mix(in srgb, var(--m-course) 12%, transparent); }
+.mahan-themed .mahan-progress-label { color: var(--m-course-text); }
+/* Tinted, not filled. Painting the solid rung with the course fill put
+   white text on cyan/green/amber at 1.8-3.7:1; the tint keeps the accent
+   and keeps the label legible (measured >=4.5:1 in both themes). */
+.mahan-themed .mahan-ladder-rung.is-current {
+	background: color-mix(in srgb, var(--m-course) 14%, var(--m-surface));
+	border-color: color-mix(in srgb, var(--m-course) 46%, var(--m-border));
+	color: var(--m-course-text);
+}
+.mahan-themed a.mahan-ladder-rung:hover { border-color: var(--m-course); color: var(--m-course-text); }
+/* The course's own cover tints its hero card, so the page opens in its
+   colour instead of a neutral box. */
+.mahan-course.mahan-themed .mahan-course-hero {
+	border-color: color-mix(in srgb, var(--m-course) 26%, var(--m-border));
+	background: linear-gradient(150deg, color-mix(in srgb, var(--m-course) 7%, var(--m-surface)), var(--m-surface) 62%);
+}

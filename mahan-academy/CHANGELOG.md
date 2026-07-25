@@ -4,6 +4,67 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.21.0]
+
+**Every course looks like itself.** Until now the whole app was one indigo and
+covers varied only by hue, so a category section could read as the same card
+printed four times. Now a course carries its own identity — cover pattern and
+accent colour — from the catalog card all the way into its lessons.
+**No new tables, DB stays v4.**
+
+### Cover pattern families
+
+Six pattern families (diagonal weave, dot grid, ruled grid, rays, concentric
+arcs, cross-hatch), picked from the course title, layered over the existing
+category hue. Two courses in one category now share a colour family without
+sharing a look. All pure CSS gradients — still no image requests.
+
+### Course accent
+
+One class on the course/lesson wrapper redefines `--m-course` for everything
+inside it, derived from the same identity the cover uses.
+
+- Applied to **identifying chrome only**: category kicker, unit headings, topic
+  chips, progress meters, the reading-progress hairline, the current ladder
+  rung, and a tint on the course hero card.
+- **Primary buttons deliberately keep the brand colour.** The button you press
+  must not move around the palette from one course to the next — that rule is
+  asserted in the test suite, not just written down.
+- Lessons inherit their course's accent (`/lesson` now returns
+  `course_categories`), so a course reads as itself all the way down instead of
+  every page being brand indigo.
+
+### Contrast, measured rather than assumed
+
+Each of the six families has a separate AA-legible on-surface text shade per
+theme (`--m-course-text`), the same fill/text split as `--m-primary`. Measuring
+caught three real problems that eyeballing would have shipped:
+
+- The amber accent came out at exactly **4.50:1** on its own chip tint — no
+  margin at all. Darkened.
+- The green accent measured **4.29:1** on the current-rung tint. Darkened.
+- Painting the *solid* current ladder rung with the course fill put white text
+  on cyan/green/amber at **1.8–3.7:1**. That rung is now tinted with accent-
+  coloured text instead of filled.
+
+Worst case across all 12 accents (6 families × 2 themes), on the surface, on
+the chip tint and on the rung tint, is now **4.54:1**.
+
+### Verification
+
+- 10-assertion headless run: pattern families in use, one category = one hue
+  while its courses still differ by pattern, the theme class on both the course
+  and its lessons, accent-coloured chrome, **the CTA still on brand**, the rung
+  tinted rather than white-on-accent, and **every accent passing AA in both
+  themes as the browser actually computes it**.
+- Two of those assertions failed first as *harness* bugs, both fixed: Chromium
+  returns `color-mix()` as `color(srgb 0–1)`, which the probe was reading as
+  0–255 (making every tint look near-black), and `rgb(154, 69, 8)` was being
+  string-compared against `#9a4508`. The browser-measured numbers now match the
+  offline math exactly.
+- All ten earlier render harnesses still pass; `php -l`, `node --check` and the
+  seed validator clean.
+
 ## [1.20.0]
 
 A second UI pass, this one about **restraint**. 1.19.0 added things; this one

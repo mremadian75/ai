@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.20.0
+Stable tag: 1.21.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -30,7 +30,8 @@ Mahan Academy is a self-contained learning plugin built to teach people how to u
 * Visual drag-and-drop Course Builder — build the whole curriculum on one screen
 * AI authoring assistant — generate outcomes, draft lessons, and create exercises
 * Beautiful single-page application front-end (Coursera structure + Duolingo energy)
-* Automatic course cover art: every course gets a generated CSS gradient cover — hue by category so a subject area reads as a colour family, angle and tone by title so sibling courses stay distinguishable. No uploads, no image requests, and it looks right in both light and dark themes
+* Automatic course cover art: every course gets a generated CSS gradient cover — hue by category so a subject area reads as a colour family, and one of six pattern families (weave, dot grid, ruled grid, rays, arcs, cross-hatch) plus angle and tone by title, so sibling courses never look like the same card twice. No uploads, no image requests, and it looks right in both light and dark themes
+* Per-course identity: each course carries its own accent through its kicker, unit headings, topic chips, meters and ladder — and into its lessons. Primary buttons stay on the brand colour so the button you press never moves around the palette. Every accent is contrast-checked in both themes
 * Designed for dark mode, not just recoloured for it: cards, heroes, panels and dialogs carry real elevation on dark surfaces
 * Real-time streaming AI tutor via Server-Sent Events (Anthropic / OpenAI / Google) — with a structured teaching playbook (diagnose → explain at your level with a worked example from your world → check understanding → point to the next step) and misconception-aware, difficulty-tuned practice questions
 * Five exercise types: multiple choice, true/false, fill-in-the-blank, short answer, and prompt-writing (open answers graded by AI)
@@ -75,6 +76,9 @@ You don't have to do anything — the starter catalog installs automatically on 
 Each course lists the authoritative references it is grounded in under "Further reading & sources" on the course page — peer-reviewed papers, standards and institutional guidance (NIST AI Risk Management Framework, EU AI Act, UNESCO, OECD, OWASP, C2PA), textbooks, and official provider documentation.
 
 == Changelog ==
+
+= 1.21.0 =
+Every course now looks like itself. Covers gained six pattern families (weave, dot grid, ruled grid, rays, arcs, cross-hatch) picked from the course title and layered over the category hue, so two courses in one category share a colour family without sharing a look. Each course also carries its own accent colour through its category kicker, unit headings, topic chips, progress meters and the current ladder rung — and into its lessons, so a course reads as itself all the way down instead of every page being brand indigo. Primary buttons deliberately stay on the brand colour: the button you press must not move around the palette from course to course. Every one of the twelve accents (six families x two themes) was measured rather than eyeballed; three that failed AA were fixed, and the worst case is now 4.54:1. No new tables.
 
 = 1.20.0 =
 A second UI pass, this one about restraint — 1.19.0 added things, this one takes things away so what's left can lead. The dashboard stacked three full-width banners in three tints and nothing led; the review CTA is now a single-line strip, which makes "Continue learning" the one primary action again. Stats lost their emoji hats (the flame stays, because it carries state — an at-risk streak is now a dimmed flame instead of a cryptic candle), the level meter went from a two-hue gradient to one flat accent, and week dots are simply filled or not. Card grids now lift in as they scroll into view — strictly opt-in, so no JS, no IntersectionObserver, or reduced motion means the content is just there. Fixes: grids loaded after the page (the recommendations strip) never animated, and uncategorised courses all shared one cover colour. Front-end only, no new tables.

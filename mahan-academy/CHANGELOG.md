@@ -4,6 +4,101 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.28.0]
+
+A live AI examiner, and the course that explains why any of this feels personal.
+**Schema change: DB goes to v6.**
+
+### The thing a quiz cannot do
+
+Every assessment in the plugin until now asked the learner to *recognise* the
+right answer: pick an option, judge true/false, fill a blank. That is cheap to
+grade and easy to pass without understanding anything.
+
+**Live assessment** (`Mahan_Viva`) asks them to say it. At the end of each unit —
+once every lesson in it is done — a sitting opens and an AI examiner runs three
+stages:
+
+| Stage | What it asks for |
+| --- | --- |
+| **Explain** | The core idea in your own words, including *why* it works. |
+| **Apply** | What you would actually do, in a scenario built from **your** role, tools and goal. |
+| **Judge** | A trade-off, a limit, a failure mode, or when not to use it at all. |
+
+Each answer is prose, graded 0–100 against a rubric the examiner wrote when it
+set the question. Pass the stage and the next one opens. Answer *partly* right
+and it probes once — one focused follow-up on the exact gap — before the attempt
+counts against you. Two failed attempts on a stage ends the sitting; the
+questions are new next time.
+
+### Three properties that are not negotiable
+
+- **The score is the server's.** The model returns a number and an advisory
+  verdict; PHP decides pass/fail. The rubric lives in the database row and is
+  stripped before the session reaches the browser, so there is nothing to forge
+  and nothing to read the answer off. A model that says "pass" on a 30 is
+  overruled; so is one that says "fail" on a 95. There are tests for both.
+- **It is bounded.** Stages, attempts, turns per stage, answer length and the
+  unit material handed to the examiner are all capped. A live model conversation
+  cannot become a runaway bill.
+- **It is resumable.** A sitting is a row, not a transient. Close the tab
+  mid-exam and you come back to the same question — not a fresh one, and not a
+  lost one. A sitting untouched for a day is retired rather than resumed.
+
+Passing pays 60 XP, once per unit ever. Retaking for a better score is welcome;
+farming it is not. With no API key configured the feature does not appear at all
+— the same rule the tutor already followed.
+
+### The personalization thread, made explicit
+
+The **Apply** stage is where the request behind this release lands: its question
+is generated from the learner context block, so two people finishing the same
+unit are examined on the same concept *inside their own jobs*.
+
+Alongside it, a nineteenth course — **"Personalizing AI: Make It Work Like You
+Do"** — teaches the subject the rest of the catalog had been assuming: why an
+assistant answers generically by default (an empty context, not a weak model),
+the four levers that change that (instructions, context, memory, examples), how
+to write a profile where every line would be wrong in a stranger's, when to use
+a project instead of re-uploading, why showing beats describing, and then the
+part almost everyone skips — building a five-task personal eval set and actually
+checking whether the setup helped. It closes on the two failure modes
+personalization creates: context that has quietly gone stale, and an assistant so
+well tuned to you that it stops disagreeing with you.
+
+Four units, eight lessons, 32 exercises, four quizzes, ~3 hours, grounded in the
+few-shot-learning and RAG papers, the published behaviour of the major
+assistants, GDPR Article 5, and the NIST AI RMF. The catalog is now **19 courses,
+76 units, 152 lessons, 629 exercises, 297 quiz questions**.
+
+The per-lesson "For you" note also got sharper: it must now end with one specific
+thing the learner could try today, in a task they already have, rather than
+observing that the lesson is relevant to them. The AI cache namespace was
+versioned along with it — changing a prompt without that would have shipped the
+improvement to nobody, since every existing site would keep serving notes the old
+prompt wrote.
+
+### Fixes
+
+- `Mahan_DB::drop_tables()` and `uninstall.php` both missed the `certificates`
+  table, shipped in 1.22.0. "Remove all data" left every issued credential
+  behind. Both now drop it (and `viva`).
+- Five CSS rules referenced `--m-primary-on-surface` / `--m-accent-on-surface`,
+  tokens that do not exist, so they silently resolved to their fallbacks instead
+  of the AA-legible `--m-primary-text` / `--m-accent-text` they were meant to
+  use. Introduced in 1.26.0, fixed here.
+
+### Delivery
+
+- 87 new assertions covering the state machine — server-authoritative scoring,
+  bounded probing, ownership, resumption, staleness, XP-once, and that the rubric
+  never reaches `public_session()`.
+- A 25-check headless render harness driving a whole sitting: probe → stage pass
+  → stage pass → final pass, asserting the locked row is inert, the pips track
+  the stage, the compose box disappears on completion, and the rubric never
+  reaches the DOM.
+- Spanish is complete again: 712/712 strings.
+
 ## [1.27.0]
 
 Every course is four units deep. **No schema change — DB stays v5.**

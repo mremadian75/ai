@@ -157,6 +157,25 @@ class Mahan_REST {
 			'permission_callback' => $logged_in,
 		) );
 
+		// Live AI oral exam (viva): open a sitting, answer a question, walk away.
+		register_rest_route( self::NS, '/viva/start', array(
+			'methods'             => WP_REST_Server::CREATABLE,
+			'callback'            => array( __CLASS__, 'viva_start' ),
+			'permission_callback' => $logged_in,
+		) );
+
+		register_rest_route( self::NS, '/viva/answer', array(
+			'methods'             => WP_REST_Server::CREATABLE,
+			'callback'            => array( __CLASS__, 'viva_answer' ),
+			'permission_callback' => $logged_in,
+		) );
+
+		register_rest_route( self::NS, '/viva/abandon', array(
+			'methods'             => WP_REST_Server::CREATABLE,
+			'callback'            => array( __CLASS__, 'viva_abandon' ),
+			'permission_callback' => $logged_in,
+		) );
+
 		// Per-lesson AI "For you" personalization note.
 		register_rest_route( self::NS, '/lesson/personalize', array(
 			'methods'             => WP_REST_Server::CREATABLE,
@@ -379,6 +398,10 @@ class Mahan_REST {
 				'title'   => $unit['title'],
 				'lessons' => $lessons,
 				'quiz'    => $quiz,
+				// Live oral exam for this unit. Only meaningful for an enrolled
+				// learner with a provider configured; otherwise the row simply
+				// doesn't appear.
+				'viva'    => ( $user_id && $enrolled ) ? Mahan_Viva::unit_state( $user_id, $course_id, $unit['title'] ) : null,
 			);
 		}
 
@@ -1072,6 +1095,83 @@ class Mahan_REST {
 			return new WP_REST_Response( array( 'ok' => false, 'error' => 'missing_token' ), 400 );
 		}
 		$res = Mahan_Practice::grade( $user_id, $token, $index, $answer );
+		if ( empty( $res['ok'] ) ) {
+			return new WP_REST_Response( $res, 404 );
+		}
+		return rest_ensure_response( $res );
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Live AI oral exam (viva)                                            */
+	/* ------------------------------------------------------------------ */
+
+	/**
+	 * HTTP status for a viva error code. A locked unit is a 403, a missing one
+	 * a 404, and "the provider didn't answer" a 503 — the browser retries the
+	 * last one and only the last one.
+	 */
+	private static function viva_status( $error ) {
+		switch ( (string) $error ) {
+			case 'not_found':
+				return 404;
+			case 'not_enrolled':
+			case 'locked':
+				return 403;
+			case 'generation_failed':
+			case 'grading_failed':
+			case 'ai_unavailable':
+				return 503;
+			case 'empty_answer':
+				return 400;
+			default:
+				return 422;
+		}
+	}
+
+	/**
+	 * Open (or resume) a viva sitting for a unit.
+	 */
+	public static function viva_start( WP_REST_Request $request ) {
+		$body      = $request->get_json_params();
+		$course_id = isset( $body['course_id'] ) ? absint( $body['course_id'] ) : 0;
+		$unit      = isset( $body['unit'] ) ? (string) $body['unit'] : '';
+		if ( ! $course_id || '' === trim( $unit ) ) {
+			return new WP_REST_Response( array( 'ok' => false, 'error' => 'missing_params' ), 400 );
+		}
+		$res = Mahan_Viva::start( get_current_user_id(), $course_id, $unit );
+		if ( empty( $res['ok'] ) ) {
+			return new WP_REST_Response( $res, self::viva_status( isset( $res['error'] ) ? $res['error'] : '' ) );
+		}
+		return rest_ensure_response( $res );
+	}
+
+	/**
+	 * Submit one answer in a live sitting.
+	 */
+	public static function viva_answer( WP_REST_Request $request ) {
+		$body       = $request->get_json_params();
+		$session_id = isset( $body['session_id'] ) ? absint( $body['session_id'] ) : 0;
+		$answer     = isset( $body['answer'] ) ? (string) $body['answer'] : '';
+		if ( ! $session_id ) {
+			return new WP_REST_Response( array( 'ok' => false, 'error' => 'missing_params' ), 400 );
+		}
+		$res = Mahan_Viva::answer( get_current_user_id(), $session_id, $answer );
+		if ( empty( $res['ok'] ) ) {
+			return new WP_REST_Response( $res, self::viva_status( isset( $res['error'] ) ? $res['error'] : '' ) );
+		}
+		return rest_ensure_response( $res );
+	}
+
+	/**
+	 * Retire a sitting the learner walked out of.
+	 */
+	public static function viva_abandon( WP_REST_Request $request ) {
+		$body       = $request->get_json_params();
+		$session_id = isset( $body['session_id'] ) ? absint( $body['session_id'] ) : 0;
+		if ( ! $session_id ) {
+			return new WP_REST_Response( array( 'ok' => false, 'error' => 'missing_params' ), 400 );
+		}
+		$res = Mahan_Viva::abandon( get_current_user_id(), $session_id );
 		if ( empty( $res['ok'] ) ) {
 			return new WP_REST_Response( $res, 404 );
 		}

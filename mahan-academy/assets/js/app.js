@@ -1555,6 +1555,8 @@
 				if (unit.quiz) {
 					list.appendChild(quizRow(unit, j));
 				}
+				var viva = vivaRow(unit, j);
+				if (viva) { list.appendChild(viva); }
 				content.appendChild(list);
 			});
 			wrap.appendChild(content);
@@ -1662,6 +1664,40 @@
 				q.passed ? h('span', { class: 'mahan-quiz-score', text: '✓ ' + q.score + '%' })
 					: (q.score !== null ? h('span', { class: 'mahan-quiz-score-fail', text: q.score + '%' }) : null),
 				h('span', { class: 'mahan-lesson-min', text: plural(q.count, 'questionOne', 'questions', 'question', 'questions') })
+			])
+		]);
+	}
+
+	// The unit's live oral exam. A quiz asks you to recognise the answer; this
+	// asks you to say it. The row only exists once the unit's lessons are done
+	// and a provider is configured — an exam you can't sit is just noise.
+	function vivaRow(unit, j) {
+		var v = unit.viva;
+		if (!v || !v.available) { return null; }
+		var passed = v.status === 'passed';
+		var clickable = j.enrolled && D.loggedIn && v.unlocked;
+		var cls = 'mahan-lesson-row mahan-viva-row' + (passed ? ' is-done' : '') + (clickable ? '' : ' is-locked');
+		var label = v.resume && !passed
+			? t('vivaResume', 'Resume live assessment')
+			: (passed ? t('vivaRetake', 'Retake live assessment') : t('vivaTitle', 'Live assessment'));
+		return h(clickable ? 'button' : 'div', {
+			class: cls,
+			type: clickable ? 'button' : null,
+			'aria-disabled': clickable ? null : 'true',
+			title: v.unlocked ? '' : t('vivaLockedHint', 'Finish every lesson in this unit to unlock'),
+			onClick: clickable
+				? function () { openViva(j.course.id, unit.title); }
+				: function () { toast(esc(t('vivaLocked', 'Finish every lesson in this unit to unlock the live assessment.')), 'info'); }
+		}, [
+			h('span', { class: 'mahan-lesson-icon', text: v.unlocked ? (passed ? '✓' : '🎙') : '🔒' }),
+			h('span', { class: 'mahan-lesson-name' }, [
+				document.createTextNode(label + '  '),
+				h('span', { class: 'mahan-viva-tag', text: t('vivaTag', 'AI examiner') })
+			]),
+			h('span', { class: 'mahan-lesson-meta' }, [
+				passed ? h('span', { class: 'mahan-quiz-score', text: '✓ ' + v.percent + '%' }) : null,
+				v.resume && !passed ? h('span', { class: 'mahan-viva-live', text: t('vivaInProgress', 'in progress') }) : null,
+				h('span', { class: 'mahan-lesson-min', text: plural(v.stages, 'vivaStageOne', 'vivaStages', 'stage', 'stages') })
 			])
 		]);
 	}
@@ -1812,6 +1848,246 @@
 				// guard doesn't veto it and leave two modals stacked.
 				onClick: function () { modal.submitted = false; modal.close(true); openQuiz(state.courseId, unit); } }));
 		}
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Live AI oral exam (viva)                                            */
+	/* ------------------------------------------------------------------ */
+
+	// Errors here are worth naming: "something went wrong" tells a learner
+	// staring at a half-finished exam nothing about whether to try again.
+	function vivaError(err) {
+		var code = (err && err.payload && err.payload.error) || '';
+		if (code === 'locked') { return t('vivaLocked', 'Finish every lesson in this unit to unlock the live assessment.'); }
+		if (code === 'ai_unavailable') { return t('vivaUnavailable', 'The AI examiner is unavailable right now.'); }
+		if (code === 'generation_failed') { return t('vivaNoQuestion', "The examiner couldn't set a question — please try again in a moment."); }
+		if (code === 'grading_failed') { return t('vivaNoGrade', "The examiner couldn't read that answer — send it again."); }
+		if (code === 'empty_answer') { return t('vivaEmpty', 'Write an answer first.'); }
+		return t('error', 'Something went wrong.');
+	}
+
+	function openViva(courseId, unit) {
+		// Setting the first question is a live model call — say so, or the tap
+		// looks like it did nothing.
+		toast('🎙 ' + esc(t('vivaOpening', 'The examiner is preparing your first question…')), 'info');
+		api('/viva/start', 'POST', { course_id: courseId, unit: unit }).then(function (r) {
+			if (!r.ok) { toast(esc(t('error', 'Something went wrong.')), 'error'); return; }
+			renderVivaModal(courseId, unit, r.session);
+		}).catch(function (err) {
+			toast(esc(vivaError(err)), 'error');
+		});
+	}
+
+	// One line of the exam transcript.
+	function vivaTurn(entry) {
+		if (entry.role === 'grade') {
+			var kind = entry.passed ? 'is-pass' : (entry.probe ? 'is-probe' : 'is-fail');
+			var chips = h('div', { class: 'mahan-viva-chips' });
+			(entry.strengths || []).forEach(function (s) {
+				chips.appendChild(h('span', { class: 'mahan-viva-chip is-good', text: '✓ ' + s }));
+			});
+			(entry.gaps || []).forEach(function (s) {
+				chips.appendChild(h('span', { class: 'mahan-viva-chip is-gap', text: '△ ' + s }));
+			});
+			return h('div', { class: 'mahan-viva-grade ' + kind }, [
+				h('div', { class: 'mahan-viva-grade-head' }, [
+					h('span', { class: 'mahan-viva-score', text: entry.score + '%' }),
+					h('strong', {
+						text: entry.passed
+							? t('vivaStagePassed', 'Stage passed')
+							: (entry.probe ? t('vivaProbing', 'One more question on this') : t('vivaStageMissed', 'Not there yet'))
+					})
+				]),
+				entry.feedback ? h('p', { class: 'mahan-viva-feedback', text: entry.feedback }) : null,
+				chips.childNodes.length ? chips : null
+			]);
+		}
+		var who = entry.role === 'learner' ? t('vivaYou', 'You') : t('vivaExaminer', 'Examiner');
+		return h('div', { class: 'mahan-viva-turn is-' + entry.role }, [
+			h('span', { class: 'mahan-viva-who', text: who }),
+			h('div', { class: 'mahan-viva-bubble', html: mdToHtml(entry.text || '') })
+		]);
+	}
+
+	function renderVivaModal(courseId, unit, session) {
+		var modal;
+		var finished = false;
+		var thread = h('div', { class: 'mahan-viva-thread', role: 'log', 'aria-live': 'polite', tabindex: '0' });
+		var pips = h('ol', { class: 'mahan-viva-pips' });
+		var msg = h('div', { class: 'mahan-viva-msg', role: 'status' });
+
+		function paintPips(current, status) {
+			pips.innerHTML = '';
+			(session.stages || []).forEach(function (s) {
+				var cls = 'mahan-viva-pip';
+				if (status === 'passed' || s.n < current) { cls += ' is-done'; }
+				else if (s.n === current) { cls += ' is-current'; }
+				pips.appendChild(h('li', { class: cls, title: s.blurb }, [
+					h('span', { class: 'mahan-viva-pip-n', text: (status === 'passed' || s.n < current) ? '✓' : String(s.n) }),
+					h('span', { class: 'mahan-viva-pip-label', text: s.label })
+				]));
+			});
+		}
+
+		function paintThread() {
+			thread.innerHTML = '';
+			(session.transcript || []).forEach(function (e) { thread.appendChild(vivaTurn(e)); });
+			// The freshest turn is the one they need — pin the view to it.
+			thread.scrollTop = thread.scrollHeight;
+		}
+
+		function append(entry) {
+			session.transcript = (session.transcript || []).concat([entry]);
+			thread.appendChild(vivaTurn(entry));
+			thread.scrollTop = thread.scrollHeight;
+		}
+
+		var box = h('textarea', {
+			class: 'mahan-viva-input',
+			rows: '4',
+			maxlength: String(session.answer_max || 2000),
+			placeholder: t('vivaPlaceholder', 'Answer in your own words — a few sentences is plenty.'),
+			'aria-label': t('vivaYourAnswer', 'Your answer')
+		});
+		var counter = h('span', { class: 'mahan-viva-counter' });
+		function updateCounter() {
+			counter.textContent = box.value.length + ' / ' + (session.answer_max || 2000);
+		}
+		box.addEventListener('input', updateCounter);
+		// Ctrl/Cmd+Enter sends, like every other compose box on the internet.
+		box.addEventListener('keydown', function (e) {
+			if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); submit(); }
+		});
+		updateCounter();
+
+		var sendBtn = h('button', {
+			class: 'mahan-btn mahan-btn-primary', type: 'button',
+			text: t('vivaSend', 'Send answer'),
+			onClick: function () { submit(); }
+		});
+		var compose = h('div', { class: 'mahan-viva-compose' }, [
+			box,
+			h('div', { class: 'mahan-viva-compose-foot' }, [counter, sendBtn])
+		]);
+
+		function endSitting(r) {
+			finished = true;
+			compose.remove();
+			var passed = r.outcome === 'passed';
+			var banner = h('div', { class: 'mahan-quiz-result ' + (passed ? 'is-pass' : 'is-fail') }, [
+				h('span', { class: 'mahan-quiz-result-icon', text: passed ? '🏅' : '💪' }),
+				h('div', {}, [
+					h('strong', {
+						text: (passed ? t('vivaPassed', 'Assessment passed!') : t('vivaFailed', 'Not this time'))
+							+ ' — ' + (r.session ? r.session.percent : 0) + '%'
+					}),
+					h('div', { class: 'mahan-quiz-result-sub', text: passed
+						? t('vivaPassedSub', 'You explained it, applied it, and judged it.')
+						: t('vivaFailedSub', 'Review the unit and sit it again — the questions will be new.') })
+				])
+			]);
+			thread.parentNode.insertBefore(banner, thread.nextSibling);
+			// The last thing marked is the last thing they want to read.
+			thread.scrollTop = thread.scrollHeight;
+			banner.scrollIntoView({ block: 'nearest' });
+			if (passed) { celebrateXp(r); }
+
+			var actions = modal.dialog.querySelector('.mahan-modal-actions');
+			actions.innerHTML = '';
+			actions.appendChild(h('button', { class: 'mahan-btn mahan-btn-primary', text: t('done', 'Done'),
+				onClick: function () { modal.close(true); } }));
+			if (!passed) {
+				actions.appendChild(h('button', { class: 'mahan-btn mahan-btn-ghost', text: t('retry', 'Try again'),
+					onClick: function () { modal.close(true); openViva(courseId, unit); } }));
+			}
+		}
+
+		function submit() {
+			if (finished) { return; }
+			var answer = box.value.trim();
+			if (!answer) { msg.textContent = t('vivaEmpty', 'Write an answer first.'); box.focus(); return; }
+			msg.textContent = '';
+			var restore = setBusy(sendBtn, t('vivaGrading', 'Marking…'));
+			box.disabled = true;
+			append({ role: 'learner', stage: session.stage, text: answer });
+			var thinking = h('div', { class: 'mahan-viva-thinking', text: t('vivaThinking', 'The examiner is reading your answer…') });
+			thread.appendChild(thinking);
+			thread.scrollTop = thread.scrollHeight;
+
+			api('/viva/answer', 'POST', { session_id: session.id, answer: answer }).then(function (r) {
+				thinking.remove();
+				restore();
+				box.disabled = false;
+				if (!r.ok) { msg.textContent = t('error', 'Something went wrong.'); return; }
+				box.value = '';
+				updateCounter();
+				modal.touched = true;
+
+				// The server's session is the truth — adopt it wholesale rather
+				// than trying to keep a parallel copy in sync.
+				var prev = session.transcript;
+				session = r.session || session;
+				if (!session.transcript || !session.transcript.length) { session.transcript = prev; }
+				paintPips(session.stage, session.status);
+				paintThread();
+
+				if (r.outcome === 'passed' || r.outcome === 'failed') { endSitting(r); return; }
+				if (r.outcome === 'stage_passed') {
+					toast('✓ ' + esc(t('vivaStageCleared', 'Stage cleared')) + ' — ' + r.score + '%', 'xp');
+				} else if (r.outcome === 'retry') {
+					msg.textContent = (r.attempts_left === 1)
+						? t('vivaLastTry', 'One more attempt on this stage — here is a different question.')
+						: t('vivaAnotherTry', 'Here is a different question on the same idea.');
+				}
+				box.focus();
+			}).catch(function (err) {
+				thinking.remove();
+				restore();
+				box.disabled = false;
+				// Keep what they typed — a provider hiccup must not eat an answer.
+				box.value = answer;
+				updateCounter();
+				// The optimistic learner bubble is a lie now; drop it.
+				session.transcript = (session.transcript || []).slice(0, -1);
+				paintThread();
+				msg.textContent = vivaError(err);
+			});
+		}
+
+		paintPips(session.stage, session.status);
+		paintThread();
+
+		var dialog = h('div', { class: 'mahan-modal mahan-viva-modal' }, [
+			h('h2', { text: '🎙 ' + t('vivaTitle', 'Live assessment') }),
+			h('p', { class: 'mahan-modal-sub', text: unit + ' · '
+				+ plural(session.stage_count, 'vivaStageOne', 'vivaStages', 'stage', 'stages')
+				+ ' · ' + t('passMark', 'pass') + ' ' + session.pass_score + '%' }),
+			pips,
+			thread,
+			compose,
+			msg,
+			h('div', { class: 'mahan-modal-actions' }, [
+				h('button', { class: 'mahan-btn mahan-btn-ghost', text: t('vivaPause', 'Pause — resume later'),
+					onClick: function () { modal.close(); } })
+			])
+		]);
+
+		var closeArmed = false;
+		modal = openModal(dialog, {
+			label: t('vivaTitle', 'Live assessment'),
+			// Unsent text is the only thing closing can destroy — the sitting
+			// itself survives on the server and resumes exactly here.
+			beforeClose: function () {
+				if (finished || closeArmed || !box.value.trim()) { return true; }
+				closeArmed = true;
+				msg.textContent = t('vivaCloseWarn', 'Your unsent answer will be lost — close again to confirm.');
+				return false;
+			},
+			onClose: function () {
+				if ((modal.touched || finished) && state.view === 'course') { renderCourse(); }
+			}
+		});
+		box.focus();
 	}
 
 	/* ------------------------------------------------------------------ */

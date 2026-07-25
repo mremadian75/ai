@@ -224,7 +224,10 @@ class Mahan_Personalization {
 			return array( 'ok' => false, 'reason' => 'not_found' );
 		}
 
-		$cache_key = md5( 'mahan_foryou:' . $lesson_id . ':' . $sig );
+		// The namespace carries a version: when the prompt changes, cached notes
+		// written by the old one are no longer the notes this code produces, and
+		// leaving them in place would ship the improvement to nobody.
+		$cache_key = md5( 'mahan_foryou.v2:' . $lesson_id . ':' . $sig );
 		$cached    = Mahan_DB::cache_get( $cache_key, 0 );
 		if ( null !== $cached && '' !== trim( (string) $cached ) ) {
 			return array( 'ok' => true, 'text' => (string) $cached, 'cached' => true );
@@ -239,9 +242,13 @@ class Mahan_Personalization {
 		}
 
 		$system = 'You connect what a lesson teaches to THIS specific learner\'s job. '
-			. 'In 2–3 short sentences (max ~55 words), tell them concretely how to apply this lesson in their own work — '
+			. 'In 2–3 short sentences (max ~60 words), tell them concretely how to apply this lesson in their own work — '
 			. 'name their role, a tool they use, or their stated goal where natural. Warm, specific, second person ("you"). '
-			. 'No preamble, no headings, no restating the lesson — just the personal connection. '
+			// A note that only observes "this is relevant to you" is a
+			// compliment, not personalization. End on something they could do
+			// before the day is out, in a task they already have.
+			. 'End with ONE specific thing they could try today — a task they already do, not a hypothetical exercise. '
+			. 'No preamble, no headings, no restating the lesson — just the personal connection and the action. '
 			. 'Write in the same language as the lesson.';
 		$ctx      = self::learner_context( $user_id, array( 'with_difficulty' => false ) );
 		$topics_line = ! empty( $topics ) ? "\nConcepts: " . implode( ', ', $topics ) : '';

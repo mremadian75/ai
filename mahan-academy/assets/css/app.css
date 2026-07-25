@@ -1601,19 +1601,19 @@ div.mahan-lesson-row:active { transform: translateY(1px); }
 	transition: color .12s ease, border-color .12s ease;
 }
 .mahan-tab:hover { color: var(--m-text); }
-.mahan-tab.is-active { color: var(--m-primary-on-surface, var(--m-primary)); border-bottom-color: var(--m-primary); }
+.mahan-tab.is-active { color: var(--m-primary-text); border-bottom-color: var(--m-primary); }
 .mahan-tab-count {
 	min-width: 20px; padding: 1px 6px; border-radius: 999px;
 	background: var(--m-surface-2); color: var(--m-muted);
 	font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums;
 }
-.mahan-tab.is-active .mahan-tab-count { background: color-mix(in srgb, var(--m-primary) 16%, var(--m-surface)); color: var(--m-primary-on-surface, var(--m-primary)); }
+.mahan-tab.is-active .mahan-tab-count { background: color-mix(in srgb, var(--m-primary) 16%, var(--m-surface)); color: var(--m-primary-text); }
 .mahan-shelf-empty { margin: 26px 0; color: var(--m-muted); text-align: center; }
 
 .mahan-dash-h2row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .mahan-linkbtn {
 	border: 0; background: none; padding: 0; cursor: pointer; font: inherit;
-	font-size: 14px; font-weight: 600; color: var(--m-primary-on-surface, var(--m-primary));
+	font-size: 14px; font-weight: 600; color: var(--m-primary-text);
 }
 .mahan-linkbtn:hover { text-decoration: underline; }
 
@@ -1628,7 +1628,7 @@ div.mahan-lesson-row:active { transform: translateY(1px); }
 	display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px;
 	font-size: 12.5px; font-weight: 700;
 }
-.mahan-prof-level-badge { background: color-mix(in srgb, var(--m-primary) 14%, var(--m-surface)); color: var(--m-primary-on-surface, var(--m-primary)); }
+.mahan-prof-level-badge { background: color-mix(in srgb, var(--m-primary) 14%, var(--m-surface)); color: var(--m-primary-text); }
 .mahan-prof-placed { background: var(--m-surface-2); color: var(--m-muted); }
 
 .mahan-prof-totals {
@@ -1681,7 +1681,7 @@ div.mahan-lesson-row:active { transform: translateY(1px); }
 .mahan-skill-count {
 	min-width: 19px; padding: 0 5px; border-radius: 999px; font-size: 11.5px; font-weight: 700;
 	background: color-mix(in srgb, var(--m-accent) 20%, var(--m-surface));
-	color: var(--m-accent-on-surface, var(--m-text)); font-variant-numeric: tabular-nums;
+	color: var(--m-accent-text); font-variant-numeric: tabular-nums;
 }
 
 .mahan-hud-me { display: inline-flex; border-radius: 999px; text-decoration: none; }
@@ -1692,4 +1692,132 @@ div.mahan-lesson-row:active { transform: translateY(1px); }
 	.mahan-prof-name { font-size: 22px; }
 	.mahan-prof-avatar .mahan-hud-avatar { width: 58px; height: 58px; font-size: 21px; }
 	.mahan-prof-totals { grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); }
+}
+
+/* ====================================================================== */
+/* v1.28.0 — Live AI oral exam (viva)                                     */
+/* ====================================================================== */
+
+/* --- Course-outline row ---------------------------------------------- */
+.mahan-viva-row { border-style: dashed; }
+.mahan-viva-row.is-done { border-style: solid; }
+.mahan-viva-tag {
+	display: inline-block; padding: 2px 8px; border-radius: 999px;
+	font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
+	background: color-mix(in srgb, var(--m-primary) 16%, var(--m-surface));
+	color: var(--m-primary-text);
+	vertical-align: middle;
+}
+.mahan-viva-live {
+	font-size: 12px; font-weight: 700; color: var(--m-accent-text);
+}
+.mahan-viva-live::before { content: '● '; }
+
+/* --- The exam room ---------------------------------------------------- */
+.mahan-viva-modal { max-width: 680px; display: flex; flex-direction: column; }
+
+.mahan-viva-pips { display: flex; gap: 8px; list-style: none; margin: 0 0 16px; padding: 0; }
+.mahan-viva-pip {
+	flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0;
+	padding: 8px 10px; border-radius: var(--m-radius-sm);
+	border: 1px solid var(--m-border); background: var(--m-surface-2);
+	font-size: 13px; color: var(--m-muted);
+}
+.mahan-viva-pip-n {
+	flex: 0 0 auto; width: 22px; height: 22px; display: grid; place-items: center;
+	border-radius: 999px; font-size: 12px; font-weight: 700;
+	background: var(--m-surface); border: 1px solid var(--m-border); color: inherit;
+}
+.mahan-viva-pip-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mahan-viva-pip.is-current {
+	border-color: var(--m-primary); color: var(--m-text); font-weight: 600;
+	background: color-mix(in srgb, var(--m-primary) 8%, var(--m-surface));
+}
+.mahan-viva-pip.is-current .mahan-viva-pip-n { background: var(--m-primary); color: #fff; border-color: transparent; }
+.mahan-viva-pip.is-done { border-color: color-mix(in srgb, var(--m-accent-fill) 45%, var(--m-border)); color: var(--m-text); }
+.mahan-viva-pip.is-done .mahan-viva-pip-n {
+	background: color-mix(in srgb, var(--m-accent-fill) 82%, var(--m-surface)); color: #fff; border-color: transparent;
+}
+
+.mahan-viva-thread {
+	display: flex; flex-direction: column; gap: 14px;
+	/* No smooth scrolling: the thread is pinned to its newest turn
+	   programmatically, and an animated scroll fights every repaint. */
+	max-height: 46vh; overflow-y: auto; padding: 4px 2px 2px;
+}
+
+.mahan-viva-turn { display: flex; flex-direction: column; gap: 4px; max-width: 92%; }
+.mahan-viva-turn.is-learner { align-self: flex-end; align-items: flex-end; }
+.mahan-viva-who { font-size: 11.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--m-muted); }
+.mahan-viva-bubble {
+	padding: 12px 14px; border-radius: var(--m-radius); line-height: 1.6;
+	border: 1px solid var(--m-border); background: var(--m-surface-2);
+}
+.mahan-viva-bubble > :first-child { margin-top: 0; }
+.mahan-viva-bubble > :last-child { margin-bottom: 0; }
+.mahan-viva-turn.is-examiner .mahan-viva-bubble {
+	border-color: color-mix(in srgb, var(--m-primary) 30%, var(--m-border));
+	background: color-mix(in srgb, var(--m-primary) 6%, var(--m-surface));
+	font-size: 16px;
+}
+.mahan-viva-turn.is-learner .mahan-viva-bubble { background: var(--m-surface); }
+
+/* --- The mark --------------------------------------------------------- */
+.mahan-viva-grade {
+	border: 1px solid var(--m-border); border-left-width: 4px;
+	border-radius: var(--m-radius); padding: 12px 14px; background: var(--m-surface-2);
+}
+.mahan-viva-grade.is-pass { border-left-color: var(--m-accent-fill); }
+.mahan-viva-grade.is-probe { border-left-color: var(--m-accent); }
+.mahan-viva-grade.is-fail { border-left-color: var(--m-danger); }
+.mahan-viva-grade-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.mahan-viva-score {
+	padding: 3px 10px; border-radius: 999px; font-size: 13px; font-weight: 800;
+	font-variant-numeric: tabular-nums;
+	background: var(--m-surface); border: 1px solid var(--m-border);
+}
+.mahan-viva-grade.is-pass .mahan-viva-score {
+	background: color-mix(in srgb, var(--m-accent-fill) 16%, var(--m-surface));
+	border-color: color-mix(in srgb, var(--m-accent-fill) 40%, var(--m-border));
+}
+.mahan-viva-grade.is-fail .mahan-viva-score {
+	background: color-mix(in srgb, var(--m-danger) 14%, var(--m-surface));
+	border-color: color-mix(in srgb, var(--m-danger) 40%, var(--m-border));
+}
+.mahan-viva-feedback { margin: 0; line-height: 1.6; }
+.mahan-viva-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.mahan-viva-chip {
+	padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 600;
+	border: 1px solid var(--m-border); background: var(--m-surface);
+}
+.mahan-viva-chip.is-good { color: var(--m-accent-text); border-color: color-mix(in srgb, var(--m-accent-fill) 38%, var(--m-border)); }
+.mahan-viva-chip.is-gap { color: var(--m-muted); }
+
+.mahan-viva-thinking {
+	align-self: flex-start; font-size: 13.5px; color: var(--m-muted); font-style: italic;
+	padding: 6px 2px;
+}
+.mahan-viva-thinking::after { content: '…'; animation: mahan-viva-dots 1.2s steps(4, end) infinite; }
+@keyframes mahan-viva-dots { 0% { opacity: .3; } 50% { opacity: 1; } 100% { opacity: .3; } }
+
+/* --- Compose ---------------------------------------------------------- */
+.mahan-viva-compose { margin-top: 16px; }
+.mahan-viva-input {
+	width: 100%; resize: vertical; min-height: 96px;
+	padding: 12px 14px; border-radius: var(--m-radius); line-height: 1.6;
+	border: 1px solid var(--m-border); background: var(--m-surface); color: var(--m-text);
+	font: inherit; font-size: 15px;
+}
+.mahan-viva-input:focus { border-color: var(--m-primary); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--m-primary) 22%, transparent); }
+.mahan-viva-input:disabled { opacity: .6; }
+.mahan-viva-compose-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px; }
+.mahan-viva-counter { font-size: 12.5px; color: var(--m-muted); font-variant-numeric: tabular-nums; }
+.mahan-viva-msg { margin-top: 10px; font-size: 13.5px; color: var(--m-muted); min-height: 1.2em; }
+
+@media (max-width: 720px) {
+	.mahan-viva-pips { flex-wrap: wrap; }
+	.mahan-viva-pip { flex: 1 1 100%; }
+	.mahan-viva-pip-label { white-space: normal; }
+	.mahan-viva-turn { max-width: 100%; }
+	.mahan-viva-thread { max-height: 40vh; }
 }

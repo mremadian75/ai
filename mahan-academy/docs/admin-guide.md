@@ -91,6 +91,29 @@ Open a lesson (**Edit content** from the builder, or Mahan Academy → Lessons).
 
 XP is awarded the first time a learner gets an exercise right.
 
+### Live assessment (the AI oral exam)
+
+Each unit also carries a **live assessment** — nothing to author, and nothing to
+switch on beyond having an API key configured. Once a learner finishes every
+lesson in a unit, a row appears under it and opens a three-stage conversation
+with an AI examiner: explain the idea in their own words, apply it to a scenario
+built from their own role and tools, then judge a trade-off or a limit.
+
+Things worth knowing as an owner:
+
+- **You do not write the questions.** They are generated from the unit's own
+  lessons and concepts, so a unit you edit is examined on what it now says.
+- **The score is decided on your server**, not by the model's own verdict, and
+  the grading rubric never reaches the learner's browser.
+- **It costs API calls** — roughly two per answer (one to grade, one to set the
+  next question). Stages, attempts and answer length are all capped, so a single
+  sitting has a hard ceiling.
+- **It is resumable.** A learner who closes the tab returns to the same question.
+  A sitting nobody touches for a day is retired automatically.
+- **Passing pays 60 XP once per unit, ever.** Retaking for a better score costs
+  nothing and pays nothing.
+- With **no API key configured, the row does not appear at all.**
+
 ---
 
 ## 5. Gamification

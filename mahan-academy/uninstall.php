@@ -34,6 +34,8 @@ $tables = array(
 	$wpdb->prefix . 'mahan_ai_cache',
 	$wpdb->prefix . 'mahan_xp_log',
 	$wpdb->prefix . 'mahan_reviews',
+	$wpdb->prefix . 'mahan_certificates',
+	$wpdb->prefix . 'mahan_viva',
 );
 foreach ( $tables as $t ) {
 	// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery

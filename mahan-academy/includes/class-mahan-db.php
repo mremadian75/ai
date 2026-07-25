@@ -2,7 +2,8 @@
 /**
  * Custom tables for the dynamic LMS data: enrollments, lesson progress,
  * exercise attempts, gamification stats, AI chat history, an AI cache, the
- * spaced-repetition review queue, and issued certificates.
+ * spaced-repetition review queue, issued certificates, and live AI oral-exam
+ * (viva) sessions.
  *
  * CPTs hold the *content* (courses & lessons); these tables hold the
  * relational, per-user, fast-changing data.
@@ -86,6 +87,11 @@ class Mahan_DB {
 		return $wpdb->prefix . 'mahan_certificates';
 	}
 
+	public static function viva() {
+		global $wpdb;
+		return $wpdb->prefix . 'mahan_viva';
+	}
+
 	/* ------------------------------------------------------------------ */
 	/* Schema                                                              */
 	/* ------------------------------------------------------------------ */
@@ -105,6 +111,7 @@ class Mahan_DB {
 		$xp_log      = self::xp_log();
 		$reviews     = self::reviews();
 		$certs       = self::certificates();
+		$viva        = self::viva();
 
 		$sql = array();
 
@@ -244,6 +251,33 @@ class Mahan_DB {
 			KEY course (course_id)
 		) {$charset};";
 
+		// Live AI oral-exam (viva) sessions. One row per sitting, carrying the
+		// whole conversation, so a learner who closes the tab mid-exam comes
+		// back to the same question rather than a fresh one. `pending` holds
+		// the current question *and* the grader's rubric for it — that stays
+		// server-side, which is what makes the score unforgeable.
+		$sql[] = "CREATE TABLE {$viva} (
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			user_id BIGINT UNSIGNED NOT NULL,
+			course_id BIGINT UNSIGNED NOT NULL,
+			unit VARCHAR(190) NOT NULL DEFAULT '',
+			stage TINYINT UNSIGNED NOT NULL DEFAULT 1,
+			turn TINYINT UNSIGNED NOT NULL DEFAULT 1,
+			attempt TINYINT UNSIGNED NOT NULL DEFAULT 1,
+			score INT UNSIGNED NOT NULL DEFAULT 0,
+			max_score INT UNSIGNED NOT NULL DEFAULT 0,
+			status VARCHAR(16) NOT NULL DEFAULT 'active',
+			pending LONGTEXT NULL,
+			transcript LONGTEXT NULL,
+			xp_awarded INT UNSIGNED NOT NULL DEFAULT 0,
+			started_at DATETIME NOT NULL,
+			updated_at DATETIME NOT NULL,
+			completed_at DATETIME NULL DEFAULT NULL,
+			PRIMARY KEY  (id),
+			KEY user_course (user_id, course_id),
+			KEY user_status (user_id, status)
+		) {$charset};";
+
 		foreach ( $sql as $statement ) {
 			dbDelta( $statement );
 		}
@@ -263,6 +297,11 @@ class Mahan_DB {
 			self::ai_cache(),
 			self::xp_log(),
 			self::reviews(),
+			// Certificates shipped in 1.22.0 and viva in 1.28.0; both were
+			// created by create_tables() so both have to be dropped here, or
+			// "remove all data" leaves rows behind.
+			self::certificates(),
+			self::viva(),
 		);
 		foreach ( $tables as $table ) {
 			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery

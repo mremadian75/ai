@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.27.0
+Stable tag: 1.28.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -17,7 +17,7 @@ Mahan Academy is a self-contained learning plugin built to teach people how to u
 **Key features:**
 
 * Standalone courses & lessons (no Tutor LMS, LearnDash, etc. required)
-* Built-in Starter Content Library — 18 professionally written courses across Prompt Engineering, Machine Learning, Generative AI, AI for Productivity, hands-on AI Tools (ChatGPT, Claude, Gemini, image generation), and Responsible AI, organized into categories and Coursera-style bundles. Every course is four units deep: 144 lessons, 597 interactive exercises and 72 unit quizzes — around 50 hours of material. Installs automatically so the academy is never empty
+* Built-in Starter Content Library — 19 professionally written courses across Prompt Engineering, Machine Learning, Generative AI, AI for Productivity, hands-on AI Tools (ChatGPT, Claude, Gemini, image generation), AI personalization, and Responsible AI, organized into categories and Coursera-style bundles. Every course is four units deep: 152 lessons, 629 interactive exercises and 76 unit quizzes — around 53 hours of material. Installs automatically so the academy is never empty
 * Honest course lengths — the hours on a card are computed from the lessons, exercises and quizzes actually in the course, not typed in by hand, and the build fails if the two ever disagree
 * Level ladders: subjects climb four rungs — Beginner → Intermediate → Advanced → Expert — as real, separate courses on a shared track, with the whole ladder shown on the course page so learners can move up (or drop back) at any time
 * Department-specific lessons: the same lesson specializes to the learner's field (marketing, sales, finance, HR, management, …) with its own worked examples, metrics, and cautions, marked by a "Tailored for X" badge — mapped automatically from the profile role, and dropped silently rather than faked when there is no match for that field
@@ -25,6 +25,7 @@ Mahan Academy is a self-contained learning plugin built to teach people how to u
 * Every lesson is personalized — lesson text adapts to your role, goal, and tools via {{placeholders}}, plus an AI "For you" note on how each lesson applies to your own work
 * "Recommended for you" — the catalog leads with the courses that fit your role, goal, and level, with a plain-language reason why
 * Concept "topics" (مباحث): a shared vocabulary tagged on courses and lessons — shown as chips in the learner UI — that also tells the AI tutor and question generator exactly which concepts each lesson covers
+* Live assessment (AI oral exam): at the end of each unit, an AI examiner runs a three-stage viva — explain the idea in your own words, apply it to a scenario built from your own role and tools, then judge a trade-off or a limit. Answers are prose, graded 0–100 against a rubric the examiner wrote when it set the question; pass a stage and the next one opens, answer partly right and it probes once on the exact gap. The score is decided on the server, the rubric never reaches the browser, and the sitting survives closing the tab
 * Smart Practice: a one-tap "Generate practice" on any lesson that asks AI for fresh questions tuned to the lesson's concepts and your level (with misconception-targeting distractors), grades them instantly, and feeds anything you miss into spaced repetition
 * Category filter + bundle discovery right in the catalog (Coursera/Duolingo-style domains and specializations)
 * Browse by subject & topic: the catalog groups courses into category sections and offers a "Browse by topic" panel to filter by any concept (مباحث); course topic chips are clickable to pivot to everything on the same topic
@@ -82,6 +83,9 @@ You don't have to do anything — the starter catalog installs automatically on 
 Each course lists the authoritative references it is grounded in under "Further reading & sources" on the course page — peer-reviewed papers, standards and institutional guidance (NIST AI Risk Management Framework, EU AI Act, UNESCO, OECD, OWASP, C2PA), textbooks, and official provider documentation.
 
 == Changelog ==
+
+= 1.28.0 =
+A live AI examiner. Every assessment in the plugin until now asked you to recognise the right answer; this one asks you to say it. At the end of each unit — once its lessons are done — an AI examiner runs a three-stage viva: explain the core idea in your own words, apply it to a scenario built from your own role, tools and goal, then judge a trade-off or a limit. Answers are prose, graded 0–100 against a rubric the examiner wrote when it set the question. Pass a stage and the next opens; answer partly right and it probes once on the exact gap before the attempt counts. The score is the server's — a model that says "pass" on a 30 is overruled, and the rubric is stripped before the session reaches the browser, so there is nothing to forge and nothing to read the answer off. Stages, attempts, turns and answer length are all capped, and the sitting is a database row rather than a transient, so closing the tab mid-exam loses nothing. Passing pays XP once per unit ever. With no API key configured the feature does not appear at all. Alongside it, a nineteenth course — "Personalizing AI: Make It Work Like You Do" — teaches what the rest of the catalog had been assuming: why answers are generic by default, the four levers that change it, and how to check whether your setup actually helped. The per-lesson "For you" note now has to end with one thing you could try today. Fixes: "remove all data" left the certificates table behind, and five CSS rules pointed at colour tokens that do not exist. Schema change: DB goes to v6.
 
 = 1.27.0 =
 Every course is now four units deep. v1.25.0 rebuilt the Prompt Engineering ladder and left the other fifteen courses honest but thin at roughly an hour each; this release finishes the job. The Machine Learning, Generative AI and ChatGPT ladders and all five standalone courses gained two units apiece, each with a genuine arc rather than more of the same — where difficulty really lives and when not to use ML at all; the context window, cost and tool use; the politics of adoption and honest reporting when a pilot fails; diagnosing whether retrieval or generation broke; accountability, procurement questions and incident response. The catalog goes from 12.7 to 50.5 hours of authored material: 72 units, 144 lessons, 597 exercises, 281 quiz questions, roughly 43,000 words. Course lengths stayed honest throughout — the validator caught six courses whose advertised hours had fallen behind the new content, which is exactly what it was added for. Recall-only exercises fell from 81% to 74%. Everything reaches existing sites through the additive backfill shipped in 1.25.0, which never touches a lesson you edited. No schema change.

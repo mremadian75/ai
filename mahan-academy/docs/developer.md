@@ -14,7 +14,7 @@ mahan-academy/
 ├── includes/
 │   ├── class-mahan-logger.php           # debug logging
 │   ├── class-mahan-utils.php            # time, meta, JSON, placeholder helpers
-│   ├── class-mahan-db.php                # 9 custom tables + AI cache
+│   ├── class-mahan-db.php                # 10 custom tables + AI cache
 │   ├── class-mahan-settings.php          # options + defaults + profile schema
 │   ├── class-mahan-i18n.php              # language resolution, learner preference, catalogs
 │   ├── class-mahan-learner.php           # saved courses, skills, lifetime totals, minutes left
@@ -36,6 +36,7 @@ mahan-academy/
 │   ├── class-mahan-quizzes.php           # end-of-unit quizzes
 │   ├── class-mahan-reviews.php           # adaptive review (spaced repetition + AI variants)
 │   ├── class-mahan-practice.php          # on-demand AI practice generator + grading
+│   ├── class-mahan-viva.php              # live AI oral exam: staged, graded, resumable
 │   ├── class-mahan-paths.php             # learning paths
 │   ├── class-mahan-ai-stream.php         # SSE tutor + non-streaming fallback
 │   ├── class-mahan-rest.php              # mahan/v1 REST API
@@ -124,8 +125,8 @@ back; trashing is not a strong enough signal to distinguish that from "not seen
 yet", and never shipping new material is worse for every other site.
 
 **Course shape.** Every seed course is four units of two lessons, each unit
-closed by a quiz — 72 units, 144 lessons, 597 exercises and 281 quiz questions
-across the eighteen courses. The two later units of each course are
+closed by a quiz — 76 units, 152 lessons, 629 exercises and 297 quiz questions
+across the nineteen courses. The two later units of each course are
 deliberately not more of the introduction: they carry the material that makes
 the subject difficult (limits, failure diagnosis, cost, governance), which is
 what gives a course an arc rather than a length.
@@ -171,7 +172,37 @@ per reader via `Mahan_Profile::personalize_content()` (natural fallbacks for
 blanks), applied in `/lesson`. `Mahan_Personalization::for_you()`
 (`POST /lesson/personalize`) generates a short "how this applies to your work"
 note, cached in the AI cache per `(lesson, Mahan_Profile::signature())` so it
-regenerates only when the learner updates their profile.
+regenerates only when the learner updates their profile. The cache namespace
+carries a version (`mahan_foryou.v2`) — change the prompt without bumping it and
+the improvement ships to nobody, because every existing site keeps serving notes
+the old prompt wrote.
+
+**Live oral exam** (`Mahan_Viva`) is the one assessment that cannot be answered
+by recognition. A sitting runs three stages — explain → apply → judge — each one
+question answered in prose, graded 0–100 by the AI against a rubric the AI wrote
+when it set the question. Three properties are load-bearing:
+
+- **The score is the server's.** The model returns a number and an advisory
+  verdict; PHP decides pass/fail against `PASS_SCORE`. The rubric lives in the
+  row's `pending` blob and is stripped by `public_session()`, so the browser has
+  nothing to forge and nothing to read the answer off. A `probe` (one focused
+  follow-up on a partly-right answer) is the only verdict the model controls, and
+  `MAX_TURNS` bounds even that.
+- **It is bounded.** Stages, attempts per stage (`MAX_ATTEMPTS`), turns per stage,
+  answer length (`ANSWER_MAX`) and unit material (`MATERIAL_MAX`) are all capped,
+  so a live model conversation cannot become a runaway bill.
+- **It is resumable.** The sitting is a row, not a transient. `start()` returns
+  the active sitting instead of opening a second one; a sitting untouched for
+  `STALE_AFTER` is retired rather than resumed, because a half-remembered
+  question a week later helps nobody.
+
+A viva opens only when every lesson in its unit is complete, and it is hidden
+entirely when no provider is configured — the same rule as the tutor. XP is paid
+once per unit ever (`passed_before()`), so retaking for a better score is welcome
+and farming it is not. The middle stage is where the personalization thread
+lands: its question is generated from `Mahan_Personalization::learner_context()`,
+so two learners finishing the same unit are examined on the same concept inside
+their own jobs.
 
 **Placement** (`Mahan_Placement`) is authored, not AI-generated: the bank lives
 in `includes/data/placement.php` (32 questions tagged tier 1–4) and scoring is
@@ -196,7 +227,7 @@ credential) and skip 0/O/1/I because they get typed off printouts;
 never a user id. `Mahan_Plugin::maybe_backfill_certificates()` issues once for
 anyone who completed a course before v1.22.
 
-**Dynamic per-user data** lives in nine custom tables (see `Mahan_DB`):
+**Dynamic per-user data** lives in ten custom tables (see `Mahan_DB`):
 `enrollments`, `progress`, `attempts`, `stats`, `chat`, `ai_cache`,
 `xp_log` (append-only: every XP award with `amount`, `reason`, `ref_id`,
 `created_at` — powers weekly leaderboards, daily goals, and reports), and
@@ -204,8 +235,11 @@ anyone who completed a course before v1.22.
 Leitner `box`, `due_at`, `reps`/`lapses`, a JSON `snapshot` of the question,
 and `last_xp_date` — added in DB v3, `last_xp_date` in DB v4), and
 `certificates` (issued credentials: `serial`, `issued_at`, `revoked`, unique on
-both `serial` and `(user_id, course_id)` — added in DB v5). The `stats`
-table also carries `freezes` and `daily_goal` (added in DB v2 via `dbDelta`).
+both `serial` and `(user_id, course_id)` — added in DB v5), and `viva` (live
+oral-exam sittings: `stage`/`turn`/`attempt`, the running `score`, a JSON
+`transcript`, and a JSON `pending` holding the live question **and its grading
+rubric** — added in DB v6). The `stats` table also carries `freezes` and
+`daily_goal` (added in DB v2 via `dbDelta`).
 
 > Review XP is capped at once per item per day (`last_xp_date`): a wrong
 > answer makes an item immediately due again (so the end-of-lesson re-drill
@@ -258,6 +292,9 @@ fields) is `Mahan_Settings::default_schema()`. No new tables.
 | `POST /lesson/personalize` | logged-in | AI "how this lesson applies to your work" note (cached per profile signature). |
 | `POST /practice` | logged-in | Generate fresh AI practice questions for a lesson, tuned to its concepts and the learner's difficulty. |
 | `POST /practice/grade` | logged-in | Grade a generated practice answer; misses go into the review queue (XP daily-capped). |
+| `POST /viva/start` | logged-in | Open (or resume) a unit's live oral exam; returns the sitting and its first question. |
+| `POST /viva/answer` | logged-in | Submit one prose answer; returns the grade, the outcome (`probe` / `stage_passed` / `retry` / `passed` / `failed`) and the updated sitting. |
+| `POST /viva/abandon` | logged-in | Retire a sitting the learner walked out of. |
 | `GET /recommendations` | logged-in | "Recommended for you" courses + best-fit bundle, with the reason. |
 | `GET /placement` | logged-in | A sitting (answer keys stripped) + the seed + any previous result. |
 | `POST /placement` | logged-in | Grade a sitting, store the level, return where to start on each ladder. |
@@ -345,8 +382,9 @@ add_action( 'mahan_course_completed', function ( $user_id, $course_id ) {
 ## Front-end (SPA)
 
 `assets/js/app.js` is a dependency-free single-page app mounted on
-`#mahan-app`. Views: catalog, course (with unit quiz cards), lesson (tutor panel
-+ exercises), dashboard (with badges), leaderboard, paths, and path detail.
+`#mahan-app`. Views: catalog, course (with unit quiz and live-assessment rows), lesson (tutor
+panel + exercises), dashboard (with badges), profile, leaderboard, paths, and
+path detail.
 Config + i18n are injected via `wp_localize_script` as `window.MahanData`. Theme
 colors are CSS variables (`--mahan-primary`, `--mahan-accent`) set inline from
 settings.
@@ -357,6 +395,17 @@ registered with `onUnmount(fn)`; `mount()` runs and drains those hooks before
 painting the next view. The corollary matters: register hooks **after** calling
 `mount()`, or the teardown you are about to trigger will eat them. That is why
 `readingProgress()` returns `{ node, start }` instead of wiring itself up.
+
+**Live assessment modal** (`openViva` / `renderVivaModal`). A turn-by-turn
+transcript with stage pips, a compose box (Ctrl/Cmd+Enter sends), and grade
+cards carrying the score, the feedback, and strength/gap chips. Three details
+that are not decoration: the learner's turn is appended optimistically and
+**rolled back** if the request fails, so a provider hiccup never leaves a
+phantom answer on screen; the typed text is restored into the box on failure
+rather than lost; and closing is safe by design — the sitting lives on the
+server, so `beforeClose` only guards *unsent* text. After each answer the client
+adopts the server's session wholesale instead of maintaining a parallel copy of
+the state machine.
 
 **Course covers.** `courseCover(course, { wide })` returns the card/hero cover.
 With a featured image it's the image; otherwise it's a generated CSS gradient —

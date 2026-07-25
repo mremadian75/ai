@@ -200,6 +200,20 @@ class Mahan_REST {
 			'permission_callback' => $public,
 		) );
 
+		// The learner's profile page.
+		register_rest_route( self::NS, '/profile/summary', array(
+			'methods'             => WP_REST_Server::READABLE,
+			'callback'            => array( __CLASS__, 'profile_summary' ),
+			'permission_callback' => $logged_in,
+		) );
+
+		// Save a course for later (Udemy/Coursera-style wishlist).
+		register_rest_route( self::NS, '/save', array(
+			'methods'             => WP_REST_Server::CREATABLE,
+			'callback'            => array( __CLASS__, 'toggle_saved' ),
+			'permission_callback' => $logged_in,
+		) );
+
 		// Language. Public on purpose: a visitor browsing the catalog should be
 		// able to read it in their own language before deciding to sign up.
 		register_rest_route( self::NS, '/language', array(
@@ -688,13 +702,19 @@ class Mahan_REST {
 		// "Jump back in": give each in-progress course its next lesson so the
 		// dashboard can deep-link straight into the lesson player.
 		$courses = Mahan_Enrollment::get_user_courses( $user_id );
+		$saved   = Mahan_Learner::saved( $user_id );
 		foreach ( $courses as &$c ) {
+			$c['saved'] = in_array( (int) $c['id'], $saved, true );
 			if ( (int) $c['progress_pct'] < 100 ) {
 				$next = Mahan_Courses::next_lesson( $user_id, $c['id'] );
 				if ( $next ) {
 					$c['next_lesson_id']    = $next;
 					$c['next_lesson_title'] = get_the_title( $next );
 				}
+				// What is actually left, measured from the unfinished lessons —
+				// "40% to go" says nothing about whether that is ten minutes or
+				// two hours, and the difference decides whether someone starts.
+				$c['minutes_left'] = Mahan_Learner::minutes_remaining( $user_id, (int) $c['id'] );
 			}
 		}
 		unset( $c );
@@ -711,11 +731,61 @@ class Mahan_REST {
 			),
 			'stats'       => $stats,
 			'courses'     => $courses,
+			'saved'       => Mahan_Learner::saved_courses( $user_id ),
 			'badges'      => Mahan_Badges::for_user( $user_id ),
 			'certificates' => Mahan_Certificates::for_user( $user_id ),
 			'placement'   => Mahan_Placement::get( $user_id ),
 			'leaderboard' => (bool) Mahan_Settings::get( 'leaderboard_enabled', 0 ),
 		) );
+	}
+
+	/**
+	 * The learner's profile: who they are and what they have become.
+	 *
+	 * Separate from /me because it is heavier (skill and total queries scan
+	 * history) and the dashboard reloads far more often than the profile does.
+	 */
+	public static function profile_summary( WP_REST_Request $request ) {
+		$user_id = get_current_user_id();
+		$user    = wp_get_current_user();
+		$profile = class_exists( 'Mahan_Profile' ) ? Mahan_Profile::get_profile( $user_id ) : array();
+
+		$totals = Mahan_Learner::totals( $user_id );
+		$stats  = Mahan_Gamification::hud( $user_id );
+
+		return rest_ensure_response(
+			array(
+				'ok'           => true,
+				'user'         => array(
+					'name'   => $user ? $user->display_name : '',
+					'avatar' => get_avatar_url( $user_id, array( 'size' => 160 ) ),
+					// The learner's own words about their work, when they gave
+					// them — a profile headed only by a display name says nothing.
+					'role'    => isset( $profile['role'] ) ? (string) $profile['role'] : '',
+					'goal'    => isset( $profile['primary_goal'] ) ? (string) $profile['primary_goal'] : '',
+				),
+				'stats'        => $stats,
+				'totals'       => $totals,
+				'skills'       => Mahan_Learner::skills( $user_id ),
+				'activity'     => Mahan_Gamification::activity_map( $user_id, 91 ),
+				'certificates' => Mahan_Certificates::for_user( $user_id ),
+				'placement'    => Mahan_Placement::get( $user_id ),
+				'badges'       => Mahan_Badges::for_user( $user_id ),
+			)
+		);
+	}
+
+	/**
+	 * Save / unsave a course for later.
+	 */
+	public static function toggle_saved( WP_REST_Request $request ) {
+		$course_id = (int) $request->get_param( 'course_id' );
+		$course    = get_post( $course_id );
+		if ( ! $course || Mahan_CPT::COURSE !== $course->post_type || 'publish' !== $course->post_status ) {
+			return new WP_Error( 'mahan_not_found', __( 'Course not found.', 'mahan-academy' ), array( 'status' => 404 ) );
+		}
+		$state = Mahan_Learner::toggle_saved( get_current_user_id(), $course_id );
+		return rest_ensure_response( array_merge( array( 'ok' => true ), $state ) );
 	}
 
 	/**

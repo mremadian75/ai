@@ -4,6 +4,83 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.26.0]
+
+Profile and dashboard. **No schema change — DB stays v5.**
+
+Ideas taken deliberately from the three systems that solved this already:
+Duolingo's activity calendar and lifetime streak record, Coursera's skills and
+"My Learning" shelves, Udemy's save-for-later.
+
+### There was no profile
+
+The avatar in the top bar was decoration. The dashboard could answer *what do I
+do next*; nothing could answer *what have I become* — and that second question
+is the one that makes the hours spent feel like they were worth something.
+
+`?view=profile`, reached from the avatar (and its own stop in the phone bottom
+bar, which has no avatar to tap):
+
+- **Identity** — name, the role from their own profile, member-since, level
+  title, and the tier they placed at.
+- **Six lifetime totals** — XP, lessons, courses, exercises correct, days
+  active, longest streak. Lifetime on purpose: a streak resets to zero on one
+  missed day, and these never go backwards. "Days active" is a truer measure of
+  a habit than a streak for exactly that reason.
+- **A 91-day activity calendar** — columns are weeks, so the eye reads a habit
+  rather than a list of days. Intensity is scaled against the learner's own
+  daily goal, not their best day ever, so one enormous session doesn't make
+  every ordinary day afterwards look like failure.
+- **Skills you have built** — the topic taxonomy crossed with completed
+  lessons. A topic counts only at two lessons or more: one lesson is an
+  encounter, not a skill, and a profile listing every topic ever touched says
+  nothing. Each chip pivots the catalog to that topic.
+- **Certificates and achievements**, with earned ones leading — the profile is
+  a record of what was done, so the locked ones are context, not the headline.
+
+### My Learning is three shelves, not one heap
+
+A finished course sitting in "Continue" is noise, and a course someone was
+merely curious about had nowhere to live at all. Tabs now separate **In
+progress / Completed / Saved**, each with its count, so a tab tells you whether
+it is worth opening before you open it. Switching is local — the data is
+already on the page, so a tab costs no round trip — and arrow keys move between
+them.
+
+### Save for later
+
+A star on every course card, deliberately distinct from enrolling: "I might do
+this" and "I am doing this" are different intentions, and a catalog offering
+only the second loses everything anyone was curious about. Saving does not
+navigate into the course, reports its state to assistive tech, and on failure
+puts the star back rather than claiming success.
+
+### Minutes left, not percent done
+
+In-progress cards now say how much work is actually left, summed from the
+lessons not yet finished. "60% done" says nothing about whether the rest is ten
+minutes or two hours, and that difference decides whether someone starts.
+
+### Fixed along the way
+
+- **`urlFor()` silently dropped unknown params.** A skill chip linking to a
+  topic-filtered catalog produced a URL with no topic — the filter worked for
+  one paint and vanished on reload or share. `topic` is now a first-class URL
+  param, so a filtered catalog is linkable.
+- The activity grid stretched its columns to fill the container, which read as
+  scattered dots rather than a calendar; columns are now cell-width.
+- Profile stat tiles lost their emoji, matching the call 1.20.0 made on the
+  dashboard: six icons at that size compete with the numbers, and the numbers
+  are the point. The flame stays on the one stat where it means something.
+
+### Under the hood
+
+New `Mahan_Learner` (saved courses, skills, lifetime totals, minutes
+remaining) and `Mahan_Gamification::activity_map()`. Everything is derived from
+data already stored — no new tables. Two new routes: `GET /profile/summary`
+(kept separate from `/me` because its history scans are heavier and the
+dashboard reloads far more often) and `POST /save`.
+
 ## [1.25.0]
 
 Course quality. **No schema change — DB stays v5.**

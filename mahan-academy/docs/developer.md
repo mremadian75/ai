@@ -17,6 +17,7 @@ mahan-academy/
 │   ├── class-mahan-db.php                # 9 custom tables + AI cache
 │   ├── class-mahan-settings.php          # options + defaults + profile schema
 │   ├── class-mahan-i18n.php              # language resolution, learner preference, catalogs
+│   ├── class-mahan-learner.php           # saved courses, skills, lifetime totals, minutes left
 │   ├── class-mahan-cpt.php               # mahan_course / mahan_lesson + taxonomy
 │   ├── class-mahan-profile.php           # schema-driven learner profile (user meta)
 │   ├── class-mahan-courses.php           # course/lesson structure + meta keys + topics
@@ -255,6 +256,8 @@ fields) is `Mahan_Settings::default_schema()`. No new tables.
 | `POST /placement` | logged-in | Grade a sitting, store the level, return where to start on each ladder. |
 | `GET /certificates` | logged-in | The caller's issued certificates. |
 | `GET /certificate/{serial}` | **public** | Verify a serial. Public by design; returns only who/what/when. |
+| `GET /profile/summary` | logged-in | Profile page: identity, lifetime totals, skills, 91-day activity map, certificates, badges. Separate from `/me` because its history scans are heavier and the dashboard reloads far more often. |
+| `POST /save` | logged-in | Toggle save-for-later on a course. |
 | `POST /language` | public† | Record the reader's language. Public so guests can switch before signing up (†still requires the REST nonce, so no other site can flip a learner's language). |
 | `POST /enroll` | logged-in | Enroll in a course. |
 | `POST /progress` | logged-in | Mark a lesson complete (awards XP, recomputes course %). |
@@ -572,6 +575,34 @@ does not pretend otherwise. `Mahan_Front::strings()` is the boundary: everything
 the SPA renders comes through it, wrapped in `__()`, resolved server-side at
 boot. The app does no client-side translation — switching language reloads the
 document rather than re-rendering, because the strings live on the server.
+
+---
+
+## Profile & saved courses
+
+`Mahan_Learner` derives everything the profile shows from data already stored —
+there are no new tables. Skills come from the topic taxonomy joined to completed
+lessons in one query (`SKILL_THRESHOLD` of 2, because one lesson is an encounter
+rather than a skill); lifetime totals from the progress, enrollment, attempts
+and XP-log tables; saved courses from `mahan_saved` user meta.
+
+`Mahan_Gamification::activity_map()` generalises the seven-day strip into a
+run of weeks, keeping XP per day so the UI can show intensity. Intensity is
+bucketed against the learner's own daily goal rather than their best day ever —
+otherwise one enormous session makes every ordinary day afterwards look like a
+failure.
+
+**Saved is not enrolled.** "I might do this" and "I am doing this" are different
+intentions; collapsing them turns a dashboard into a graveyard of things nobody
+started. The dashboard's three shelves (in progress / completed / saved) are
+filtered client-side from data `/me` already returns, so switching tabs costs no
+round trip.
+
+**`urlFor()` is the only place URLs are built**, and it ignores params it does
+not know about — silently. A `topic` param was added there when the profile's
+skill chips needed to link to a filtered catalog; anything else that needs to
+survive a reload or a share has to be added there too, not passed hopefully
+through `go()`.
 
 ---
 

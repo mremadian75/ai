@@ -181,7 +181,7 @@
 	/* State & routing                                                     */
 	/* ------------------------------------------------------------------ */
 
-	var state = { view: 'catalog', courseId: 0, lessonId: 0, me: null, profile: null, levelFilter: '', catFilter: '', topicFilter: '' };
+	var state = { view: 'catalog', courseId: 0, lessonId: 0, me: null, profile: null, levelFilter: '', catFilter: '', topicFilter: '', shelf: '' };
 	var root = el('mahan-app');
 
 	// The level ladder, lowest rung first. Shared by the catalog's level facets
@@ -250,6 +250,10 @@
 		// A verification link has to survive being copied into an email or
 		// printed on a certificate, so the serial lives in the URL.
 		if (params && params.serial) { u.searchParams.set('serial', params.serial); }
+		// A topic-filtered catalog is a destination worth linking to — from a
+		// skill on the profile, or from a colleague's message. parseUrl() reads
+		// it back, so it survives a reload as well as a share.
+		if (params && params.topic) { u.searchParams.set('topic', params.topic); }
 		return u.pathname + u.search;
 	}
 
@@ -290,6 +294,9 @@
 		state.pathId = (params && params.path) || 0;
 		state.from = (params && params.from) || '';
 		state.serial = (params && params.serial) || '';
+		// An explicit topic wins; without one the learner's existing filters
+		// survive a return to the catalog, as they always have.
+		if (params && params.topic) { state.topicFilter = params.topic; }
 		pendingScroll = null;
 		pendingFocus = true;
 		// From the first user navigation on, announce view changes to AT.
@@ -331,6 +338,10 @@
 				active: state.view === 'dashboard' || state.view === 'lesson' || state.view === 'review' } : null,
 			D.hasPaths ? { view: 'paths', icon: '🗺️', label: t('paths', 'Paths'),
 				active: state.view === 'paths' || state.view === 'path' } : null,
+			// Phones have no top-bar avatar to tap, so the profile needs its own
+			// stop in the bottom bar or it is unreachable there.
+			D.loggedIn ? { view: 'profile', icon: '👤', label: t('profile', 'Profile'),
+				active: state.view === 'profile', bottomOnly: true } : null,
 			D.leaderboard ? { view: 'leaderboard', icon: '🏆', label: t('leaderboard', 'Leaderboard'),
 				active: state.view === 'leaderboard' } : null
 		].filter(Boolean);
@@ -377,7 +388,11 @@
 		var brand = h('a', { class: 'mahan-brand', href: urlFor('catalog'),
 			onClick: function (e) { e.preventDefault(); go('catalog'); } }, brandKids);
 
-		var nav = h('nav', { class: 'mahan-nav', 'aria-label': t('menu', 'Menu') }, navItems().map(function (it) {
+		// The top bar reaches the profile through the avatar, so the duplicate
+		// nav link is dropped here rather than shown twice.
+		var nav = h('nav', { class: 'mahan-nav', 'aria-label': t('menu', 'Menu') }, navItems().filter(function (it) {
+			return !it.bottomOnly;
+		}).map(function (it) {
 			return h('a', {
 				class: 'mahan-nav-link' + (it.active ? ' is-active' : ''), href: urlFor(it.view),
 				'aria-current': it.active ? 'page' : null,
@@ -404,7 +419,13 @@
 					h('span', { class: 'mahan-hud-icon', text: '⚡' }), h('span', { id: 'hud-xp', text: String(s.xp || 0) })]),
 				h('div', { class: 'mahan-hud-item mahan-hud-level', title: s.level_title || t('level', 'Level') }, [
 					h('span', { class: 'mahan-hud-icon', text: '◆' }), h('span', { id: 'hud-level', text: String(s.level || 1) })]),
-				avatarNode(state.me.user)
+				// The avatar is where everyone looks for their own profile, so
+				// that is what it now does instead of being decoration.
+				h('a', {
+					class: 'mahan-hud-me' + ('profile' === state.view ? ' is-active' : ''),
+					href: urlFor('profile'), title: t('profile', 'Profile'), 'aria-label': t('profile', 'Profile'),
+					onClick: function (e) { e.preventDefault(); go('profile'); }
+				}, [avatarNode(state.me.user)])
 			]);
 		} else if (D.loggedIn) {
 			// Logged in but /me hasn't resolved yet — placeholder, not a
@@ -1281,6 +1302,12 @@
 				h('span', { class: 'mahan-tag', text: levelLabel(c.level) }),
 				h('span', { class: 'mahan-tag mahan-tag-soft', text: plural(c.lesson_count, 'lessonOne', 'lessons', 'lesson', 'lessons') })]);
 
+		// What is actually left, in minutes. "60% done" does not tell anyone
+		// whether they can finish this before their next meeting.
+		var left = (c.enrolled && (c.progress_pct || 0) < 100 && (c.minutes_left || 0) > 0)
+			? h('p', { class: 'mahan-card-left', text: '⏱ ' + fmt(t('minutesLeft', '%s min left'), c.minutes_left) })
+			: null;
+
 		return h('a', {
 			class: 'mahan-card' + (c.featured ? ' is-featured' : ''), href: urlFor('course', nav),
 			onClick: function (e) { e.preventDefault(); go('course', nav); },
@@ -1288,6 +1315,7 @@
 			onFocus: function () { prefetchCourse(c.id); }
 		}, [
 			c.featured ? h('span', { class: 'mahan-ribbon', text: '★ ' + t('featured', 'Featured') }) : null,
+			saveButton(c),
 			media,
 			h('div', { class: 'mahan-card-body' }, [
 				h('div', { class: 'mahan-card-kicker' }, [
@@ -1300,9 +1328,46 @@
 				]),
 				h('h3', { class: 'mahan-card-title', text: c.title }),
 				h('p', { class: 'mahan-card-sub', text: c.subtitle || c.excerpt || '' }),
+				left,
 				foot
 			])
 		]);
+	}
+
+	// Save for later. Deliberately distinct from enrolling: "I might do this"
+	// and "I am doing this" are different intentions, and a catalog that only
+	// offers the second one loses everything a learner was merely curious about.
+	function saveButton(c) {
+		if (!D.loggedIn) { return null; }
+		var saved = !!c.saved;
+		var btn = h('button', {
+			class: 'mahan-save' + (saved ? ' is-saved' : ''), type: 'button',
+			'aria-pressed': saved ? 'true' : 'false',
+			title: saved ? t('unsave', 'Remove from saved') : t('save', 'Save for later'),
+			'aria-label': saved ? t('unsave', 'Remove from saved') : t('save', 'Save for later')
+		}, [h('span', { class: 'mahan-save-icon', 'aria-hidden': 'true', text: saved ? '★' : '☆' })]);
+
+		btn.addEventListener('click', function (e) {
+			// The card is a link; saving must not navigate into the course.
+			e.preventDefault();
+			e.stopPropagation();
+			if (btn.disabled) { return; }
+			btn.disabled = true;
+			api('/save', 'POST', { course_id: c.id }).then(function (r) {
+				c.saved = !!r.saved;
+				btn.classList.toggle('is-saved', c.saved);
+				btn.setAttribute('aria-pressed', c.saved ? 'true' : 'false');
+				var label = c.saved ? t('unsave', 'Remove from saved') : t('save', 'Save for later');
+				btn.title = label;
+				btn.setAttribute('aria-label', label);
+				var icon = btn.querySelector('.mahan-save-icon');
+				if (icon) { icon.textContent = c.saved ? '★' : '☆'; }
+				toast(c.saved ? t('savedToast', 'Saved for later') : t('unsavedToast', 'Removed from saved'), 'info');
+			}).catch(function () {
+				toast(t('error', 'Something went wrong. Please try again.'), 'error');
+			}).then(function () { btn.disabled = false; });
+		});
+		return btn;
 	}
 
 	// Human label for a ladder rung. Anything off the ladder is shown verbatim
@@ -2684,64 +2749,283 @@
 			// Stats after the actions: what to DO comes before how it's going.
 			wrap.appendChild(hero);
 
-			if (!courses.length) {
+			// My Learning, as three shelves rather than one heap. A finished
+			// course sitting in "Continue" is noise, and a course you were
+			// curious about had nowhere to live at all.
+			courses.forEach(function (c) { c.enrolled = true; });
+			var inProgressList = courses.filter(function (c) { return (c.progress_pct || 0) < 100; });
+			var completedList  = courses.filter(function (c) { return (c.progress_pct || 0) >= 100; });
+			var savedList      = j.saved || [];
+
+			var shelves = [
+				{ key: 'active', label: t('inProgress', 'In progress'), items: inProgressList,
+					empty: t('emptyInProgress', 'Nothing on the go. Pick a course and start today.') },
+				{ key: 'done', label: t('completed', 'Completed'), items: completedList,
+					empty: t('emptyCompleted', 'Finish a course and it will be kept here.') },
+				{ key: 'saved', label: t('savedTab', 'Saved'), items: savedList,
+					empty: t('emptySaved', 'Tap the star on any course to keep it for later.') }
+			];
+
+			if (!courses.length && !savedList.length) {
 				wrap.appendChild(h('div', { class: 'mahan-empty' }, [
 					h('div', { class: 'mahan-empty-icon', 'aria-hidden': 'true', text: '📚' }),
 					h('p', { text: t('emptyDashboard', 'Pick your first course and start earning XP today.') }),
 					h('button', { class: 'mahan-btn mahan-btn-primary', text: t('browseCourses', 'Browse courses'), onClick: function () { go('catalog'); } })
 				]));
 			} else {
-				wrap.appendChild(h('h2', { class: 'mahan-dash-h2', text: t('continue', 'Continue') }));
-				var grid = h('div', { class: 'mahan-grid' });
-				courses.forEach(function (c) { c.enrolled = true; grid.appendChild(courseCard(c, 'dashboard')); });
-				wrap.appendChild(grid);
+				wrap.appendChild(shelfTabs(shelves));
 			}
 
 			// Certificates the learner actually holds, each with its serial.
 			if (j.certificates && j.certificates.length) {
 				wrap.appendChild(h('h2', { class: 'mahan-dash-h2', text: t('certificates', 'Certificates') }));
-				var certList = h('div', { class: 'mahan-cert-list' });
-				j.certificates.forEach(function (c) {
-					certList.appendChild(h('button', {
-						class: 'mahan-cert-item', type: 'button',
-						onClick: function () { showCertificate({ title: c.course_title }, c); }
-					}, [
-						h('span', { class: 'mahan-cert-item-icon', 'aria-hidden': 'true', text: '🎓' }),
-						h('span', { class: 'mahan-cert-item-body' }, [
-							h('span', { class: 'mahan-cert-item-title', text: c.course_title }),
-							h('span', { class: 'mahan-cert-item-meta', text: shortDate(c.issued_at) + ' · ' + c.serial })
-						])
-					]));
-				});
-				wrap.appendChild(certList);
+				wrap.appendChild(certificateList(j.certificates));
 			}
 
-			// Achievements.
+			// Achievements — a teaser plus a route to the full wall, which now
+			// lives on the profile where a record of what you did belongs.
 			if (j.badges && j.badges.length) {
-				wrap.appendChild(h('h2', { class: 'mahan-dash-h2', text: t('achievements', 'Achievements') }));
-				var earned = j.badges.filter(function (b) { return b.earned; }).length;
-				wrap.appendChild(h('p', { class: 'mahan-badges-sub', text: earned + ' / ' + j.badges.length }));
-				var bgrid = h('div', { class: 'mahan-badges' });
-				j.badges.forEach(function (b) {
-					var showProgress = !b.earned && (b.need || 0) > 1 && (b.progress || 0) > 0;
-					bgrid.appendChild(h('div', { class: 'mahan-badge' + (b.earned ? ' is-earned' : ' is-locked'), title: b.desc }, [
-						h('span', { class: 'mahan-sr-only', text: b.earned ? t('badgeEarnedState', 'Earned:') : fmt(t('badgeLockedState', 'Locked, %s of %s:'), b.progress || 0, b.need || 1) }),
-						h('span', { class: 'mahan-badge-icon', 'aria-hidden': 'true', text: b.icon }),
-						h('span', { class: 'mahan-badge-title', text: b.title }),
-						h('span', { class: 'mahan-badge-desc', text: b.desc }),
-						showProgress ? h('div', { class: 'mahan-badge-progress' }, [
-							h('div', { class: 'mahan-badge-progress-bar' }, [
-								h('span', { style: 'width:' + Math.round((b.progress / b.need) * 100) + '%' })
-							]),
-							h('span', { class: 'mahan-badge-progress-label', text: b.progress + '/' + b.need })
-						]) : null
-					]));
-				});
-				wrap.appendChild(bgrid);
+				var earnedBadges = j.badges.filter(function (b) { return b.earned; });
+				wrap.appendChild(h('div', { class: 'mahan-dash-h2row' }, [
+					h('h2', { class: 'mahan-dash-h2', text: t('achievements', 'Achievements') }),
+					h('button', { class: 'mahan-linkbtn', type: 'button', text: t('viewProfile', 'View profile') + ' →',
+						onClick: function () { go('profile'); } })
+				]));
+				wrap.appendChild(h('p', { class: 'mahan-badges-sub', text: earnedBadges.length + ' / ' + j.badges.length }));
+				wrap.appendChild(badgeGrid(j.badges));
 			}
 
 			mount(wrap);
 		}, renderDashboard);
+	}
+
+	// Tabbed shelves for My Learning. Switching is local — the data is already
+	// on the page, so a tab must not cost a round trip.
+	function shelfTabs(shelves) {
+		var wrap = h('div', { class: 'mahan-shelves' });
+		var current = state.shelf && shelves.some(function (s) { return s.key === state.shelf; })
+			? state.shelf
+			: shelves[0].key;
+
+		var tablist = h('div', { class: 'mahan-tabs', role: 'tablist', 'aria-label': t('dashboard', 'My Learning') });
+		var panel   = h('div', { class: 'mahan-shelf-panel', role: 'tabpanel' });
+
+		function paint(key) {
+			state.shelf = key;
+			var shelf = shelves.filter(function (s) { return s.key === key; })[0] || shelves[0];
+
+			Array.prototype.forEach.call(tablist.children, function (btn) {
+				var on = btn.getAttribute('data-shelf') === key;
+				btn.classList.toggle('is-active', on);
+				btn.setAttribute('aria-selected', on ? 'true' : 'false');
+				btn.tabIndex = on ? 0 : -1;
+			});
+
+			panel.textContent = '';
+			if (!shelf.items.length) {
+				panel.appendChild(h('p', { class: 'mahan-shelf-empty', text: shelf.empty }));
+				return;
+			}
+			var grid = h('div', { class: 'mahan-grid' });
+			shelf.items.forEach(function (c) { grid.appendChild(courseCard(c, 'dashboard')); });
+			panel.appendChild(grid);
+		}
+
+		shelves.forEach(function (s) {
+			var btn = h('button', {
+				class: 'mahan-tab', type: 'button', role: 'tab', 'data-shelf': s.key,
+				'aria-selected': 'false'
+			}, [
+				document.createTextNode(s.label),
+				// The count is the useful part — it says whether the tab is
+				// worth opening before you open it.
+				h('span', { class: 'mahan-tab-count', text: String(s.items.length) })
+			]);
+			btn.addEventListener('click', function () { paint(s.key); });
+			// Arrow keys move between tabs, as a tablist is expected to.
+			btn.addEventListener('keydown', function (e) {
+				if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') { return; }
+				e.preventDefault();
+				var keys = shelves.map(function (x) { return x.key; });
+				var at = keys.indexOf(state.shelf);
+				var next = keys[(at + (e.key === 'ArrowRight' ? 1 : keys.length - 1)) % keys.length];
+				paint(next);
+				var el2 = tablist.querySelector('[data-shelf="' + next + '"]');
+				if (el2) { el2.focus(); }
+			});
+			tablist.appendChild(btn);
+		});
+
+		wrap.appendChild(tablist);
+		wrap.appendChild(panel);
+		paint(current);
+		return wrap;
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* View: Profile                                                       */
+	/* ------------------------------------------------------------------ */
+
+	// The dashboard answers "what do I do next". The profile answers "what
+	// have I become" — a different question, and the one that makes a learner
+	// feel the time they have put in was worth something.
+	function renderProfile() {
+		if (!D.loggedIn) { mount(loginGate()); return; }
+		setTitle(t('profile', 'Profile'));
+		cachedApi('/profile/summary', 'dash', function (j) {
+			var s = j.stats || {}, tot = j.totals || {}, u = j.user || {};
+			var wrap = h('div', { class: 'mahan-profile' });
+
+			/* --- Identity ------------------------------------------------ */
+			var meta = [];
+			if (u.role) { meta.push(u.role); }
+			if (tot.member_since) { meta.push(t('memberSince', 'Member since') + ' ' + shortDate(tot.member_since)); }
+
+			wrap.appendChild(h('header', { class: 'mahan-prof-head' }, [
+				h('div', { class: 'mahan-prof-avatar' }, [avatarNode({ name: u.name, avatar: u.avatar })]),
+				h('div', { class: 'mahan-prof-id' }, [
+					h('h1', { class: 'mahan-prof-name', text: u.name || t('profile', 'Profile') }),
+					meta.length ? h('p', { class: 'mahan-prof-meta', text: meta.join(' · ') }) : null,
+					h('div', { class: 'mahan-prof-level' }, [
+						h('span', { class: 'mahan-prof-level-badge', text: '◆ ' + (s.level_title || (t('level', 'Level') + ' ' + (s.level || 1))) }),
+						j.placement && j.placement.level
+							? h('span', { class: 'mahan-prof-placed', text: t('placedAt', 'Placed at') + ' ' + levelLabel(j.placement.level) })
+							: null
+					])
+				])
+			]));
+
+			/* --- Lifetime totals ----------------------------------------- */
+			// Lifetime numbers, not this week's. A streak resets to zero on one
+			// missed day; these never go backwards, which is the point of them.
+			// No icon per tile. Six emoji at this size is decoration competing
+			// with the numbers, and the numbers are the point — the same call
+			// the dashboard stats made in 1.20.0. The flame stays on the one
+			// stat where it means something.
+			wrap.appendChild(h('div', { class: 'mahan-prof-totals' }, [
+				profStat('', s.xp || 0, 'XP'),
+				profStat('', tot.lessons_completed || 0, t('lessonsDone', 'lessons completed')),
+				profStat('', tot.courses_completed || 0, t('coursesDone', 'courses completed')),
+				profStat('', tot.exercises_correct || 0, t('exercisesRight', 'exercises correct')),
+				profStat('', tot.active_days || 0, t('activeDays', 'days active')),
+				profStat('🔥', s.longest_streak || 0, t('longestStreakLabel', 'longest streak'))
+			]));
+
+			/* --- Activity map -------------------------------------------- */
+			if (j.activity && j.activity.length) {
+				wrap.appendChild(h('h2', { class: 'mahan-dash-h2', text: t('activity', 'Activity') }));
+				wrap.appendChild(activityMap(j.activity));
+			}
+
+			/* --- Skills --------------------------------------------------- */
+			// Coursera's best idea: name what the learner can now do. Derived
+			// from topics whose lessons they actually finished, so it is earned
+			// rather than claimed.
+			wrap.appendChild(h('h2', { class: 'mahan-dash-h2', text: t('skills', 'Skills you have built') }));
+			if (j.skills && j.skills.length) {
+				wrap.appendChild(h('div', { class: 'mahan-skills' }, j.skills.map(function (sk) {
+					return h('button', {
+						class: 'mahan-skill', type: 'button',
+						title: fmt(t('skillFrom', '%s lessons completed'), sk.lessons),
+						// The catalog filters on the topic NAME, not the slug.
+						onClick: function () { go('catalog', { topic: sk.name }); }
+					}, [
+						h('span', { class: 'mahan-skill-name', text: sk.name }),
+						h('span', { class: 'mahan-skill-count', text: String(sk.lessons) })
+					]);
+				})));
+			} else {
+				wrap.appendChild(h('p', { class: 'mahan-prof-empty',
+					text: t('skillsEmpty', 'Finish a couple of lessons on the same topic and it will show up here.') }));
+			}
+
+			/* --- Certificates --------------------------------------------- */
+			if (j.certificates && j.certificates.length) {
+				wrap.appendChild(h('h2', { class: 'mahan-dash-h2', text: t('certificates', 'Certificates') }));
+				wrap.appendChild(certificateList(j.certificates));
+			}
+
+			/* --- Achievements --------------------------------------------- */
+			if (j.badges && j.badges.length) {
+				var earned = j.badges.filter(function (b) { return b.earned; });
+				wrap.appendChild(h('h2', { class: 'mahan-dash-h2', text: t('achievements', 'Achievements') }));
+				wrap.appendChild(h('p', { class: 'mahan-badges-sub', text: earned.length + ' / ' + j.badges.length }));
+				// Earned first here — the profile is a record of what was done,
+				// so the locked ones are context, not the headline.
+				var ordered = earned.concat(j.badges.filter(function (b) { return !b.earned; }));
+				wrap.appendChild(badgeGrid(ordered));
+			}
+
+			mount(wrap);
+		}, renderProfile);
+	}
+
+	function profStat(icon, value, label) {
+		return h('div', { class: 'mahan-prof-stat' }, [
+			icon ? h('span', { class: 'mahan-prof-stat-icon', 'aria-hidden': 'true', text: icon }) : null,
+			h('strong', { class: 'mahan-prof-stat-value', text: String(value) }),
+			h('span', { class: 'mahan-prof-stat-label', text: label })
+		]);
+	}
+
+	// A calendar of effort, GitHub/Duolingo style. Columns are weeks so the
+	// eye reads a habit rather than a list of days.
+	function activityMap(days) {
+		var grid = h('div', { class: 'mahan-heat', role: 'img',
+			'aria-label': fmt(t('activityDays', 'Learning activity over the last %s days'), days.length) });
+		var active = 0;
+		days.forEach(function (d) {
+			if (d.level > 0) { active++; }
+			grid.appendChild(h('span', {
+				class: 'mahan-heat-cell mahan-heat-' + d.level + (d.today ? ' is-today' : ''),
+				title: d.date + (d.xp ? ' · ' + d.xp + ' XP' : '')
+			}));
+		});
+		return h('div', { class: 'mahan-heat-wrap' }, [
+			grid,
+			h('p', { class: 'mahan-heat-legend' }, [
+				h('span', { text: fmt(t('activeInWindow', 'Active on %1$s of the last %2$s days'), active, days.length) })
+			])
+		]);
+	}
+
+	// Shared by the dashboard and the profile so a certificate looks the same
+	// wherever it appears.
+	function certificateList(certs) {
+		var list = h('div', { class: 'mahan-cert-list' });
+		certs.forEach(function (c) {
+			list.appendChild(h('button', {
+				class: 'mahan-cert-item', type: 'button',
+				onClick: function () { showCertificate({ title: c.course_title }, c); }
+			}, [
+				h('span', { class: 'mahan-cert-item-icon', 'aria-hidden': 'true', text: '🎓' }),
+				h('span', { class: 'mahan-cert-item-body' }, [
+					h('span', { class: 'mahan-cert-item-title', text: c.course_title }),
+					h('span', { class: 'mahan-cert-item-meta', text: shortDate(c.issued_at) + ' · ' + c.serial })
+				])
+			]));
+		});
+		return list;
+	}
+
+	function badgeGrid(badges) {
+		var grid = h('div', { class: 'mahan-badges' });
+		badges.forEach(function (b) {
+			var showProgress = !b.earned && (b.need || 0) > 1 && (b.progress || 0) > 0;
+			grid.appendChild(h('div', { class: 'mahan-badge' + (b.earned ? ' is-earned' : ' is-locked'), title: b.desc }, [
+				h('span', { class: 'mahan-sr-only', text: b.earned ? t('badgeEarnedState', 'Earned:') : fmt(t('badgeLockedState', 'Locked, %s of %s:'), b.progress || 0, b.need || 1) }),
+				h('span', { class: 'mahan-badge-icon', 'aria-hidden': 'true', text: b.icon }),
+				h('span', { class: 'mahan-badge-title', text: b.title }),
+				h('span', { class: 'mahan-badge-desc', text: b.desc }),
+				showProgress ? h('div', { class: 'mahan-badge-progress' }, [
+					h('div', { class: 'mahan-badge-progress-bar' }, [
+						h('span', { style: 'width:' + Math.round((b.progress / b.need) * 100) + '%' })
+					]),
+					h('span', { class: 'mahan-badge-progress-label', text: b.progress + '/' + b.need })
+				]) : null
+			]));
+		});
+		return grid;
 	}
 
 	/* ------------------------------------------------------------------ */
@@ -3755,6 +4039,7 @@
 			case 'paths': return renderPaths();
 			case 'path': return renderPath();
 			case 'placement': return D.loggedIn ? renderPlacement() : mount(loginGate());
+			case 'profile': return D.loggedIn ? renderProfile() : mount(loginGate());
 			// Verification is public on purpose — the person checking a
 			// credential is usually not the person who earned it.
 			case 'verify': return renderVerify();

@@ -308,6 +308,79 @@ class Mahan_Gamification {
 		return $out;
 	}
 
+	/**
+	 * A longer activity map for the profile, one entry per day.
+	 *
+	 * The seven-day strip answers "am I on track this week". It cannot show a
+	 * habit, and a habit is the thing a learner is actually trying to build —
+	 * so the profile gets a run of weeks instead, with the XP kept per day so
+	 * the UI can show intensity rather than a flat on/off.
+	 *
+	 * @param int $user_id Learner.
+	 * @param int $days    How far back to go (clamped to a sane range).
+	 * @return array[] { date, xp, level:0-4, today:bool }
+	 */
+	public static function activity_map( $user_id, $days = 91 ) {
+		$user_id = (int) $user_id;
+		$days    = max( 7, min( 371, (int) $days ) );
+		if ( ! $user_id ) {
+			return array();
+		}
+
+		global $wpdb;
+		$tz    = function_exists( 'wp_timezone' ) ? wp_timezone() : new DateTimeZone( 'UTC' );
+		$today = new DateTimeImmutable( 'now', $tz );
+		$table = Mahan_DB::xp_log();
+		$since = $today->modify( '-' . ( $days - 1 ) . ' days' )->format( 'Y-m-d' ) . ' 00:00:00';
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT DATE(created_at) AS d, SUM(amount) AS s FROM {$table} WHERE user_id = %d AND created_at >= %s GROUP BY DATE(created_at)",
+				$user_id,
+				$since
+			),
+			ARRAY_A
+		);
+		$per_day = array();
+		foreach ( (array) $rows as $r ) {
+			$per_day[ $r['d'] ] = (int) $r['s'];
+		}
+
+		// Intensity is relative to the learner's own goal, not to their best
+		// day ever — otherwise one enormous session makes every ordinary day
+		// afterwards look like a failure.
+		$goal = self::daily_goal( $user_id );
+		$goal = $goal > 0 ? $goal : 50;
+
+		$out = array();
+		for ( $i = $days - 1; $i >= 0; $i-- ) {
+			$day = $today->modify( '-' . $i . ' days' );
+			$key = $day->format( 'Y-m-d' );
+			$xp  = isset( $per_day[ $key ] ) ? $per_day[ $key ] : 0;
+
+			if ( $xp <= 0 ) {
+				$level = 0;
+			} elseif ( $xp >= $goal * 2 ) {
+				$level = 4;
+			} elseif ( $xp >= $goal ) {
+				$level = 3;
+			} elseif ( $xp >= $goal / 2 ) {
+				$level = 2;
+			} else {
+				$level = 1;
+			}
+
+			$out[] = array(
+				'date'  => $key,
+				'xp'    => $xp,
+				'level' => $level,
+				'today' => 0 === $i,
+			);
+		}
+		return $out;
+	}
+
 	/* ------------------------------------------------------------------ */
 	/* Streaks + freezes                                                   */
 	/* ------------------------------------------------------------------ */

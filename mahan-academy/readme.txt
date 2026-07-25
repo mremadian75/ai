@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.25.0
+Stable tag: 1.26.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -52,6 +52,8 @@ Mahan Academy is a self-contained learning plugin built to teach people how to u
 * Featured courses, promo videos, prerequisites, and printable completion certificates
 * Bilingual interface — English and Spanish, shipped compiled and ready. Each learner picks their own language from the top bar and reads the academy in it while the rest of the site stays in its own; the AI tutor answers in that language too. Course text and email templates are yours and stay as you wrote them
 * Fully translatable, with the gettext toolchain (POT extractor, PO merger, MO compiler) included so you can add a language without installing gettext binaries
+* Learner profile: lifetime totals that never go backwards, a 91-day activity calendar, and "Skills you have built" earned from the topics whose lessons you actually completed — each one pivoting the catalog to more of the same
+* My Learning shelves: In progress, Completed and Saved, each with its count; plus save-for-later stars on every course card and "43 min left" on the ones you are part-way through
 * Lightweight: vanilla JS, no build step, no external runtime dependencies
 
 == Installation ==
@@ -80,6 +82,9 @@ You don't have to do anything — the starter catalog installs automatically on 
 Each course lists the authoritative references it is grounded in under "Further reading & sources" on the course page — peer-reviewed papers, standards and institutional guidance (NIST AI Risk Management Framework, EU AI Act, UNESCO, OECD, OWASP, C2PA), textbooks, and official provider documentation.
 
 == Changelog ==
+
+= 1.26.0 =
+Profile and dashboard, with ideas taken deliberately from Duolingo, Coursera and Udemy. There was no profile at all before — the avatar was decoration. Now it opens one: identity and role, six lifetime totals (XP, lessons, courses, exercises correct, days active, longest streak), a 91-day activity calendar whose columns are weeks so you read a habit rather than a list of days, "Skills you have built" derived from the topics whose lessons you actually finished (each chip pivots the catalog to that topic), plus your certificates and achievements with earned ones leading. My Learning is now three shelves instead of one heap — In progress / Completed / Saved — each with its count, switching locally with no round trip and navigable by arrow key. Every course card gains a save-for-later star, deliberately separate from enrolling. In-progress cards say how many minutes of work are actually left, summed from the lessons you have not done, because "60% done" does not tell you whether the rest is ten minutes or two hours. Also fixes a URL builder that silently dropped unknown params, so a topic-filtered catalog is now properly linkable and survives a reload. No schema change.
 
 = 1.25.0 =
 Course quality. Measured first: the catalog advertised 57 hours of material and contained 12.7 — and all 18 courses had the identical 2-unit shape. Course length is now computed from what is actually authored (lesson minutes plus a budget per exercise and quiz question) instead of typed by hand, and the seed validator fails if the two disagree, so it cannot drift again. Cards now show smaller, true numbers. The Prompt Engineering ladder was rebuilt to real depth — 4 units on every rung, 24 lessons, 98 exercises, ~3 hours each — with a genuine progression from technique to automation to governance, and that is the template the other tracks follow next. Fourteen new applied exercises (prompt-writing and short answer with real rubrics) across the courses that were almost entirely multiple-choice; no course is above 80% recall now. Deeper courses also reach sites that already installed: a strictly additive backfill installs lessons and unit quizzes that are missing, and never rewrites, reorders or removes anything already there — including owner-edited unit quizzes. Also fixes a validator check that disagreed with the seeder and rejected a valid fill-in-the-blank answer of "0". The other tracks keep their original depth for now and read "1 h" honestly. No schema change.

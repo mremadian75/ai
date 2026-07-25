@@ -4,6 +4,97 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.25.0]
+
+Course quality. **No schema change — DB stays v5.**
+
+### The catalog was overstating itself
+
+Measured before touching anything: the catalog advertised **57 hours** of
+material and contained **12.7** — 22% of the claim. Every one of the 18 courses
+had the identical shape (2 units × 2 lessons), which is a template filled in
+eighteen times, not eighteen authored curricula. And 81% of exercises were
+recall — multiple choice, true/false, fill-in-the-blank — which tests whether
+someone read the page, not whether they can do anything.
+
+### Duration is now measured, not typed
+
+`est_hours` was a number written by hand next to the content, and the two
+drifted for eleven releases because nothing ever compared them. `Mahan_Seed`
+now computes the length from what is actually authored — lesson minutes, plus a
+flat budget per exercise and quiz question, since those are answered rather than
+read. The seed validator fails the build if an authored `est_hours` disagrees
+with the computed one, so it cannot drift again.
+
+Every card now shows a smaller, true number. Fifteen courses correctly read
+"1 h" — because that is what they contain. That is the honest starting point
+for fixing them, and a course card that lies is worse than one that
+disappoints.
+
+### The Prompt Engineering track is a real course now
+
+The flagship ladder went from 2 units to 4 on every rung — **12 units, 24
+lessons, 98 exercises, 47 quiz questions**, roughly 3 hours each, and each rung
+now has an arc rather than a sample:
+
+| Rung | New unit 3 | New unit 4 |
+| --- | --- | --- |
+| Prompting Foundations | Iterating instead of restarting — diagnosing a bad answer, few-shot | Judgement — where models are weak, and building your own checklist |
+| Prompt Patterns & Techniques | Decomposition — chaining, and making the model check its own work | When patterns fail — the four failure modes, and choosing the cheapest pattern |
+| Prompt Engineering at Work | Prompts that run without you — writing for a program, handling failure | Measuring and governing — evaluation sets, versioning, ownership |
+
+That last progression is the point: technique → automation → governance is what
+separates a course from a tutorial, and it is the template the other tracks
+will follow.
+
+### Exercises that ask you to do something
+
+Fourteen new applied exercises — prompt-writing tasks and short answers with
+real rubrics — across the eight courses the new validator check flagged as
+recall-heavy. They are built around the mistakes that actually happen: target
+leakage in an ML feature set, 99.4% accuracy on a 0.6% fraud base rate, a
+retrieval miss caused by vocabulary rather than meaning, a policy everyone
+ignores. No course is above 80% recall any more, and the validator warns if one
+drifts back.
+
+### Delivering deeper courses to sites that already installed
+
+v1.23.0 fixed metadata reaching existing sites but deliberately stopped short of
+content — which meant the new units above would only ever have appeared on
+brand-new academies. `Mahan_Seed::add_missing_lessons()` closes that gap under a
+strictly additive rule:
+
+- a lesson is created **only** when nothing carries its seed key yet
+- an existing lesson is **never** rewritten, reordered, or removed, even when
+  the library's copy has since changed
+- a missing unit quiz is added; an existing one is carried through untouched
+  (`save_all()` replaces the whole map, so adding one naively would wipe the rest)
+- a course that grew has its advertised length recomputed
+
+The honest cost: a lesson an owner deliberately deleted comes back. Trashing is
+not a strong enough signal to tell "I don't want this" apart from "I haven't
+seen it yet", and never delivering new material is worse for every other site.
+
+### Validator
+
+Three new checks, one of which found a real bug the moment it ran — an authored
+`est_hours` that the new exercises had pushed over an hour boundary:
+
+- `est_hours` must equal the computed duration
+- a course needs at least 2 units, and warns below 45 minutes of material
+- warns above 80% recall exercises
+
+Also fixed a check that disagreed with the code it validates: the validator used
+`empty()` on `answer_text` where `Mahan_Seed` uses `'' === trim()`, so a
+perfectly good fill-in-the-blank answer of `"0"` was rejected by the validator
+and accepted by the seeder. A validator that disagrees with production is worse
+than no validator.
+
+### Still to do
+
+The other three ladders and the standalone courses keep their original depth for
+now and read "1 h" honestly. They follow the same four-unit pattern next.
+
 ## [1.24.0]
 
 The academy speaks Spanish. **No schema change — DB stays v5.**

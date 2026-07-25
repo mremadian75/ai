@@ -394,5 +394,328 @@ return array(
 				),
 			),
 		),
+
+		/* ---- Unit 3 ------------------------------------------------------ */
+		array(
+			'title'   => 'Iterating instead of restarting',
+			'lessons' => array(
+
+				array(
+					'title'   => 'Read the answer like a diagnosis',
+					'type'    => 'reading',
+					'est_min' => 10,
+					'xp'      => 25,
+					'topics'  => array( 'Iteration' ),
+					'content' => '<h2>A disappointing answer is evidence, not a dead end</h2>'
+						. '<p>The most common mistake after a bad reply is to delete the prompt and type a different one from scratch. That throws away the only useful information you just bought: <strong>the specific way it went wrong</strong>.</p>'
+						. '<p>Almost every disappointing answer fails in one of a handful of recognisable ways, and each one points at a missing ingredient.</p>'
+						. '<h3>The diagnostic table</h3>'
+						. '<table><thead><tr><th>What came back</th><th>What was missing</th><th>The fix</th></tr></thead><tbody>'
+						. '<tr><td>Generic, could be about any company</td><td>Context</td><td>Paste the actual facts, names, numbers</td></tr>'
+						. '<tr><td>Right content, wrong shape</td><td>Format</td><td>State the structure: bullets, table, word count</td></tr>'
+						. '<tr><td>Right shape, wrong register</td><td>Role or tone</td><td>Name the speaker and the reader</td></tr>'
+						. '<tr><td>Confident but wrong facts</td><td>Grounding</td><td>Supply the source; allow "I don\'t know"</td></tr>'
+						. '<tr><td>Answered a different question</td><td>Task clarity</td><td>One verb, one job, moved to the end</td></tr>'
+						. '<tr><td>Too long, buries the point</td><td>A limit</td><td>Give a number, not "briefly"</td></tr>'
+						. '</tbody></table>'
+						. '<h3>Change one thing at a time</h3>'
+						. '<p>If you rewrite the role, the context and the format all at once and the answer improves, you have learned nothing about which change did it. Adjust one ingredient, look at what moved, keep it or discard it. This is slower for one prompt and far faster across the hundred you will write this year.</p>'
+						. '<blockquote>Do not ask "what should I write instead?" Ask "which of the four parts was thin?" The second question has an answer.</blockquote>'
+						. '<h3>Steer inside the same conversation</h3>'
+						. '<p>You rarely need a new chat. "That is close — make it half the length and drop the third point" keeps everything the model already knows and corrects only what was wrong. Starting over means re-supplying all the context you had just finished giving it.</p>'
+						. '<h3>Recap</h3>'
+						. '<p>Diagnose the failure, name the missing ingredient, change that one thing, and stay in the conversation while you do it.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'An answer is accurate and well-structured but reads like a legal notice when you wanted it friendly. Which ingredient is thin?',
+							'options'  => array( 'Context', 'Task', 'Role and tone', 'Grounding' ),
+							'answer'   => 2,
+							'hint'     => 'Which part decides who is speaking, and to whom?',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'When a reply is close but not right, starting a brand-new chat is usually the fastest fix.',
+							'answer'   => 1,
+							'hint'     => 'What happens to all the context you already supplied?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'Change ___ thing at a time, so you can tell which change actually helped.',
+							'answer_text' => 'one',
+							'accept'      => array( 'a single', 'single' ),
+							'hint'        => 'The opposite of rewriting everything at once.',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'Here is a real failure: you asked for "a summary of our Q3 results" and got a confident summary containing numbers you have never seen. Write the follow-up message that fixes the actual problem — do not start a new chat.',
+							'rubric' => 'A strong answer identifies missing grounding as the cause, supplies (or says it will paste) the real figures, and explicitly permits the model to say it does not know rather than fill gaps. It should be a continuation of the conversation, not a fresh prompt.',
+							'hint'   => 'Invented numbers is the classic symptom of one specific missing ingredient.',
+						),
+					),
+				),
+
+				array(
+					'title'   => 'Showing beats explaining: examples',
+					'type'    => 'practice',
+					'est_min' => 11,
+					'xp'      => 25,
+					'topics'  => array( 'Iteration', 'Output format' ),
+					'content' => '<h2>When describing what you want stops working</h2>'
+						. '<p>Some requirements are easy to describe: "under 100 words", "in a table", "no jargon". Others are almost impossible — house style, the particular way your team writes a bug title, the voice of your newsletter. You know it when you see it, and so does the model, but only if you <strong>show</strong> it.</p>'
+						. '<p>Including one or two examples of the output you want is the single highest-leverage move in this course. Researchers call it few-shot prompting; in practice it is just "here is one I made earlier".</p>'
+						. '<h3>The shape of an example-led prompt</h3>'
+						. '<p>Give the instruction, then a worked example, then the real input:</p>'
+						. '<pre><code>Rewrite each support ticket title so it names the symptom, not the guess.\n\nExample\nBefore: "Database is broken again"\nAfter: "Checkout fails with timeout after 30s"\n\nNow rewrite:\nBefore: "Emails not working"</code></pre>'
+						. '<p>Nothing in that prompt explains your style rules. The example carries them: past tense out, specific symptom in, no blame, roughly this length.</p>'
+						. '<h3>One good example beats five mediocre ones</h3>'
+						. '<p>The model imitates what it sees — including mistakes. If your example is inconsistent, the output will be too. Pick a case you would be happy to receive back.</p>'
+						. '<h3>A counter-example is a sharp tool</h3>'
+						. '<p>Showing one thing you do <em>not</em> want, labelled clearly, fixes stubborn habits fast: "Avoid this: \'We are pleased to announce…\'". Use it sparingly — a prompt that is mostly prohibitions produces cautious, lifeless writing.</p>'
+						. '<blockquote>If you have tried to describe it twice and it still is not right, stop describing and paste an example.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Describe what is easy to describe. Show everything else. One clean example, and a counter-example only when a habit will not shift.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Which requirement is best communicated with an example rather than an instruction?',
+							'options'  => array(
+								'A 200-word limit',
+								'Output as valid JSON',
+								'Our team\'s particular tone of voice',
+								'Use British spelling',
+							),
+							'answer'   => 2,
+							'hint'     => 'Which one would you struggle to write down as a rule?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'Giving a model one or two worked examples of the output you want is known as ___-shot prompting.',
+							'answer_text' => 'few',
+							'accept'      => array( 'one', 'n' ),
+							'hint'        => 'As opposed to zero-shot, where you only describe.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'Adding more examples always improves the result, so include as many as you can find.',
+							'answer'   => 1,
+							'hint'     => 'What happens if the examples disagree with each other?',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'Write an example-led prompt that turns rough meeting notes into a standard action item in your own team\'s style. Include the instruction, exactly one before/after example, and then the real input.',
+							'rubric' => 'A strong answer has three clearly separated parts: a one-line instruction, a single consistent before/after pair that demonstrates the style rather than describing it, and the real input left for the model to process. The example should itself be well-formed enough to imitate.',
+							'hint'   => 'The example is doing the teaching — make it one you would be happy to receive.',
+						),
+					),
+				),
+			),
+			'quiz'    => array(
+				'title'     => 'Iterating instead of restarting — quiz',
+				'passing'   => 70,
+				'xp'        => 30,
+				'questions' => array(
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'The answer is generic and could describe any company in your industry. What is missing?',
+						'options'  => array( 'Format', 'Context', 'A word limit', 'A different model' ),
+						'answer'   => 1,
+					),
+					array(
+						'type'     => 'true_false',
+						'question' => 'Changing several parts of a prompt at once makes it harder to learn which change helped.',
+						'answer'   => 0,
+					),
+					array(
+						'type'        => 'fill_blank',
+						'question'    => 'When describing a style twice has not worked, stop describing and paste an ___.',
+						'answer_text' => 'example',
+						'accept'      => array( 'examples' ),
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'A model returns confident figures you have never seen. The right correction is to:',
+						'options'  => array(
+							'Ask it to be more careful next time',
+							'Supply the real source and allow it to say it does not know',
+							'Increase the word limit',
+							'Rephrase the question as a command',
+						),
+						'answer'   => 1,
+					),
+				),
+			),
+		),
+
+		/* ---- Unit 4 ------------------------------------------------------ */
+		array(
+			'title'   => 'Judgement: trust, limits, and your own checklist',
+			'lessons' => array(
+
+				array(
+					'title'   => 'Where models are strong and where they are not',
+					'type'    => 'reading',
+					'est_min' => 10,
+					'xp'      => 25,
+					'topics'  => array( 'Prompt design', 'Iteration' ),
+					'content' => '<h2>Knowing when not to ask is part of the skill</h2>'
+						. '<p>A language model predicts fluent text. Everything it is good at, and everything it is bad at, follows from that one fact — and fluency is not the same thing as being right.</p>'
+						. '<h3>Reliably strong</h3>'
+						. '<ul>'
+						. '<li><strong>Transforming text you supply</strong> — summarising, rewriting, translating, changing register, extracting fields. The material is in front of it, so there is little to invent.</li>'
+						. '<li><strong>Producing structure</strong> — turning prose into a table, notes into an agenda, requirements into a checklist.</li>'
+						. '<li><strong>Getting you off a blank page</strong> — a first draft to react to is easier than nothing, even when you rewrite most of it.</li>'
+						. '<li><strong>Explaining at a chosen level</strong> — the same concept for a board, a new starter, or a specialist.</li>'
+						. '</ul>'
+						. '<h3>Reliably weak</h3>'
+						. '<ul>'
+						. '<li><strong>Facts it was never given</strong> — private figures, internal policy, anything after its training cutoff. It will answer anyway, and it will sound certain.</li>'
+						. '<li><strong>Exact arithmetic over long chains</strong> — it is predicting the next token, not calculating. Check the numbers or give it a calculator tool.</li>'
+						. '<li><strong>Citations</strong> — plausible-looking references to papers, cases and page numbers that do not exist. Never pass one on unchecked.</li>'
+						. '<li><strong>Saying "I don\'t know"</strong> — unless you explicitly make that an acceptable answer, it will fill the gap.</li>'
+						. '</ul>'
+						. '<blockquote>Fluency is not accuracy. The answer that sounds most confident is not the one that has been checked — it is just the one that is well written.</blockquote>'
+						. '<h3>The practical rule</h3>'
+						. '<p>Ask yourself: <em>could I verify this in under a minute?</em> If yes, use the model freely and verify. If no — and the answer matters — either supply the source material yourself, or do not use the model for that part.</p>'
+						. '<h3>Recap</h3>'
+						. '<p>Lean on it for transformation, structure and first drafts. Distrust it for unsupplied facts, exact arithmetic and citations. Make "I don\'t know" a permitted answer.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Which task plays most directly to a language model\'s strengths?',
+							'options'  => array(
+								'Telling you last quarter\'s exact revenue',
+								'Turning a page of meeting notes you paste in into a structured action list',
+								'Citing the page number of a specific court judgment',
+								'Adding a long column of figures',
+							),
+							'answer'   => 1,
+							'hint'     => 'Which one works entirely from material you supplied?',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'A confident, well-written answer is a reasonable signal that the facts in it are correct.',
+							'answer'   => 1,
+							'hint'     => 'What is the model actually optimising for?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'Model-generated references to papers or cases are notorious for being plausible but ___.',
+							'answer_text' => 'fabricated',
+							'accept'      => array( 'invented', 'made up', 'fake', 'nonexistent', 'non-existent' ),
+							'hint'        => 'They look real and are not.',
+						),
+						array(
+							'type'     => 'short_answer',
+							'question' => 'Describe one task in your own work you would happily hand to a model, and one you would not — and say what distinguishes them.',
+							'rubric'   => 'A strong answer names two concrete tasks and identifies the real distinguishing factor: whether the material needed is supplied in the prompt versus recalled by the model, and whether a wrong answer would be caught quickly or pass unnoticed.',
+						),
+					),
+				),
+
+				array(
+					'title'   => 'Build your own prompt checklist',
+					'type'    => 'practice',
+					'est_min' => 12,
+					'xp'      => 30,
+					'topics'  => array( 'Prompt design', 'Output format', 'Iteration' ),
+					'content' => '<h2>Turning this course into something you actually use</h2>'
+						. '<p>Technique you have to remember is technique you will skip when you are busy. The fix is a short checklist you keep beside you until it becomes automatic — the same reason surgeons and pilots use them, and for the same reason: not because the steps are hard, but because under pressure people skip the obvious one.</p>'
+						. '<h3>The five questions</h3>'
+						. '<ol>'
+						. '<li><strong>Who is speaking, and to whom?</strong> Role and audience.</li>'
+						. '<li><strong>What does it need to know that only I know?</strong> Context — and paste it, do not refer to it.</li>'
+						. '<li><strong>What is the one job?</strong> A single clear verb.</li>'
+						. '<li><strong>What shape should the answer be?</strong> Format, with a number wherever "short" or "a few" would otherwise appear.</li>'
+						. '<li><strong>What would make this answer wrong, and would I notice?</strong> If the answer is "no", supply the source or check it yourself.</li>'
+						. '</ol>'
+						. '<h3>Keep the ones that work</h3>'
+						. '<p>When a prompt finally produces exactly what you wanted, do not close the tab. Save it. Most professional work is repetitive — the weekly report, the ticket triage, the customer reply — and a saved prompt turns a ten-minute exercise into a thirty-second one. A folder of six prompts you actually reuse is worth more than a hundred you read about.</p>'
+						. '<h3>Write for the next person</h3>'
+						. '<p>Replace the parts that change with obvious placeholders — <code>[PASTE TRANSCRIPT]</code>, <code>[CUSTOMER NAME]</code> — so a colleague can use it without reverse-engineering what it was built for. This is the point where personal technique becomes a team asset.</p>'
+						. '<blockquote>Five questions before you send. One folder of prompts that work. That is the whole discipline.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>You now have the model of how prompts are read, the four ingredients, a way to diagnose failures, examples for what cannot be described, and a sense of what to distrust. The checklist is what makes you use all of it.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Why does the checklist end with "what would make this answer wrong, and would I notice?"',
+							'options'  => array(
+								'To make the prompt longer',
+								'Because an error you cannot catch is the one that reaches your reader',
+								'Because models refuse uncertain questions',
+								'To reduce the cost of the request',
+							),
+							'answer'   => 1,
+							'hint'     => 'Which errors actually cause damage — the ones you spot, or the ones you do not?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'In a reusable prompt, the parts that change each time should be marked with obvious ___.',
+							'answer_text' => 'placeholders',
+							'accept'      => array( 'placeholder' ),
+							'hint'        => 'Like [PASTE TRANSCRIPT].',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'A prompt that worked well is worth saving even though you could write it again.',
+							'answer'   => 0,
+							'hint'     => 'How much of your work repeats?',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'Take the single task you repeat most often at work and write it as a reusable prompt: role, context with placeholders, one clear task, an explicit output format, and a line permitting the model to flag anything it is unsure of.',
+							'rubric' => 'A strong answer is genuinely reusable — it contains marked placeholders rather than one situation\'s details, names a role and audience, states exactly one task, specifies the output shape with a concrete limit, and includes an instruction that allows the model to signal uncertainty instead of guessing.',
+							'hint'   => 'Run the five questions over it before you submit.',
+						),
+						array(
+							'type'     => 'reflection',
+							'question' => 'Looking back at how you were prompting before this course, which of the four ingredients were you most often leaving out — and what did the answers look like as a result?',
+							'rubric'   => 'A thoughtful answer connects a specific missing ingredient to the specific disappointment it caused, rather than giving a general statement about improvement.',
+						),
+					),
+				),
+			),
+			'quiz'    => array(
+				'title'     => 'Judgement and your checklist — quiz',
+				'passing'   => 70,
+				'xp'        => 35,
+				'questions' => array(
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'Which of these should you least trust a model to produce unaided?',
+						'options'  => array(
+							'A summary of a document you pasted',
+							'A specific citation with a page number',
+							'A rewrite of your draft in a warmer tone',
+							'A table built from notes you supplied',
+						),
+						'answer'   => 1,
+					),
+					array(
+						'type'     => 'true_false',
+						'question' => 'Unless you say otherwise, a model will usually fill a gap rather than admit it does not know.',
+						'answer'   => 0,
+					),
+					array(
+						'type'        => 'fill_blank',
+						'question'    => 'Replace vague words like "short" with a specific ___ so the length is under your control.',
+						'answer_text' => 'number',
+						'accept'      => array( 'word count', 'limit' ),
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'The strongest reason to save a prompt that worked is that:',
+						'options'  => array(
+							'Prompts expire if unused',
+							'Most professional work repeats, so a saved prompt pays back many times',
+							'Models perform better on older prompts',
+							'It reduces the context window',
+						),
+						'answer'   => 1,
+					),
+				),
+			),
+		),
 	),
 );

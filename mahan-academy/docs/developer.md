@@ -110,6 +110,27 @@ a later version could never reach a site that already seeded.
 `maybe_refresh_structure()` runs that sweep once per version, claimed with an
 atomic per-version `add_option` — deliberately not a separate lock option, which
 a fatal mid-sweep could strand and thereby block every future refresh.
+
+The same sweep calls `add_missing_lessons()`, which delivers *new content* to
+already-installed courses under a strictly additive rule: a lesson is created
+only when nothing carries its seed key (`<course>:u<N>:l<M>`) yet, and an
+existing lesson is never rewritten, reordered or removed even when the library's
+copy has since changed. Unit quizzes follow the same rule, with one trap worth
+knowing — `Mahan_Quizzes::save_all()` replaces the whole map, so the existing
+quizzes must be read and merged or adding one would silently wipe the rest. The
+honest cost of "additive" is that a lesson the owner deliberately deleted comes
+back; trashing is not a strong enough signal to distinguish that from "not seen
+yet", and never shipping new material is worse for every other site.
+
+**Course length is computed, never typed.** `Mahan_Seed::duration()` sums lesson
+minutes plus a flat budget per exercise (`MIN_PER_EXERCISE`) and per quiz
+question (`MIN_PER_QUIZ_Q`), because those are answered rather than read. It is
+the source of truth for `M_EST_HOURS` at install and after a backfill. The
+authored `est_hours` in each data file is kept only as a claim the seed
+validator checks against the computed value — the two drifted for eleven
+releases until the catalog advertised 57 hours against 13 of material, precisely
+because nothing compared them.
+
 Triggered from the admin dashboard
 (`admin_post_mahan_seed_install`) and **auto-installed by default** via
 `Mahan_Seed::maybe_autoseed()` — on activation and as a one-time `init` catch-up

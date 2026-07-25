@@ -21,7 +21,7 @@ return array(
 		. '<p>You will learn which jobs Claude handles well, how to paste in a report and ask grounded questions about it, how to get answers in the exact shape you need, and the handful of habits that keep AI-assisted work trustworthy. No coding required — just clear thinking and a few reliable moves.</p>',
 	'category'    => 'AI Tools',
 	'level'       => 'beginner',
-	'est_hours'   => 2,
+	'est_hours'   => 1,
 	'featured'    => false,
 	'certificate' => true,
 	'order'       => 2,

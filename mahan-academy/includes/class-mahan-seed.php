@@ -23,6 +23,10 @@ class Mahan_Seed {
 	/** Marker meta on seeded posts (course/lesson/path). */
 	const SEED_META = '_mahan_seed_key';
 
+	/** Minutes budgeted per exercise and per quiz question. See duration(). */
+	const MIN_PER_EXERCISE = 2;
+	const MIN_PER_QUIZ_Q   = 1;
+
 	/** Option recording the plugin version that last seeded. */
 	const OPT_DONE = 'mahan_seed_version';
 
@@ -253,6 +257,46 @@ class Mahan_Seed {
 		}
 	}
 
+	/* ------------------------------------------------------------------ */
+	/* Duration                                                            */
+	/* ------------------------------------------------------------------ */
+
+	/**
+	 * How long this course actually takes, measured from what is authored.
+	 *
+	 * `est_hours` used to be a number typed by hand next to the content, and
+	 * the two drifted: the catalog advertised 57 hours against 13 hours of
+	 * material. A duration nobody computes is a duration nobody keeps true, so
+	 * the card now reports the sum of the work in front of the learner.
+	 *
+	 * Reading minutes come from each lesson. Exercises and quiz questions are
+	 * costed at a flat rate because they are answered, not read — a
+	 * prompt-writing task takes longer than a true/false, but not so much
+	 * longer that per-type weights would be anything but false precision.
+	 *
+	 * @param array $c Course data.
+	 * @return array { minutes:int, hours:int }
+	 */
+	public static function duration( $c ) {
+		$minutes = 0;
+		foreach ( ( isset( $c['units'] ) && is_array( $c['units'] ) ? $c['units'] : array() ) as $unit ) {
+			foreach ( ( isset( $unit['lessons'] ) && is_array( $unit['lessons'] ) ? $unit['lessons'] : array() ) as $lesson ) {
+				$minutes += isset( $lesson['est_min'] ) ? (int) $lesson['est_min'] : 0;
+				$minutes += count( isset( $lesson['exercises'] ) ? (array) $lesson['exercises'] : array() ) * self::MIN_PER_EXERCISE;
+			}
+			if ( ! empty( $unit['quiz']['questions'] ) ) {
+				$minutes += count( (array) $unit['quiz']['questions'] ) * self::MIN_PER_QUIZ_Q;
+			}
+		}
+
+		// Round to the nearest hour but never to zero: a course that exists
+		// takes some time, and "0 h" on a card reads as broken.
+		return array(
+			'minutes' => $minutes,
+			'hours'   => $minutes > 0 ? max( 1, (int) round( $minutes / 60 ) ) : 0,
+		);
+	}
+
 	/**
 	 * @param array $list Raw references.
 	 * @return array[] { title, source, url }
@@ -295,8 +339,100 @@ class Mahan_Seed {
 			$existing = self::find_by_seed_key( Mahan_CPT::COURSE, (string) $course['seed_key'] );
 			if ( $existing ) {
 				self::refresh_course_meta( $existing, $course );
+				self::add_missing_lessons( $existing, $course );
 			}
 		}
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Additive content backfill                                           */
+	/* ------------------------------------------------------------------ */
+
+	/**
+	 * Install lessons and unit quizzes a course is missing, and nothing else.
+	 *
+	 * When a release deepens a course, `install()` won't deliver it: it skips
+	 * courses that already exist, correctly, because the owner may have edited
+	 * them. Without this, new units would only ever appear on brand-new sites
+	 * and every existing academy would stay at its original length.
+	 *
+	 * The rule that makes this safe is strictly additive. A lesson is created
+	 * only when nothing carries its seed key yet; an existing lesson is never
+	 * rewritten, reordered, or removed, even if the library's version has since
+	 * changed. Same for unit quizzes — a missing one is added, an existing one
+	 * is left exactly as the owner has it.
+	 *
+	 * A lesson the owner deliberately deleted would come back, which is the one
+	 * honest cost here. Trashing it is not enough of a signal to distinguish
+	 * "I don't want this" from "I have not seen it yet", and the alternative —
+	 * never delivering new material — is worse for every other site.
+	 *
+	 * @param int   $course_id Existing course post id.
+	 * @param array $c         Course data from the library.
+	 * @return array { lessons:int, quizzes:int } counts actually added.
+	 */
+	public static function add_missing_lessons( $course_id, $c ) {
+		$course_id = (int) $course_id;
+		$added     = array( 'lessons' => 0, 'quizzes' => 0 );
+		if ( $course_id < 1 || empty( $c['seed_key'] ) || empty( $c['units'] ) || ! is_array( $c['units'] ) ) {
+			return $added;
+		}
+
+		$seed     = (string) $c['seed_key'];
+		$result   = array();
+		$existing = self::existing_quiz_units( $course_id );
+		$quiz_map = array();
+		$unit_i   = 0;
+
+		foreach ( $c['units'] as $unit ) {
+			$unit_i++;
+			$unit_title   = sanitize_text_field( isset( $unit['title'] ) ? (string) $unit['title'] : sprintf( __( 'Unit %d', 'mahan-academy' ), $unit_i ) );
+			$unit_lessons = isset( $unit['lessons'] ) && is_array( $unit['lessons'] ) ? $unit['lessons'] : array();
+			$order_i      = 0;
+
+			foreach ( $unit_lessons as $lesson ) {
+				$order_i++;
+				$key = $seed . ':u' . $unit_i . ':l' . $order_i;
+				if ( self::find_by_seed_key( Mahan_CPT::LESSON, $key ) ) {
+					continue; // Already delivered — leave it alone.
+				}
+				if ( self::install_lesson( $course_id, $seed, $unit_title, $unit_i, $order_i, $lesson, $result ) ) {
+					$added['lessons']++;
+				}
+			}
+
+			// Only quizzes for units that have none. save_all() replaces the
+			// whole map, so anything already stored has to be carried through
+			// untouched or adding one quiz would wipe the rest.
+			if ( ! empty( $unit['quiz']['questions'] ) && ! isset( $existing[ $unit_title ] ) ) {
+				$quiz_map[ $unit_title ] = $unit['quiz'];
+				$added['quizzes']++;
+			}
+		}
+
+		if ( $quiz_map && class_exists( 'Mahan_Quizzes' ) ) {
+			Mahan_Quizzes::save_all( $course_id, array_merge( $existing, $quiz_map ) );
+		}
+
+		if ( $added['lessons'] || $added['quizzes'] ) {
+			// The course got longer, so the advertised length has to follow.
+			$duration = self::duration( $c );
+			update_post_meta( $course_id, Mahan_Courses::M_EST_HOURS, $duration['hours'] );
+			Mahan_Logger::log( sprintf( 'Seed backfill: course %d gained %d lesson(s), %d quiz(zes)', $course_id, $added['lessons'], $added['quizzes'] ) );
+		}
+
+		return $added;
+	}
+
+	/**
+	 * Unit quizzes already stored on a course, keyed by unit title.
+	 */
+	private static function existing_quiz_units( $course_id ) {
+		if ( ! class_exists( 'Mahan_Quizzes' ) ) {
+			return array();
+		}
+		$all = Mahan_Quizzes::all( (int) $course_id );
+		return is_array( $all ) ? $all : array();
 	}
 
 	/**
@@ -324,7 +460,9 @@ class Mahan_Seed {
 		update_post_meta( $post_id, self::SEED_META, (string) $c['seed_key'] );
 		update_post_meta( $post_id, Mahan_Courses::M_SUBTITLE, isset( $c['subtitle'] ) ? (string) $c['subtitle'] : '' );
 		update_post_meta( $post_id, Mahan_Courses::M_LEVEL, isset( $c['level'] ) ? (string) $c['level'] : 'beginner' );
-		update_post_meta( $post_id, Mahan_Courses::M_EST_HOURS, isset( $c['est_hours'] ) ? (int) $c['est_hours'] : 0 );
+		// Measured from the authored content, not typed alongside it.
+		$duration = self::duration( $c );
+		update_post_meta( $post_id, Mahan_Courses::M_EST_HOURS, $duration['hours'] );
 		update_post_meta( $post_id, Mahan_Courses::M_OUTCOMES, isset( $c['outcomes'] ) && is_array( $c['outcomes'] ) ? implode( "\n", array_map( 'strval', $c['outcomes'] ) ) : '' );
 		update_post_meta( $post_id, Mahan_Courses::M_FEATURED, ! empty( $c['featured'] ) ? 1 : 0 );
 		update_post_meta( $post_id, Mahan_Courses::M_CERTIFICATE, ! empty( $c['certificate'] ) ? 1 : 0 );

@@ -26,7 +26,7 @@ return array(
 	'track'       => 'machine-learning',
 	'level_rank'  => 2,
 	'level'       => 'intermediate',
-	'est_hours'   => 4,
+	'est_hours'   => 2,
 	'featured'    => false,
 	'certificate' => true,
 	'order'       => 2,
@@ -286,6 +286,11 @@ return array(
 							'feedback_correct'   => 'Right — when a miss is dangerous, you favour recall and accept more false alarms.',
 							'feedback_incorrect' => 'When missing a real case is the costly error, you prioritise recall, not precision or bare accuracy.',
 						),
+						array(
+							'type'     => 'short_answer',
+							'question' => 'A fraud model reports 99.4% accuracy on a dataset where 0.6% of transactions are fraudulent. Why is that number close to meaningless, and which measures would you ask for instead?',
+							'rubric'   => 'A strong answer spots that a model predicting "never fraud" for every transaction would score 99.4% while catching nothing, so accuracy is uninformative on heavily imbalanced data. It should request precision and recall (or a confusion matrix) and connect the choice between them to the relative cost of a missed fraud versus a blocked legitimate customer.',
+						),
 					),
 				),
 
@@ -343,6 +348,11 @@ return array(
 							'question' => 'You can reliably detect overfitting by looking only at the training score.',
 							'answer'   => 1,
 							'hint'     => 'The training score looks great precisely when a model overfits.',
+						),
+						array(
+							'type'     => 'short_answer',
+							'question' => 'Your model scores 97% on training data and 71% on held-out data. Describe two different changes you would try, and what result would tell you each one had worked.',
+							'rubric'   => 'A strong answer proposes two genuinely different remedies — for example more or more varied training data, a simpler model or stronger regularisation, removing features that encode noise, or better cross-validation — and for each states the observable evidence of success: the gap between training and held-out scores narrowing without the held-out score falling.',
 						),
 					),
 				),

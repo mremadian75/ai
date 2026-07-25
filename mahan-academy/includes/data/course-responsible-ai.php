@@ -23,7 +23,7 @@ return array(
 		. '<p>This course turns the major frameworks — the <strong>NIST AI Risk Management Framework</strong>, the <strong>EU AI Act</strong>, and the <strong>OECD</strong> and <strong>UNESCO</strong> principles — into things you can actually do in your work: spot the risks in a use case, judge how sensitive it is, and put simple guardrails in place. No legal background required.</p>',
 	'category'    => 'Responsible AI',
 	'level'       => 'beginner',
-	'est_hours'   => 3,
+	'est_hours'   => 1,
 	'featured'    => true,
 	'certificate' => true,
 	'order'       => 1,

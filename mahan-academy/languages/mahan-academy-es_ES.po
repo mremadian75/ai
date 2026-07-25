@@ -958,7 +958,7 @@ msgstr "Programas guiados: cursos en un orden recomendado."
 msgid "HR & People"
 msgstr "RR. HH. y Personas"
 
-#: includes/class-mahan-seed.php:90
+#: includes/class-mahan-seed.php:94
 msgid "Hands-on guides to popular AI tools — ChatGPT, Claude, Gemini, and image generators."
 msgstr "Guías prácticas de las herramientas de IA más usadas: ChatGPT, Claude, Gemini y generadores de imágenes."
 
@@ -982,7 +982,7 @@ msgstr "Pista"
 msgid "Hint (optional)"
 msgstr "Pista (opcional)"
 
-#: includes/class-mahan-seed.php:87
+#: includes/class-mahan-seed.php:91
 msgid "How machines learn from data — core concepts through practical, shippable models."
 msgstr "Cómo aprenden las máquinas a partir de los datos: de los conceptos base a modelos prácticos y desplegables."
 
@@ -1568,7 +1568,7 @@ msgstr "Escribe una respuesta antes de enviar."
 msgid "Power Learner"
 msgstr "Aprendiz de élite"
 
-#: includes/class-mahan-seed.php:89
+#: includes/class-mahan-seed.php:93
 msgid "Practical, safe ways to use AI to get everyday work done faster."
 msgstr "Formas prácticas y seguras de usar la IA para acelerar el trabajo diario."
 
@@ -2184,11 +2184,11 @@ msgstr "Escribe tu respuesta…"
 msgid "Unavailable"
 msgstr "No disponible"
 
-#: includes/class-mahan-seed.php:88
+#: includes/class-mahan-seed.php:92
 msgid "Understand and use generative AI and large language models with confidence."
 msgstr "Entiende y usa con confianza la IA generativa y los grandes modelos de lenguaje."
 
-#: includes/class-mahan-seed.php:379
+#: includes/class-mahan-seed.php:389 includes/class-mahan-seed.php:517
 msgid "Unit %d"
 msgstr "Unidad %d"
 
@@ -2224,7 +2224,7 @@ msgstr "Proveedor no compatible."
 msgid "Untitled lesson"
 msgstr "Lección sin título"
 
-#: includes/class-mahan-seed.php:91
+#: includes/class-mahan-seed.php:95
 msgid "Use AI in ways you can defend — risk, fairness, transparency, and the rules that apply."
 msgstr "Usa la IA de forma defendible: riesgo, equidad, transparencia y las normas que aplican."
 
@@ -2300,7 +2300,7 @@ msgstr "Cuándo"
 msgid "Why does this matter?"
 msgstr "¿Por qué importa esto?"
 
-#: includes/class-mahan-seed.php:86
+#: includes/class-mahan-seed.php:90
 msgid "Write clear, reliable prompts and build repeatable prompting workflows."
 msgstr "Escribe prompts claros y fiables, y crea flujos de trabajo repetibles."
 

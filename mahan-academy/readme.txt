@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.24.0
+Stable tag: 1.25.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -17,7 +17,8 @@ Mahan Academy is a self-contained learning plugin built to teach people how to u
 **Key features:**
 
 * Standalone courses & lessons (no Tutor LMS, LearnDash, etc. required)
-* Built-in Starter Content Library — 15 professionally written courses across Prompt Engineering, Machine Learning, Generative AI, AI for Productivity, hands-on AI Tools (ChatGPT, Claude, Gemini, image generation), and Responsible AI, organized into categories and Coursera-style bundles with interactive exercises and unit quizzes. Installs automatically so the academy is never empty
+* Built-in Starter Content Library — 18 professionally written courses across Prompt Engineering, Machine Learning, Generative AI, AI for Productivity, hands-on AI Tools (ChatGPT, Claude, Gemini, image generation), and Responsible AI, organized into categories and Coursera-style bundles with 84 lessons, 342 interactive exercises and 42 unit quizzes. Installs automatically so the academy is never empty
+* Honest course lengths — the hours on a card are computed from the lessons, exercises and quizzes actually in the course, not typed in by hand, and the build fails if the two ever disagree
 * Level ladders: subjects climb four rungs — Beginner → Intermediate → Advanced → Expert — as real, separate courses on a shared track, with the whole ladder shown on the course page so learners can move up (or drop back) at any time
 * Department-specific lessons: the same lesson specializes to the learner's field (marketing, sales, finance, HR, management, …) with its own worked examples, metrics, and cautions, marked by a "Tailored for X" badge — mapped automatically from the profile role, and dropped silently rather than faked when there is no match for that field
 * Reference-grounded: every course cites the authoritative sources it is built on — peer-reviewed papers, standards bodies (NIST AI RMF, EU AI Act, UNESCO, OWASP, C2PA), textbooks, and official documentation — shown as "Further reading" on the course page
@@ -79,6 +80,9 @@ You don't have to do anything — the starter catalog installs automatically on 
 Each course lists the authoritative references it is grounded in under "Further reading & sources" on the course page — peer-reviewed papers, standards and institutional guidance (NIST AI Risk Management Framework, EU AI Act, UNESCO, OECD, OWASP, C2PA), textbooks, and official provider documentation.
 
 == Changelog ==
+
+= 1.25.0 =
+Course quality. Measured first: the catalog advertised 57 hours of material and contained 12.7 — and all 18 courses had the identical 2-unit shape. Course length is now computed from what is actually authored (lesson minutes plus a budget per exercise and quiz question) instead of typed by hand, and the seed validator fails if the two disagree, so it cannot drift again. Cards now show smaller, true numbers. The Prompt Engineering ladder was rebuilt to real depth — 4 units on every rung, 24 lessons, 98 exercises, ~3 hours each — with a genuine progression from technique to automation to governance, and that is the template the other tracks follow next. Fourteen new applied exercises (prompt-writing and short answer with real rubrics) across the courses that were almost entirely multiple-choice; no course is above 80% recall now. Deeper courses also reach sites that already installed: a strictly additive backfill installs lessons and unit quizzes that are missing, and never rewrites, reorders or removes anything already there — including owner-edited unit quizzes. Also fixes a validator check that disagreed with the seeder and rejected a valid fill-in-the-blank answer of "0". The other tracks keep their original depth for now and read "1 h" honestly. No schema change.
 
 = 1.24.0 =
 The academy is now bilingual: English and Spanish. All 650 interface strings are translated — learner app, admin screens, editors, badges, reports and settings. Course prose, quiz questions and email templates are deliberately NOT translated: those are your rows in your database, and the plugin says so on screen rather than half-doing the job. A language picker in the top bar lets each learner (and each signed-out visitor) read the academy in their own language, while the rest of the site stays in its own — the switch is scoped to this plugin's textdomain, so nothing else on the page moves. A guest's choice follows them onto their account when they register. Spanish variants like es_MX and es_AR now resolve to the Spanish catalog instead of falling back to English. The AI tutor, grader and question writer answer in the learner's language, and dates format in it too. Translation tooling (POT extractor, dictionary, PO merger, MO compiler) ships with the plugin, so the academy stays translatable without depending on gettext binaries being installed. Also fixes translations loading before `init` (flagged by WordPress 6.7) and a plural that used the singular form in both slots. No schema change.

@@ -26,7 +26,7 @@ return array(
 	'track'       => 'prompt-engineering',
 	'level_rank'  => 2,
 	'level'       => 'intermediate',
-	'est_hours'   => 4,
+	'est_hours'   => 3,
 	'featured'    => false,
 	'certificate' => true,
 	'order'       => 2,
@@ -400,6 +400,337 @@ return array(
 						),
 						'answer'   => 2,
 						'hint'     => 'Gaps should become an explicit marker, not fiction.',
+					),
+				),
+			),
+		),
+
+		/* ---- Unit 3 ------------------------------------------------------ */
+		array(
+			'title'   => 'Decomposition: one job per prompt',
+			'lessons' => array(
+
+				array(
+					'title'   => 'Chaining: when one prompt is too many jobs',
+					'type'    => 'reading',
+					'est_min' => 12,
+					'xp'      => 25,
+					'topics'  => array( 'Chain-of-thought', 'Structured output' ),
+					'content' => '<h2>The prompt that does four things does none of them well</h2>'
+						. '<p>A request like "read these fifty reviews, find the themes, rank them by severity, and draft a response to each" looks efficient. It is the most reliable way to get mediocre output. Quality degrades on every sub-task, and when the result is wrong you cannot tell which stage broke.</p>'
+						. '<p><strong>Chaining</strong> splits the work: each prompt does one job, and its output becomes the next prompt\'s input.</p>'
+						. '<h3>The same task, chained</h3>'
+						. '<ol>'
+						. '<li><strong>Extract</strong> — "For each review below, output JSON with <code>id</code>, <code>sentiment</code>, and <code>issue</code>. No commentary."</li>'
+						. '<li><strong>Cluster</strong> — "Here are 50 issue strings. Group them into at most 8 themes. Output theme name and the ids in it."</li>'
+						. '<li><strong>Rank</strong> — "Given these themes with counts, order by customer impact and justify each in one line."</li>'
+						. '<li><strong>Draft</strong> — "Write a reply for theme 3 in the voice of the example below."</li>'
+						. '</ol>'
+						. '<p>Four prompts instead of one, and each is short enough to check. When the themes come out wrong you fix step 2 without touching the extraction that was already correct.</p>'
+						. '<h3>Why this works</h3>'
+						. '<p>Each step has a narrow instruction, a smaller context, and an output shape you can validate before spending anything on the next stage. It also makes the expensive stages cheap to skip — if extraction produces nothing worth clustering, you stop.</p>'
+						. '<blockquote>A chain is not more work. It is the same work, arranged so that failure is visible and local.</blockquote>'
+						. '<h3>Where to cut</h3>'
+						. '<p>Cut where the output changes <em>shape</em>. Raw text → structured records is one boundary. Records → groups is another. Groups → prose is a third. If two steps produce the same kind of thing, they probably belong together.</p>'
+						. '<h3>The cost of chaining</h3>'
+						. '<p>More calls means more latency and more to orchestrate, and errors compound — a bad extraction poisons everything downstream. Chain when a single prompt is measurably failing, not by default.</p>'
+						. '<h3>Recap</h3>'
+						. '<p>One job per prompt. Cut where the shape changes. Validate between stages so a failure stays where it happened.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'What is the strongest argument for splitting a big task into a chain of prompts?',
+							'options'  => array(
+								'It uses fewer tokens overall',
+								'A failure stays local and visible instead of contaminating one opaque answer',
+								'Models refuse long prompts',
+								'It avoids the need for output formats',
+							),
+							'answer'   => 1,
+							'hint'     => 'Think about what happens when the single-prompt version comes back wrong.',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'A good place to cut a chain is where the output changes ___ — for example raw text becoming structured records.',
+							'answer_text' => 'shape',
+							'accept'      => array( 'form', 'format', 'structure' ),
+							'hint'        => 'Not where the topic changes — where the kind of thing changes.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'Chaining is free: splitting a task into stages carries no downside.',
+							'answer'   => 1,
+							'hint'     => 'What happens to latency, orchestration, and an early mistake?',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'Take this single overloaded prompt and split it into a chain: "Read the attached 20-page contract, list the risky clauses, score each by severity, and write an email to legal summarising the top three." Write the instruction for each stage and say what shape its output takes.',
+							'rubric' => 'A strong answer produces three or four stages cut at genuine shape changes (text → extracted clauses → scored records → prose email), gives each stage a single verb, specifies a checkable output format for the intermediate stages, and notes where a chunking step is needed because the contract will not fit in one window.',
+							'hint'   => 'Where does the kind of output change?',
+						),
+					),
+				),
+
+				array(
+					'title'   => 'Making the model check its own work',
+					'type'    => 'practice',
+					'est_min' => 11,
+					'xp'      => 25,
+					'topics'  => array( 'Chain-of-thought', 'Delimiters & guardrails' ),
+					'content' => '<h2>A second pass catches what the first one missed</h2>'
+						. '<p>Models are markedly better at <em>spotting</em> a flaw than at avoiding it while generating. That asymmetry is useful: ask for the answer, then ask for a critique of the answer, then ask for a revision. Each pass is a fresh, narrow job.</p>'
+						. '<h3>The three-pass shape</h3>'
+						. '<pre><code>Pass 1: Draft the migration plan.\n\nPass 2: You are a sceptical reviewer. List every assumption in the plan\n        below that is not supported by the source notes. Do not rewrite it.\n\nPass 3: Revise the plan to address each point raised. Where a point\n        cannot be addressed, say so explicitly instead of removing it.</code></pre>'
+						. '<p>Pass 2 is the one people skip, and it is the one that works. Note that it is forbidden from rewriting — a reviewer who can edit will quietly patch problems instead of naming them, and you lose the list.</p>'
+						. '<h3>Give the critic a standard to check against</h3>'
+						. '<p>"Is this good?" produces flattery. "Check this against the following four rules, and quote the line that breaks each one" produces findings. The more specific the standard, the more useful the critique — and a critic that must quote cannot invent a violation as easily.</p>'
+						. '<h3>Self-consistency: ask more than once</h3>'
+						. '<p>For questions with one right answer, generating the answer three times independently and taking the majority is a cheap accuracy win. Where the three disagree, you have found the questions that need a human — which is often more valuable than the answer itself.</p>'
+						. '<blockquote>Generate, then criticise, then revise. Never ask a model to do all three in one breath — it will grade its own homework generously.</blockquote>'
+						. '<h3>Know the limit</h3>'
+						. '<p>Self-checking catches inconsistency, unsupported claims and missed requirements. It does not catch a fact that is wrong in the source, and it cannot verify anything outside the context. It reduces sloppiness; it does not create knowledge.</p>'
+						. '<h3>Recap</h3>'
+						. '<p>Separate the passes, forbid the critic from editing, give it an explicit standard and make it quote, and use disagreement across runs as a flag for human review.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Why should the critique pass be forbidden from rewriting the draft?',
+							'options'  => array(
+								'Rewriting costs more tokens',
+								'A reviewer that can edit will patch problems silently instead of naming them',
+								'Models cannot edit and review at once',
+								'It would exceed the context window',
+							),
+							'answer'   => 1,
+							'hint'     => 'What is the output of the critique pass supposed to be?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'Asking a critic to ___ the line that breaks each rule makes it much harder to invent a violation.',
+							'answer_text' => 'quote',
+							'accept'      => array( 'cite', 'quote back' ),
+							'hint'        => 'Make it point at the evidence.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'Self-checking can catch a fact that was already wrong in the source material you supplied.',
+							'answer'   => 1,
+							'hint'     => 'What can the model actually compare against?',
+						),
+						array(
+							'type'     => 'short_answer',
+							'question' => 'You run the same classification prompt three times and get two "high risk" and one "low risk". What should happen next, and why is that disagreement useful?',
+							'rubric'   => 'A strong answer treats the disagreement as a signal rather than noise: the majority may be taken as the answer, but the item should be flagged for human review because inconsistency across runs marks genuinely ambiguous cases — which is itself valuable information about the task.',
+						),
+					),
+				),
+			),
+			'quiz'    => array(
+				'title'     => 'Decomposition — quiz',
+				'passing'   => 70,
+				'xp'        => 30,
+				'questions' => array(
+					array(
+						'type'        => 'fill_blank',
+						'question'    => 'Splitting a task so each prompt does one job, feeding output into the next, is called ___.',
+						'answer_text' => 'chaining',
+						'accept'      => array( 'chain', 'prompt chaining' ),
+					),
+					array(
+						'type'     => 'true_false',
+						'question' => 'Generating, critiquing, and revising in a single prompt is as effective as separating the three passes.',
+						'answer'   => 1,
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'Running the same question several times and taking the majority answer mainly helps because:',
+						'options'  => array(
+							'It makes the model faster',
+							'It raises accuracy and surfaces the ambiguous cases through disagreement',
+							'It reduces the context window',
+							'It removes the need for examples',
+						),
+						'answer'   => 1,
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'Which critique instruction will produce the most useful findings?',
+						'options'  => array(
+							'"Is this any good?"',
+							'"Make this better."',
+							'"Check this against these four rules and quote the line that breaks each."',
+							'"Rewrite anything you dislike."',
+						),
+						'answer'   => 2,
+					),
+				),
+			),
+		),
+
+		/* ---- Unit 4 ------------------------------------------------------ */
+		array(
+			'title'   => 'When patterns fail',
+			'lessons' => array(
+
+				array(
+					'title'   => 'Diagnosing a pattern that stopped working',
+					'type'    => 'reading',
+					'est_min' => 11,
+					'xp'      => 25,
+					'topics'  => array( 'Few-shot examples', 'Structured output' ),
+					'content' => '<h2>Every pattern in this course has a failure mode</h2>'
+						. '<p>Patterns are not magic words. Each one works by changing what the model attends to, and each fails in a way you can recognise once you have seen it.</p>'
+						. '<h3>Few-shot drifting into copying</h3>'
+						. '<p><strong>Symptom:</strong> the output reuses details from your examples — the same company name, the same numbers.<br>'
+						. '<strong>Cause:</strong> the examples are too close to the real input, so imitation of the <em>content</em> is as plausible as imitation of the <em>form</em>.<br>'
+						. '<strong>Fix:</strong> make examples deliberately unlike the real case, and add "follow the structure, not the subject matter".</p>'
+						. '<h3>Step-by-step reasoning producing confident nonsense</h3>'
+						. '<p><strong>Symptom:</strong> a beautifully laid-out chain of reasoning that reaches a wrong conclusion.<br>'
+						. '<strong>Cause:</strong> the steps are generated text like any other; a fluent chain is not a verified one.<br>'
+						. '<strong>Fix:</strong> ask for the steps to be checkable — each one citing the input line it rests on — and verify the arithmetic separately.</p>'
+						. '<h3>Structured output that is almost valid</h3>'
+						. '<p><strong>Symptom:</strong> JSON with a trailing comma, a stray "Here is the JSON:", or an extra field.<br>'
+						. '<strong>Cause:</strong> the instruction competed with the model\'s pull toward being conversational.<br>'
+						. '<strong>Fix:</strong> state "output only the JSON object, no prose, no code fence", give the exact schema, and parse defensively — always assume the first parse may fail.</p>'
+						. '<h3>Guardrails leaking</h3>'
+						. '<p><strong>Symptom:</strong> instructions inside pasted user content get followed.<br>'
+						. '<strong>Cause:</strong> the model cannot tell your instructions from text that looks like instructions.<br>'
+						. '<strong>Fix:</strong> delimit the untrusted block clearly, state that everything inside is <em>data</em> and never a command, and put your real instruction after the block.</p>'
+						. '<blockquote>When a pattern fails, the question is never "which other pattern should I try?" It is "what is this pattern actually doing, and which part of that stopped applying?"</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Copying, fluent-but-wrong chains, almost-valid structure, and leaking guardrails. Four symptoms, four causes, four specific fixes.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Your few-shot prompt keeps producing output containing the customer name from your example. The best fix is to:',
+							'options'  => array(
+								'Add more examples with the same customer',
+								'Make the examples deliberately unlike the real input and say to follow structure, not subject matter',
+								'Remove all examples',
+								'Increase the word limit',
+							),
+							'answer'   => 1,
+							'hint'     => 'The model cannot tell which part of the example it was meant to imitate.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'A well-laid-out chain of reasoning is good evidence that the conclusion is correct.',
+							'answer'   => 1,
+							'hint'     => 'The steps are predicted text too.',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'To stop pasted content being read as commands, delimit it and state that everything inside the block is ___, never an instruction.',
+							'answer_text' => 'data',
+							'accept'      => array( 'content', 'input' ),
+							'hint'        => 'The opposite of a command.',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'A pipeline that extracts JSON from support emails fails roughly one time in twenty, always with a short sentence before the JSON. Rewrite the instruction so this stops happening, and describe what your code should still do about it.',
+							'rubric' => 'A strong answer both tightens the instruction (output only the object, no prose, no code fence, exact schema given) and accepts that the instruction alone is not a guarantee — the calling code must parse defensively, and either retry or extract the object rather than assuming the response is clean.',
+							'hint'   => 'Two fixes are needed: one in the prompt, one outside it.',
+						),
+					),
+				),
+
+				array(
+					'title'   => 'Choosing the cheapest pattern that works',
+					'type'    => 'practice',
+					'est_min' => 10,
+					'xp'      => 25,
+					'topics'  => array( 'Prompt design', 'Structured output' ),
+					'content' => '<h2>Every pattern costs something</h2>'
+						. '<p>Patterns are usually taught as pure upside. In production they are trade-offs: examples cost input tokens on every single call, reasoning costs output tokens and latency, chains cost round trips, self-checking multiplies everything by two or three.</p>'
+						. '<h3>The ladder</h3>'
+						. '<p>Start at the bottom and stop as soon as the output is good enough:</p>'
+						. '<ol>'
+						. '<li><strong>Plain instruction</strong> — cheapest, works for most transformation tasks.</li>'
+						. '<li><strong>Add a format spec</strong> — nearly free, fixes most "wrong shape" problems.</li>'
+						. '<li><strong>Add one example</strong> — costs input tokens per call, fixes style and tone.</li>'
+						. '<li><strong>Ask for reasoning</strong> — costs output tokens and latency, for genuine multi-step logic.</li>'
+						. '<li><strong>Chain</strong> — costs round trips and orchestration, for tasks with distinct stages.</li>'
+						. '<li><strong>Self-check</strong> — multiplies cost, for output that is expensive to get wrong.</li>'
+						. '</ol>'
+						. '<p>Most teams jump straight to rung 4 or 5 because that is what the interesting articles are about, then wonder why their bill and their latency are what they are.</p>'
+						. '<h3>Match the pattern to the cost of being wrong</h3>'
+						. '<p>A draft that a human will read and edit does not need self-consistency. A classification that automatically closes customer tickets does. The question is not "how accurate can I make this?" but "what happens when this is wrong, and who notices?"</p>'
+						. '<blockquote>The right pattern is the cheapest one that survives your own evaluation. Everything above that line is decoration you pay for on every call.</blockquote>'
+						. '<h3>Prove it, do not assume it</h3>'
+						. '<p>Keep ten to twenty real inputs with the outputs you would accept. When you consider adding a rung, run both versions against that set. Frequently the expensive pattern wins on two cases out of twenty — which tells you to fix those two cases another way, not to pay three times as much on all twenty.</p>'
+						. '<h3>Recap</h3>'
+						. '<p>Climb the ladder only as far as you need. Let the cost of a wrong answer set the height, and let a small test set decide whether a rung earned its place.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Which pattern is close to free and should usually be tried before any other?',
+							'options'  => array(
+								'Self-consistency across three runs',
+								'A precise output format specification',
+								'A four-stage chain',
+								'A critique-and-revise pass',
+							),
+							'answer'   => 1,
+							'hint'     => 'Which one adds almost nothing to the call?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'How much technique a task deserves should be set by the cost of being ___.',
+							'answer_text' => 'wrong',
+							'accept'      => array( 'incorrect' ),
+							'hint'        => 'And by whether anyone would notice.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'Examples are a one-off cost paid when you write the prompt.',
+							'answer'   => 1,
+							'hint'     => 'Where do the examples live on every call?',
+						),
+						array(
+							'type'     => 'short_answer',
+							'question' => 'You are choosing between a plain prompt and a three-run self-consistency version for a task that drafts internal meeting summaries a human always reviews. Which do you pick, and what would change your mind?',
+							'rubric'   => 'A strong answer picks the plain prompt because a human reviewer already catches errors, so the extra runs buy little. It should name a concrete condition that would change the decision — for example the summaries becoming an unreviewed input to another automated step, or evidence from a test set that errors slip past the reviewer.',
+						),
+					),
+				),
+			),
+			'quiz'    => array(
+				'title'     => 'When patterns fail — quiz',
+				'passing'   => 70,
+				'xp'        => 35,
+				'questions' => array(
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'Output arrives as valid JSON preceded by "Sure, here you go:". The most reliable response is to:',
+						'options'  => array(
+							'Accept it and hope',
+							'Tighten the instruction AND parse defensively in code',
+							'Switch to XML',
+							'Ask the model to apologise',
+						),
+						'answer'   => 1,
+					),
+					array(
+						'type'     => 'true_false',
+						'question' => 'Few-shot examples are charged on every call, not once when you write the prompt.',
+						'answer'   => 0,
+					),
+					array(
+						'type'        => 'fill_blank',
+						'question'    => 'Keep ten to twenty real inputs with acceptable outputs — a small ___ set — so pattern changes can be measured rather than guessed.',
+						'answer_text' => 'test',
+						'accept'      => array( 'eval', 'evaluation' ),
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'Which task most justifies the cost of a self-checking pass?',
+						'options'  => array(
+							'A first draft a human will rewrite anyway',
+							'A classification that automatically closes customer tickets',
+							'Rewording an internal note',
+							'Generating brainstorm ideas',
+						),
+						'answer'   => 1,
 					),
 				),
 			),

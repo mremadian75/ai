@@ -956,7 +956,7 @@ msgstr ""
 msgid "HR & People"
 msgstr ""
 
-#: includes/class-mahan-seed.php:90
+#: includes/class-mahan-seed.php:94
 msgid "Hands-on guides to popular AI tools — ChatGPT, Claude, Gemini, and image generators."
 msgstr ""
 
@@ -980,7 +980,7 @@ msgstr ""
 msgid "Hint (optional)"
 msgstr ""
 
-#: includes/class-mahan-seed.php:87
+#: includes/class-mahan-seed.php:91
 msgid "How machines learn from data — core concepts through practical, shippable models."
 msgstr ""
 
@@ -1566,7 +1566,7 @@ msgstr ""
 msgid "Power Learner"
 msgstr ""
 
-#: includes/class-mahan-seed.php:89
+#: includes/class-mahan-seed.php:93
 msgid "Practical, safe ways to use AI to get everyday work done faster."
 msgstr ""
 
@@ -2182,11 +2182,11 @@ msgstr ""
 msgid "Unavailable"
 msgstr ""
 
-#: includes/class-mahan-seed.php:88
+#: includes/class-mahan-seed.php:92
 msgid "Understand and use generative AI and large language models with confidence."
 msgstr ""
 
-#: includes/class-mahan-seed.php:379
+#: includes/class-mahan-seed.php:389 includes/class-mahan-seed.php:517
 msgid "Unit %d"
 msgstr ""
 
@@ -2222,7 +2222,7 @@ msgstr ""
 msgid "Untitled lesson"
 msgstr ""
 
-#: includes/class-mahan-seed.php:91
+#: includes/class-mahan-seed.php:95
 msgid "Use AI in ways you can defend — risk, fairness, transparency, and the rules that apply."
 msgstr ""
 
@@ -2298,7 +2298,7 @@ msgstr ""
 msgid "Why does this matter?"
 msgstr ""
 
-#: includes/class-mahan-seed.php:86
+#: includes/class-mahan-seed.php:90
 msgid "Write clear, reliable prompts and build repeatable prompting workflows."
 msgstr ""
 

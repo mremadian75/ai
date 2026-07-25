@@ -25,7 +25,7 @@ return array(
 	'track'       => 'prompt-engineering',
 	'level_rank'  => 3,
 	'level'       => 'advanced',
-	'est_hours'   => 4,
+	'est_hours'   => 3,
 	'featured'    => false,
 	'certificate' => true,
 	'order'       => 3,
@@ -379,6 +379,336 @@ return array(
 							'Because models only read one line at a time',
 						),
 						'answer'   => 2,
+					),
+				),
+			),
+		),
+
+		/* ---- Unit 3 ------------------------------------------------------ */
+		array(
+			'title'   => 'Prompts that run without you',
+			'lessons' => array(
+
+				array(
+					'title'   => 'Writing for a program, not a person',
+					'type'    => 'reading',
+					'est_min' => 12,
+					'xp'      => 30,
+					'topics'  => array( 'Prompt templates', 'Debugging prompts' ),
+					'content' => '<h2>Nobody is watching when this one runs</h2>'
+						. '<p>A prompt you run in a chat window has a safety net: you. You see a strange answer and retry. The moment a prompt runs inside a script, a scheduled job or a product feature, that net is gone — the output goes straight to a database, a customer, or another system.</p>'
+						. '<p>Prompts for automation are written to a different standard, and it is not about wording.</p>'
+						. '<h3>1. The output must be machine-checkable</h3>'
+						. '<p>Prose cannot be validated. Structure can. Specify an exact schema, and have the calling code check it before doing anything with it — required fields present, values from the allowed set, types correct. An answer that fails validation is a failure you can handle; an answer that is merely wrong is one you will discover from a customer.</p>'
+						. '<h3>2. There must be a defined "I can\'t"</h3>'
+						. '<p>Give every automated prompt a legitimate escape hatch: <code>{"status": "needs_review", "reason": "..."}</code>. Without one, an input the prompt was never designed for still produces a confident, well-formed, wrong record — and well-formed wrong is the hardest kind to catch downstream.</p>'
+						. '<h3>3. Untrusted input is data, always</h3>'
+						. '<p>In automation, the variable part is usually something a stranger wrote: an email, a review, a form field. Fence it with delimiters, state explicitly that its contents are data and never instructions, and put your real instruction after it. Assume someone will eventually paste "ignore all previous instructions" into your form, because they will.</p>'
+						. '<h3>4. Pin what you can</h3>'
+						. '<p>Pin the model version — a silent upgrade can change output shape overnight. Set temperature to zero for extraction and classification, where you want the same input to give the same answer. Save nothing to your prompt that you would not want reproduced identically ten thousand times.</p>'
+						. '<blockquote>In a chat, a bad answer costs you thirty seconds. In a pipeline, a bad answer becomes a row that everything downstream believes.</blockquote>'
+						. '<h3>5. Log the input, the prompt version, and the output</h3>'
+						. '<p>When something goes wrong three weeks later, the only way to understand it is to replay it. Log enough to reconstruct the call exactly — subject to whatever your privacy rules allow you to keep.</p>'
+						. '<h3>Recap</h3>'
+						. '<p>Validate the shape, provide an honest way out, treat all supplied content as data, pin what you can, and log enough to replay.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Why does an automated prompt need an explicit "needs_review" style output?',
+							'options'  => array(
+								'It reduces token cost',
+								'Without one, an unexpected input still yields a confident, well-formed, wrong record',
+								'Models refuse to answer otherwise',
+								'It is required by most APIs',
+							),
+							'answer'   => 1,
+							'hint'     => 'What happens to an input the prompt was never designed for?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'For extraction and classification in a pipeline, set temperature to ___ so the same input gives the same answer.',
+							'answer_text' => '0',
+							'accept'      => array( 'zero', '0.0' ),
+							'hint'        => 'You want determinism, not creativity.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'Pinning a specific model version matters little, because newer versions are strictly better.',
+							'answer'   => 1,
+							'hint'     => 'Better on average is not the same as identical in shape.',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'Write the full prompt for an automated step that reads an inbound customer email and outputs a JSON record with intent, urgency (low/medium/high), and a one-line summary. Include the schema, the escape hatch, and the delimiting of untrusted content.',
+							'rubric' => 'A strong answer gives an exact schema with an enumerated urgency set, forbids prose around the JSON, fences the email in clear delimiters while stating its contents are data and never instructions, provides an explicit needs_review path with a reason, and places the real instruction after the untrusted block.',
+							'hint'   => 'Assume the email contains an attempt to hijack your instructions.',
+						),
+					),
+				),
+
+				array(
+					'title'   => 'Handling failure on purpose',
+					'type'    => 'practice',
+					'est_min' => 11,
+					'xp'      => 25,
+					'topics'  => array( 'Debugging prompts', 'Prompt templates' ),
+					'content' => '<h2>The call will fail. Decide now what happens then</h2>'
+						. '<p>Model calls fail in ways ordinary functions do not: they time out, they get rate-limited, they return the right shape with the wrong content, and occasionally they return something no schema anticipated. A pipeline that assumes success is a pipeline that will corrupt data quietly.</p>'
+						. '<h3>Four failure classes, four responses</h3>'
+						. '<table><thead><tr><th>Failure</th><th>How you detect it</th><th>What to do</th></tr></thead><tbody>'
+						. '<tr><td>Transport — timeout, 5xx, rate limit</td><td>The HTTP layer</td><td>Retry with exponential backoff, then give up loudly</td></tr>'
+						. '<tr><td>Malformed — not parseable</td><td>Your parser</td><td>Retry once with the error appended; then route to review</td></tr>'
+						. '<tr><td>Invalid — parses, breaks the schema</td><td>Your validator</td><td>Route to review. Do not retry blindly; the prompt may be wrong</td></tr>'
+						. '<tr><td>Plausible but wrong</td><td>Nothing automatic</td><td>Sampling, spot checks, downstream signals</td></tr>'
+						. '</tbody></table>'
+						. '<p>The fourth row is the honest one. No amount of prompt engineering detects a confident wrong answer from inside the same call. You catch it by checking a sample of real output regularly, and by watching what happens downstream — refund rates, reopened tickets, corrections.</p>'
+						. '<h3>Retry carefully</h3>'
+						. '<p>Retrying the identical prompt after a malformed response often works, because generation is not deterministic. Retrying more than once or twice usually does not — at that point the prompt, not the call, is the problem. And never retry a request that already had a side effect.</p>'
+						. '<h3>Fail into a queue, not into silence</h3>'
+						. '<p>Every path that cannot be handled automatically should end somewhere a human will actually look: a review queue, a flagged row, an alert. "Log and continue" means nobody ever finds out.</p>'
+						. '<blockquote>Design the unhappy path first. The happy path is the easy half, and it is not the half that damages trust.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Separate transport, malformed, invalid and plausible-but-wrong. Retry only where retrying makes sense. Route everything else to a queue a person reads.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Which failure class cannot be detected from inside the same model call?',
+							'options'  => array(
+								'A request timeout',
+								'Unparseable output',
+								'Output that breaks the schema',
+								'Output that is well-formed and confidently wrong',
+							),
+							'answer'   => 3,
+							'hint'     => 'Which one looks exactly like success?',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'If a response fails schema validation, the right move is to keep retrying the same prompt until it passes.',
+							'answer'   => 1,
+							'hint'     => 'What does repeated schema failure suggest about the prompt itself?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'Anything that cannot be handled automatically should end in a review ___ that a person actually reads.',
+							'answer_text' => 'queue',
+							'accept'      => array( 'list' ),
+							'hint'        => 'Not a log file nobody opens.',
+						),
+						array(
+							'type'     => 'short_answer',
+							'question' => 'Your extraction step succeeds on 98% of emails. Describe how you would find out whether the 98% are actually correct.',
+							'rubric'   => 'A strong answer recognises that success rate measures parseability, not correctness, and proposes measuring correctness directly: regularly sampling real outputs against human judgement, and watching downstream signals such as corrections, reopened tickets or complaints that would reveal errors the pipeline accepted.',
+						),
+					),
+				),
+			),
+			'quiz'    => array(
+				'title'     => 'Prompts that run without you — quiz',
+				'passing'   => 70,
+				'xp'        => 35,
+				'questions' => array(
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'The single most important difference between a chat prompt and an automated one is that:',
+						'options'  => array(
+							'Automated prompts must be shorter',
+							'No human sees the output before something acts on it',
+							'Automated prompts cannot use examples',
+							'Chat prompts cost more',
+						),
+						'answer'   => 1,
+					),
+					array(
+						'type'     => 'true_false',
+						'question' => 'Content pasted in from a customer should be fenced and declared to be data, never instructions.',
+						'answer'   => 0,
+					),
+					array(
+						'type'        => 'fill_blank',
+						'question'    => 'Log the input, the output, and the prompt ___ so a failure weeks later can be replayed exactly.',
+						'answer_text' => 'version',
+						'accept'      => array( 'id' ),
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'A response arrives unparseable. The most sensible first step is to:',
+						'options'  => array(
+							'Route straight to human review',
+							'Retry once, appending the parse error to the prompt',
+							'Retry indefinitely',
+							'Accept it and store the raw text',
+						),
+						'answer'   => 1,
+					),
+				),
+			),
+		),
+
+		/* ---- Unit 4 ------------------------------------------------------ */
+		array(
+			'title'   => 'Measuring, versioning, and governing prompts',
+			'lessons' => array(
+
+				array(
+					'title'   => 'A test set beats an opinion',
+					'type'    => 'reading',
+					'est_min' => 12,
+					'xp'      => 30,
+					'topics'  => array( 'Debugging prompts', 'Team prompt libraries' ),
+					'content' => '<h2>"That feels better" is not a result</h2>'
+						. '<p>Prompt work goes wrong in a specific, recognisable way: someone tweaks the wording, tries two inputs, decides it improved, and ships. Two weeks later the outputs are worse on a case nobody thought to try, and there is no way to tell which of the eleven edits since caused it.</p>'
+						. '<p>The fix is unglamorous and takes an afternoon: <strong>a small evaluation set</strong>.</p>'
+						. '<h3>Building one</h3>'
+						. '<ol>'
+						. '<li><strong>Collect 20–50 real inputs.</strong> Real, not invented — invented inputs are always tidier than reality.</li>'
+						. '<li><strong>Include the hard ones deliberately.</strong> The empty input, the one in another language, the 40-page one, the one that broke it last month. A set of easy cases proves nothing.</li>'
+						. '<li><strong>Write down the acceptable output for each.</strong> Not the perfect one — the bar you would sign off.</li>'
+						. '<li><strong>Decide what "pass" means per case.</strong> Exact match for structured fields; a short rubric for prose.</li>'
+						. '</ol>'
+						. '<h3>Using it</h3>'
+						. '<p>Run the whole set before and after every prompt change. You are looking for two numbers: how many passed, and — more importantly — <em>which ones changed</em>. A change that fixes three cases and breaks two is not an improvement, and without the set it would have looked like one.</p>'
+						. '<blockquote>Twenty real cases with agreed answers will tell you more than any amount of discussion about wording.</blockquote>'
+						. '<h3>Grading prose without drowning in it</h3>'
+						. '<p>For open-ended output, write a three-line rubric per case and grade against it. A model can apply that rubric for a first pass, which is fine for catching regressions — but a human sets the rubric and reviews disagreements. A model marking its own family of outputs against a standard it also wrote is not evidence.</p>'
+						. '<h3>Keep the set alive</h3>'
+						. '<p>Every real failure that reaches production earns a permanent place in the set. That single habit is what stops a system regressing into the same mistake twice, and it is the difference between a prompt that gets better and one that just gets edited.</p>'
+						. '<h3>Recap</h3>'
+						. '<p>Twenty to fifty real inputs, hard cases included, with agreed acceptable outputs. Run it on every change, watch which cases moved, and add every production failure to it forever.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'A prompt change makes three previously failing cases pass and two previously passing cases fail. This is:',
+							'options'  => array(
+								'A clear improvement — net positive',
+								'Not obviously an improvement; the two regressions need examining',
+								'Irrelevant, since the total is higher',
+								'A sign the test set is too large',
+							),
+							'answer'   => 1,
+							'hint'     => 'Which cases broke, and how much do they matter?',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'An evaluation set built from invented example inputs is just as useful as one built from real ones.',
+							'answer'   => 1,
+							'hint'     => 'How messy is real input compared with what you would make up?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'Every failure that reaches production should be added permanently to the ___ set, so the same mistake cannot return unnoticed.',
+							'answer_text' => 'test',
+							'accept'      => array( 'eval', 'evaluation' ),
+							'hint'        => 'The habit that stops regressions repeating.',
+						),
+						array(
+							'type'     => 'short_answer',
+							'question' => 'Name three inputs you would deliberately put in the evaluation set for a prompt that summarises customer support threads, and say what each one is testing.',
+							'rubric'   => 'A strong answer chooses genuinely adversarial cases — for example an empty or one-line thread, a thread in another language, a very long thread that exceeds the window, one containing an instruction-like sentence, or one where the customer is angry — and states the specific failure mode each is designed to expose.',
+						),
+					),
+				),
+
+				array(
+					'title'   => 'Prompts as team assets',
+					'type'    => 'practice',
+					'est_min' => 11,
+					'xp'      => 30,
+					'topics'  => array( 'Team prompt libraries', 'Prompt templates' ),
+					'content' => '<h2>The prompt in someone\'s notes app is a liability</h2>'
+						. '<p>Once prompts affect real work, they stop being personal notes and start being infrastructure. The failure is familiar to anyone who has watched a spreadsheet become load-bearing: it works, one person understands it, and then that person is on holiday.</p>'
+						. '<h3>Treat a production prompt like code</h3>'
+						. '<ul>'
+						. '<li><strong>Version it.</strong> In the repository, in review, with a history. "Who changed this and why" must be answerable.</li>'
+						. '<li><strong>Give it an owner.</strong> A named person or team accountable for its behaviour — not "the AI channel".</li>'
+						. '<li><strong>Document its contract.</strong> What goes in, what comes out, what it must never do, what it costs per call.</li>'
+						. '<li><strong>Attach its evaluation set.</strong> A prompt without one cannot be safely changed by anyone but its author.</li>'
+						. '</ul>'
+						. '<h3>What a library entry should contain</h3>'
+						. '<p>Purpose in one sentence · the prompt itself with placeholders marked · a worked example of input and expected output · known limitations and failure modes · owner and last-reviewed date · the model and settings it was validated against.</p>'
+						. '<p>That last item saves the most grief. A prompt tuned on one model at temperature 0 may behave quite differently elsewhere, and without the note nobody knows what it was ever tested on.</p>'
+						. '<h3>Review on a schedule, not on incident</h3>'
+						. '<p>Models change under you. A quarterly pass — re-run every library prompt against its evaluation set, update the last-reviewed date — turns a slow, invisible drift into a scheduled half-day. The alternative is finding out from a customer.</p>'
+						. '<blockquote>If a prompt matters enough to run in production, it matters enough to have an owner, a version, and a test set. If it has none of those, it is not a tool — it is a rumour that happens to work.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Version, own, document, and evaluate. Record the model and settings each prompt was validated against, and re-run everything on a schedule instead of waiting for an incident.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Which library entry field most often prevents confusion when a prompt starts behaving differently?',
+							'options'  => array(
+								'The author\'s job title',
+								'The model and settings it was validated against',
+								'The date it was first written',
+								'The number of times it has run',
+							),
+							'answer'   => 1,
+							'hint'     => 'What changes underneath a prompt without anyone editing it?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'A production prompt should have a named ___ who is accountable for its behaviour.',
+							'answer_text' => 'owner',
+							'accept'      => array( 'maintainer' ),
+							'hint'        => 'Not a channel, a person or team.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'Waiting for something to break is an acceptable review schedule for prompts in production.',
+							'answer'   => 1,
+							'hint'     => 'Who discovers the drift first in that model?',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'Write a complete library entry for one prompt you or your team actually rely on: purpose, the prompt with placeholders, a worked input/output example, known failure modes, owner, and the model and settings it was validated against.',
+							'rubric' => 'A strong answer is a genuine handover document — a colleague could adopt the prompt without asking questions. It must include marked placeholders, at least one honest limitation rather than only strengths, and the specific model and settings, not just "an AI".',
+							'hint'   => 'Write it for a colleague who joins next month.',
+						),
+						array(
+							'type'     => 'reflection',
+							'question' => 'Which prompts in your organisation are currently load-bearing but undocumented — and what would break first if their author left tomorrow?',
+							'rubric'   => 'A thoughtful answer identifies a specific dependency and traces the concrete consequence, rather than stating generally that documentation is good.',
+						),
+					),
+				),
+			),
+			'quiz'    => array(
+				'title'     => 'Measuring and governing — quiz',
+				'passing'   => 70,
+				'xp'        => 40,
+				'questions' => array(
+					array(
+						'type'        => 'fill_blank',
+						'question'    => 'Before and after every prompt change, run the whole evaluation set and check which cases ___.',
+						'answer_text' => 'changed',
+						'accept'      => array( 'moved', 'regressed' ),
+					),
+					array(
+						'type'     => 'true_false',
+						'question' => 'A model grading its own outputs against a rubric it also wrote counts as independent evidence of quality.',
+						'answer'   => 1,
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'Which is the strongest sign a prompt has become team infrastructure rather than a personal note?',
+						'options'  => array(
+							'It is longer than ten lines',
+							'Real work depends on it and only one person understands it',
+							'It uses few-shot examples',
+							'It returns JSON',
+						),
+						'answer'   => 1,
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'Why review library prompts on a schedule rather than when something breaks?',
+						'options'  => array(
+							'To keep the document count up',
+							'Because models change underneath prompts, and drift is otherwise found by customers',
+							'Because prompts expire',
+							'To reduce token cost',
+						),
+						'answer'   => 1,
 					),
 				),
 			),

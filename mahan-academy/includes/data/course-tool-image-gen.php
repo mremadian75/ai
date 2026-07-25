@@ -21,7 +21,7 @@ return array(
 		. '<p>This course starts from zero. You will build a plain-language mental model of how image models work, learn the parts of a prompt that reliably steer the result, practise turning a first draft into a finished image, and cover the rights and ethics that keep your work safe to publish. No design degree and no coding required.</p>',
 	'category'    => 'AI Tools',
 	'level'       => 'beginner',
-	'est_hours'   => 3,
+	'est_hours'   => 1,
 	'featured'    => true,
 	'certificate' => true,
 	'order'       => 4,

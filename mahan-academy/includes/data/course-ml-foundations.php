@@ -26,7 +26,7 @@ return array(
 	'track'       => 'machine-learning',
 	'level_rank'  => 1,
 	'level'       => 'beginner',
-	'est_hours'   => 3,
+	'est_hours'   => 1,
 	'featured'    => true,
 	'certificate' => true,
 	'order'       => 1,

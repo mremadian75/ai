@@ -21,7 +21,7 @@ return array(
 		. '<p>This short course shows you what Gemini is, how to combine words and pictures in a single prompt, and how to fold the tool into everyday work like drafting, summarising, and brainstorming. You will also learn its limits — when to double-check an answer and how to keep private information safe — so you can rely on it without being caught out.</p>',
 	'category'    => 'AI Tools',
 	'level'       => 'beginner',
-	'est_hours'   => 2,
+	'est_hours'   => 1,
 	'featured'    => false,
 	'certificate' => true,
 	'order'       => 3,

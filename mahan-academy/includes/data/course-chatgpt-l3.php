@@ -25,7 +25,7 @@ return array(
 	'track'       => 'chatgpt',
 	'level_rank'  => 3,
 	'level'       => 'advanced',
-	'est_hours'   => 1,
+	'est_hours'   => 3,
 	'featured'    => false,
 	'certificate' => true,
 	'order'       => 6,
@@ -471,6 +471,322 @@ return array(
 							'A few rules that matter, grown from real failures',
 							'No rules, to keep it flexible',
 							'Only a tone instruction',
+						),
+						'answer'   => 1,
+					),
+				),
+			),
+		),
+
+		/* ---- Unit 3 ------------------------------------------------------ */
+		array(
+			'title'   => 'Connecting ChatGPT to real systems',
+			'lessons' => array(
+
+				array(
+					'title'   => 'When the assistant needs to look things up',
+					'type'    => 'reading',
+					'est_min' => 12,
+					'xp'      => 30,
+					'topics'  => array( 'Custom assistants', 'Long documents & data' ),
+					'content' => '<h2>The limits of an assistant that only has files</h2>'
+						. '<p>A custom assistant with reference documents attached is genuinely useful, and it hits a wall the moment someone asks about something that changes. Order status, current stock, this month\'s figures, whether a customer is still on the old plan — none of that lives in an uploaded PDF, and an assistant asked anyway will answer from whatever the PDF said in March.</p>'
+						. '<p><strong>Tools</strong> close that gap. You describe an action the assistant can request — look up an order, search the knowledge base, check availability — and when it decides one is needed, it asks for it. Your system runs the request and hands the result back.</p>'
+						. '<h3>The division that keeps this safe</h3>'
+						. '<p>The assistant <em>chooses</em>; your systems <em>execute</em>. That is not a technical detail — it is where every control lives. Permissions, rate limits, what a given user may see, whether an action is allowed at all: all of it sits on your side, and none of it depends on the model behaving well.</p>'
+						. '<h3>Read is not write</h3>'
+						. '<p>Looking something up is low risk and can usually run freely, scoped to what the asker is entitled to see. Anything that spends money, sends a message, or changes a record is a different category and should require a human to confirm. The distinction is not about how clever the model is; it is that mistakes in the second category cannot be taken back.</p>'
+						. '<h3>What to expect when it goes wrong</h3>'
+						. '<p>Tool use fails in ways worth anticipating: the assistant calls the wrong tool, invents an argument, or calls nothing when it should have. Validate every argument before acting on it, and make the failure path explicit — "if the lookup returns nothing, say so; do not estimate."</p>'
+						. '<blockquote>Give it the ability to look things up, and it stops needing to remember them. That single change removes most of what people call hallucination in an internal assistant.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Files answer stable questions; tools answer live ones. The model decides and your systems execute, read is safer than write, and every argument is validated before anything happens.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Your assistant has the product manual attached but keeps giving wrong stock levels. What is the fix?',
+							'options'  => array(
+								'Upload the manual again',
+								'Give it a tool that queries live stock, rather than expecting a document to hold it',
+								'Ask it to be more careful',
+								'Attach more documents',
+							),
+							'answer'   => 1,
+							'hint'     => 'Where does changing data actually live?',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'Because the model chooses which tool to call, permission checks are best handled inside the prompt.',
+							'answer'   => 1,
+							'hint'     => 'Which side actually executes the call?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'Actions that spend, send or change a record should require a human to ___ before they run.',
+							'answer_text' => 'confirm',
+							'accept'      => array( 'approve' ),
+							'hint'        => 'They cannot be taken back.',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'Design the tool set for an internal assistant that answers customer-service questions. List the tools, mark each as read or write, and state the control you would put on each.',
+							'rubric' => 'A strong answer separates read tools (order lookup, policy search, account status) from write ones (issue refund, send email, update record), scopes read access to what the asking agent is entitled to see, and requires explicit human confirmation plus value limits and logging on the write tools. It should place those controls in the calling system, not the prompt.',
+							'hint'   => 'The read/write line is where the controls change.',
+						),
+					),
+				),
+
+				array(
+					'title'   => 'Costs, limits and what breaks at scale',
+					'type'    => 'practice',
+					'est_min' => 11,
+					'xp'      => 25,
+					'topics'  => array( 'Prompt testing', 'Long documents & data' ),
+					'content' => '<h2>What worked for ten items behaves differently at ten thousand</h2>'
+						. '<p>An advanced workflow that runs beautifully in a chat window meets a different set of problems when it runs unattended over real volume. None of them are exotic; all of them surprise people the first time.</p>'
+						. '<h3>Cost is per call, and prompts are charged every time</h3>'
+						. '<p>The long, carefully written system prompt you are proud of is paid for on every single item. Over ten thousand items that is the dominant cost, and trimming it is usually the cheapest saving available — often larger than switching models.</p>'
+						. '<h3>Rate limits are real</h3>'
+						. '<p>Firing a thousand requests at once gets you throttled. Batching with a sensible delay, and retrying with increasing backoff on failure, is the difference between a job that completes and one that dies at item 340 having spent the money anyway.</p>'
+						. '<h3>Partial failure is the normal case</h3>'
+						. '<p>Some items will fail — a timeout, an unparseable answer, an input nobody anticipated. Design for it: record which items succeeded, make the job resumable, and never let one failure abandon the batch. A run that has to start over from zero will be started over from zero many times.</p>'
+						. '<h3>Small errors multiply</h3>'
+						. '<p>A 2% error rate is invisible on ten items and is two hundred wrong records on ten thousand. Before a large run, do a small one — fifty items, checked properly — and extrapolate honestly. That half hour is the cheapest insurance in this entire course.</p>'
+						. '<blockquote>Run fifty first. Everything you will learn from ten thousand, you can learn from fifty for one two-hundredth of the cost.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Prompt length is a recurring cost, rate limits require batching and backoff, partial failure needs resumability, and every large run starts with a small one you actually checked.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Before processing 10,000 documents, the most valuable thing to do is:',
+							'options'  => array(
+								'Buy more capacity',
+								'Run 50 and check the results properly',
+								'Make the prompt longer for safety',
+								'Switch to the largest model',
+							),
+							'answer'   => 1,
+							'hint'     => 'What can fifty items tell you about ten thousand?',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'A long system prompt is a one-off cost paid when you write it.',
+							'answer'   => 1,
+							'hint'     => 'How many times is it sent?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'A long job must be ___, so a failure at item 340 does not mean starting from zero.',
+							'answer_text' => 'resumable',
+							'accept'      => array( 'restartable' ),
+							'hint'        => 'Record what succeeded.',
+						),
+						array(
+							'type'     => 'short_answer',
+							'question' => 'Your pilot on 50 items had 3 wrong. You need to process 8,000. What do you do, and what do you tell the person who asked for it?',
+							'rubric'   => 'A strong answer extrapolates honestly — roughly 6% implies around 480 wrong records — and does not proceed as if that were acceptable without asking. It should propose fixing the prompt and re-piloting, and communicate the expected error rate and its consequence to the requester so they can decide whether it is tolerable for their use.',
+						),
+					),
+				),
+			),
+			'quiz'    => array(
+				'title'     => 'Connecting to real systems — quiz',
+				'passing'   => 70,
+				'xp'        => 35,
+				'questions' => array(
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'The core safety principle in tool use is:',
+						'options'  => array(
+							'The model executes actions directly',
+							'The model decides, your systems execute under your controls',
+							'Tools are always read-only',
+							'Users approve every lookup',
+						),
+						'answer'   => 1,
+					),
+					array(
+						'type'        => 'fill_blank',
+						'question'    => 'Retrying a throttled request with increasing delay is called exponential ___.',
+						'answer_text' => 'backoff',
+						'accept'      => array( 'back-off', 'back off' ),
+					),
+					array(
+						'type'     => 'true_false',
+						'question' => 'A 2% error rate that is invisible on ten items is 200 wrong records on ten thousand.',
+						'answer'   => 0,
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'Which belongs in the "requires human confirmation" category?',
+						'options'  => array(
+							'Looking up an order the caller owns',
+							'Issuing a refund',
+							'Searching the policy documents',
+							'Checking stock levels',
+						),
+						'answer'   => 1,
+					),
+				),
+			),
+		),
+
+		/* ---- Unit 4 ------------------------------------------------------ */
+		array(
+			'title'   => 'Owning a workflow other people depend on',
+			'lessons' => array(
+
+				array(
+					'title'   => 'The handover document',
+					'type'    => 'reading',
+					'est_min' => 11,
+					'xp'      => 30,
+					'topics'  => array( 'Custom assistants', 'Prompt testing' ),
+					'content' => '<h2>You built it. Now someone else has to run it</h2>'
+						. '<p>An advanced workflow that only its author can operate is not an asset — it is a dependency with a person\'s name on it. The transition from clever to genuinely useful happens the day someone else can run it, change it, and know when it has gone wrong.</p>'
+						. '<h3>What the next person actually needs</h3>'
+						. '<ul>'
+						. '<li><strong>What it does and what it does not.</strong> One paragraph. Including the cases it was never built for, which is the part people leave out and the part that causes incidents.</li>'
+						. '<li><strong>How to run it</strong>, precisely enough to follow without asking — inputs, where they come from, where output goes.</li>'
+						. '<li><strong>The test set.</strong> A dozen real examples with the outputs you accept. Without it nobody can safely change anything, and everybody will change something.</li>'
+						. '<li><strong>Known failure modes</strong> and what each looks like. "If the transcript has no decisions, the summary is vague filler — check the source rather than rerunning."</li>'
+						. '<li><strong>Cost per run</strong>, so nobody is surprised by an invoice.</li>'
+						. '<li><strong>The model and settings</strong> it was validated against, and when.</li>'
+						. '</ul>'
+						. '<h3>The section that pays for itself</h3>'
+						. '<p>Known failure modes. It is the difference between a colleague spending an afternoon debugging something you already understand, and them recognising it in thirty seconds. Every failure you have already had belongs there.</p>'
+						. '<h3>Test the handover, not just the workflow</h3>'
+						. '<p>Have someone run it from your document while you stay silent. Every question is a gap. This is the same discipline as testing a shared prompt one rung down, applied to something with more moving parts and more ways to fail.</p>'
+						. '<blockquote>Write it while you still remember why. Six weeks later you will be reconstructing your own reasoning like a stranger.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Scope and limits, how to run it, the test set, known failures, cost, and validated configuration — then have someone else use it from the document while you say nothing.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Which handover section most reduces the time a colleague loses to debugging?',
+							'options'  => array(
+								'The author\'s contact details',
+								'Known failure modes and what each looks like',
+								'The date it was written',
+								'A list of tools used',
+							),
+							'answer'   => 1,
+							'hint'     => 'What turns an afternoon into thirty seconds?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'Without a ___ set attached, nobody can safely change the workflow — and somebody will.',
+							'answer_text' => 'test',
+							'accept'      => array( 'evaluation', 'eval' ),
+							'hint'        => 'Real examples with accepted outputs.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'A workflow only its author can run is best described as an asset.',
+							'answer'   => 1,
+							'hint'     => 'What happens when they are on holiday?',
+						),
+						array(
+							'type'     => 'short_answer',
+							'question' => 'Think of an AI workflow you have built or use. What would break first if you disappeared for a month, and what would prevent it?',
+							'rubric'   => 'A strong answer identifies a specific dependency — an undocumented correction step, knowledge of what good input looks like, an unrecorded failure mode, access only they hold — and names the concrete artefact that would prevent it, rather than answering that documentation generally helps.',
+						),
+					),
+				),
+
+				array(
+					'title'   => 'Keeping it working as everything changes',
+					'type'    => 'practice',
+					'est_min' => 11,
+					'xp'      => 30,
+					'topics'  => array( 'Prompt testing', 'Custom assistants', 'Prompt chaining' ),
+					'content' => '<h2>Three things move underneath a working workflow</h2>'
+						. '<p>You ship it, it works, and then — without anyone touching it — it gets worse. Three things change independently, and each has a different signature.</p>'
+						. '<p><strong>The model changes.</strong> Providers update and deprecate. Output shape shifts subtly, a phrasing you relied on stops appearing, or the endpoint stops existing. Pin versions where you can, and read deprecation notices, because the alternative is finding out from a failure.</p>'
+						. '<p><strong>The inputs change.</strong> A form gains a field, a supplier changes their invoice layout, people start writing tickets differently. The workflow keeps running and quietly handles the new shape badly.</p>'
+						. '<p><strong>The need changes.</strong> The business wants something slightly different, asks for a small tweak, and after six small tweaks nobody can say what the thing is for. This is the one that ends workflows.</p>'
+						. '<h3>The quarterly half hour</h3>'
+						. '<p>Run the test set. Compare against last quarter. Check the cost. Confirm the model is still current. Update the date. Half an hour, four times a year, and it converts a slow invisible decay into a scheduled task — which is the entire trick.</p>'
+						. '<h3>Know when to retire it</h3>'
+						. '<p>Not everything deserves maintaining. If it runs rarely, if the manual version is nearly as fast, if the tweaks have made it incoherent, or if a product now does it natively — retire it deliberately. An abandoned workflow still running is worse than a deleted one, because people still trust its output.</p>'
+						. '<blockquote>Everything you build here has an owner and a review date, or it has neither and you will discover which during an incident.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Model, inputs and requirements all drift. A quarterly half hour against a fixed test set catches all three — and retiring something deliberately is a legitimate, sometimes correct, outcome.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'A workflow nobody has touched starts producing worse results. Which is NOT one of the three usual causes?',
+							'options'  => array(
+								'The model was updated',
+								'The input format changed',
+								'The requirement drifted through small tweaks',
+								'The prompt file corrupted itself',
+							),
+							'answer'   => 3,
+							'hint'     => 'Three things move; one of these does not happen.',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'A quarterly review turns a slow invisible decay into a ___ task.',
+							'answer_text' => 'scheduled',
+							'accept'      => array( 'planned', 'routine' ),
+							'hint'        => 'That is the whole trick.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'An abandoned workflow that still runs is safer than one that has been deleted.',
+							'answer'   => 1,
+							'hint'     => 'Do people still trust its output?',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'Write the quarterly review checklist for an AI workflow your team depends on: what you check, what evidence you look at, and the three conditions that would make you retire it instead of maintaining it.',
+							'rubric' => 'A strong answer checks the test set against the previous quarter, cost per run, model currency and deprecation notices, and whether the input format has shifted. The retirement conditions should be concrete — usage below a threshold, the manual alternative being comparable, accumulated tweaks having destroyed coherence, or a product now doing it natively — rather than a vague "if it is not useful".',
+							'hint'   => 'Retirement is a legitimate outcome; give it real criteria.',
+						),
+						array(
+							'type'     => 'reflection',
+							'question' => 'Across this course — chaining, long documents, custom assistants, testing, tools and maintenance — which idea would most change how your team builds with AI?',
+							'rubric'   => 'A thoughtful answer names one specific idea and ties it to a concrete change in how the team would work, rather than summarising the course.',
+						),
+					),
+				),
+			),
+			'quiz'    => array(
+				'title'     => 'Owning a workflow — quiz',
+				'passing'   => 70,
+				'xp'        => 40,
+				'questions' => array(
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'The most useful thing to hand over with a workflow is:',
+						'options'  => array(
+							'The prompt alone',
+							'The test set and the known failure modes',
+							'A screenshot of it working',
+							'A list of models tried',
+						),
+						'answer'   => 1,
+					),
+					array(
+						'type'     => 'true_false',
+						'question' => 'Retiring a workflow deliberately can be the right decision.',
+						'answer'   => 0,
+					),
+					array(
+						'type'        => 'fill_blank',
+						'question'    => 'Have a colleague run it from your document while you stay ___ — every question they ask is a gap.',
+						'answer_text' => 'silent',
+						'accept'      => array( 'quiet' ),
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'Requirement drift through repeated small tweaks is dangerous because:',
+						'options'  => array(
+							'It increases cost',
+							'Nobody can eventually say what the workflow is for',
+							'It changes the model version',
+							'It breaks the API',
 						),
 						'answer'   => 1,
 					),

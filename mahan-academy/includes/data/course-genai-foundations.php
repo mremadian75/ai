@@ -25,7 +25,7 @@ return array(
 	'track'       => 'generative-ai',
 	'level_rank'  => 1,
 	'level'       => 'beginner',
-	'est_hours'   => 1,
+	'est_hours'   => 3,
 	'featured'    => true,
 	'certificate' => true,
 	'order'       => 1,
@@ -386,6 +386,329 @@ return array(
 							'Check the organisation\'s policy and use an approved, private tool for sensitive data',
 							'Post it in a public forum to ask others for help',
 							'Email the file to themselves first, then paste it in',
+						),
+						'answer'   => 1,
+					),
+				),
+			),
+		),
+
+		/* ---- Unit 3 ------------------------------------------------------ */
+		array(
+			'title'   => 'Working with it, not just trying it',
+			'lessons' => array(
+
+				array(
+					'title'   => 'Which tasks it is worth handing over',
+					'type'    => 'reading',
+					'est_min' => 11,
+					'xp'      => 25,
+					'topics'  => array( 'GenAI families', 'Hallucinations & limits' ),
+					'content' => '<h2>The question is not "can it?" but "should it?"</h2>'
+						. '<p>Generative AI can attempt almost any task involving words or images. Attempting is cheap; being reliably useful is not. Two questions sort the good candidates from the expensive disappointments.</p>'
+						. '<h3>Question 1: is the material in front of it?</h3>'
+						. '<p>Tasks where you supply everything needed — summarise this document, rewrite this in plainer English, pull the dates out of these emails, turn these notes into a table — are the reliable ones. The model is transforming what it was given, so there is little room to invent.</p>'
+						. '<p>Tasks that depend on facts you did <em>not</em> supply — what our refund policy says, what last quarter\'s numbers were, what the law requires — are where confident fiction appears. The fix is not a better prompt. It is putting the material in front of it.</p>'
+						. '<h3>Question 2: would you catch a mistake?</h3>'
+						. '<p>If you would spot an error in ten seconds, use the model freely. If a wrong answer would sail past you and reach a customer, either verify every output or do not use it there.</p>'
+						. '<p>These two questions produce a simple grid:</p>'
+						. '<table><thead><tr><th></th><th>Easy to check</th><th>Hard to check</th></tr></thead><tbody>'
+						. '<tr><td><strong>Material supplied</strong></td><td>Use freely — summaries, rewrites, extraction</td><td>Use with a review step — long-document analysis</td></tr>'
+						. '<tr><td><strong>Material not supplied</strong></td><td>Use as a starting point — brainstorms, first drafts</td><td>Do not use unaided — facts, figures, citations, legal or medical claims</td></tr>'
+						. '</tbody></table>'
+						. '<h3>The most valuable use is not "write it for me"</h3>'
+						. '<p>People reach first for full drafting, which is the case that needs the most editing. The higher-yield uses are quieter: getting unstuck on a blank page, having something explained at the level you actually need, turning a mess of notes into structure, and being asked what you have forgotten.</p>'
+						. '<blockquote>Give it the material, or accept that you are getting a plausible guess. There is no third option.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Supply the material, and know whether you would catch an error. Those two answers place any task on the grid and tell you how much to trust the output.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Which task sits in the "use freely" corner of the grid?',
+							'options'  => array(
+								'Asking what your company\'s refund policy says',
+								'Summarising a report you pasted in full',
+								'Asking for the exact figure of last quarter\'s revenue',
+								'Requesting a citation for a legal claim',
+							),
+							'answer'   => 1,
+							'hint'     => 'Which one supplies the material and is easy to check?',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'A better-worded prompt can make a model reliable about facts it was never given.',
+							'answer'   => 1,
+							'hint'     => 'Where would the facts come from?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'If a wrong answer would reach a customer without anyone ___ it, that task needs verification or should not use AI at all.',
+							'answer_text' => 'catching',
+							'accept'      => array( 'noticing', 'checking', 'spotting' ),
+							'hint'        => 'Question two of the grid.',
+						),
+						array(
+							'type'     => 'short_answer',
+							'question' => 'Place two tasks from your own week on the grid — one you would hand over freely and one you would not — and say which question decided each.',
+							'rubric'   => 'A strong answer names two concrete tasks and justifies each by the two criteria: whether the necessary material is supplied in the prompt, and whether an error would be caught quickly. It should not simply label one "easy" and one "hard".',
+						),
+					),
+				),
+
+				array(
+					'title'   => 'Reading AI output like an editor',
+					'type'    => 'practice',
+					'est_min' => 11,
+					'xp'      => 25,
+					'topics'  => array( 'Hallucinations & limits', 'Responsible use' ),
+					'content' => '<h2>The output is a draft by someone confident and unaccountable</h2>'
+						. '<p>Generative AI writes with unearned assurance. There is no hesitation in the prose when it is guessing, which means fluency tells you nothing — and the habit worth building is reading output the way an editor reads a submission from a bright, fast, occasionally careless writer.</p>'
+						. '<h3>Four things to look at first</h3>'
+						. '<p><strong>Specifics.</strong> Names, numbers, dates, quotations, references. These are where fabrication concentrates, because they are exactly the details a plausible sentence needs. Check every one you did not supply.</p>'
+						. '<p><strong>Confident hedging.</strong> "Studies suggest", "it is widely accepted", "experts agree" — with no study, no one, and no source. This construction is a strong tell.</p>'
+						. '<p><strong>Silent omission.</strong> Ask what is missing. A summary that reads beautifully may have dropped the one caveat that mattered, and nothing in the text marks the gap.</p>'
+						. '<p><strong>Averaged blandness.</strong> Text that could describe any company in your industry means the model had no specifics and smoothed toward the middle. That is a signal you did not give it enough, not that your situation is unremarkable.</p>'
+						. '<h3>The sixty-second check</h3>'
+						. '<p>Before anything leaves your hands: does every fact come from something I supplied or can verify? Is anything stated more certainly than I know it to be? What has been left out? Would I put my name on this?</p>'
+						. '<p>That last question is the real one. You are accountable for what you send, and "the AI wrote it" has never once repaired a relationship with a customer.</p>'
+						. '<blockquote>Fluent and correct are unrelated properties. The model optimises for one of them.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Check specifics, distrust sourceless authority, hunt for what is missing, read blandness as a prompt problem — and take the last sixty seconds before anything goes out with your name on it.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Where does fabrication most often concentrate in AI output?',
+							'options'  => array(
+								'In the opening sentence',
+								'In specific names, numbers, dates and citations',
+								'In short paragraphs',
+								'In bulleted lists',
+							),
+							'answer'   => 1,
+							'hint'     => 'Which details does a plausible-sounding sentence need?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => '"Studies suggest" with no study named is an example of confident ___.',
+							'answer_text' => 'hedging',
+							'accept'      => array( 'vagueness', 'sourceless authority' ),
+							'hint'        => 'Authority with nothing behind it.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'Well-written, fluent output is reasonable evidence that the content is accurate.',
+							'answer'   => 1,
+							'hint'     => 'What is the model optimising for?',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'You asked AI to summarise a supplier contract and it produced a clean one-page summary. Write the checklist you would work through before forwarding it to your finance team.',
+							'rubric' => 'A strong answer checks every figure, date and party name against the actual contract, looks specifically for omitted clauses (termination, liability, auto-renewal) rather than only verifying what is present, flags anything stated more confidently than the source supports, and ends with taking personal responsibility for what is sent on.',
+							'hint'   => 'What is present is easier to check than what is missing.',
+						),
+					),
+				),
+			),
+			'quiz'    => array(
+				'title'     => 'Working with it — quiz',
+				'passing'   => 70,
+				'xp'        => 30,
+				'questions' => array(
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'The most reliable generative AI tasks are those where:',
+						'options'  => array(
+							'The prompt is very long',
+							'You supply the material and can check the result quickly',
+							'The model is the newest available',
+							'The output is short',
+						),
+						'answer'   => 1,
+					),
+					array(
+						'type'     => 'true_false',
+						'question' => 'Output that could describe any company in your industry usually means the prompt lacked specifics.',
+						'answer'   => 0,
+					),
+					array(
+						'type'        => 'fill_blank',
+						'question'    => 'Before sending AI-assisted work, the decisive question is whether you would put your ___ on it.',
+						'answer_text' => 'name',
+						'accept'      => array( 'signature' ),
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'Which is hardest to spot when reviewing an AI summary?',
+						'options'  => array(
+							'A misspelled word',
+							'A clause that was silently left out',
+							'An overly long paragraph',
+							'A missing heading',
+						),
+						'answer'   => 1,
+					),
+				),
+			),
+		),
+
+		/* ---- Unit 4 ------------------------------------------------------ */
+		array(
+			'title'   => 'Bringing it into real work',
+			'lessons' => array(
+
+				array(
+					'title'   => 'What you may and may not put in',
+					'type'    => 'reading',
+					'est_min' => 11,
+					'xp'      => 25,
+					'topics'  => array( 'Responsible use' ),
+					'content' => '<h2>The input side is where most organisations get hurt</h2>'
+						. '<p>Attention goes to what AI produces. The costlier mistakes usually happen at the other end — in what people paste into it — and they happen quietly, with good intentions, by someone trying to get their work done.</p>'
+						. '<h3>Assume it leaves the building</h3>'
+						. '<p>Unless you are on a service that contractually says otherwise, treat anything you paste as having left your organisation. That is the working assumption; the terms of your specific plan then either relax it or confirm it. Consumer tiers and enterprise agreements differ sharply here, and the difference is worth ten minutes of reading.</p>'
+						. '<h3>The four categories that need care</h3>'
+						. '<ul>'
+						. '<li><strong>Personal data</strong> — customer names, addresses, health or financial details. Under GDPR and similar regimes, pasting these into an external service is a transfer that needs a basis.</li>'
+						. '<li><strong>Confidential business information</strong> — unreleased plans, pricing, contracts, anything under NDA. An NDA does not carve out "unless it was convenient".</li>'
+						. '<li><strong>Credentials and keys</strong> — never, under any circumstances, including "just to debug this error".</li>'
+						. '<li><strong>Someone else\'s copyrighted work</strong> — pasting a whole book or paid report to summarise is a use question, not just a privacy one.</li>'
+						. '</ul>'
+						. '<h3>Redaction usually costs nothing</h3>'
+						. '<p>Most tasks do not need the real names. "Customer A" and "Customer B" summarise exactly as well as the real people, and the output maps back trivially. Where the work genuinely needs real data, that is the signal to use a sanctioned tool with the right agreement — not to paste anyway and hope.</p>'
+						. '<blockquote>The question is not "is this sensitive?" — people always answer no when they are busy. It is "would I be comfortable if this appeared in a news story about our company?"</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Assume it leaves. Know the four categories. Redact by default, because it usually costs nothing. Escalate to a sanctioned tool when the work truly needs the real thing.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Which is the safest default assumption about text you paste into an AI service?',
+							'options'  => array(
+								'It is deleted immediately',
+								'Treat it as having left your organisation unless the terms say otherwise',
+								'It is safe because the chat is private to you',
+								'It is safe if you delete the conversation afterwards',
+							),
+							'answer'   => 1,
+							'hint'     => 'Start from the cautious assumption, then check the terms.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'Pasting an API key into a chat is acceptable when you are only trying to debug an error message.',
+							'answer'   => 1,
+							'hint'     => 'There is no exception to this one.',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'For most summarising tasks, replacing real names with "Customer A" and "Customer B" costs ___.',
+							'answer_text' => 'nothing',
+							'accept'      => array( 'little', 'almost nothing' ),
+							'hint'        => 'The output maps back trivially.',
+						),
+						array(
+							'type'     => 'short_answer',
+							'question' => 'A colleague wants to paste a spreadsheet of customer complaints — with names and email addresses — to find common themes. What do you suggest, and why is it not simply "no"?',
+							'rubric'   => 'A strong answer keeps the useful work while removing the risk: strip names and contact details, since themes do not depend on identity, and paste the complaint text alone. It should explain why a flat refusal fails — the colleague will do it anyway or lose real value — and note when the task genuinely needs identity, escalate to a sanctioned tool with the right agreement.',
+						),
+					),
+				),
+
+				array(
+					'title'   => 'Your own first workflow',
+					'type'    => 'practice',
+					'est_min' => 11,
+					'xp'      => 30,
+					'topics'  => array( 'Generating vs classifying', 'GenAI families', 'Responsible use' ),
+					'content' => '<h2>One task, done properly, beats ten experiments</h2>'
+						. '<p>Most people try generative AI on a dozen things, find it uneven, and drift away. The ones for whom it sticks pick a single repeating task and get it genuinely right, once. The saved prompt then pays back every week without further thought.</p>'
+						. '<h3>Choose well</h3>'
+						. '<p>The task should repeat weekly or more, take real minutes each time, work from material you can supply, and have an output you would recognise as wrong. Weekly report from notes, triaging an inbox, turning a call into action items, first-pass replies to common questions — these qualify. "Write our strategy" does not.</p>'
+						. '<h3>Build it in four passes</h3>'
+						. '<ol>'
+						. '<li><strong>Do it once by hand</strong> and keep the result. That is your target — you cannot judge the model against a standard you never wrote down.</li>'
+						. '<li><strong>Write the prompt</strong> with the role, the material pasted, one clear task, and the exact output shape.</li>'
+						. '<li><strong>Compare with your hand-made version</strong> and change one thing at a time until the gap closes.</li>'
+						. '<li><strong>Save it with placeholders</strong> for whatever changes each week, and a note on what each expects.</li>'
+						. '</ol>'
+						. '<h3>Measure honestly, twice</h3>'
+						. '<p>After a month, ask two questions. Is it faster including the checking? Editing a bad draft can take longer than writing a good one, and the honest answer is sometimes no. And is the output as good as what you did by hand? Faster and worse is not a win — it is a slow erosion nobody logs.</p>'
+						. '<blockquote>One saved prompt you actually reuse is worth more than a hundred you read about.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>You know what generative AI is, which families exist, where it fails, how to judge output, and what not to paste. Now pick one repeating task, build it properly, and measure whether it really helped.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Which task is the best first candidate for a saved AI workflow?',
+							'options'  => array(
+								'Writing the company strategy',
+								'Turning your weekly meeting notes into a standard update',
+								'Deciding next year\'s budget',
+								'Choosing who to promote',
+							),
+							'answer'   => 1,
+							'hint'     => 'Repeating, material supplied, output you would recognise as wrong.',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'Do the task by hand once first, because you cannot judge the model against a standard you never wrote ___.',
+							'answer_text' => 'down',
+							'accept'      => array( 'out' ),
+							'hint'        => 'Your target output.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'If a workflow is faster but the output is noticeably worse than your own, it is still a clear win.',
+							'answer'   => 1,
+							'hint'     => 'Faster and worse is erosion nobody logs.',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'Pick one task you repeat weekly and write the full prompt for it: role, the material with a marked placeholder, one clear task, the exact output format, and a line telling the model what to do when the material does not contain something it needs.',
+							'rubric' => 'A strong answer is genuinely reusable — marked placeholders rather than one week\'s details, one task rather than several, a specific output shape with a limit, and explicit instruction to flag gaps rather than fill them. The chosen task should be one where the material is supplied and an error would be noticed.',
+							'hint'   => 'Write it so next month\'s you can use it without thinking.',
+						),
+						array(
+							'type'     => 'reflection',
+							'question' => 'What did you believe generative AI was for before this course, and what would you now tell a colleague it is genuinely good at?',
+							'rubric'   => 'A thoughtful answer contrasts a specific prior expectation with a more precise view — typically moving from "it writes things" toward transforming supplied material, structuring, explaining and first drafts — rather than a general statement of having learned.',
+						),
+					),
+				),
+			),
+			'quiz'    => array(
+				'title'     => 'Bringing it into real work — quiz',
+				'passing'   => 70,
+				'xp'        => 35,
+				'questions' => array(
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'Which should never be pasted into an AI tool?',
+						'options'  => array(
+							'A meeting agenda',
+							'An API key or password',
+							'A public press release',
+							'Your own draft email',
+						),
+						'answer'   => 1,
+					),
+					array(
+						'type'        => 'fill_blank',
+						'question'    => 'For most tasks, replacing real customer names with labels is a form of ___ that costs almost nothing.',
+						'answer_text' => 'redaction',
+						'accept'      => array( 'anonymisation', 'anonymization' ),
+					),
+					array(
+						'type'     => 'true_false',
+						'question' => 'A workflow should be judged on time saved including the time spent checking the output.',
+						'answer'   => 0,
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'The strongest reason to do a task by hand once before automating it is:',
+						'options'  => array(
+							'To practise typing',
+							'To have a target you can judge the model against',
+							'To use up the free tier',
+							'To make the prompt longer',
 						),
 						'answer'   => 1,
 					),

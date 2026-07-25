@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.26.0
+Stable tag: 1.27.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -17,7 +17,7 @@ Mahan Academy is a self-contained learning plugin built to teach people how to u
 **Key features:**
 
 * Standalone courses & lessons (no Tutor LMS, LearnDash, etc. required)
-* Built-in Starter Content Library — 18 professionally written courses across Prompt Engineering, Machine Learning, Generative AI, AI for Productivity, hands-on AI Tools (ChatGPT, Claude, Gemini, image generation), and Responsible AI, organized into categories and Coursera-style bundles with 84 lessons, 342 interactive exercises and 42 unit quizzes. Installs automatically so the academy is never empty
+* Built-in Starter Content Library — 18 professionally written courses across Prompt Engineering, Machine Learning, Generative AI, AI for Productivity, hands-on AI Tools (ChatGPT, Claude, Gemini, image generation), and Responsible AI, organized into categories and Coursera-style bundles. Every course is four units deep: 144 lessons, 597 interactive exercises and 72 unit quizzes — around 50 hours of material. Installs automatically so the academy is never empty
 * Honest course lengths — the hours on a card are computed from the lessons, exercises and quizzes actually in the course, not typed in by hand, and the build fails if the two ever disagree
 * Level ladders: subjects climb four rungs — Beginner → Intermediate → Advanced → Expert — as real, separate courses on a shared track, with the whole ladder shown on the course page so learners can move up (or drop back) at any time
 * Department-specific lessons: the same lesson specializes to the learner's field (marketing, sales, finance, HR, management, …) with its own worked examples, metrics, and cautions, marked by a "Tailored for X" badge — mapped automatically from the profile role, and dropped silently rather than faked when there is no match for that field
@@ -82,6 +82,9 @@ You don't have to do anything — the starter catalog installs automatically on 
 Each course lists the authoritative references it is grounded in under "Further reading & sources" on the course page — peer-reviewed papers, standards and institutional guidance (NIST AI Risk Management Framework, EU AI Act, UNESCO, OECD, OWASP, C2PA), textbooks, and official provider documentation.
 
 == Changelog ==
+
+= 1.27.0 =
+Every course is now four units deep. v1.25.0 rebuilt the Prompt Engineering ladder and left the other fifteen courses honest but thin at roughly an hour each; this release finishes the job. The Machine Learning, Generative AI and ChatGPT ladders and all five standalone courses gained two units apiece, each with a genuine arc rather than more of the same — where difficulty really lives and when not to use ML at all; the context window, cost and tool use; the politics of adoption and honest reporting when a pilot fails; diagnosing whether retrieval or generation broke; accountability, procurement questions and incident response. The catalog goes from 12.7 to 50.5 hours of authored material: 72 units, 144 lessons, 597 exercises, 281 quiz questions, roughly 43,000 words. Course lengths stayed honest throughout — the validator caught six courses whose advertised hours had fallen behind the new content, which is exactly what it was added for. Recall-only exercises fell from 81% to 74%. Everything reaches existing sites through the additive backfill shipped in 1.25.0, which never touches a lesson you edited. No schema change.
 
 = 1.26.0 =
 Profile and dashboard, with ideas taken deliberately from Duolingo, Coursera and Udemy. There was no profile at all before — the avatar was decoration. Now it opens one: identity and role, six lifetime totals (XP, lessons, courses, exercises correct, days active, longest streak), a 91-day activity calendar whose columns are weeks so you read a habit rather than a list of days, "Skills you have built" derived from the topics whose lessons you actually finished (each chip pivots the catalog to that topic), plus your certificates and achievements with earned ones leading. My Learning is now three shelves instead of one heap — In progress / Completed / Saved — each with its count, switching locally with no round trip and navigable by arrow key. Every course card gains a save-for-later star, deliberately separate from enrolling. In-progress cards say how many minutes of work are actually left, summed from the lessons you have not done, because "60% done" does not tell you whether the rest is ten minutes or two hours. Also fixes a URL builder that silently dropped unknown params, so a topic-filtered catalog is now properly linkable and survives a reload. No schema change.

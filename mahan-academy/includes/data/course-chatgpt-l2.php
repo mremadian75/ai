@@ -29,7 +29,7 @@ return array(
 	'track'       => 'chatgpt',
 	'level_rank'  => 2,
 	'level'       => 'intermediate',
-	'est_hours'   => 1,
+	'est_hours'   => 3,
 	'featured'    => false,
 	'certificate' => true,
 	'order'       => 5,
@@ -459,6 +459,328 @@ return array(
 							'Spot-check and adjust your most-used prompts after tool changes',
 							'Assume the new structure is better',
 							'Add ten more examples',
+						),
+						'answer'   => 1,
+					),
+				),
+			),
+		),
+
+		/* ---- Unit 3 ------------------------------------------------------ */
+		array(
+			'title'   => 'Reliability under pressure',
+			'lessons' => array(
+
+				array(
+					'title'   => 'When the same prompt gives different answers',
+					'type'    => 'reading',
+					'est_min' => 11,
+					'xp'      => 25,
+					'topics'  => array( 'Verification', 'Structured output' ),
+					'content' => '<h2>Variation is the design, not a fault</h2>'
+						. '<p>Run the same prompt twice and you will often get two different answers. People assume something is broken. Nothing is: generation involves deliberate randomness, which is what makes the output feel natural rather than robotic.</p>'
+						. '<p>The practical question is whether that variation matters for <em>your</em> task — and the answer differs sharply.</p>'
+						. '<h3>Where variation is fine, and where it is not</h3>'
+						. '<p>Drafting, brainstorming, rewriting: variation is harmless or actively useful. Extraction, classification, anything feeding a spreadsheet or another step: variation is a defect, because the same input producing different structured output is a data quality problem you will discover downstream.</p>'
+						. '<h3>Three ways to pin it down</h3>'
+						. '<p><strong>Constrain the output space.</strong> "Answer with exactly one of: Billing, Bug, Feature request. No other text." A prompt that permits only three answers cannot drift into a fourth.</p>'
+						. '<p><strong>Give examples.</strong> Two or three worked cases anchor the format far more firmly than any description of it — which you learned in Unit 1, and this is the reason it matters beyond style.</p>'
+						. '<p><strong>Ask more than once.</strong> For a judgement that must be right, run it three times and look at whether the answers agree. Where they do, you can be reasonably confident. Where they disagree, you have identified exactly the cases that need a human — which is often more useful than the answer.</p>'
+						. '<h3>Use disagreement as a signal</h3>'
+						. '<p>This is the move most people miss. Inconsistency across runs is not noise to be suppressed; it is the model telling you the case is genuinely ambiguous. Route those to a person and let the consistent ones through.</p>'
+						. '<blockquote>Ask whether you need the same answer every time. If yes, constrain the output. If no, stop worrying about it.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Variation is deliberate. It is fine for drafting and a defect for structured work. Constrain the answer set, anchor with examples, and treat disagreement across runs as a flag rather than a failure.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'You run a classification prompt three times and get two "Billing" and one "Bug". The best response is:',
+							'options'  => array(
+								'Take the majority and move on silently',
+								'Take the majority but flag this case for a human, because disagreement marks ambiguity',
+								'Discard the case entirely',
+								'Rewrite the prompt from scratch',
+							),
+							'answer'   => 1,
+							'hint'     => 'What is the disagreement telling you?',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'Getting a different answer to the same prompt means something has gone wrong.',
+							'answer'   => 1,
+							'hint'     => 'Why does output feel natural rather than robotic?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'A prompt that permits only three named answers cannot ___ into a fourth.',
+							'answer_text' => 'drift',
+							'accept'      => array( 'wander', 'stray' ),
+							'hint'        => 'Constrain the output space.',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'You are tagging 200 product reviews as Positive, Negative or Mixed, and the results are inconsistent between runs. Write the revised prompt, and describe the process you would run around it to catch the ambiguous cases.',
+							'rubric' => 'A strong answer constrains the output to exactly the three labels with no additional text, includes two or three worked examples covering a genuinely ambiguous case, and proposes running each review more than once and routing disagreements to a human rather than silently taking a majority.',
+							'hint'   => 'Fix the prompt and the process — one alone is not enough.',
+						),
+					),
+				),
+
+				array(
+					'title'   => 'Prompts that survive being handed over',
+					'type'    => 'practice',
+					'est_min' => 11,
+					'xp'      => 25,
+					'topics'  => array( 'Reusable workflows', 'Few-shot examples' ),
+					'content' => '<h2>The prompt works. For you</h2>'
+						. '<p>Here is a pattern that repeats everywhere: someone builds a prompt that works beautifully, shares it, and their colleague gets noticeably worse results from what looks like the same thing.</p>'
+						. '<p>The reason is almost never the prompt text. It is everything the author supplied without noticing — knowing what good input looks like, recognising a bad answer, quietly correcting the first attempt, having context in the conversation from earlier messages. None of that travels.</p>'
+						. '<h3>What to add before you share</h3>'
+						. '<ul>'
+						. '<li><strong>Obvious placeholders</strong> — <code>[PASTE TRANSCRIPT]</code>, not a leftover from your own last use, which colleagues will edit around rather than replace.</li>'
+						. '<li><strong>A worked example of good input</strong> — so they can see what "meeting notes" means here: three bullet points, or two pages?</li>'
+						. '<li><strong>An example of good output</strong> — the standard, so they can tell whether what they got is acceptable.</li>'
+						. '<li><strong>The known failure</strong> — "if the transcript has no decisions in it, this produces vague filler; that is the signal to check the source, not to rerun."</li>'
+						. '<li><strong>A first-line note</strong> saying what it is for, in one sentence.</li>'
+						. '</ul>'
+						. '<h3>Test it the honest way</h3>'
+						. '<p>Hand it to a colleague and watch without helping. Every question they ask is a gap in the prompt. It is uncomfortable and it takes ten minutes, and it finds things you cannot see because you already know the answers.</p>'
+						. '<h3>Where to keep them</h3>'
+						. '<p>Somewhere the team already looks — the wiki, the shared drive, the pinned channel message. A brilliant prompt library nobody can find is a private notes file with extra steps.</p>'
+						. '<blockquote>A prompt is not shareable until someone else has used it successfully without asking you anything.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Package the tacit knowledge: placeholders, an input example, an output standard, the known failure mode, and one line on purpose. Then watch someone use it, silently.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'A colleague gets worse results from your shared prompt. The most likely cause is:',
+							'options'  => array(
+								'They typed it incorrectly',
+								'Unstated knowledge you supplied without noticing — what good input looks like, when to correct it',
+								'Their account is on a weaker model',
+								'The prompt is too long',
+							),
+							'answer'   => 1,
+							'hint'     => 'What travelled with the text, and what did not?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'Including an example of good ___ tells a colleague whether the answer they got is acceptable.',
+							'answer_text' => 'output',
+							'accept'      => array( 'result' ),
+							'hint'        => 'The standard to compare against.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'Watching a colleague use your prompt without helping is a good way to find gaps in it.',
+							'answer'   => 0,
+							'hint'     => 'Every question they ask is a gap.',
+						),
+						array(
+							'type'     => 'short_answer',
+							'question' => 'Take a prompt you use regularly. What do you know about using it well that is not written anywhere in it?',
+							'rubric'   => 'A strong answer surfaces genuinely tacit knowledge — what constitutes suitable input, how to recognise a bad answer, a correction habitually made on the second turn, or context the author supplies from memory — rather than restating what the prompt already says.',
+						),
+					),
+				),
+			),
+			'quiz'    => array(
+				'title'     => 'Reliability under pressure — quiz',
+				'passing'   => 70,
+				'xp'        => 30,
+				'questions' => array(
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'Variation between runs is a genuine defect when:',
+						'options'  => array(
+							'You are brainstorming ideas',
+							'The output feeds a spreadsheet or another automated step',
+							'You are drafting an email',
+							'You are rewriting a paragraph',
+						),
+						'answer'   => 1,
+					),
+					array(
+						'type'        => 'fill_blank',
+						'question'    => 'Disagreement across repeated runs identifies the cases that need a ___.',
+						'answer_text' => 'human',
+						'accept'      => array( 'person', 'review' ),
+					),
+					array(
+						'type'     => 'true_false',
+						'question' => 'A prompt is ready to share once it works reliably for its author.',
+						'answer'   => 1,
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'Which addition most helps a colleague judge whether their result is good enough?',
+						'options'  => array(
+							'A longer instruction',
+							'An example of acceptable output',
+							'A note about which model to use',
+							'More placeholders',
+						),
+						'answer'   => 1,
+					),
+				),
+			),
+		),
+
+		/* ---- Unit 4 ------------------------------------------------------ */
+		array(
+			'title'   => 'Judgement at scale',
+			'lessons' => array(
+
+				array(
+					'title'   => 'Deciding how much checking is enough',
+					'type'    => 'reading',
+					'est_min' => 11,
+					'xp'      => 25,
+					'topics'  => array( 'Verification', 'Reusable workflows' ),
+					'content' => '<h2>Checking everything is as wrong as checking nothing</h2>'
+						. '<p>Unit 2 gave you a sixty-second verification habit. It works well for one output at a time. It falls apart at fifty, and what people do next is the interesting part: they either check nothing, or they check everything and lose all the time they saved.</p>'
+						. '<p>Neither is right. The amount of checking should be set by the consequence of an error, and consequences vary enormously across a single day.</p>'
+						. '<h3>Three tiers</h3>'
+						. '<p><strong>Check everything.</strong> Anything going to a customer, a regulator or a public channel; anything with numbers a decision rests on; anything you would be embarrassed to have attributed to you. Small volume, high stakes.</p>'
+						. '<p><strong>Sample.</strong> Bulk work where an occasional error is survivable — internal tagging, first-pass triage, draft summaries someone will read anyway. Check ten in every hundred, properly. If the sample is clean, proceed; if two of ten are wrong, stop and fix the prompt rather than continuing to check.</p>'
+						. '<p><strong>Check the process, not the output.</strong> High volume, low individual stakes. Verify that the pipeline is behaving — is the distribution of labels roughly what you expect, has the rate of one category suddenly doubled — rather than reading each item.</p>'
+						. '<h3>Sampling is a real answer, not laziness</h3>'
+						. '<p>Every quality process outside software works this way. Reading a sample properly beats skimming everything, because skimming everything catches almost nothing while feeling thorough.</p>'
+						. '<h3>Escalate on evidence</h3>'
+						. '<p>When a sample shows a problem, the response is to fix the prompt and re-run — not to check harder. Checking harder treats the symptom forever.</p>'
+						. '<blockquote>Decide the tier before you start the batch. Deciding afterwards means deciding while tired, with a deadline, which reliably produces "it looked fine".</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Three tiers set by consequence: check everything, sample properly, or monitor the process. Choose the tier up front, and treat a bad sample as a prompt problem rather than a reason to read more.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'You have 200 internally tagged support tickets. The right verification approach is usually:',
+							'options'  => array(
+								'Read all 200 carefully',
+								'Check a proper sample, and fix the prompt if the sample shows problems',
+								'Check none — they are internal',
+								'Skim all 200 quickly',
+							),
+							'answer'   => 1,
+							'hint'     => 'Which one catches problems without consuming the time saved?',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'Skimming everything quickly is a better use of time than reading a smaller sample properly.',
+							'answer'   => 1,
+							'hint'     => 'What does skimming actually catch?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'When a sample shows repeated errors, the right response is to fix the ___ rather than to check more items.',
+							'answer_text' => 'prompt',
+							'accept'      => array( 'process' ),
+							'hint'        => 'Treat the cause, not the symptom.',
+						),
+						array(
+							'type'     => 'short_answer',
+							'question' => 'Sort three tasks from your own work into the three tiers, and justify each placement by what happens when it is wrong.',
+							'rubric'   => 'A strong answer assigns three concrete tasks to the check-everything, sample and monitor-the-process tiers, and justifies each by consequence and visibility of an error — who sees it, how quickly it would be caught, and what it would cost — rather than by how much time each takes.',
+						),
+					),
+				),
+
+				array(
+					'title'   => 'Knowing when you have outgrown the chat window',
+					'type'    => 'practice',
+					'est_min' => 11,
+					'xp'      => 30,
+					'topics'  => array( 'Reusable workflows', 'Structured output', 'Verification' ),
+					'content' => '<h2>Four signs it is time for something more than a chat box</h2>'
+						. '<p>Working in the chat interface is right for most people most of the time. But there is a point where it stops being the efficient choice, and recognising it early saves a great deal of tedium.</p>'
+						. '<ul>'
+						. '<li><strong>You are pasting the same prompt more than a few times a day.</strong> That is a job for a saved prompt or a small custom assistant.</li>'
+						. '<li><strong>You are doing the same thing to many items.</strong> Fifty documents through one prompt by hand is an afternoon; the same thing scripted is minutes, and it never gets bored on item forty.</li>'
+						. '<li><strong>The output has to land somewhere else.</strong> Copying results into a spreadsheet one at a time is the clearest signal of all — that is a data pipeline being performed manually.</li>'
+						. '<li><strong>Someone else needs it to run without you.</strong> A prompt only you execute is a bottleneck with your name on it.</li>'
+						. '</ul>'
+						. '<h3>What comes next, in order of effort</h3>'
+						. '<p><strong>A saved prompt</strong> costs nothing. <strong>A custom assistant</strong> with fixed instructions and reference files costs an hour and removes all the setup typing. <strong>A no-code automation</strong> connects it to the tools you already use. <strong>Actual code</strong> against the API is the most flexible and the most work — and it is where the whole of this ladder\'s rung three lives.</p>'
+						. '<h3>Do not skip ahead</h3>'
+						. '<p>Building automation before the prompt is proven is the classic mistake. Get it right by hand, use it for a fortnight, and let real use tell you what actually needs to scale. Half the prompts people plan to automate turn out not to be worth it.</p>'
+						. '<blockquote>Automate the prompt you have used forty times, not the one you are excited about today.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Repetition, volume, output that must land elsewhere, and dependence on you are the four signals. Climb the ladder of effort only as far as real use justifies.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Which is the clearest sign you have outgrown the chat window?',
+							'options'  => array(
+								'The answers are getting long',
+								'You are copying results into a spreadsheet one at a time',
+								'You use it every day',
+								'You have several prompts saved',
+							),
+							'answer'   => 1,
+							'hint'     => 'That is a pipeline being performed by hand.',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'Automate the prompt you have already used many times, not the one you are ___ about today.',
+							'answer_text' => 'excited',
+							'accept'      => array( 'enthusiastic' ),
+							'hint'        => 'Let real use decide.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'Building the automation first and proving the prompt afterwards is the efficient order.',
+							'answer'   => 1,
+							'hint'     => 'What happens if the prompt turns out not to be worth it?',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'Identify one thing you currently do by hand in a chat window that meets at least two of the four signals. Describe the smallest next step up — not the most sophisticated one — and say what you would need to see before going further.',
+							'rubric' => 'A strong answer names a real task, states which of the four signals it meets, proposes the genuinely smallest escalation (a saved prompt or a custom assistant rather than jumping to code), and gives a concrete condition — a volume, a frequency, or a second person needing it — that would justify the next step.',
+							'hint'   => 'Smallest step, not the most impressive one.',
+						),
+						array(
+							'type'     => 'reflection',
+							'question' => 'Which of this course\'s ideas — examples, structured output, verification, reusable prompts — has changed your results the most, and how do you know?',
+							'rubric'   => 'A thoughtful answer names one idea and offers concrete evidence of the change — a task that now takes less time, an error class that stopped appearing, a prompt colleagues now use — rather than a general impression.',
+						),
+					),
+				),
+			),
+			'quiz'    => array(
+				'title'     => 'Judgement at scale — quiz',
+				'passing'   => 70,
+				'xp'        => 35,
+				'questions' => array(
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'How much checking an AI output needs should be decided by:',
+						'options'  => array(
+							'How long the output is',
+							'The consequence of an error and whether it would be caught',
+							'How confident the model sounds',
+							'How much time is left in the day',
+						),
+						'answer'   => 1,
+					),
+					array(
+						'type'     => 'true_false',
+						'question' => 'Reading a proper sample beats skimming everything.',
+						'answer'   => 0,
+					),
+					array(
+						'type'        => 'fill_blank',
+						'question'    => 'A prompt only you can run is a ___ with your name on it.',
+						'answer_text' => 'bottleneck',
+						'accept'      => array( 'dependency' ),
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'The right first escalation beyond the chat window is usually:',
+						'options'  => array(
+							'Writing code against the API',
+							'A saved prompt or a custom assistant',
+							'Hiring a developer',
+							'Switching AI providers',
 						),
 						'answer'   => 1,
 					),

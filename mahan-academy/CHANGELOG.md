@@ -4,6 +4,72 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.27.0]
+
+Every course is four units deep. **No schema change — DB stays v5.**
+
+v1.25.0 rebuilt the Prompt Engineering ladder to real depth and left the other
+fifteen courses honest but thin — around an hour each, which is what they
+actually contained. This finishes the job.
+
+| | Before 1.25.0 | After 1.27.0 |
+| --- | --- | --- |
+| Units | 36 | **72** |
+| Lessons | 72 | **144** |
+| Exercises | 277 | **597** |
+| Quiz questions | 137 | **281** |
+| Authored material | 12.7 h | **50.5 h** |
+| Recall-only exercises | 81% | **74%** |
+
+Roughly 43,000 words of lesson prose.
+
+### Each course got an arc, not more of the same
+
+The two new units per course are where the subject actually gets difficult,
+not an extension of the introduction:
+
+- **ML Foundations** — where the difficulty really lives (data, not
+  algorithms), when *not* to use ML, and how to read an accuracy claim.
+- **Supervised Learning** — feature engineering, the classification threshold
+  as a business decision, cross-validation, and model cards.
+- **Practical ML** — drift and silent decay, retraining without breaking
+  things, bias that survives dropping the sensitive column, and explaining a
+  model to the three audiences that need different things.
+- **Generative AI, Explained** — which tasks are worth handing over, reading
+  output like an editor, what you may paste, and building one workflow.
+- **How LLMs Work** — the context window as the whole world, cost and model
+  choice, tool use and agents, and reading a launch announcement without
+  being sold to.
+- **RAG** — diagnosing whether retrieval or generation failed, keeping a corpus
+  honest, measuring faithfully, and when *not* to build RAG at all.
+- **ChatGPT ladder** — steering instead of restarting and files/images/voice
+  (rung 1); variation, shareable prompts and proportionate checking (rung 2);
+  tools, scale economics and handover (rung 3); the politics of adoption,
+  policy people will follow, and honest reporting when a pilot fails (rung 4).
+- **Claude / Gemini / Image generation / Responsible AI / Productivity** — long
+  context and tool choice; integration and currency; composition control and
+  where generated images belong; accountability, procurement and incidents;
+  where the minutes actually go and what stays yours.
+
+### The validator did its job again
+
+Six courses had `est_hours` that the new content had pushed past an hour
+boundary. The check added in 1.25.0 failed the build on all six before anything
+shipped — which is the entire reason the number is computed rather than typed.
+
+### Delivery
+
+Everything reaches sites that installed an earlier version through the
+strictly additive backfill from 1.25.0: new lessons and unit quizzes appear,
+and nothing you edited is touched.
+
+### Tooling
+
+`tools/` gained nothing, but the authoring pipeline did: units are now written
+as standalone blocks and spliced in by a small script that refuses rather than
+guesses if a file's tail does not match exactly. Hand-editing eighteen deeply
+nested data files is how a silent truncation gets shipped.
+
 ## [1.26.0]
 
 Profile and dashboard. **No schema change — DB stays v5.**

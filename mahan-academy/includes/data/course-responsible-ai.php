@@ -23,7 +23,7 @@ return array(
 		. '<p>This course turns the major frameworks — the <strong>NIST AI Risk Management Framework</strong>, the <strong>EU AI Act</strong>, and the <strong>OECD</strong> and <strong>UNESCO</strong> principles — into things you can actually do in your work: spot the risks in a use case, judge how sensitive it is, and put simple guardrails in place. No legal background required.</p>',
 	'category'    => 'Responsible AI',
 	'level'       => 'beginner',
-	'est_hours'   => 1,
+	'est_hours'   => 3,
 	'featured'    => true,
 	'certificate' => true,
 	'order'       => 1,
@@ -357,6 +357,331 @@ return array(
 							'Tell users they are interacting with an AI system',
 							'Disable the chatbot at night',
 							'Ask users to sign a contract',
+						),
+						'answer'   => 1,
+					),
+				),
+			),
+		),
+
+		/* ---- Unit 3 ------------------------------------------------------ */
+		array(
+			'title'   => 'From policy to practice',
+			'lessons' => array(
+
+				array(
+					'title'   => 'Who is accountable when the system is wrong',
+					'type'    => 'reading',
+					'est_min' => 11,
+					'xp'      => 25,
+					'topics'  => array( 'Governance & compliance', 'Transparency' ),
+					'content' => '<h2>"The system decided" is not an answer anyone accepts</h2>'
+						. '<p>An AI system produces a wrong outcome that affects someone. The question that follows is never technical. It is: who is answerable, and what can the affected person do about it?</p>'
+						. '<p>Organisations that cannot answer that in advance discover, at the worst possible moment, that everyone assumed someone else was.</p>'
+						. '<h3>The four roles worth naming</h3>'
+						. '<p><strong>The decision owner</strong> — the person accountable for the outcome, who would have been accountable if a human had made the same call. Deploying a model does not transfer this to anyone; it just makes it easier to forget.</p>'
+						. '<p><strong>The system owner</strong> — accountable for the thing working as described: monitored, reviewed, retired when it should be.</p>'
+						. '<p><strong>The reviewer</strong> — where a human is in the loop, whoever that is, with enough information and enough time to genuinely exercise judgement.</p>'
+						. '<p><strong>The route for the affected person</strong> — how they find out a system was involved, how they contest the outcome, and who reconsiders it.</p>'
+						. '<h3>The failure mode: oversight in name only</h3>'
+						. '<p>A reviewer given four hundred cases a day, no context, and a target that punishes disagreement is not oversight. They are a rubber stamp providing legal cover, and everyone in the chain knows it. Genuine human review needs time, information, and a culture where overriding the system is normal rather than career-limiting.</p>'
+						. '<blockquote>If nobody can be named, nobody is accountable. Write the names down before deployment, not after the incident.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Name the decision owner, the system owner, the reviewer and the appeal route before launch — and check that the reviewer can actually review rather than rubber-stamp.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Deploying a model to make a decision transfers accountability to:',
+							'options'  => array(
+								'The model vendor',
+								'Nobody — it stays with whoever was accountable for the decision before',
+								'The data science team',
+								'The end user',
+							),
+							'answer'   => 1,
+							'hint'     => 'Who was answerable when a human made this call?',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'A reviewer handling 400 cases a day with no context provides meaningful human oversight.',
+							'answer'   => 1,
+							'hint'     => 'What do they actually have time to do?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'An affected person needs a route to ___ the outcome, and someone who will reconsider it.',
+							'answer_text' => 'contest',
+							'accept'      => array( 'appeal', 'challenge', 'dispute' ),
+							'hint'        => 'The fourth role.',
+						),
+						array(
+							'type'     => 'short_answer',
+							'question' => 'For an AI system your organisation uses or might use, name the four roles. Where you cannot name a person, say what that tells you.',
+							'rubric'   => 'A strong answer attempts real names or roles rather than departments, and treats a gap as a finding — an unnamed decision owner or a missing appeal route is a deployment risk to fix before launch, not a formality.',
+						),
+					),
+				),
+
+				array(
+					'title'   => 'Assessing a system before you buy it',
+					'type'    => 'practice',
+					'est_min' => 11,
+					'xp'      => 25,
+					'topics'  => array( 'AI risk', 'Governance & compliance' ),
+					'content' => '<h2>Most AI in an organisation arrives through procurement</h2>'
+						. '<p>Far more AI enters a business inside purchased software than gets built in-house. It arrives as a feature in an HR platform, a scoring tool in a CRM, an assistant bolted onto a helpdesk — and it usually arrives without anyone asking the questions they would ask of a system built internally.</p>'
+						. '<h3>Seven questions for any vendor</h3>'
+						. '<ol>'
+						. '<li><strong>What exactly does the model decide or recommend, and what happens to that output?</strong> A recommendation nobody ever overrides is a decision.</li>'
+						. '<li><strong>What data was it trained on, and does it resemble our population?</strong> A model validated elsewhere may behave very differently here.</li>'
+						. '<li><strong>How does it perform by group?</strong> Ask for the breakdown, not the headline. Reluctance here is itself informative.</li>'
+						. '<li><strong>What explanation does an affected person get?</strong> "Proprietary" is a business answer, not a legal one in several jurisdictions.</li>'
+						. '<li><strong>What happens to our data?</strong> Is it used to train their models, where is it stored, who can access it.</li>'
+						. '<li><strong>How do we know when it degrades?</strong> Monitoring, alerting, and what we would see.</li>'
+						. '<li><strong>How do we turn it off?</strong> What the fallback is, and whether we could still operate.</li>'
+						. '</ol>'
+						. '<h3>The answers you should worry about</h3>'
+						. '<p>"Our accuracy is 95%" with no baseline and no breakdown. "The algorithm is proprietary" in response to a question about explanation rather than internals. "It learns from your data" with no detail about what that means for confidentiality. None of these are refusals exactly, which is what makes them easy to accept.</p>'
+						. '<blockquote>Buying a system does not outsource the accountability. You will answer for its decisions, so ask the questions before signing rather than after.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Procurement is where most AI risk enters. Ask about scope, training data, group performance, explanation, data handling, degradation and exit — and treat evasive answers as answers.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'A vendor answers "the algorithm is proprietary" when asked what explanation an affected person receives. This is:',
+							'options'  => array(
+								'A complete answer',
+								'A business answer to a question that in several jurisdictions has a legal dimension',
+								'Irrelevant to procurement',
+								'A reason to pay more',
+							),
+							'answer'   => 1,
+							'hint'     => 'The question was about the affected person, not the internals.',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'A recommendation that nobody ever overrides is, in practice, a ___.',
+							'answer_text' => 'decision',
+							'accept'      => array( 'determination' ),
+							'hint'        => 'Regardless of what it is called.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'Buying an AI system from a vendor transfers accountability for its decisions to that vendor.',
+							'answer'   => 1,
+							'hint'     => 'Who answers to the affected person?',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'Write the AI section of a vendor questionnaire for a tool that will screen or score people in some way. Include the questions and, for three of them, the answer that would stop the purchase.',
+							'rubric' => 'A strong answer covers scope, training data and its representativeness, performance by group, explanation to affected people, data handling, monitoring and exit. The three disqualifying answers should be specific and defensible — refusal to provide a group breakdown, using customer data to train shared models without consent, or no way to contest an outcome.',
+							'hint'   => 'Decide the deal-breakers before you are attached to the tool.',
+						),
+					),
+				),
+			),
+			'quiz'    => array(
+				'title'     => 'From policy to practice — quiz',
+				'passing'   => 70,
+				'xp'        => 30,
+				'questions' => array(
+					array(
+						'type'        => 'fill_blank',
+						'question'    => 'Genuine human oversight needs time, information, and a culture where ___ the system is normal.',
+						'answer_text' => 'overriding',
+						'accept'      => array( 'disagreeing with', 'challenging' ),
+					),
+					array(
+						'type'     => 'true_false',
+						'question' => 'Most AI risk in a typical organisation arrives through purchased software rather than in-house builds.',
+						'answer'   => 0,
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'Which vendor answer should most increase your concern?',
+						'options'  => array(
+							'Detailed performance broken down by group',
+							'"Our accuracy is 95%" with no baseline and no breakdown',
+							'A documented monitoring plan',
+							'A clear data-retention policy',
+						),
+						'answer'   => 1,
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'The four roles to name before deployment are:',
+						'options'  => array(
+							'Developer, tester, manager, user',
+							'Decision owner, system owner, reviewer, and the affected person\'s appeal route',
+							'Vendor, buyer, auditor, regulator',
+							'Analyst, engineer, lawyer, executive',
+						),
+						'answer'   => 1,
+					),
+				),
+			),
+		),
+
+		/* ---- Unit 4 ------------------------------------------------------ */
+		array(
+			'title'   => 'Responsible AI as everyday practice',
+			'lessons' => array(
+
+				array(
+					'title'   => 'Incidents: what to do when it goes wrong',
+					'type'    => 'reading',
+					'est_min' => 11,
+					'xp'      => 25,
+					'topics'  => array( 'AI risk', 'Governance & compliance' ),
+					'content' => '<h2>Assume it will, and decide now what happens</h2>'
+						. '<p>AI incidents are not exotic. A chatbot tells a customer something untrue about their rights. A scoring tool is found to work poorly for one group. A summarisation tool omits a safety warning. Generated content is published containing invented facts.</p>'
+						. '<p>Each of these has happened somewhere, and the organisations that handled them well were the ones that had decided the response before they needed it.</p>'
+						. '<h3>The five steps</h3>'
+						. '<ol>'
+						. '<li><strong>Stop the harm.</strong> Turn it off or fall back to the manual process. This should be possible in minutes, and someone should have tested that it is.</li>'
+						. '<li><strong>Find the scope.</strong> How many people, over what period. This is where good logging earns everything it cost — and where its absence turns a contained incident into an unbounded one.</li>'
+						. '<li><strong>Tell the affected people.</strong> Earlier and more plainly than is comfortable. The reputational damage from a disclosed error is almost always smaller than from a concealed one that surfaces later.</li>'
+						. '<li><strong>Fix the cause, not the instance.</strong> One wrong answer patched is one wrong answer. Ask what class of input produces it.</li>'
+						. '<li><strong>Record it.</strong> What happened, why, what changed. This becomes the test case that stops it recurring.</li>'
+						. '</ol>'
+						. '<h3>The thing that makes all of this possible</h3>'
+						. '<p>Logs. Without a record of what the system was given and what it produced, you cannot establish scope, cannot tell the affected people anything useful, and cannot prove the fix worked. Decide what you log — within your privacy obligations — while building, because you cannot log the past.</p>'
+						. '<blockquote>The measure of a responsible deployment is not that nothing goes wrong. It is how quickly you can tell who was affected and stop it.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Stop, scope, tell, fix the class of problem, record. All of it depends on logging you set up beforehand.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Which capability most determines how well an AI incident is handled?',
+							'options'  => array(
+								'The size of the engineering team',
+								'Logs that establish who was affected and how',
+								'The model\'s accuracy',
+								'The vendor relationship',
+							),
+							'answer'   => 1,
+							'hint'     => 'What lets you answer "how many people?"',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'Concealing a contained AI error usually costs less reputationally than disclosing it.',
+							'answer'   => 1,
+							'hint'     => 'What happens when it surfaces later?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'Fix the ___ of input that causes the error, not just the single instance reported.',
+							'answer_text' => 'class',
+							'accept'      => array( 'category', 'type' ),
+							'hint'        => 'One patched answer is one answer.',
+						),
+						array(
+							'type'     => 'short_answer',
+							'question' => 'Your customer-facing assistant has been giving incorrect refund information for an unknown period. Walk through your first hour.',
+							'rubric'   => 'A strong answer disables the assistant or falls back immediately rather than investigating first, then uses logs to establish scope and identify affected customers, initiates proactive contact, and only then investigates the cause. It should acknowledge explicitly what happens if the logs do not exist.',
+						),
+					),
+				),
+
+				array(
+					'title'   => 'The questions worth asking every time',
+					'type'    => 'practice',
+					'est_min' => 11,
+					'xp'      => 30,
+					'topics'  => array( 'Fairness & bias', 'Transparency', 'AI risk', 'Governance & compliance' ),
+					'content' => '<h2>Responsible AI is a habit, not a document</h2>'
+						. '<p>Most organisations write principles and then struggle to connect them to Tuesday. The connection is a short set of questions asked routinely — in the meeting where someone proposes a tool, not in an annual review.</p>'
+						. '<h3>The six</h3>'
+						. '<ol>'
+						. '<li><strong>Who is affected by this, and were they asked?</strong> The people a system acts on are rarely in the room where it is chosen.</li>'
+						. '<li><strong>What does it get wrong, and who bears that?</strong> Every system has an error profile. Someone experiences it, and it is usually not the person deploying it.</li>'
+						. '<li><strong>Does it work equally well for everyone it touches?</strong> If you cannot answer, that is the finding.</li>'
+						. '<li><strong>Can an affected person find out and object?</strong> If not, you have automated something unaccountable.</li>'
+						. '<li><strong>Who is answerable?</strong> By name.</li>'
+						. '<li><strong>How would we know if it stopped working?</strong> Silent degradation is the normal failure mode.</li>'
+						. '</ol>'
+						. '<h3>Ask them early, when they are cheap</h3>'
+						. '<p>Raised at the proposal stage, these are a fifteen-minute conversation. Raised after launch, each one is a project. The cost of asking rises steeply with time, which is exactly why they get skipped in the rush and become expensive later.</p>'
+						. '<h3>Being the person who asks</h3>'
+						. '<p>You will occasionally be the only one raising them, and it can feel like obstruction. It is not — these are the questions the organisation will be asked eventually, by a regulator, a journalist, or a customer with a lawyer. Asking early is cheaper for everyone, and being consistently right about that is how the role becomes valued rather than tolerated.</p>'
+						. '<blockquote>Responsible AI is not a brake on doing things. It is the difference between doing them once and doing them again after an incident.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>You know what the principles mean, where bias comes from, what transparency and oversight require, how risk tiers work, who must be accountable, how to assess a vendor, and what to do in an incident. The six questions are how you use all of it, routinely.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Why ask the responsible-AI questions at the proposal stage?',
+							'options'  => array(
+								'It is required by law everywhere',
+								'They cost fifteen minutes then and become projects after launch',
+								'It delays projects usefully',
+								'Vendors expect it',
+							),
+							'answer'   => 1,
+							'hint'     => 'How does the cost change with time?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'If you cannot answer whether a system works equally well for everyone it touches, that inability is itself the ___.',
+							'answer_text' => 'finding',
+							'accept'      => array( 'answer', 'problem' ),
+							'hint'        => 'Not knowing is information.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'The people a system acts on are usually present when it is chosen.',
+							'answer'   => 1,
+							'hint'     => 'Who is in that meeting?',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'Apply the six questions to one AI system your organisation actually uses. Answer each honestly, and mark the ones you cannot answer.',
+							'rubric' => 'A strong answer works through all six on a real system, gives specific answers rather than reassurances, and is willing to mark unanswerable ones — which is the point of the exercise. It should identify at least one concrete action arising from a gap.',
+							'hint'   => 'The ones you cannot answer are the valuable output.',
+						),
+						array(
+							'type'     => 'reflection',
+							'question' => 'Which of the six questions would be hardest to raise in your organisation, and what would make it easier?',
+							'rubric'   => 'A thoughtful answer names a specific question and an honest obstacle — commercial pressure, hierarchy, or lack of a forum — and proposes something concrete rather than concluding that culture should change.',
+						),
+					),
+				),
+			),
+			'quiz'    => array(
+				'title'     => 'Everyday practice — quiz',
+				'passing'   => 70,
+				'xp'        => 35,
+				'questions' => array(
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'The first step in an AI incident is to:',
+						'options'  => array(
+							'Investigate the root cause',
+							'Stop the harm — disable it or fall back',
+							'Draft a public statement',
+							'Contact the vendor',
+						),
+						'answer'   => 1,
+					),
+					array(
+						'type'     => 'true_false',
+						'question' => 'You cannot log the past, so what to log must be decided while building.',
+						'answer'   => 0,
+					),
+					array(
+						'type'        => 'fill_blank',
+						'question'    => 'Every system has an error profile, and the person who ___ it is rarely the person deploying it.',
+						'answer_text' => 'bears',
+						'accept'      => array( 'experiences', 'suffers' ),
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'A system nobody affected can find out about or object to is:',
+						'options'  => array(
+							'Efficient',
+							'Automated and unaccountable',
+							'Compliant by default',
+							'Low risk',
 						),
 						'answer'   => 1,
 					),

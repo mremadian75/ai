@@ -26,7 +26,7 @@ return array(
 	'track'       => 'generative-ai',
 	'level_rank'  => 2,
 	'level'       => 'intermediate',
-	'est_hours'   => 2,
+	'est_hours'   => 3,
 	'featured'    => false,
 	'certificate' => true,
 	'order'       => 2,
@@ -405,6 +405,320 @@ return array(
 							'Turning off the system prompt',
 						),
 						'answer'   => 0,
+					),
+				),
+			),
+		),
+
+		/* ---- Unit 3 ------------------------------------------------------ */
+		array(
+			'title'   => 'The context window is the whole world',
+			'lessons' => array(
+
+				array(
+					'title'   => 'What the model can and cannot see',
+					'type'    => 'reading',
+					'est_min' => 12,
+					'xp'      => 25,
+					'topics'  => array( 'Next-token prediction', 'System prompts & fine-tuning' ),
+					'content' => '<h2>Everything the model knows right now is in one buffer</h2>'
+						. '<p>An LLM has no memory between requests. Everything it can consider — the system prompt, the conversation so far, anything you pasted, and its own reply as it forms — occupies a single fixed buffer called the <strong>context window</strong>. Nothing outside it exists for this answer.</p>'
+						. '<h3>The chat that "remembers" is being re-told</h3>'
+						. '<p>A conversation feels continuous because the application resends the previous turns with every message. The model is not recalling; it is re-reading. That has consequences: a long conversation costs more each turn, and once the window fills, the oldest turns are dropped or summarised — which is precisely why a long chat starts contradicting things you agreed near the beginning.</p>'
+						. '<h3>Position matters more than people expect</h3>'
+						. '<p>Attention is not uniform across a long context. Material at the very start and the very end tends to be used more reliably than material buried in the middle — a documented effect, not folklore. So put your actual instruction <em>after</em> a long pasted document rather than before it, and do not assume a critical caveat on page 40 of 60 carried the same weight as one on page 1.</p>'
+						. '<h3>A bigger window is not a free pass</h3>'
+						. '<p>Million-token windows are now common, and they change what is possible without changing what is wise. Filling a window with everything you have costs money on every call, adds latency, and dilutes the signal — the model has more places for the important sentence to hide. Curating what goes in beats dumping, almost always.</p>'
+						. '<blockquote>If it is not in the window, it does not exist. If it is buried in the middle of the window, do not assume it was read carefully.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>One buffer holds everything. Chats are re-sent, not remembered. Position within the window matters. And a large window is an opportunity to be selective, not an excuse not to be.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Why does a long conversation start contradicting things agreed near the start?',
+							'options'  => array(
+								'The model gets confused by long topics',
+								'The earliest turns fall out of the context window as it fills',
+								'The model deliberately changes its mind',
+								'Longer chats use a weaker model',
+							),
+							'answer'   => 1,
+							'hint'     => 'What happens when a fixed buffer runs out of room?',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'A model genuinely remembers your previous messages between requests.',
+							'answer'   => 1,
+							'hint'     => 'What does the application do with the earlier turns?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'Material buried in the ___ of a long context tends to be used less reliably than material at either end.',
+							'answer_text' => 'middle',
+							'accept'      => array( 'centre', 'center' ),
+							'hint'        => 'A documented attention effect.',
+						),
+						array(
+							'type'     => 'short_answer',
+							'question' => 'You are pasting a 60-page policy document and asking one question about it. Where do you put the question, and what else would you do to improve the odds of a good answer?',
+							'rubric'   => 'A strong answer places the instruction after the document so it sits at the end of the context, and adds at least one curation step — extracting only the relevant sections rather than pasting all 60 pages, or asking the model to quote the passage it relied on so the answer can be checked against the source.',
+						),
+					),
+				),
+
+				array(
+					'title'   => 'Cost, latency, and picking a model',
+					'type'    => 'practice',
+					'est_min' => 11,
+					'xp'      => 25,
+					'topics'  => array( 'Temperature & sampling', 'System prompts & fine-tuning' ),
+					'content' => '<h2>Every provider offers a range, and the biggest is rarely the right default</h2>'
+						. '<p>Models come in tiers — small and fast, mid-range, and large and capable — and the price between the ends of that range is often an order of magnitude. Reaching for the largest by reflex is the most common way to spend a lot of money making an easy task slightly better.</p>'
+						. '<h3>What you are actually charged for</h3>'
+						. '<p>Billing is by token, split into input and output, usually at different rates. Two practical consequences follow. First, a long system prompt or a big pasted document is paid for on <em>every single call</em>, not once. Second, asking for step-by-step reasoning costs output tokens — sometimes far more than the answer itself.</p>'
+						. '<h3>Match the tier to the job</h3>'
+						. '<p>Classification, extraction, routing, tagging and simple rewrites are usually well within a small model\'s reach. Nuanced writing, multi-step reasoning and tricky code benefit from a larger one. The honest way to decide is not intuition: run both against twenty real examples and look at the difference. Often there is barely one, and occasionally the small model is better because it is less inclined to embellish.</p>'
+						. '<h3>Latency is a product decision</h3>'
+						. '<p>A two-second wait is invisible in a nightly batch and intolerable in a chat box. Streaming helps enormously — first token in 300ms feels responsive even if the whole answer takes six seconds — because perceived speed is about when something starts, not when it ends.</p>'
+						. '<h3>Cheap levers before expensive ones</h3>'
+						. '<p>Trim the system prompt you never revised. Cache what repeats. Send only the relevant part of the document. Ask for shorter output. These reduce cost without touching quality at all, and they are almost always still on the table when someone proposes upgrading the model.</p>'
+						. '<blockquote>Start at the smallest model that could plausibly work and move up only when a test set says you must. The reverse order is how budgets disappear.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Tokens in and out are the bill; long prompts are charged every call. Match the tier to the task using real examples, treat latency as a product concern, and exhaust the free levers before paying more.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'A long system prompt is charged:',
+							'options'  => array(
+								'Once, when you first write it',
+								'On every call that uses it',
+								'Only when the answer is long',
+								'Never — only output is billed',
+							),
+							'answer'   => 1,
+							'hint'     => 'It is part of the input every time.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'The largest available model is the sensible default for every task.',
+							'answer'   => 1,
+							'hint'     => 'What does a classification task actually need?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'Perceived speed depends on when the answer ___, which is why streaming feels fast.',
+							'answer_text' => 'starts',
+							'accept'      => array( 'begins' ),
+							'hint'        => 'Not when it finishes.',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'Your team routes 50,000 support emails a month through a large model to tag each with one of six categories, and the bill is uncomfortable. Write the plan you would propose, in order, saying what you would measure at each step.',
+							'rubric' => 'A strong answer starts with the free levers — trimming the prompt, sending only the email body, capping output — then proposes testing a smaller model against a labelled set of real emails and comparing accuracy directly, rather than assuming either that the small model will do or that it will not. It should state the measurement at each step, not just the action.',
+							'hint'   => 'What can you try before changing the model at all?',
+						),
+					),
+				),
+			),
+			'quiz'    => array(
+				'title'     => 'Context, cost and latency — quiz',
+				'passing'   => 70,
+				'xp'        => 30,
+				'questions' => array(
+					array(
+						'type'        => 'fill_blank',
+						'question'    => 'The single buffer holding the system prompt, the conversation and your pasted text is the context ___.',
+						'answer_text' => 'window',
+						'accept'      => array(),
+					),
+					array(
+						'type'     => 'true_false',
+						'question' => 'Put your instruction after a long pasted document rather than before it.',
+						'answer'   => 0,
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'Which task is most likely to run well on a small, cheap model?',
+						'options'  => array(
+							'Tagging support emails into six fixed categories',
+							'Drafting a nuanced legal argument',
+							'Multi-step mathematical reasoning',
+							'Reviewing a complex codebase',
+						),
+						'answer'   => 0,
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'A million-token context window mainly changes:',
+						'options'  => array(
+							'The need to curate what you send',
+							'What is possible, without changing what is wise or cheap',
+							'The model\'s accuracy on every task',
+							'Whether the model remembers between sessions',
+						),
+						'answer'   => 1,
+					),
+				),
+			),
+		),
+
+		/* ---- Unit 4 ------------------------------------------------------ */
+		array(
+			'title'   => 'Beyond a single reply',
+			'lessons' => array(
+
+				array(
+					'title'   => 'Tools, functions, and agents',
+					'type'    => 'reading',
+					'est_min' => 12,
+					'xp'      => 25,
+					'topics'  => array( 'System prompts & fine-tuning', 'Next-token prediction' ),
+					'content' => '<h2>Giving a text predictor a way to act</h2>'
+						. '<p>A model that only produces text cannot look anything up, do arithmetic reliably, or change anything in your systems. <strong>Tool use</strong> — also called function calling — closes that gap, and it is the single idea behind most of what gets marketed as an "AI agent".</p>'
+						. '<h3>How it actually works</h3>'
+						. '<p>You describe the tools available: their names, what they do, and what arguments they take. When the model decides one is needed, it does not call anything — it emits a structured request, such as "call <code>get_order_status</code> with order_id 4471". <em>Your code</em> makes the call, and hands the result back into the conversation. The model then writes the answer using it.</p>'
+						. '<p>That division matters enormously: the model chooses, your code executes. Every permission check, rate limit and validation lives on your side, where it belongs.</p>'
+						. '<h3>Why this fixes the classic failures</h3>'
+						. '<p>The model no longer has to remember your order database, because it can query it. It no longer has to do arithmetic, because it can call a calculator. Grounding stops being a prompting trick and becomes a system property.</p>'
+						. '<h3>What an "agent" adds, and what it costs</h3>'
+						. '<p>An agent loops: think, call a tool, read the result, decide what next, repeat until done. That is genuinely powerful and genuinely harder — errors compound across steps, loops can run away, and a wrong tool call in step two poisons everything after it. Bound the number of steps, log every call, and require confirmation before anything irreversible.</p>'
+						. '<blockquote>The model decides; your code executes. Anything that writes, spends or sends should ask a human first.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Tools let a text predictor look things up and act. The model emits a request, your code runs it under your rules. Agents chain that into loops, and need bounds, logging and confirmation gates to be safe.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'When a model "uses a tool", what does it actually produce?',
+							'options'  => array(
+								'A direct network request to the service',
+								'A structured request that your code then executes',
+								'A database write',
+								'A new model',
+							),
+							'answer'   => 1,
+							'hint'     => 'Who runs the call?',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'Because the model chooses the tool, permission checks belong in the model rather than in your code.',
+							'answer'   => 1,
+							'hint'     => 'Where does execution actually happen?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'An agent loops through think, call, read and decide, so errors ___ across steps.',
+							'answer_text' => 'compound',
+							'accept'      => array( 'accumulate', 'multiply' ),
+							'hint'        => 'A wrong step two poisons everything after.',
+						),
+						array(
+							'type'     => 'short_answer',
+							'question' => 'You are giving a support assistant three tools: look up an order, issue a refund, and email the customer. What controls would you put around each, and why are they not the same?',
+							'rubric'   => 'A strong answer distinguishes the read-only tool from the two that have side effects: the lookup can run freely (scoped to the authenticated customer), while refunds and emails are irreversible or externally visible and should require human confirmation, value limits, and logging. It should locate those controls in the calling code rather than in the prompt.',
+						),
+					),
+				),
+
+				array(
+					'title'   => 'Reading a model announcement without being sold to',
+					'type'    => 'practice',
+					'est_min' => 11,
+					'xp'      => 30,
+					'topics'  => array( 'Training', 'Temperature & sampling', 'System prompts & fine-tuning' ),
+					'content' => '<h2>New models ship constantly. Most announcements will not change your work</h2>'
+						. '<p>Keeping up is exhausting and mostly unnecessary. What you need is a filter that turns a launch post into a decision in five minutes.</p>'
+						. '<h3>The four things that actually matter to you</h3>'
+						. '<ul>'
+						. '<li><strong>Price per token</strong>, input and output. This is the number most likely to change what you do, and it is often buried below the benchmarks.</li>'
+						. '<li><strong>Context window and output limit.</strong> A larger input window is useless if the output cap is still short and you needed long output.</li>'
+						. '<li><strong>Modality.</strong> Can it accept images, audio, files? This opens genuinely new tasks rather than doing old ones slightly better.</li>'
+						. '<li><strong>Latency.</strong> Rarely in the headline, always in the user experience.</li>'
+						. '</ul>'
+						. '<h3>How to read a benchmark</h3>'
+						. '<p>Benchmarks are real measurements of specific test sets, which is not the same as your task. A model that gains four points on a reasoning benchmark may be identical on your classification job. Treat them as a rough tier signal — is this a small, mid or large model — and nothing finer.</p>'
+						. '<p>Two habits keep you honest: compare like with like (a big model against a big model, not against last year\'s small one), and be sceptical of any comparison chart published by the party selling the model.</p>'
+						. '<h3>The only test that settles it</h3>'
+						. '<p>Your twenty real examples with the outputs you would accept. Run the new model, run the current one, compare. That takes half an hour and tells you more than every launch post combined — and it is the same evaluation set that lets you change prompts safely, so it earns its keep twice.</p>'
+						. '<blockquote>Announcements describe capability in general. Your test set describes capability on the only task you are paid for.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>You now know how an LLM generates text, why it hallucinates, what temperature and system prompts do, how the context window bounds it, what it costs, and how tools let it act. The filter above is how you keep that current without chasing every release.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Which detail in a model announcement is most likely to change what you actually do?',
+							'options'  => array(
+								'The benchmark scores',
+								'The price per input and output token',
+								'The model\'s codename',
+								'The size of the launch event',
+							),
+							'answer'   => 1,
+							'hint'     => 'Which one is often below the benchmarks and decides feasibility?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'A benchmark gain tells you about a specific ___ set, not about your task.',
+							'answer_text' => 'test',
+							'accept'      => array( 'evaluation', 'eval' ),
+							'hint'        => 'Measured on something that is not your work.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'A comparison chart published by the company selling the model deserves the same trust as an independent one.',
+							'answer'   => 1,
+							'hint'     => 'Who chose the comparisons?',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'A new model is announced claiming a large jump on reasoning benchmarks at slightly higher cost. Write the short note you would send your team deciding whether to switch, including exactly what you would test and what result would justify the change.',
+							'rubric' => 'A strong answer refuses to decide from the announcement, proposes running both models over a fixed set of real examples with agreed acceptable outputs, names the metric that matters for their actual task rather than the benchmark, and states the threshold — a specific improvement large enough to justify the specific extra cost — before running the test.',
+							'hint'   => 'Decide the bar before you see the result.',
+						),
+						array(
+							'type'     => 'reflection',
+							'question' => 'Which idea from this course most changes how you will use or build with LLMs — and what will you do differently because of it?',
+							'rubric'   => 'A thoughtful answer names one specific mechanism (next-token prediction, the context window, temperature, tool use, cost per call) and ties it to a concrete change in practice rather than a general statement of interest.',
+						),
+					),
+				),
+			),
+			'quiz'    => array(
+				'title'     => 'Beyond a single reply — quiz',
+				'passing'   => 70,
+				'xp'        => 35,
+				'questions' => array(
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'The core division in tool use is that:',
+						'options'  => array(
+							'The model executes and your code observes',
+							'The model decides which tool to call and your code executes it',
+							'The tool decides what the model says',
+							'Neither side can refuse',
+						),
+						'answer'   => 1,
+					),
+					array(
+						'type'     => 'true_false',
+						'question' => 'Anything a tool does that is irreversible — spending, sending, deleting — should require human confirmation.',
+						'answer'   => 0,
+					),
+					array(
+						'type'        => 'fill_blank',
+						'question'    => 'The only reliable way to judge a new model for your work is your own ___ set of real examples.',
+						'answer_text' => 'test',
+						'accept'      => array( 'evaluation', 'eval' ),
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'Tool use makes grounding:',
+						'options'  => array(
+							'A prompting trick that works better',
+							'A system property — the model can query the real source',
+							'Unnecessary',
+							'Impossible to audit',
+						),
+						'answer'   => 1,
 					),
 				),
 			),

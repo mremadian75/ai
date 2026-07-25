@@ -23,7 +23,7 @@ return array(
 		. '<p>In about two hours you will learn how to draft and summarise faster, brainstorm and plan with AI as a thinking partner, turn rough meeting notes into clear action items, and — most importantly — build the one habit that keeps your company\'s data safe.</p>',
 	'category'    => 'AI at Work',
 	'level'       => 'beginner',
-	'est_hours'   => 2,
+	'est_hours'   => 3,
 	'featured'    => true,
 	'certificate' => true,
 	'order'       => 1,
@@ -384,6 +384,321 @@ return array(
 						'type'     => 'true_false',
 						'question' => 'Anonymising sensitive data before pasting protects the real people involved while still letting AI help with the problem.',
 						'answer'   => 0,
+					),
+				),
+			),
+		),
+
+		/* ---- Unit 3 ------------------------------------------------------ */
+		array(
+			'title'   => 'Getting time back, honestly',
+			'lessons' => array(
+
+				array(
+					'title'   => 'Where the minutes actually go',
+					'type'    => 'reading',
+					'est_min' => 11,
+					'xp'      => 25,
+					'topics'  => array( 'Email & writing', 'Planning & ideation' ),
+					'content' => '<h2>People point AI at the wrong part of the job</h2>'
+						. '<p>Ask someone what takes their time and they will name the visible thing — writing the report, answering the email. Watch a week and the time is somewhere else: switching between tools, rereading a thread to remember where it got to, reformatting the same information for a different audience, and deciding what to do next.</p>'
+						. '<p>AI helps enormously with three of those four, and most people never point it at any of them.</p>'
+						. '<h3>Rereading to catch up</h3>'
+						. '<p>You join a thread late, return from leave, or pick up a project after two weeks. Reconstructing the state costs twenty minutes and produces nothing. "Summarise where this got to, what was decided, and what is still open" costs one and produces the same understanding.</p>'
+						. '<h3>Reformatting for a different audience</h3>'
+						. '<p>The same content, three times: detailed for your team, condensed for your manager, plain for a customer. This is exactly what these tools do best — the information already exists and you are changing its shape, which is the reliable half of AI use.</p>'
+						. '<h3>Deciding what to do next</h3>'
+						. '<p>Not the deciding itself — that stays yours — but the sorting that precedes it. Paste a chaotic list and ask for it grouped by what is blocking others, what is time-bound, and what could wait a week. The clarity is usually worth more than the sorting.</p>'
+						. '<h3>The one it does not fix</h3>'
+						. '<p>Context switching. If anything, a tool that lives in another tab makes it slightly worse — which is why using an assistant inside the application you are already in matters more than it sounds.</p>'
+						. '<blockquote>Point it at the invisible work — the catching up, the reshaping, the sorting. That is where the hours actually are.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>The visible tasks are not where the time goes. Rereading, reformatting and sorting are, and all three are things AI does reliably because the material is already in front of it.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Which is the most overlooked place AI saves time?',
+							'options'  => array(
+								'Writing long documents from nothing',
+								'Reconstructing where a thread or project got to',
+								'Choosing between strategic options',
+								'Attending meetings',
+							),
+							'answer'   => 1,
+							'hint'     => 'Which one produces nothing but costs twenty minutes?',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'AI meaningfully reduces the cost of context switching between tools.',
+							'answer'   => 1,
+							'hint'     => 'What does one more tab do?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'Reformatting the same information for a different audience is reliable because the material is already ___.',
+							'answer_text' => 'supplied',
+							'accept'      => array( 'there', 'given', 'in front of it' ),
+							'hint'        => 'The reliable half of AI use.',
+						),
+						array(
+							'type'     => 'short_answer',
+							'question' => 'Track back over yesterday. Where did time go that produced nothing — and which of those could have been a one-minute prompt?',
+							'rubric'   => 'A strong answer identifies genuinely non-productive time — catching up, reformatting, searching for context — rather than naming the visible tasks, and matches at least one of them to a specific prompt that would have shortened it.',
+						),
+					),
+				),
+
+				array(
+					'title'   => 'Measuring whether it actually helped',
+					'type'    => 'practice',
+					'est_min' => 11,
+					'xp'      => 25,
+					'topics'  => array( 'Planning & ideation', 'Email & writing' ),
+					'content' => '<h2>Feeling faster and being faster are different things</h2>'
+						. '<p>AI feels productive. Something appears immediately, the blank page is gone, and the sensation of progress is strong. That sensation is not evidence, and a few weeks in it is worth checking whether the time actually came back.</p>'
+						. '<h3>Count the whole loop</h3>'
+						. '<p>The honest measure is not how long the model took. It is prompt-writing plus reading plus editing plus verifying, against how long the task took before. People consistently count the first part and forget the last three — which is how a task that now takes longer feels faster.</p>'
+						. '<h3>Three outcomes, and two of them are wins</h3>'
+						. '<p><strong>Faster and as good</strong> — keep it, and consider setting it up properly. <strong>Same speed but better output</strong> — also a win, just a different one; be clear which you got. <strong>Faster but worse</strong> — the dangerous one, because it feels like success and the quality loss is invisible until someone else notices.</p>'
+						. '<h3>The honest test</h3>'
+						. '<p>Do the next one both ways. Write it yourself, then have AI draft it, and compare — not just the time, but which you would rather send. Half an hour, once, and it settles the question for that task permanently.</p>'
+						. '<h3>Beware the moving standard</h3>'
+						. '<p>The subtle risk is that your bar drops to meet the output. The AI draft is fine, so fine becomes the standard, and the good version you used to write quietly stops existing. Compare against what you used to produce, not against what the tool gives you.</p>'
+						. '<blockquote>Faster and worse is the most expensive outcome available, because nobody logs it and everybody feels productive.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Count prompting, reading, editing and verifying together. Distinguish faster from better. Test one task both ways. And compare against your old standard, not against the draft in front of you.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'When measuring time saved, what do people most often forget to count?',
+							'options'  => array(
+								'How long the model took to respond',
+								'Writing the prompt, reading, editing and verifying',
+								'The cost of the subscription',
+								'The number of attempts',
+							),
+							'answer'   => 1,
+							'hint'     => 'Everything either side of the generation.',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'Compare the output against what you ___ to produce, not against the draft in front of you.',
+							'answer_text' => 'used',
+							'accept'      => array( 'used to be able' ),
+							'hint'        => 'The standard can drift down.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'Faster but slightly worse output is a straightforward win.',
+							'answer'   => 1,
+							'hint'     => 'Who notices, and when?',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'Design the honest test for one task you now use AI for: what you would measure, how you would compare quality rather than only speed, and what result would make you stop using it.',
+							'rubric' => 'A strong answer measures the whole loop including editing and verification, compares quality using a concrete criterion — which version they would rather send, or a colleague\'s blind preference — and states a specific stopping condition rather than assuming the tool will win.',
+							'hint'   => 'Decide the stopping condition before you run it.',
+						),
+					),
+				),
+			),
+			'quiz'    => array(
+				'title'     => 'Getting time back — quiz',
+				'passing'   => 70,
+				'xp'        => 30,
+				'questions' => array(
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'Which task type is AI most reliably good at?',
+						'options'  => array(
+							'Recalling facts about your company',
+							'Reshaping information you supplied for a different audience',
+							'Making the decision itself',
+							'Predicting next quarter',
+						),
+						'answer'   => 1,
+					),
+					array(
+						'type'        => 'fill_blank',
+						'question'    => 'The honest measure counts prompting, reading, editing and ___ together.',
+						'answer_text' => 'verifying',
+						'accept'      => array( 'checking', 'verification' ),
+					),
+					array(
+						'type'     => 'true_false',
+						'question' => 'Catching up on a thread you joined late is a good use of a summarising prompt.',
+						'answer'   => 0,
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'The risk of a "moving standard" is that:',
+						'options'  => array(
+							'Prompts get longer over time',
+							'Your bar quietly drops to match the AI draft',
+							'The model changes version',
+							'Costs increase',
+						),
+						'answer'   => 1,
+					),
+				),
+			),
+		),
+
+		/* ---- Unit 4 ------------------------------------------------------ */
+		array(
+			'title'   => 'Working well with other people in the loop',
+			'lessons' => array(
+
+				array(
+					'title'   => 'When to say it was AI-assisted',
+					'type'    => 'reading',
+					'est_min' => 10,
+					'xp'      => 25,
+					'topics'  => array( 'Data safety at work', 'Email & writing' ),
+					'content' => '<h2>Nobody has settled this, so decide your own line</h2>'
+						. '<p>There is no established etiquette yet, and the vacuum makes people either over-disclose until it becomes noise, or never mention it and quietly worry. A consistent personal rule is better than either.</p>'
+						. '<h3>A workable principle</h3>'
+						. '<p>Disclose when the reader would reasonably assume a human did something a human did not — and when knowing would change how they read it.</p>'
+						. '<p>Nobody needs telling you used spellcheck. But a recommendation, an assessment, a piece of analysis, or a personal message carries an implicit claim about where it came from, and that claim is what disclosure protects.</p>'
+						. '<h3>Rough lines</h3>'
+						. '<p><strong>Usually no need</strong> — AI helped you edit, summarise for your own use, or draft something routine you then rewrote substantially. The judgement and the words are yours.</p>'
+						. '<p><strong>Usually say something</strong> — substantive analysis or research that AI produced, anything a reader might act on without checking, and creative work where authorship matters to the audience.</p>'
+						. '<p><strong>Always</strong> — where a policy, a client contract, an academic rule or a regulator requires it. Check rather than assume.</p>'
+						. '<h3>How to say it without making it strange</h3>'
+						. '<p>One clause, no ceremony. "I used AI to pull the first draft together from the reports; I have checked the figures." That tells the reader what was done and, more importantly, what you took responsibility for — which is the part they actually care about.</p>'
+						. '<blockquote>The question is not whether AI touched it. It is whether the reader would feel misled to find out.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Disclose when it would change how someone reads it or when a rule requires it, keep it to one plain clause, and make clear what you verified.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Which most clearly warrants disclosure?',
+							'options'  => array(
+								'AI helped tidy the grammar of your email',
+								'AI produced the analysis your colleague will act on without checking',
+								'AI summarised a document for your own reading',
+								'AI suggested a subject line you rewrote',
+							),
+							'answer'   => 1,
+							'hint'     => 'Would knowing change how they treat it?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'A disclosure should also make clear what you ___ before sending it on.',
+							'answer_text' => 'verified',
+							'accept'      => array( 'checked' ),
+							'hint'        => 'The part readers actually care about.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'Because there is no settled etiquette, it is best to disclose on absolutely everything.',
+							'answer'   => 1,
+							'hint'     => 'What happens to a signal used everywhere?',
+						),
+						array(
+							'type'     => 'short_answer',
+							'question' => 'Write your own disclosure rule in two sentences, and give one example each of something above and below your line.',
+							'rubric'   => 'A strong answer states a rule based on reader expectation or consequence rather than on how much AI was involved, and the two examples should genuinely sit on either side of it — showing the line has been thought about rather than asserted.',
+						),
+					),
+				),
+
+				array(
+					'title'   => 'Keeping the parts that are yours',
+					'type'    => 'practice',
+					'est_min' => 12,
+					'xp'      => 30,
+					'topics'  => array( 'Meeting notes', 'Email & writing', 'Data safety at work' ),
+					'content' => '<h2>Some things get worse when you delegate them</h2>'
+						. '<p>The productivity framing pushes toward handing over everything that can be handed over. Some tasks are genuinely worth doing slowly, and it is worth naming them before efficiency quietly erodes them.</p>'
+						. '<h3>Writing that is thinking</h3>'
+						. '<p>Some writing is transmission — a status update, a confirmation, a summary. Delegate it freely. Other writing is how you work out what you think: the argument you are constructing, the decision you are reasoning through. Hand that over and you get a document without having done the thinking, and you will notice the first time someone asks a follow-up question.</p>'
+						. '<h3>The message that is really a relationship</h3>'
+						. '<p>Condolences. Apologies. Difficult feedback. Thanks that means something. People can usually tell, and being able to tell is itself the injury — the message said you did not consider it worth your own words.</p>'
+						. '<h3>The skill you are still building</h3>'
+						. '<p>If you are learning to write well, or to structure an argument, or to work in a new domain, having a model do it produces good output and no learning. That is fine for something you will never need to do again, and a real cost for something central to your career. Notice which you are in.</p>'
+						. '<h3>The judgement itself</h3>'
+						. '<p>You can ask for options, arguments and things you might have missed — all of that helps you decide better. But the deciding is what you are there for, and the moment "the AI recommended it" enters your reasoning, something has gone wrong that the tool cannot fix.</p>'
+						. '<blockquote>Ask what you lose by not doing it yourself. For most tasks the answer is nothing, which is exactly why the exceptions are worth naming.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>You know where the hidden time is, how to measure honestly, when to disclose, and what to protect. Delegate transmission freely; keep the thinking, the relationships, the learning and the judgement.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Which writing is worth doing yourself even when AI could do it faster?',
+							'options'  => array(
+								'A routine status update',
+								'The argument you are using to work out what you actually think',
+								'A meeting summary for your own reference',
+								'A confirmation email',
+							),
+							'answer'   => 1,
+							'hint'     => 'Which one is the thinking, not the transmission?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'When you are still building a skill, delegating it produces good output and no ___.',
+							'answer_text' => 'learning',
+							'accept'      => array( 'practice', 'growth' ),
+							'hint'        => 'Fine for one-offs, costly for your core work.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'A message of condolence or apology is a good candidate for AI drafting because the wording is difficult.',
+							'answer'   => 1,
+							'hint'     => 'What does the recipient conclude if they can tell?',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'Write your own two lists: five things you will delegate to AI without hesitation, and four you will keep — with the reason for each of the four.',
+							'rubric' => 'A strong answer draws on the writer\'s real work, and the four reserved items should have distinct reasons — one because the writing is the thinking, one because it is a relationship, one because they are still learning that skill, and one because the judgement is theirs to make.',
+							'hint'   => 'Four different reasons, not four examples of the same one.',
+						),
+						array(
+							'type'     => 'reflection',
+							'question' => 'Is there anything you have already started delegating that you should take back? What made it easy to hand over?',
+							'rubric'   => 'A thoughtful answer names something specific and is honest about the pull that made it easy — time pressure, the output looking good enough, or the task feeling routine — rather than answering that everything is well balanced.',
+						),
+					),
+				),
+			),
+			'quiz'    => array(
+				'title'     => 'People in the loop — quiz',
+				'passing'   => 70,
+				'xp'        => 35,
+				'questions' => array(
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'The best test for whether to disclose AI assistance is:',
+						'options'  => array(
+							'How many words the model produced',
+							'Whether the reader would feel misled to find out',
+							'Whether it was a long task',
+							'Whether anyone asked',
+						),
+						'answer'   => 1,
+					),
+					array(
+						'type'        => 'fill_blank',
+						'question'    => 'Writing that is transmission can be delegated; writing that is ___ should not be.',
+						'answer_text' => 'thinking',
+						'accept'      => array( 'reasoning' ),
+					),
+					array(
+						'type'     => 'true_false',
+						'question' => 'Delegating a skill you are actively trying to build gives you output without the learning.',
+						'answer'   => 0,
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'Disclosing on absolutely everything is unhelpful because:',
+						'options'  => array(
+							'It is against most policies',
+							'A signal used everywhere stops carrying information',
+							'It takes too long to type',
+							'Readers dislike transparency',
+						),
+						'answer'   => 1,
 					),
 				),
 			),

@@ -21,7 +21,7 @@ return array(
 		. '<p>This short course shows you what Gemini is, how to combine words and pictures in a single prompt, and how to fold the tool into everyday work like drafting, summarising, and brainstorming. You will also learn its limits — when to double-check an answer and how to keep private information safe — so you can rely on it without being caught out.</p>',
 	'category'    => 'AI Tools',
 	'level'       => 'beginner',
-	'est_hours'   => 1,
+	'est_hours'   => 3,
 	'featured'    => false,
 	'certificate' => true,
 	'order'       => 3,
@@ -372,6 +372,326 @@ return array(
 					array(
 						'type'     => 'true_false',
 						'question' => 'It is fine to paste confidential customer records into any AI chat as long as the answer is useful.',
+						'answer'   => 1,
+					),
+				),
+			),
+		),
+
+		/* ---- Unit 3 ------------------------------------------------------ */
+		array(
+			'title'   => 'Working where your files already live',
+			'lessons' => array(
+
+				array(
+					'title'   => 'The advantage of being inside the suite',
+					'type'    => 'reading',
+					'est_min' => 11,
+					'xp'      => 25,
+					'topics'  => array( 'Everyday tasks', 'Gemini basics' ),
+					'content' => '<h2>The paste-and-download loop is where the time actually goes</h2>'
+						. '<p>Compare two ways of doing the same job. Open a document, select all, copy, switch tabs, paste into a chat, ask, copy the answer, switch back, paste, fix the formatting. Or: ask in the sidebar of the document you already have open.</p>'
+						. '<p>The second is not a better answer. It is the same answer without eight steps of clerical work — and across a week that difference dwarfs any prompting technique.</p>'
+						. '<h3>Where it pays most</h3>'
+						. '<ul>'
+						. '<li><strong>Long threads.</strong> Summarising a forty-message conversation you are joining late, without forwarding anything anywhere.</li>'
+						. '<li><strong>Documents you are already editing.</strong> Rewrite this section, tighten this paragraph, suggest a heading — in place.</li>'
+						. '<li><strong>Spreadsheets.</strong> Describing what you want and getting a formula beats searching for the syntax you half remember.</li>'
+						. '<li><strong>Recorded meetings.</strong> Notes and action items from something that already happened, with no transcript to shuttle around.</li>'
+						. '</ul>'
+						. '<h3>The trade you are making</h3>'
+						. '<p>Integration means the assistant can reach your material — which is convenient and is exactly why it is worth knowing what it may reach, and under whose account. Convenience and access are the same property viewed from two directions.</p>'
+						. '<p>Two habits follow. Know whether the assistant sees only the current file or your whole drive. And be careful in shared documents: something drafted in a file others have open is visible before you have reviewed it.</p>'
+						. '<blockquote>Judge a tool by the work it removes, not only by the quality of its answer. Eight steps of copy-paste is real work.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Integration wins by deleting the shuttling, most visibly on threads, live documents, spreadsheets and recordings — and the same access that makes it convenient is the thing to understand before using it.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'The main advantage of an assistant built into your document suite is:',
+							'options'  => array(
+								'It gives better answers than other assistants',
+								'It removes the copy-paste-switch loop around the answer',
+								'It is always free',
+								'It never makes mistakes',
+							),
+							'answer'   => 1,
+							'hint'     => 'What work disappears?',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'Convenience and access are separate properties — an integrated assistant is convenient without reaching more of your material.',
+							'answer'   => 1,
+							'hint'     => 'How does it reach the file you are editing?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'In a ___ document, AI-drafted text is visible to others before you have reviewed it.',
+							'answer_text' => 'shared',
+							'accept'      => array( 'collaborative' ),
+							'hint'        => 'Others may have it open.',
+						),
+						array(
+							'type'     => 'short_answer',
+							'question' => 'Name a task you currently do by copying between a document and a chat window. How many steps would integration remove, and what would you check before switching?',
+							'rubric'   => 'A strong answer counts the actual clerical steps removed and identifies a specific thing to check first — what the assistant can access, whether the document is shared, or whether the content is confidential — rather than only welcoming the convenience.',
+						),
+					),
+				),
+
+				array(
+					'title'   => 'When the answer needs to be current',
+					'type'    => 'practice',
+					'est_min' => 10,
+					'xp'      => 25,
+					'topics'  => array( 'Limits', 'Everyday tasks' ),
+					'content' => '<h2>"Does this thing look things up?" is the question people forget to ask</h2>'
+						. '<p>Some assistants search the web as they answer; some answer purely from training; some do either depending on how you ask. Not knowing which mode you are in produces a specific and avoidable failure: a confident answer about something that changed last month.</p>'
+						. '<h3>How to tell</h3>'
+						. '<p>Ask something that only a current source could answer — a price, a recent announcement, today\'s date in a specific place. If the answer arrives with links or a note about sources, you are searching. If it arrives smoothly with no sources at all, treat it as memory.</p>'
+						. '<h3>Searching does not mean correct</h3>'
+						. '<p>A retrieved answer inherits whatever it retrieved. A confidently wrong web page becomes a confidently wrong answer, now wearing a citation — which makes it more persuasive, not less. Two habits follow: read what the citation actually says rather than trusting that it supports the claim, and notice when the source is a forum post rather than the official documentation.</p>'
+						. '<h3>Ask for the source, always</h3>'
+						. '<p>"Give me the link for each claim" costs nothing and changes the answer\'s status entirely. An unlinked claim is something to verify; a linked one is something to check in ten seconds.</p>'
+						. '<h3>Where currency matters most</h3>'
+						. '<p>Prices, product features, regulations, anything involving a version number, and anything with a date in it. If your question has an implicit "right now" in it, the mode you are in is the whole question.</p>'
+						. '<blockquote>An answer with a citation is not verified. It is checkable — which is only an improvement if you check it.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Establish whether you are searching or remembering, ask for links by default, read what the source actually says, and treat anything time-sensitive as needing a current source.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'How can you tell whether an assistant is searching or answering from memory?',
+							'options'  => array(
+								'By how long the answer is',
+								'By asking something only a current source could answer and seeing whether sources appear',
+								'By the tone of the reply',
+								'By the time of day',
+							),
+							'answer'   => 1,
+							'hint'     => 'Test it with something time-sensitive.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'An answer that includes a citation has been verified.',
+							'answer'   => 1,
+							'hint'     => 'Checkable is not the same as checked.',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'A retrieved answer inherits the quality of whatever it ___.',
+							'answer_text' => 'retrieved',
+							'accept'      => array( 'found', 'read' ),
+							'hint'        => 'A wrong page becomes a wrong answer with a link.',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'Write a prompt for researching whether a software product meets four specific requirements, in a way that makes the answer checkable rather than merely confident.',
+							'rubric' => 'A strong answer names the four requirements explicitly, requires a source link per claim, instructs the assistant to distinguish official documentation from secondary sources, and directs it to say "not found" for any requirement it cannot evidence rather than inferring an answer.',
+							'hint'   => 'What should it do about a requirement it cannot evidence?',
+						),
+					),
+				),
+			),
+			'quiz'    => array(
+				'title'     => 'Integration and currency — quiz',
+				'passing'   => 70,
+				'xp'        => 30,
+				'questions' => array(
+					array(
+						'type'        => 'fill_blank',
+						'question'    => 'Ask for a ___ with each claim so an answer becomes checkable in seconds.',
+						'answer_text' => 'link',
+						'accept'      => array( 'source', 'citation' ),
+					),
+					array(
+						'type'     => 'true_false',
+						'question' => 'The same access that makes an integrated assistant convenient is what you should understand before using it.',
+						'answer'   => 0,
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'Which question most needs a current source rather than trained knowledge?',
+						'options'  => array(
+							'Explain what a spreadsheet pivot table is',
+							'What is this product\'s current pricing tier?',
+							'Rewrite this paragraph more simply',
+							'Summarise this document I pasted',
+						),
+						'answer'   => 1,
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'The clearest benefit of an in-suite assistant is that it:',
+						'options'  => array(
+							'Produces better prose',
+							'Removes the clerical work around the answer',
+							'Costs nothing',
+							'Never needs verification',
+						),
+						'answer'   => 1,
+					),
+				),
+			),
+		),
+
+		/* ---- Unit 4 ------------------------------------------------------ */
+		array(
+			'title'   => 'Making it stick without making a mess',
+			'lessons' => array(
+
+				array(
+					'title'   => 'Three tasks worth setting up properly',
+					'type'    => 'reading',
+					'est_min' => 10,
+					'xp'      => 25,
+					'topics'  => array( 'Everyday tasks', 'Multimodal' ),
+					'content' => '<h2>Everyone experiments. Very few people set anything up</h2>'
+						. '<p>The gap between people who get real value from these tools and people who find them "quite good" is not skill. It is that one group turned three tasks into a routine and the other kept improvising.</p>'
+						. '<h3>The three that repay setup for almost everyone</h3>'
+						. '<p><strong>1. The recurring summary.</strong> A long thread, a weekly report, a set of updates — anything you read regularly and extract the same kind of thing from. Write the prompt once, specifying exactly what you want pulled out, and use it every time.</p>'
+						. '<p><strong>2. The thing you always reformat.</strong> Notes into a standard structure, data into a table, technical detail into plain language. The shape never changes, only the content, which is precisely what a saved prompt is for.</p>'
+						. '<p><strong>3. The first draft you always rewrite anyway.</strong> Where you are going to edit heavily regardless, starting from a draft is strictly better than starting from nothing — and the editing was always the real work.</p>'
+						. '<h3>What "setting up properly" means</h3>'
+						. '<p>Write the prompt. Test it three times on real material. Fix the one thing that keeps going wrong. Save it where you will find it in a month — not in a note you will lose. That is twenty minutes, once.</p>'
+						. '<h3>What not to bother with</h3>'
+						. '<p>Anything you do once. Anything where you already know exactly what to write. Anything where checking would cost more than doing. Being deliberate about the exclusions is what stops this becoming a hobby.</p>'
+						. '<blockquote>Three tasks set up properly beat thirty tried once. The second group has more stories; the first group has the time back.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Set up the recurring summary, the standard reformat, and the draft you always rewrite. Test each three times, save it findably, and deliberately skip the rest.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Which task is worth turning into a saved routine?',
+							'options'  => array(
+								'A one-off letter you will never write again',
+								'The weekly summary you produce from the same kind of source every time',
+								'A sentence you already know how to write',
+								'A decision only you can make',
+							),
+							'answer'   => 1,
+							'hint'     => 'Repeating, same shape, different content.',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'Setting up properly means testing the prompt on ___ material a few times before relying on it.',
+							'answer_text' => 'real',
+							'accept'      => array( 'actual' ),
+							'hint'        => 'Not invented examples.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'It is worth setting up a routine for tasks where verifying the output costs more than doing the task.',
+							'answer'   => 1,
+							'hint'     => 'Count the checking.',
+						),
+						array(
+							'type'     => 'short_answer',
+							'question' => 'Name your three, and say what specifically you would ask for in the first one.',
+							'rubric'   => 'A strong answer names three genuinely recurring tasks fitting the summary, reformat and first-draft patterns, and gives a concrete specification for the first — what to extract, in what shape, and what to do with anything missing — rather than a general description.',
+						),
+					),
+				),
+
+				array(
+					'title'   => 'What stays yours',
+					'type'    => 'practice',
+					'est_min' => 11,
+					'xp'      => 30,
+					'topics'  => array( 'Limits', 'Gemini basics', 'Everyday tasks' ),
+					'content' => '<h2>The tool got faster. The responsibility did not move</h2>'
+						. '<p>The more useful these assistants become, the easier it is to let them creep from drafting into deciding. The line is worth drawing deliberately, once, rather than discovering where it was after crossing it.</p>'
+						. '<h3>What stays with you, always</h3>'
+						. '<ul>'
+						. '<li><strong>The facts.</strong> Anything the model was not given by you, going anywhere it matters, is yours to check.</li>'
+						. '<li><strong>The judgement.</strong> Whether to hire, what to prioritise, how to answer an unhappy customer, what you believe about a strategy. A draft can help you think; it cannot hold the opinion.</li>'
+						. '<li><strong>The relationship.</strong> An apology, a difficult conversation, a message to someone who is upset — people can usually tell, and being able to tell is the damage.</li>'
+						. '<li><strong>The accountability.</strong> Everything you send is yours, however it was drafted. There has never been a working version of "the AI wrote it".</li>'
+						. '</ul>'
+						. '<h3>The drift to watch for</h3>'
+						. '<p>It is gradual and reasonable at every step. Draft the email, then send it with a glance, then stop reading carefully, then use it for the difficult one too. No single step is wrong. The cumulative position is somewhere you would not have chosen.</p>'
+						. '<p>A simple test: could you defend this output in your own words if challenged? If not, you have not reviewed it — you have forwarded it.</p>'
+						. '<h3>Where this leaves you</h3>'
+						. '<p>You know what Gemini is, how multimodal prompts work, how to use it for everyday tasks, how to check its work, where integration helps, when currency matters, and what to set up. The last piece is the one that keeps all of it trustworthy.</p>'
+						. '<blockquote>Use it for everything it is good at. Keep the judgement, the relationships, and the accountability firmly in your own hands.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Facts, judgement, relationships and accountability stay yours. Watch for gradual drift, and use the defend-it-in-your-own-words test before anything leaves.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Which task should stay entirely with a person?',
+							'options'  => array(
+								'Drafting a routine status update',
+								'Apologising to an upset customer in a way that has to be sincere',
+								'Summarising a long thread',
+								'Reformatting notes into a table',
+							),
+							'answer'   => 1,
+							'hint'     => 'Which one is about the relationship?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'If you could not ___ the output in your own words when challenged, you forwarded it rather than reviewed it.',
+							'answer_text' => 'defend',
+							'accept'      => array( 'explain', 'justify' ),
+							'hint'        => 'A simple test before sending.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'Drift from drafting into deciding usually happens through one obviously wrong decision.',
+							'answer'   => 1,
+							'hint'     => 'Each step seems reasonable.',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'Write your own four lines: what you will always verify, what you will never delegate, what you will disclose, and what you remain accountable for — each specific to your actual job.',
+							'rubric' => 'A strong answer is concrete to the writer\'s work rather than generic: named categories of fact they must check, at least one specific task reserved for their own judgement, a stated disclosure threshold, and an unambiguous claim of personal accountability. "Be careful" does not meet the bar.',
+							'hint'   => 'Specific enough that you could check yourself against it.',
+						),
+						array(
+							'type'     => 'reflection',
+							'question' => 'Where in your own use is the line between drafting and deciding least clear — and how will you keep it visible?',
+							'rubric'   => 'A thoughtful answer identifies a genuine grey area in their own practice and proposes a concrete check, rather than asserting the line is always obvious.',
+						),
+					),
+				),
+			),
+			'quiz'    => array(
+				'title'     => 'What stays yours — quiz',
+				'passing'   => 70,
+				'xp'        => 35,
+				'questions' => array(
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'Three tasks set up properly beat thirty tried once because:',
+						'options'  => array(
+							'Setting up is more enjoyable',
+							'Routines return time every week; experiments return stories',
+							'Saved prompts are cheaper',
+							'The model prefers repetition',
+						),
+						'answer'   => 1,
+					),
+					array(
+						'type'     => 'true_false',
+						'question' => 'Everything you send remains yours, however it was drafted.',
+						'answer'   => 0,
+					),
+					array(
+						'type'        => 'fill_blank',
+						'question'    => 'The drift from drafting into deciding is dangerous because each individual step seems ___.',
+						'answer_text' => 'reasonable',
+						'accept'      => array( 'sensible', 'fine' ),
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'Which is NOT worth setting up as a routine?',
+						'options'  => array(
+							'A weekly summary from the same kind of source',
+							'A one-off letter you will never write again',
+							'Notes reformatted into a standard structure',
+							'A first draft you always rewrite anyway',
+						),
 						'answer'   => 1,
 					),
 				),

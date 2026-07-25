@@ -25,7 +25,7 @@ return array(
 	'track'       => 'chatgpt',
 	'level_rank'  => 4,
 	'level'       => 'expert',
-	'est_hours'   => 1,
+	'est_hours'   => 3,
 	'featured'    => false,
 	'certificate' => true,
 	'order'       => 7,
@@ -472,6 +472,336 @@ return array(
 							'It may be roughly break-even; measure both sides before scaling',
 							'Review time never matters',
 							'Abandon AI entirely',
+						),
+						'answer'   => 1,
+					),
+				),
+			),
+		),
+
+		/* ---- Unit 3 ------------------------------------------------------ */
+		array(
+			'title'   => 'The politics of adoption',
+			'lessons' => array(
+
+				array(
+					'title'   => 'Resistance is information, not obstruction',
+					'type'    => 'reading',
+					'est_min' => 12,
+					'xp'      => 30,
+					'topics'  => array( 'Team enablement', 'Workflow design' ),
+					'content' => '<h2>The people pushing back usually know something you do not</h2>'
+						. '<p>Every rollout meets resistance, and the standard response is to treat it as a communication problem — more training, better messaging, an enthusiastic email from a senior leader. That works when the objection is unfamiliarity. It fails completely when the objection is correct.</p>'
+						. '<h3>Four objections, and what each actually means</h3>'
+						. '<p><strong>"It gets things wrong."</strong> Usually true, and usually from someone who tried it on the hardest part of their job. They are not wrong about the tool; they are wrong about where it fits. Show them a task where it genuinely works, not a demo of the task they raised.</p>'
+						. '<p><strong>"It will replace us."</strong> Not a technical objection and cannot be answered with technical reassurance. If nobody will lose their job, say so plainly and specifically. If roles genuinely will change, say that instead — people forgive an uncomfortable truth far more readily than a comfortable evasion they later discover was one.</p>'
+						. '<p><strong>"I do not have time to learn it."</strong> The most reasonable objection on the list. Someone whose week is already full is being asked to spend hours now for savings later, on a promise. Take work away first, or accept that adoption will be slow among exactly the busiest people — who are often the ones you most wanted to reach.</p>'
+						. '<p><strong>"It is not allowed."</strong> Sometimes true and worth knowing. If your policy is genuinely unclear, that is your problem to fix before it is theirs.</p>'
+						. '<h3>The quiet resistance that matters more</h3>'
+						. '<p>Nobody argues. Everyone agrees in the meeting. Usage stays at nine people. Vocal objection is a gift because it is visible — silent non-adoption tells you the same thing, later, with no diagnosis attached. Watch usage, not sentiment.</p>'
+						. '<blockquote>If experienced people are refusing, assume first that they are right about something and find out what.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Sort objections by what they actually are. Answer the "wrong" objection with a better-fitting task, the job-security one honestly, the time one by removing work — and treat silence as the loudest signal on the list.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'An experienced colleague says the tool "gets things wrong". The best first response is:',
+							'options'  => array(
+								'Explain that all tools have limitations',
+								'Ask what they tried, and show a task where it genuinely fits',
+								'Send them more training material',
+								'Escalate to their manager',
+							),
+							'answer'   => 1,
+							'hint'     => 'They may be right about the task they chose.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'Vocal objection is a worse signal than a room that agrees and then does not use the tool.',
+							'answer'   => 1,
+							'hint'     => 'Which one comes with a diagnosis attached?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'Someone saying they have no time to learn it is often best answered by taking ___ away first.',
+							'answer_text' => 'work',
+							'accept'      => array( 'something', 'tasks' ),
+							'hint'        => 'They are being asked to invest hours on a promise.',
+						),
+						array(
+							'type'     => 'short_answer',
+							'question' => 'Your rollout has enthusiastic sign-up and almost no sustained use. What would you investigate, and in what order?',
+							'rubric'   => 'A strong answer treats the gap as a diagnosis problem rather than a motivation one: look at who used it once and stopped, ask those people specifically what happened, check whether the suggested tasks actually fit their work, and whether the time cost was real. It should avoid defaulting to more training or more communication.',
+						),
+					),
+				),
+
+				array(
+					'title'   => 'Finding and keeping the people who make it spread',
+					'type'    => 'practice',
+					'est_min' => 11,
+					'xp'      => 30,
+					'topics'  => array( 'Team enablement' ),
+					'content' => '<h2>Adoption spreads sideways, not downward</h2>'
+						. '<p>People adopt tools because a colleague they respect showed them something useful — not because leadership announced a programme. Which means your job is less about broadcasting and more about finding the handful of people whose example actually moves others, and making their life easy.</p>'
+						. '<h3>Who they are</h3>'
+						. '<p>Not necessarily the most technical, and rarely the most enthusiastic. The people who spread things are the ones others already ask for help. They are usually busy, which is exactly why they cannot also be your unpaid support desk.</p>'
+						. '<h3>What to give them</h3>'
+						. '<ul>'
+						. '<li><strong>Early access and real influence</strong> — being consulted before decisions, not informed after.</li>'
+						. '<li><strong>Something to show</strong> — one worked example from their own function, so they demonstrate rather than advocate.</li>'
+						. '<li><strong>Somewhere to send questions</strong> — so helping does not consume their week.</li>'
+						. '<li><strong>Visible credit</strong> — named, publicly. This costs nothing and is the most reliable thing on the list.</li>'
+						. '</ul>'
+						. '<h3>Share the failures too</h3>'
+						. '<p>A channel of nothing but wins is read as marketing and quietly ignored. "I tried this and it wasted an hour, here is why" builds far more credibility than another success story, and it saves everyone else the same hour. Post one yourself, early, so it is clearly allowed.</p>'
+						. '<h3>Watch for the burnout you caused</h3>'
+						. '<p>If one person is answering everything, your programme has a single point of failure and that person is being punished for helping. Rotate it, document the repeated questions, and notice when someone starts responding more slowly.</p>'
+						. '<blockquote>Find the four people others already ask for help. Everything else is amplification of what they do or do not do.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Adoption travels between peers. Equip the people others already trust, give them something to show rather than something to say, make failures publishable, and protect them from becoming the help desk.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'The most useful champions are usually:',
+							'options'  => array(
+								'The most technically skilled people',
+								'The people colleagues already go to for help',
+								'The most senior people',
+								'The most enthusiastic volunteers',
+							),
+							'answer'   => 1,
+							'hint'     => 'Whose example do people actually follow?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'A channel containing only successes reads as ___ and gets ignored.',
+							'answer_text' => 'marketing',
+							'accept'      => array( 'propaganda', 'advertising' ),
+							'hint'        => 'Post a failure yourself, early.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'One person answering all the questions is a healthy sign of engagement.',
+							'answer'   => 1,
+							'hint'     => 'What happens when they go on holiday, or burn out?',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'Name three people in your organisation you would equip first — by role, not necessarily by title — and for each say what specific worked example you would build with them and what you would give them in return.',
+							'rubric' => 'A strong answer picks people others already turn to rather than the most enthusiastic or senior, names a concrete task from each person\'s own function, and offers something real in return — early influence, visible credit, or protection from becoming the support desk — rather than just asking them to advocate.',
+							'hint'   => 'Something to show, not something to say.',
+						),
+					),
+				),
+			),
+			'quiz'    => array(
+				'title'     => 'The politics of adoption — quiz',
+				'passing'   => 70,
+				'xp'        => 35,
+				'questions' => array(
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'A team agrees enthusiastically in the meeting and usage stays flat. This tells you:',
+						'options'  => array(
+							'The message needs repeating',
+							'There is a real obstacle nobody said out loud',
+							'They need more senior encouragement',
+							'The tool is not capable enough',
+						),
+						'answer'   => 1,
+					),
+					array(
+						'type'     => 'true_false',
+						'question' => 'If roles genuinely will change, saying so plainly is better than reassurance people later discover was hollow.',
+						'answer'   => 0,
+					),
+					array(
+						'type'        => 'fill_blank',
+						'question'    => 'Adoption spreads ___ between peers rather than downward from announcements.',
+						'answer_text' => 'sideways',
+						'accept'      => array( 'laterally', 'horizontally' ),
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'Sharing a failure in a team channel is valuable mainly because:',
+						'options'  => array(
+							'It lowers expectations',
+							'It builds credibility and saves others the same wasted hour',
+							'It reduces usage',
+							'It satisfies compliance',
+						),
+						'answer'   => 1,
+					),
+				),
+			),
+		),
+
+		/* ---- Unit 4 ------------------------------------------------------ */
+		array(
+			'title'   => 'Governance that survives contact with reality',
+			'lessons' => array(
+
+				array(
+					'title'   => 'Writing a policy people will actually follow',
+					'type'    => 'reading',
+					'est_min' => 12,
+					'xp'      => 30,
+					'topics'  => array( 'Guardrails & data policy', 'Workflow design' ),
+					'content' => '<h2>Most AI policies fail the same way</h2>'
+						. '<p>They are long, they are written to protect the organisation rather than to help the reader, and they say "do not" without saying "instead". People read them once, conclude that everything interesting is forbidden, and carry on using their personal accounts where nobody can see.</p>'
+						. '<p>That last outcome is worse than a permissive policy. A prohibition that drives usage into the shadows removes your visibility along with your control.</p>'
+						. '<h3>What a usable policy contains</h3>'
+						. '<ul>'
+						. '<li><strong>Which tools are approved</strong>, by name. "Use approved tools" with no list is not a policy.</li>'
+						. '<li><strong>What must never go in</strong>, with concrete examples from your business rather than abstract categories.</li>'
+						. '<li><strong>What to do instead</strong> for each prohibition — the sanctioned route, and it must be genuinely usable.</li>'
+						. '<li><strong>Which decisions a human must make</strong>, named explicitly.</li>'
+						. '<li><strong>When to disclose AI involvement</strong> — internally and to customers.</li>'
+						. '<li><strong>Who to ask</strong> when the policy does not cover something, because it will not cover everything.</li>'
+						. '</ul>'
+						. '<h3>One page</h3>'
+						. '<p>If it does not fit on one page, it will not be read, and an unread policy provides documentation rather than protection. Everything else belongs in an appendix nobody needs on a normal day.</p>'
+						. '<h3>Widespread breach is a design signal</h3>'
+						. '<p>When most people are ignoring a rule, the useful question is not how to enforce it harder. It is what job they were trying to do, and why the sanctioned route was worse. Fix that and compliance follows; enforce harder and you get better concealment.</p>'
+						. '<blockquote>Every prohibition needs a workable alternative attached. Without one you have not banned a behaviour — you have hidden it.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Name the tools, give concrete examples, attach an alternative to every prohibition, keep it to a page, and treat mass non-compliance as feedback about the sanctioned route.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Why is a strict prohibition without an alternative often worse than a permissive policy?',
+							'options'  => array(
+								'It is harder to write',
+								'It drives usage into personal accounts where you have no visibility',
+								'It costs more to enforce',
+								'It slows down approvals',
+							),
+							'answer'   => 1,
+							'hint'     => 'Where does the behaviour go?',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'Widespread breach of a rule is best treated as an enforcement problem.',
+							'answer'   => 1,
+							'hint'     => 'What were people trying to do?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'A policy longer than one ___ will not be read, and an unread policy is documentation rather than protection.',
+							'answer_text' => 'page',
+							'accept'      => array( 'side' ),
+							'hint'        => 'Keep the rest in an appendix.',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'Write the one-page AI policy for your organisation: approved tools by name, what never goes in with examples from your actual business, the sanctioned alternative for each, decisions reserved for humans, the disclosure rule, and who to ask.',
+							'rubric' => 'A strong answer names specific tools, uses concrete examples from a real business rather than abstract categories, attaches a genuinely usable alternative to every prohibition, reserves named decisions for humans, and gives a real contact for uncovered cases. It should fit plausibly on one page and read as help rather than as legal protection.',
+							'hint'   => 'Every "do not" needs an "instead".',
+						),
+					),
+				),
+
+				array(
+					'title'   => 'When to stop, and how to say so',
+					'type'    => 'practice',
+					'est_min' => 12,
+					'xp'      => 35,
+					'topics'  => array( 'Measuring impact', 'Workflow design', 'Guardrails & data policy' ),
+					'content' => '<h2>The hardest thing an AI lead does is recommend not doing it</h2>'
+						. '<p>You have measured the impact, run the pilots, and built the guardrails. Some of what you tried has not worked, and there is enormous organisational pressure to describe it as a success anyway — budget was spent, expectations were set, and "AI initiative delivers modest results" is a headline nobody wants to write.</p>'
+						. '<p>Being the person who says so accurately is the whole basis of being trusted on the things that did work.</p>'
+						. '<h3>What "stop" looks like in evidence</h3>'
+						. '<ul>'
+						. '<li><strong>Time saved is inside the noise.</strong> If you cannot distinguish the improvement from an ordinary good week, it is not there.</li>'
+						. '<li><strong>Quality dropped and nobody logged it.</strong> Faster and worse is the most expensive outcome, because it accumulates silently.</li>'
+						. '<li><strong>The checking exceeds the doing.</strong> A workflow that needs verifying more carefully than doing it manually is a net loss.</li>'
+						. '<li><strong>Only its author uses it.</strong> After a fair run, that is a hobby, not a workflow.</li>'
+						. '</ul>'
+						. '<h3>How to report it</h3>'
+						. '<p>Lead with what you tried and what you learned, not with an apology. Separate the specific failure from the general question — "this workflow did not pay off, for these reasons" is a finding; "AI does not work for us" is a conclusion your evidence does not support. Name what you would need to see for it to be worth revisiting, and say what the money is better spent on now.</p>'
+						. '<h3>Retire it properly</h3>'
+						. '<p>Turn it off, tell the people who used it, and record why. An abandoned workflow left running is the worst outcome available: nobody maintains it and people still act on its output.</p>'
+						. '<h3>Where this leaves you</h3>'
+						. '<p>Across four rungs you have gone from asking better questions, to reliable structured output, to chained workflows and tools, to designing how an organisation adopts all of it. The last skill is the one that makes the rest trustworthy: honest reporting, including when the honest report is that this one did not work.</p>'
+						. '<blockquote>Your credibility is not built by the projects that worked. It is built the first time you say clearly that one did not.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Know the four stop signals, separate a specific failure from a general verdict, say what would change your mind, and turn the thing off properly.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Which is the most expensive failure mode of an AI workflow?',
+							'options'  => array(
+								'It is slower than expected',
+								'It is faster but the quality dropped without anyone recording it',
+								'It costs more than budgeted',
+								'Only some of the team use it',
+							),
+							'answer'   => 1,
+							'hint'     => 'Which one accumulates silently?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'A workflow needing more careful checking than doing the task manually is a net ___.',
+							'answer_text' => 'loss',
+							'accept'      => array( 'negative' ),
+							'hint'        => 'Count the verification time.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => '"This workflow did not pay off" and "AI does not work for us" are conclusions supported by the same evidence.',
+							'answer'   => 1,
+							'hint'     => 'One is a finding; the other is a generalisation.',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'Write the short report recommending that a six-month AI pilot be stopped: what was tried, what the evidence showed, what you would need to see to revisit it, and what you propose doing instead.',
+							'rubric' => 'A strong answer leads with the finding rather than an apology, cites specific evidence including time and quality, carefully separates this workflow\'s failure from any verdict on AI generally, states a concrete condition that would justify revisiting, and proposes a specific alternative use of the resource. It should also address turning the pilot off and informing its users.',
+							'hint'   => 'A finding, not an apology — and not a verdict on AI.',
+						),
+						array(
+							'type'     => 'reflection',
+							'question' => 'Having reached the top of this ladder, what is the single change you would make to how your organisation currently approaches AI — and what would make it hard?',
+							'rubric'   => 'A thoughtful answer names one specific change and is honest about the obstacle — political, resourcing, or cultural — rather than proposing an ideal state with no acknowledgement of what stands in its way.',
+						),
+					),
+				),
+			),
+			'quiz'    => array(
+				'title'     => 'Governance and honest reporting — quiz',
+				'passing'   => 70,
+				'xp'        => 40,
+				'questions' => array(
+					array(
+						'type'        => 'fill_blank',
+						'question'    => 'Every prohibition in an AI policy needs a workable ___ attached to it.',
+						'answer_text' => 'alternative',
+						'accept'      => array( 'instead', 'route' ),
+					),
+					array(
+						'type'     => 'true_false',
+						'question' => 'An abandoned workflow left running is worse than one that has been switched off and announced.',
+						'answer'   => 0,
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'If time saved cannot be distinguished from an ordinary good week, the honest reading is:',
+						'options'  => array(
+							'The measurement needs refining until it shows a gain',
+							'The benefit is not there',
+							'More training is needed',
+							'The pilot should run longer by default',
+						),
+						'answer'   => 1,
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'An AI lead\'s credibility is established most durably by:',
+						'options'  => array(
+							'The number of workflows launched',
+							'Saying clearly, the first time it happens, that something did not work',
+							'Enthusiasm in leadership updates',
+							'The size of the budget secured',
 						),
 						'answer'   => 1,
 					),

@@ -26,7 +26,7 @@ return array(
 	'track'       => 'machine-learning',
 	'level_rank'  => 1,
 	'level'       => 'beginner',
-	'est_hours'   => 1,
+	'est_hours'   => 3,
 	'featured'    => true,
 	'certificate' => true,
 	'order'       => 1,
@@ -378,6 +378,320 @@ return array(
 					array(
 						'type'     => 'true_false',
 						'question' => 'Testing a model on the same data it was trained on gives a reliable measure of how it will perform on new data.',
+						'answer'   => 1,
+					),
+				),
+			),
+		),
+
+		/* ---- Unit 3 ------------------------------------------------------ */
+		array(
+			'title'   => 'Where the difficulty actually lives',
+			'lessons' => array(
+
+				array(
+					'title'   => 'Garbage in, confident garbage out',
+					'type'    => 'reading',
+					'est_min' => 11,
+					'xp'      => 25,
+					'topics'  => array( 'Features & labels', 'Learning from data' ),
+					'content' => '<h2>Most failed ML projects fail at the data, not the model</h2>'
+						. '<p>The public story of machine learning is about algorithms. The working reality is that teams spend most of their time on data, and almost every project that quietly dies does so because the data could not support the question — not because the model was the wrong shape.</p>'
+						. '<h3>Four ways data betrays you</h3>'
+						. '<p><strong>Not enough of the thing you care about.</strong> Ten thousand transactions sounds like plenty until you notice only forty were fraudulent. The model learns almost nothing about fraud because it has barely seen any.</p>'
+						. '<p><strong>Labels that are actually opinions.</strong> If two people disagree about whether a ticket is "urgent", the model is being asked to learn a rule that does not exist. It will learn something — usually which labeller was busier that week.</p>'
+						. '<p><strong>The past does not look like the future.</strong> A model trained on pre-pandemic shopping predicts a world that stopped existing. Data has a shelf life, and nothing in the model tells you when it expired.</p>'
+						. '<p><strong>Missing in a way that means something.</strong> A blank income field is not random: it is often people who declined to say. Filling it with the average quietly invents a group that does not exist.</p>'
+						. '<blockquote>A model cannot learn what the data never recorded. It will still produce an answer — that is the dangerous part.</blockquote>'
+						. '<h3>The questions to ask before any modelling</h3>'
+						. '<ul>'
+						. '<li>How many examples of the <em>rare</em> outcome do we have? Not how many rows in total.</li>'
+						. '<li>Who created these labels, and would a second person agree with them?</li>'
+						. '<li>What period is this from, and what has changed since?</li>'
+						. '<li>Which fields are missing, and is the missingness itself informative?</li>'
+						. '</ul>'
+						. '<h3>Recap</h3>'
+						. '<p>Interrogate the data before reaching for a model. Volume is not coverage, labels are not facts, and the past is only a guide while the world holds still.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'A dataset has 10,000 loan applications, 40 of which defaulted. What is the real problem here?',
+							'options'  => array(
+								'The dataset is too small overall',
+								'There are very few examples of the outcome the model is meant to predict',
+								'Loan data cannot be modelled',
+								'The rows need reordering',
+							),
+							'answer'   => 1,
+							'hint'     => 'Count the examples of the thing you care about, not the rows.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'If two experts disagree on how to label an example, a model can still be expected to learn the "right" answer.',
+							'answer'   => 1,
+							'hint'     => 'What rule would it be learning?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'Filling blank income fields with the average quietly invents a group of people who do not ___.',
+							'answer_text' => 'exist',
+							'accept'      => array( 'exists' ),
+							'hint'        => 'Missing is often not random.',
+						),
+						array(
+							'type'     => 'short_answer',
+							'question' => 'You are asked to predict which employees will resign next quarter, using five years of HR records. Name two things about that data you would check before agreeing the project is feasible.',
+							'rubric'   => 'A strong answer raises concrete data concerns rather than modelling ones — how many resignations are actually in the data, whether the organisation or job market has changed over the five years, whether the reason-for-leaving field is reliably filled, and whether any field would only be known after someone had already resigned.',
+						),
+					),
+				),
+
+				array(
+					'title'   => 'When not to use machine learning',
+					'type'    => 'reading',
+					'est_min' => 10,
+					'xp'      => 25,
+					'topics'  => array( 'Learning from data', 'Types of ML' ),
+					'content' => '<h2>The most valuable ML skill is recognising the problems that are not ML problems</h2>'
+						. '<p>Machine learning earns its cost when a rule is genuinely hard to write down and the pattern is genuinely in the data. Plenty of problems meet neither condition, and reaching for a model there buys you complexity, opacity and a maintenance burden in exchange for nothing.</p>'
+						. '<h3>Use a rule instead when the rule exists</h3>'
+						. '<p>"Flag any invoice over £10,000 for approval" is a policy. It is exact, auditable, changeable in one line, and explainable to a regulator. A model that learns it from data will be approximately right and impossible to argue with. If you can write the rule down, write the rule down.</p>'
+						. '<h3>Be honest when the pattern is not there</h3>'
+						. '<p>Some things genuinely are close to unpredictable from the data you hold. A model asked to predict them will not refuse — it will find noise and present it as signal, and it will look convincing right up until it is deployed.</p>'
+						. '<h3>Think again when a wrong answer is expensive and unexplainable</h3>'
+						. '<p>In lending, hiring and medicine, "the model said so" is not an answer anyone accepts, and in several jurisdictions it is not one the law accepts either. If you cannot explain a decision to the person it affects, the technical accuracy is not the binding constraint.</p>'
+						. '<h3>Wait when the ground moves faster than you can retrain</h3>'
+						. '<p>A model learns yesterday. If your domain changes weekly and you can retrain monthly, you are always shipping a picture of a world that has moved.</p>'
+						. '<blockquote>Ask what a competent person with a spreadsheet would do. If they would do nearly as well, that is your baseline — and quite possibly your solution.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>ML is one tool. Rules beat it on clarity, honesty beats it on unpredictable problems, explainability beats it where decisions affect people, and nothing beats it when the world will not sit still.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Which of these is best solved with a written rule rather than a model?',
+							'options'  => array(
+								'Predicting which customers will churn',
+								'Flagging every invoice above a fixed approval threshold',
+								'Recognising objects in photographs',
+								'Recommending related articles',
+							),
+							'answer'   => 1,
+							'hint'     => 'Which one can you state exactly in a sentence?',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'Asked to predict something that is essentially unpredictable, a model will report that it cannot.',
+							'answer'   => 1,
+							'hint'     => 'What does it do with noise?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'In lending or hiring, a decision you cannot ___ to the person it affects is a problem regardless of accuracy.',
+							'answer_text' => 'explain',
+							'accept'      => array( 'justify' ),
+							'hint'        => 'Several jurisdictions require this.',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'A colleague proposes an ML model to decide which support tickets are urgent. Write the three questions you would ask before agreeing, and say what answer to each would make you recommend a rule instead.',
+							'rubric' => 'A strong answer asks whether urgency can be stated as a rule, whether existing urgency labels are consistent between people, and what the cost of a wrong call is and whether it must be explainable. For each it should name the answer that points to a rule — a statable policy, unreliable labels, or a decision that has to be defensible.',
+							'hint'   => 'You are deciding whether this is an ML problem at all.',
+						),
+					),
+				),
+			),
+			'quiz'    => array(
+				'title'     => 'Where the difficulty lives — quiz',
+				'passing'   => 70,
+				'xp'        => 30,
+				'questions' => array(
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'Most machine learning projects that quietly fail do so because of:',
+						'options'  => array(
+							'The wrong choice of algorithm',
+							'Data that cannot support the question being asked',
+							'Insufficient computing power',
+							'Poorly named variables',
+						),
+						'answer'   => 1,
+					),
+					array(
+						'type'     => 'true_false',
+						'question' => 'If you can state the rule exactly in a sentence, writing the rule is usually better than learning it.',
+						'answer'   => 0,
+					),
+					array(
+						'type'        => 'fill_blank',
+						'question'    => 'A model trained on data from a world that has since changed is shipping a picture of the ___.',
+						'answer_text' => 'past',
+						'accept'      => array( 'old world' ),
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'Ten thousand rows with forty positive cases is a problem mainly because:',
+						'options'  => array(
+							'Ten thousand rows is too few for any model',
+							'The model has barely seen the outcome it is meant to predict',
+							'Forty is not a round number',
+							'The data must be sorted first',
+						),
+						'answer'   => 1,
+					),
+				),
+			),
+		),
+
+		/* ---- Unit 4 ------------------------------------------------------ */
+		array(
+			'title'   => 'Reading ML claims like a professional',
+			'lessons' => array(
+
+				array(
+					'title'   => 'What an accuracy figure is hiding',
+					'type'    => 'reading',
+					'est_min' => 11,
+					'xp'      => 25,
+					'topics'  => array( 'Train/test split', 'Types of ML' ),
+					'content' => '<h2>You will be shown numbers. Here is how to read them</h2>'
+						. '<p>You do not need to build models to be useful here. You need to be the person in the room who asks the three questions that separate a real result from a demo.</p>'
+						. '<h3>1. Measured on what?</h3>'
+						. '<p>A score on the data the model trained on is not a result — it is a memory test. The only number that means anything is one measured on data the model has never seen. If nobody can tell you how the split was made, treat the figure as unverified.</p>'
+						. '<h3>2. Compared with what?</h3>'
+						. '<p>"92% accurate" means nothing on its own. If 92% of your cases are the same class, a model that always guesses that class scores 92% and does no work at all. Always ask what the trivial answer scores, because that is the bar.</p>'
+						. '<h3>3. Wrong in which direction?</h3>'
+						. '<p>Two models with identical accuracy can be opposites in practice: one misses real cases, the other raises false alarms. Which is worse depends entirely on the situation, and the single accuracy figure hides the choice completely.</p>'
+						. '<h3>The demo effect</h3>'
+						. '<p>Every model looks impressive on hand-picked examples. Ask to see it on the hard cases, the ambiguous ones, and a random sample nobody chose. Ask what happens on an input it was never designed for.</p>'
+						. '<blockquote>Three questions: on unseen data, versus what baseline, and wrong in which direction. Most inflated claims do not survive all three.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Insist on held-out data, a trivial baseline for comparison, and a breakdown of which kind of error the model makes.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'A vendor reports 99% accuracy. What is the single most useful follow-up question?',
+							'options'  => array(
+								'How many rows did you train on?',
+								'What does always predicting the majority class score on the same data?',
+								'Which programming language is it written in?',
+								'How long did training take?',
+							),
+							'answer'   => 1,
+							'hint'     => 'What is the bar the number has to clear?',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'A score measured on the training data is a valid measure of how a model will perform in production.',
+							'answer'   => 1,
+							'hint'     => 'What is being tested — learning or memory?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'Two models can have identical accuracy but be opposites in practice, because accuracy hides which ___ of error they make.',
+							'answer_text' => 'kind',
+							'accept'      => array( 'type', 'direction' ),
+							'hint'        => 'Missed cases versus false alarms.',
+						),
+						array(
+							'type'     => 'short_answer',
+							'question' => 'A supplier demos a model that spotted defects perfectly in five photographs they selected. What would you ask to see next, and why?',
+							'rubric'   => 'A strong answer asks for performance on a random or independently chosen sample, on deliberately hard or ambiguous cases, and on inputs outside the intended range — explaining that hand-picked examples demonstrate the best case rather than the expected one.',
+						),
+					),
+				),
+
+				array(
+					'title'   => 'Your first honest ML conversation',
+					'type'    => 'practice',
+					'est_min' => 11,
+					'xp'      => 30,
+					'topics'  => array( 'Learning from data', 'Features & labels', 'Train/test split' ),
+					'content' => '<h2>Turning the whole course into one useful habit</h2>'
+						. '<p>Whether you commission ML, work beside it, or are simply in the room, the same short frame turns a vague idea into a conversation that goes somewhere.</p>'
+						. '<h3>The five questions, in order</h3>'
+						. '<ol>'
+						. '<li><strong>What decision changes?</strong> If no decision or action changes because of the prediction, there is no project — only a dashboard.</li>'
+						. '<li><strong>What exactly is being predicted, and when?</strong> "Churn" is not a target. "Will this customer cancel within 30 days, judged at the moment of their renewal date" is.</li>'
+						. '<li><strong>What would we know at that moment?</strong> Every input has to exist <em>before</em> the prediction is made. Anything recorded afterwards is a leak that makes the model look brilliant in testing and useless in production.</li>'
+						. '<li><strong>What does the trivial answer achieve?</strong> Always-no, or one obvious rule. That is the number to beat, and it is often uncomfortably high.</li>'
+						. '<li><strong>What happens when it is wrong?</strong> Who is affected, who notices, and what is the recourse?</li>'
+						. '</ol>'
+						. '<h3>Why question three catches the most projects</h3>'
+						. '<p>Target leakage is the classic, and it is embarrassingly easy to fall into: predicting cancellations using a "cancellation reason" field, or predicting delivery delays using the actual delivery date. Both score beautifully. Neither can run, because at prediction time the field is empty.</p>'
+						. '<blockquote>Decision, target, timing, baseline, consequences. Five questions, and most doomed projects fail one of them out loud in the first meeting.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>You now know what ML is, what the types are, how the workflow runs, where it goes wrong, when not to use it at all, and how to read a claim. The five questions are how you use all of it.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Why must every input be available before the moment of prediction?',
+							'options'  => array(
+								'To save storage',
+								'Otherwise the model scores well in testing and cannot run in production',
+								'Because models read inputs alphabetically',
+								'To keep the dataset small',
+							),
+							'answer'   => 1,
+							'hint'     => 'What is in that field at prediction time?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'Using a field that only exists after the outcome has happened is called target ___.',
+							'answer_text' => 'leakage',
+							'accept'      => array( 'leak' ),
+							'hint'        => 'Information from the future getting in.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'If no decision or action changes as a result of the prediction, there is still a worthwhile ML project.',
+							'answer'   => 1,
+							'hint'     => 'What is the prediction for?',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'Take a prediction someone in your organisation has wished for and run the five questions over it in writing: the decision that changes, the exact target and its timing, what is known at that moment, the trivial baseline, and what happens when it is wrong.',
+							'rubric' => 'A strong answer states a target precise enough to be measured (an event and a time window), identifies at least one field that would be leakage and excludes it, proposes a concrete trivial baseline, and names who is affected by a wrong prediction and what their recourse is.',
+							'hint'   => 'Be strict about question three — it is the one that catches real projects.',
+						),
+						array(
+							'type'     => 'reflection',
+							'question' => 'Before this course, what did you assume machine learning was mostly about? What would you say now?',
+							'rubric'   => 'A thoughtful answer names a specific belief that changed — typically from algorithms and cleverness toward data quality, problem framing, and honest evaluation — rather than a general statement of having learned things.',
+						),
+					),
+				),
+			),
+			'quiz'    => array(
+				'title'     => 'Reading ML claims — quiz',
+				'passing'   => 70,
+				'xp'        => 35,
+				'questions' => array(
+					array(
+						'type'        => 'fill_blank',
+						'question'    => 'A model score only means something when it is measured on data the model has never ___.',
+						'answer_text' => 'seen',
+						'accept'      => array( 'been shown' ),
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'Predicting cancellations using a "cancellation reason" field is an example of:',
+						'options'  => array( 'Good feature engineering', 'Target leakage', 'Overfitting', 'Class imbalance' ),
+						'answer'   => 1,
+					),
+					array(
+						'type'     => 'true_false',
+						'question' => 'A single accuracy figure tells you whether a model tends to miss real cases or raise false alarms.',
+						'answer'   => 1,
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'Which is the strongest first question about any proposed ML project?',
+						'options'  => array(
+							'Which library will we use?',
+							'What decision changes because of this prediction?',
+							'How many GPUs do we need?',
+							'Can it run in the cloud?',
+						),
 						'answer'   => 1,
 					),
 				),

@@ -21,7 +21,7 @@ return array(
 		. '<p>You will learn which jobs Claude handles well, how to paste in a report and ask grounded questions about it, how to get answers in the exact shape you need, and the handful of habits that keep AI-assisted work trustworthy. No coding required — just clear thinking and a few reliable moves.</p>',
 	'category'    => 'AI Tools',
 	'level'       => 'beginner',
-	'est_hours'   => 1,
+	'est_hours'   => 3,
 	'featured'    => false,
 	'certificate' => true,
 	'order'       => 2,
@@ -373,6 +373,325 @@ return array(
 							'A customer\'s password and personal records',
 						),
 						'answer'   => 3,
+					),
+				),
+			),
+		),
+
+		/* ---- Unit 3 ------------------------------------------------------ */
+		array(
+			'title'   => 'Getting the best out of long context',
+			'lessons' => array(
+
+				array(
+					'title'   => 'Working across many documents at once',
+					'type'    => 'reading',
+					'est_min' => 11,
+					'xp'      => 25,
+					'topics'  => array( 'Long documents', 'Structured output' ),
+					'content' => '<h2>A large window changes what you can ask</h2>'
+						. '<p>Claude\'s long context is usually described as "you can paste more". The more interesting consequence is that you can ask questions no single document answers — comparisons, contradictions, and gaps across a whole set of material.</p>'
+						. '<h3>Questions that need several documents at once</h3>'
+						. '<ul>'
+						. '<li><strong>Comparison</strong> — "Here are three supplier contracts. Where do their liability terms differ?"</li>'
+						. '<li><strong>Contradiction</strong> — "These four policy documents were written by different teams. Where do they conflict?"</li>'
+						. '<li><strong>Absence</strong> — "Against this checklist, what does this proposal fail to address?" Asking what is <em>missing</em> is genuinely hard for a human across a hundred pages and something a model does well.</li>'
+						. '<li><strong>Chronology</strong> — "From this email thread, reconstruct what was decided and when."</li>'
+						. '</ul>'
+						. '<h3>Label your sources</h3>'
+						. '<p>Paste four documents unlabelled and the answer will blend them. Wrap each one clearly — <code>&lt;contract_a&gt;…&lt;/contract_a&gt;</code> — and require the answer to say which document each point came from. Claude follows tagged structure well, and it makes the answer checkable, which is the real gain.</p>'
+						. '<h3>Do not assume uniform attention</h3>'
+						. '<p>Material at the beginning and end of a long context is used more reliably than material in the middle. So put the question <em>after</em> the documents, and for anything critical ask for the supporting quotation rather than trusting a summary of page 47.</p>'
+						. '<blockquote>The question that earns its place here is one you could not answer yourself in an afternoon: what conflicts, what is missing, what changed.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Use the window for cross-document questions, tag every source and require attribution, put the question last, and ask for quotations when it matters.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Which question genuinely needs several documents in context at once?',
+							'options'  => array(
+								'Summarise this one report',
+								'Where do these four policies contradict each other?',
+								'Rewrite this paragraph',
+								'Translate this page',
+							),
+							'answer'   => 1,
+							'hint'     => 'Which one cannot be answered from any single document?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'Wrap each pasted document in clear ___ so the answer can attribute every point to its source.',
+							'answer_text' => 'tags',
+							'accept'      => array( 'delimiters', 'labels', 'markers' ),
+							'hint'        => 'Something like <contract_a>.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'Material in the middle of a very long context is used as reliably as material at either end.',
+							'answer'   => 1,
+							'hint'     => 'Where should the question go?',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'Write the prompt for comparing three job applications against a role specification. Tag each source, state exactly what to compare, require attribution, and say what to do where the specification is silent.',
+							'rubric' => 'A strong answer tags the specification and each application separately, names the specific dimensions to compare rather than asking generally who is best, requires each claim to cite which document it came from, places the instruction after the documents, and tells the model to mark a criterion as not addressed rather than inferring it.',
+							'hint'   => 'Attribution is what makes the answer checkable.',
+						),
+					),
+				),
+
+				array(
+					'title'   => 'Claude alongside other tools',
+					'type'    => 'practice',
+					'est_min' => 10,
+					'xp'      => 25,
+					'topics'  => array( 'Claude basics', 'Responsible use' ),
+					'content' => '<h2>Loyalty to one assistant is a habit, not a strategy</h2>'
+						. '<p>People settle on one tool and use it for everything, which is understandable and mildly costly. The assistants have genuinely different shapes, and knowing roughly where each is strong saves more time than any prompting technique.</p>'
+						. '<h3>What tends to differ</h3>'
+						. '<p><strong>Context size and document handling.</strong> Some assistants comfortably take a book; others expect a chapter. This is the difference that most often decides the tool for a given task.</p>'
+						. '<p><strong>Live information.</strong> Some search the web by default, others answer from training unless you supply the material. Knowing which you are using prevents a whole category of confident staleness.</p>'
+						. '<p><strong>Integration.</strong> An assistant inside the suite where your documents already live saves the entire paste-and-download loop, which is often worth more than a marginally better answer.</p>'
+						. '<p><strong>Tone and default behaviour.</strong> They differ in verbosity, in willingness to hedge, and in how readily they push back. Largely preference — but it is your preference, and it is allowed to matter.</p>'
+						. '<h3>The habit worth building</h3>'
+						. '<p>When an answer disappoints and your prompt was sound, try the same prompt somewhere else before concluding the task is impossible. It takes thirty seconds and quite often just works.</p>'
+						. '<h3>What does not change</h3>'
+						. '<p>Every one of them invents facts it was not given, every one sounds equally confident doing it, and your obligations about confidential data apply identically to all. Switching tools changes the strengths, never the responsibilities.</p>'
+						. '<blockquote>Match the tool to the task, and keep the same verification habit whichever one you used.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Assistants differ in context, live access, integration and tone. Re-ask elsewhere when a sound prompt disappoints — and carry your verification and data rules across all of them unchanged.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Which difference between assistants most often decides which one to use for a task?',
+							'options'  => array(
+								'The colour of the interface',
+								'How much material it can take in one go and how it handles documents',
+								'The company that made it',
+								'The name of the model',
+							),
+							'answer'   => 1,
+							'hint'     => 'Think about what your task actually requires.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'Switching to a different assistant changes your obligations about confidential data.',
+							'answer'   => 1,
+							'hint'     => 'Which parts travel with you?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'Knowing whether your assistant searches the ___ prevents a whole category of confident staleness.',
+							'answer_text' => 'web',
+							'accept'      => array( 'internet' ),
+							'hint'        => 'Or answers from training alone.',
+						),
+						array(
+							'type'     => 'short_answer',
+							'question' => 'Name two tasks from your work and say which assistant characteristic would decide the tool for each.',
+							'rubric'   => 'A strong answer names two concrete tasks and ties each to a specific characteristic — context size for long-document work, live search for anything time-sensitive, integration where the files already live in a suite — rather than expressing a general preference.',
+						),
+					),
+				),
+			),
+			'quiz'    => array(
+				'title'     => 'Long context and tool choice — quiz',
+				'passing'   => 70,
+				'xp'        => 30,
+				'questions' => array(
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'Asking what a proposal FAILS to address is valuable because:',
+						'options'  => array(
+							'It is a short question',
+							'Spotting absence across many pages is hard for a human and suits a model well',
+							'Models prefer negative questions',
+							'It avoids hallucination entirely',
+						),
+						'answer'   => 1,
+					),
+					array(
+						'type'        => 'fill_blank',
+						'question'    => 'Put your question ___ a long pasted document, not before it.',
+						'answer_text' => 'after',
+						'accept'      => array( 'following' ),
+					),
+					array(
+						'type'     => 'true_false',
+						'question' => 'When a sound prompt disappoints, trying the same prompt in another assistant is a reasonable next step.',
+						'answer'   => 0,
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'Requiring the answer to name which document each point came from mainly:',
+						'options'  => array(
+							'Makes it longer',
+							'Makes it checkable against the sources',
+							'Reduces the cost',
+							'Speeds up the response',
+						),
+						'answer'   => 1,
+					),
+				),
+			),
+		),
+
+		/* ---- Unit 4 ------------------------------------------------------ */
+		array(
+			'title'   => 'From one-off answers to something you rely on',
+			'lessons' => array(
+
+				array(
+					'title'   => 'Projects, memory and reusable setups',
+					'type'    => 'reading',
+					'est_min' => 10,
+					'xp'      => 25,
+					'topics'  => array( 'Claude basics', 'Structured output' ),
+					'content' => '<h2>Stop re-explaining yourself every morning</h2>'
+						. '<p>If your first three messages each day set up the same context — who you are, what the company does, how you like output formatted — that setup belongs somewhere persistent rather than being retyped.</p>'
+						. '<h3>What to put in a persistent setup</h3>'
+						. '<p>The things that are true every time: your role and the audience you usually write for, the format you nearly always want, the vocabulary your organisation uses, and the standing instructions — flag uncertainty rather than filling gaps, ask before assuming, keep it under a page unless told otherwise.</p>'
+						. '<p>What does <em>not</em> belong there: anything specific to one task, and anything confidential you would not want persisting beyond a single conversation.</p>'
+						. '<h3>Group work by project, not by day</h3>'
+						. '<p>Where the tool supports it, keeping a body of work together — with its reference documents attached — means every conversation starts already knowing the background. The alternative is a chat history where finding last month\'s good answer is archaeology.</p>'
+						. '<h3>Review it occasionally</h3>'
+						. '<p>Standing instructions rot quietly. The preference you set in January because of one annoying answer may now be making every reply worse. Read them once a quarter; delete more than you add.</p>'
+						. '<blockquote>If you have typed it three times, it belongs in the setup. If it is in the setup and you cannot remember why, it probably should not be.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Persist what is always true, keep task-specific and confidential detail out of it, group work by project, and prune the standing instructions before they accumulate.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Which belongs in a persistent setup rather than a single conversation?',
+							'options'  => array(
+								'This week\'s sales figures',
+								'The output format you nearly always want',
+								'A specific customer\'s complaint',
+								'Today\'s meeting agenda',
+							),
+							'answer'   => 1,
+							'hint'     => 'What is true every time?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'Standing instructions rot quietly, so review them and delete more than you ___.',
+							'answer_text' => 'add',
+							'accept'      => array( 'keep' ),
+							'hint'        => 'A quarterly prune.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'Confidential details are a good thing to place in a persistent setup so you do not have to repeat them.',
+							'answer'   => 1,
+							'hint'     => 'How long does it persist?',
+						),
+						array(
+							'type'     => 'short_answer',
+							'question' => 'What are the three things you find yourself re-explaining most often? Write them as standing instructions.',
+							'rubric'   => 'A strong answer produces three instructions that are genuinely always-true rather than task-specific, phrased as directives the assistant can follow, and contains nothing confidential.',
+						),
+					),
+				),
+
+				array(
+					'title'   => 'A verification habit that fits a busy day',
+					'type'    => 'practice',
+					'est_min' => 11,
+					'xp'      => 30,
+					'topics'  => array( 'Responsible use', 'Long documents', 'Claude basics' ),
+					'content' => '<h2>The check has to be quick or it will not happen</h2>'
+						. '<p>Everyone agrees AI output should be verified. Almost nobody does it consistently, because the advice is usually "check everything" — which is unrealistic, so people check nothing and feel vaguely guilty.</p>'
+						. '<p>A habit that survives a real week has to be proportionate.</p>'
+						. '<h3>Three questions, twenty seconds</h3>'
+						. '<ol>'
+						. '<li><strong>Is there a fact here I did not supply?</strong> If no, the risk is low — the model was transforming material you gave it. If yes, that fact is the thing to check.</li>'
+						. '<li><strong>Does anything sound more certain than I know it to be?</strong> Sourceless authority — "studies show", "it is standard practice" — is the tell.</li>'
+						. '<li><strong>What is missing?</strong> The hardest, because absence is invisible. Ask the model directly: "what did you leave out, and what did you assume?" It answers this surprisingly well.</li>'
+						. '</ol>'
+						. '<h3>Scale it to the stakes</h3>'
+						. '<p>Internal note that only you will read: the twenty seconds is enough. Going to a customer or a decision-maker: check every specific. Something regulated, contractual or public: verify against the source properly, and have someone else read it.</p>'
+						. '<h3>Use the model against itself</h3>'
+						. '<p>"Which claims here are you least confident about?" is a genuinely useful question. It is not a guarantee — a model can be wrong about its own uncertainty — but it reliably surfaces the weakest parts first, which is exactly where to start looking.</p>'
+						. '<blockquote>Twenty seconds every time beats a thorough check you keep meaning to do.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>You know what Claude is strong at, how to feed it documents, how to get structured output, how to work across many sources, how to persist your setup — and now how to check the result in a way you will actually keep doing.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Which question best surfaces the risk in an AI answer?',
+							'options'  => array(
+								'Is it well written?',
+								'Is there a fact here I did not supply?',
+								'Is it long enough?',
+								'Did it use headings?',
+							),
+							'answer'   => 1,
+							'hint'     => 'Where does invention live?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'Asking the model what it left out and what it ___ is a fast way to surface omissions.',
+							'answer_text' => 'assumed',
+							'accept'      => array( 'guessed' ),
+							'hint'        => 'Absence is invisible otherwise.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'Asking a model which of its claims it is least confident about is a guarantee of finding the errors.',
+							'answer'   => 1,
+							'hint'     => 'Useful, but not a guarantee.',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'Write the follow-up message you would send after any substantial Claude answer, designed to surface its own weakest points before you act on the content.',
+							'rubric' => 'A strong answer asks for at least two of: which claims came from the supplied material versus the model\'s own knowledge, which claims it is least confident about, and what it left out or assumed. It should request a short, specific list rather than a general reassurance.',
+							'hint'   => 'One message you could reuse every time.',
+						),
+						array(
+							'type'     => 'reflection',
+							'question' => 'Which of this course\'s habits — supplying documents, structured output, cross-source questions, persistent setup, quick verification — will you actually keep, and why that one?',
+							'rubric'   => 'A thoughtful answer picks one and explains why it fits their real working pattern, rather than listing all of them as valuable.',
+						),
+					),
+				),
+			),
+			'quiz'    => array(
+				'title'     => 'Relying on it — quiz',
+				'passing'   => 70,
+				'xp'        => 35,
+				'questions' => array(
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'A verification habit fails in practice mainly because:',
+						'options'  => array(
+							'People do not care about accuracy',
+							'"Check everything" is unrealistic, so people check nothing',
+							'Models are too accurate to need it',
+							'It requires special tools',
+						),
+						'answer'   => 1,
+					),
+					array(
+						'type'        => 'fill_blank',
+						'question'    => 'If you have typed something three times, it belongs in the persistent ___.',
+						'answer_text' => 'setup',
+						'accept'      => array( 'instructions', 'settings' ),
+					),
+					array(
+						'type'     => 'true_false',
+						'question' => 'The amount of checking should scale with who will see the output and what it will be used for.',
+						'answer'   => 0,
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'The hardest thing to spot when reviewing an answer is:',
+						'options'  => array(
+							'A spelling mistake',
+							'Something relevant that was left out',
+							'A long paragraph',
+							'A missing heading',
+						),
+						'answer'   => 1,
 					),
 				),
 			),

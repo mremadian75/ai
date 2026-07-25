@@ -26,7 +26,7 @@ return array(
 	'track'       => 'chatgpt',
 	'level_rank'  => 1,
 	'level'       => 'beginner',
-	'est_hours'   => 1,
+	'est_hours'   => 3,
 	'featured'    => true,
 	'certificate' => true,
 	'order'       => 1,
@@ -390,6 +390,332 @@ return array(
 						'question'    => 'You should never paste ___ data such as passwords or customer records into a general consumer ChatGPT account.',
 						'answer_text' => 'sensitive',
 						'accept'      => array( 'private', 'confidential', 'personal' ),
+					),
+				),
+			),
+		),
+
+		/* ---- Unit 3 ------------------------------------------------------ */
+		array(
+			'title'   => 'The moves that separate casual users from confident ones',
+			'lessons' => array(
+
+				array(
+					'title'   => 'Steering a conversation instead of restarting it',
+					'type'    => 'reading',
+					'est_min' => 11,
+					'xp'      => 25,
+					'topics'  => array( 'Chat basics', 'Everyday workflows' ),
+					'content' => '<h2>Almost nobody gets it right first time. That is fine</h2>'
+						. '<p>Watch a confident user and you will notice they rarely write one perfect prompt. They write a decent one, look at what came back, and then <em>steer</em> — which is faster and produces better work than agonising over the opening message.</p>'
+						. '<h3>Four corrections that cover most cases</h3>'
+						. '<ul>'
+						. '<li><strong>"Half that length, keep the second point."</strong> Length and focus in one move, without re-explaining anything.</li>'
+						. '<li><strong>"Less formal — like explaining to a colleague over coffee."</strong> A comparison beats an adjective; "friendly" is vaguer than a situation.</li>'
+						. '<li><strong>"You have assumed we are B2C. We sell to hospitals. Redo it."</strong> Correct the wrong assumption directly rather than starting over.</li>'
+						. '<li><strong>"Give me three versions: one cautious, one direct, one warm."</strong> When you cannot describe what you want, choosing is easier than specifying.</li>'
+						. '</ul>'
+						. '<h3>Why staying in the conversation wins</h3>'
+						. '<p>Everything you have already established — the audience, the facts, the format, the three things you rejected — is still there. Starting a fresh chat throws all of it away and you rebuild it from memory, usually less completely.</p>'
+						. '<h3>When to start fresh anyway</h3>'
+						. '<p>Two cases. If the conversation has wandered a long way and the model keeps dragging in irrelevant earlier material, the context has become clutter. And if you are switching to a genuinely different task, a clean start is clearer than steering sideways.</p>'
+						. '<h3>Ask it to ask you</h3>'
+						. '<p>The most underused move of all: "Before you write anything, ask me the three questions that would most improve your answer." You will usually be asked something you had not thought to mention — and that missing detail was the reason your first attempt disappointed.</p>'
+						. '<blockquote>Do not write the perfect prompt. Write a good one, read what comes back, and correct one thing.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Steer rather than restart. Correct assumptions directly, compare rather than describe, ask for options when specifying is hard, and let it interview you when you are stuck.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'The reply is good but assumes the wrong audience. What is the fastest fix?',
+							'options'  => array(
+								'Start a brand-new chat and rewrite the prompt',
+								'Say what the audience actually is and ask for a redo',
+								'Ask for it to be shorter',
+								'Try a different AI tool',
+							),
+							'answer'   => 1,
+							'hint'     => 'Correct the assumption without discarding everything else.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'Starting a fresh chat is usually the best response to an answer that is close but not right.',
+							'answer'   => 1,
+							'hint'     => 'What happens to the context you already built?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'When you cannot describe the tone you want, asking for three ___ lets you choose instead of specify.',
+							'answer_text' => 'versions',
+							'accept'      => array( 'options', 'variants' ),
+							'hint'        => 'Choosing is easier than describing.',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'You asked for a customer apology email and got something stiff, twice as long as you wanted, and assuming the customer is a consumer when they are a business buyer. Write the single follow-up message that fixes all three — without starting over.',
+							'rubric' => 'A strong answer is one continuation message that corrects the audience explicitly, gives a concrete length (a number, not "shorter"), and describes the tone by comparison to a situation rather than with a bare adjective. It should not re-supply context already given.',
+							'hint'   => 'One message, three corrections, no re-explaining.',
+						),
+					),
+				),
+
+				array(
+					'title'   => 'Working with files, images and voice',
+					'type'    => 'practice',
+					'est_min' => 11,
+					'xp'      => 25,
+					'topics'  => array( 'Everyday workflows', 'Chat basics' ),
+					'content' => '<h2>Most people only use the text box</h2>'
+						. '<p>ChatGPT accepts more than typing, and the other inputs are where a lot of the everyday time saving actually lives.</p>'
+						. '<h3>Files</h3>'
+						. '<p>Upload a document or spreadsheet and ask about its contents. This is the single best habit to build, because it moves you from the unreliable half of AI use to the reliable half: the material is now in front of the model instead of being remembered.</p>'
+						. '<p>Two cautions. A very long file may not be read in full detail — ask about specific sections rather than assuming page 40 got the same attention as page 1. And uploading is still sending, so the rules about confidential material apply exactly as before.</p>'
+						. '<h3>Images</h3>'
+						. '<p>Photograph a whiteboard after a workshop and ask for it as structured notes. Screenshot an error and ask what it means. Send a chart and ask what it shows. This works well for reading and describing — and less well for precise counting or exact measurement, so check anything numeric.</p>'
+						. '<h3>Voice</h3>'
+						. '<p>Speaking is roughly three times faster than typing, and rambling is fine — the model handles disorganised speech well. Talking through a problem on a walk and asking for structured notes at the end is a genuinely different way of working, not a gimmick.</p>'
+						. '<h3>Combining them is where it gets good</h3>'
+						. '<p>Photograph handwritten meeting notes, upload last quarter\'s report, and ask for a summary that connects the two. Neither input alone would have been enough.</p>'
+						. '<blockquote>If material exists as a file, a photo or a thought you can speak, you do not have to retype it. Retyping is the tax people pay for not knowing this.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Upload rather than paraphrase, photograph rather than transcribe, speak rather than type when it is faster — and keep checking anything numeric, whatever the input was.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Why is uploading a document better than describing what it says?',
+							'options'  => array(
+								'It uses fewer words',
+								'It moves the task from remembering to reading, which is the reliable mode',
+								'Uploads are always free',
+								'The model prefers files to text',
+							),
+							'answer'   => 1,
+							'hint'     => 'Which mode invents less?',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'Image understanding is reliable for exact counting and precise measurement.',
+							'answer'   => 1,
+							'hint'     => 'What should you always check?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'Confidentiality rules apply to uploads exactly as they do to pasted text, because uploading is still ___.',
+							'answer_text' => 'sending',
+							'accept'      => array( 'sharing', 'transferring' ),
+							'hint'        => 'The file leaves your machine.',
+						),
+						array(
+							'type'     => 'short_answer',
+							'question' => 'Describe one task from your week where uploading a file or photo instead of typing would have saved real time — and say what you would ask for.',
+							'rubric'   => 'A strong answer names a concrete task where the material already exists in another form (a document, spreadsheet, whiteboard photo or screenshot), states the specific request that would be made of it, and shows awareness of whether the content is confidential.',
+						),
+					),
+				),
+			),
+			'quiz'    => array(
+				'title'     => 'Confident everyday use — quiz',
+				'passing'   => 70,
+				'xp'        => 30,
+				'questions' => array(
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'Which follow-up is most likely to improve a disappointing answer?',
+						'options'  => array(
+							'"Make it better."',
+							'"Half that length, and the reader is a hospital procurement manager."',
+							'"Try again."',
+							'"That was wrong."',
+						),
+						'answer'   => 1,
+					),
+					array(
+						'type'        => 'fill_blank',
+						'question'    => 'Asking it to ___ you three clarifying questions before writing usually surfaces the detail you forgot to give.',
+						'answer_text' => 'ask',
+						'accept'      => array( 'put to' ),
+					),
+					array(
+						'type'     => 'true_false',
+						'question' => 'Uploading a document puts the material in front of the model instead of relying on its memory.',
+						'answer'   => 0,
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'A good reason to start a genuinely new chat is:',
+						'options'  => array(
+							'The answer needed one small correction',
+							'You are switching to a completely different task',
+							'You want a shorter reply',
+							'The tone was slightly off',
+						),
+						'answer'   => 1,
+					),
+				),
+			),
+		),
+
+		/* ---- Unit 4 ------------------------------------------------------ */
+		array(
+			'title'   => 'Making it a habit that lasts',
+			'lessons' => array(
+
+				array(
+					'title'   => 'Where it fits in a normal week',
+					'type'    => 'reading',
+					'est_min' => 10,
+					'xp'      => 25,
+					'topics'  => array( 'Everyday workflows', 'Custom instructions' ),
+					'content' => '<h2>The problem is not capability. It is remembering to use it</h2>'
+						. '<p>Most people finish a course like this convinced, use the tool enthusiastically for a week, and then drift back to old habits — not because it stopped working, but because reaching for it never became automatic.</p>'
+						. '<h3>Attach it to something you already do</h3>'
+						. '<p>New habits stick when they hang off existing ones. You already have a weekly report, a Monday inbox, a meeting that produces notes, a recurring type of customer question. Pick one and attach AI to it specifically — "after every client call, paste my notes and ask for the action items" is a habit. "Use AI more" is a resolution.</p>'
+						. '<h3>The four moments it usually pays</h3>'
+						. '<ul>'
+						. '<li><strong>Facing a blank page.</strong> Anything to react to beats nothing, even when you rewrite most of it.</li>'
+						. '<li><strong>Facing too much text.</strong> Long thread, long report, long document — summarise and extract.</li>'
+						. '<li><strong>Changing the shape of something.</strong> Notes to a table, prose to bullets, technical to plain.</li>'
+						. '<li><strong>Not understanding something.</strong> Ask for it at the level you actually need, then ask again if it is still not clear. It does not get impatient.</li>'
+						. '</ul>'
+						. '<h3>And the moments it does not</h3>'
+						. '<p>When you already know exactly what to write, typing it is faster than prompting for it and editing. When the answer must be exactly right and you cannot check it. When the thinking <em>is</em> the work — deciding what you believe is not a task to outsource.</p>'
+						. '<blockquote>Pick one recurring moment this week. One habit that sticks beats twenty experiments you abandon.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Attach it to an existing routine, learn the four moments where it reliably pays, and be honest about the ones where it does not.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Which is most likely to become a lasting habit?',
+							'options'  => array(
+								'"Use AI more this quarter."',
+								'"After every client call, paste my notes and ask for action items."',
+								'"Explore what AI can do."',
+								'"Try a new AI tool each week."',
+							),
+							'answer'   => 1,
+							'hint'     => 'Which one is attached to something you already do?',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'When you already know exactly what you want to write, prompting for it and editing is usually faster than just writing it.',
+							'answer'   => 1,
+							'hint'     => 'Count the editing time.',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'A new habit sticks best when it is attached to a routine you ___ have.',
+							'answer_text' => 'already',
+							'accept'      => array( 'currently' ),
+							'hint'        => 'Hang it off an existing hook.',
+						),
+						array(
+							'type'     => 'short_answer',
+							'question' => 'Name the one recurring moment in your week where you will use AI, and say exactly what will trigger it.',
+							'rubric'   => 'A strong answer names a specific recurring event and a concrete trigger-and-action pair, rather than a general intention. The trigger should be something that already reliably happens.',
+						),
+					),
+				),
+
+				array(
+					'title'   => 'Your personal AI ground rules',
+					'type'    => 'practice',
+					'est_min' => 11,
+					'xp'      => 30,
+					'topics'  => array( 'Limits & safety', 'Custom instructions', 'Everyday workflows' ),
+					'content' => '<h2>Five lines you write once and follow forever</h2>'
+						. '<p>Most people either use AI with no rules at all or follow a corporate policy they have never read. A short personal set — genuinely yours, genuinely followed — is worth more than either.</p>'
+						. '<h3>The five to decide now</h3>'
+						. '<ol>'
+						. '<li><strong>What I will never paste.</strong> Be specific: customer names and contact details, unreleased financials, anything under NDA, credentials. Vague rules get bent when you are busy.</li>'
+						. '<li><strong>What I always verify.</strong> Numbers, names, dates, quotations, anything with a source attached, and anything a client will see. Everything the model was not given by me.</li>'
+						. '<li><strong>Where I will not use it at all.</strong> The judgement calls that are your job — a performance review, a decision you own, an apology that should come from a person.</li>'
+						. '<li><strong>What I disclose.</strong> Decide your line — nobody expects a note on a spellcheck; most people would want to know if a substantive analysis was AI-drafted — and apply it consistently rather than case by case.</li>'
+						. '<li><strong>What I stay responsible for.</strong> Everything you send. There is no version of this where the tool is accountable.</li>'
+						. '</ol>'
+						. '<h3>Write them down</h3>'
+						. '<p>Rules you have only thought about are rules you will rationalise past on a bad afternoon. Written ones you can check in ten seconds.</p>'
+						. '<h3>The rest of the ladder</h3>'
+						. '<p>You now have the everyday foundation: how to ask, how to steer, what to upload, where it fails, and how to build the habit. The next rungs go further — getting reliably structured output you can paste into real work, then chaining prompts across long material, then leading how a whole team adopts it.</p>'
+						. '<blockquote>The people who get the most from AI are not the ones with the cleverest prompts. They are the ones who know exactly where their own judgement still has to do the work.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Decide the five, write them down, and keep the last one in view: you are accountable for everything you send, however it was drafted.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Which of these should always be on the "never paste" list?',
+							'options'  => array(
+								'A public press release',
+								'Your own rough draft',
+								'Customer names and contact details',
+								'A meeting agenda',
+							),
+							'answer'   => 2,
+							'hint'     => 'Which one is someone else\'s personal data?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'Anything the model was not given by you should be ___ before it goes anywhere.',
+							'answer_text' => 'verified',
+							'accept'      => array( 'checked' ),
+							'hint'        => 'Numbers, names, dates, quotations.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'If AI drafted something and it turns out to be wrong, responsibility is shared with the tool.',
+							'answer'   => 1,
+							'hint'     => 'Who pressed send?',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'Write your own five ground rules, filled in with specifics from your actual job — not generic advice. Make each one concrete enough that you could tell in ten seconds whether you had followed it.',
+							'rubric' => 'A strong answer is specific to the writer\'s work: named categories of data they handle, the particular things they must verify, at least one task they are explicitly reserving for their own judgement, a stated disclosure line, and an unambiguous statement of personal accountability. Generic phrasing such as "be careful with sensitive data" does not meet the bar.',
+							'hint'   => 'Specific enough to check in ten seconds.',
+						),
+						array(
+							'type'     => 'reflection',
+							'question' => 'What was the biggest thing you were doing wrong with ChatGPT before this course?',
+							'rubric'   => 'A thoughtful answer identifies one concrete prior habit — asking about things it was never given, accepting the first answer, restarting instead of steering, retyping material that could have been uploaded — rather than a general statement about improvement.',
+						),
+					),
+				),
+			),
+			'quiz'    => array(
+				'title'     => 'Making it a habit — quiz',
+				'passing'   => 70,
+				'xp'        => 35,
+				'questions' => array(
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'Which moment does AI reliably pay off in?',
+						'options'  => array(
+							'Deciding what you personally believe about a strategy',
+							'Turning a long thread into a summary with action items',
+							'Writing a sentence you already have fully in mind',
+							'Making a judgement call you own',
+						),
+						'answer'   => 1,
+					),
+					array(
+						'type'     => 'true_false',
+						'question' => 'Written ground rules are harder to rationalise past than ones you have only thought about.',
+						'answer'   => 0,
+					),
+					array(
+						'type'        => 'fill_blank',
+						'question'    => 'You remain ___ for everything you send, however it was drafted.',
+						'answer_text' => 'responsible',
+						'accept'      => array( 'accountable' ),
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'The strongest reason to attach AI use to an existing routine is that:',
+						'options'  => array(
+							'Routines are more important than new work',
+							'A habit hung off something you already do actually survives past week one',
+							'It uses fewer tokens',
+							'The model works better on schedule',
+						),
+						'answer'   => 1,
 					),
 				),
 			),

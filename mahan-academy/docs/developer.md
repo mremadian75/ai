@@ -123,6 +123,13 @@ honest cost of "additive" is that a lesson the owner deliberately deleted comes
 back; trashing is not a strong enough signal to distinguish that from "not seen
 yet", and never shipping new material is worse for every other site.
 
+**Course shape.** Every seed course is four units of two lessons, each unit
+closed by a quiz — 72 units, 144 lessons, 597 exercises and 281 quiz questions
+across the eighteen courses. The two later units of each course are
+deliberately not more of the introduction: they carry the material that makes
+the subject difficult (limits, failure diagnosis, cost, governance), which is
+what gives a course an arc rather than a length.
+
 **Course length is computed, never typed.** `Mahan_Seed::duration()` sums lesson
 minutes plus a flat budget per exercise (`MIN_PER_EXERCISE`) and per quiz
 question (`MIN_PER_QUIZ_Q`), because those are answered rather than read. It is

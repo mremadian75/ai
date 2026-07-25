@@ -26,7 +26,7 @@ return array(
 	'track'       => 'machine-learning',
 	'level_rank'  => 2,
 	'level'       => 'intermediate',
-	'est_hours'   => 2,
+	'est_hours'   => 3,
 	'featured'    => false,
 	'certificate' => true,
 	'order'       => 2,
@@ -394,6 +394,323 @@ return array(
 						'type'     => 'true_false',
 						'question' => 'A model that memorises its training data but performs poorly on new data is overfitting.',
 						'answer'   => 0,
+					),
+				),
+			),
+		),
+
+		/* ---- Unit 3 ------------------------------------------------------ */
+		array(
+			'title'   => 'Features: where models are actually made',
+			'lessons' => array(
+
+				array(
+					'title'   => 'Feature engineering, plainly',
+					'type'    => 'reading',
+					'est_min' => 12,
+					'xp'      => 25,
+					'topics'  => array( 'Regression', 'Classification' ),
+					'content' => '<h2>The model sees only what you put in front of it</h2>'
+						. '<p>A supervised model does not understand your business. It sees columns of numbers. <strong>Feature engineering</strong> is the work of turning what you know into columns the model can use — and on most real problems it moves the result more than swapping algorithms ever will.</p>'
+						. '<h3>A raw field is rarely a good feature</h3>'
+						. '<p>A timestamp is close to useless as a number. The same timestamp turned into <em>hour of day</em>, <em>day of week</em>, <em>is it a public holiday</em>, and <em>days since the customer last ordered</em> gives the model four things it can actually learn from. Nothing new was measured; the information was made visible.</p>'
+						. '<h3>Ratios beat raw counts more often than people expect</h3>'
+						. '<p>"Number of support tickets" mostly tells the model how big a customer is. "Tickets per user per month" tells it whether they are struggling. The second one is the question you meant.</p>'
+						. '<h3>Categories need a representation</h3>'
+						. '<p>A model cannot read "London". Encoding turns categories into numbers — but be careful: mapping cities to 1, 2, 3 implies that London is less than Manchester and that the midpoint of the two means something. It does not. One column per category avoids inventing an order that was never there.</p>'
+						. '<h3>Scale matters to many models</h3>'
+						. '<p>If salary runs to five digits and years-of-service to two, some algorithms will let salary drown the other out purely because the numbers are bigger. Putting features on a comparable scale is routine, cheap, and easy to forget.</p>'
+						. '<blockquote>Ask what a knowledgeable human would look at to make this judgement — then build the column that holds it. That question is most of feature engineering.</blockquote>'
+						. '<h3>The discipline that keeps it honest</h3>'
+						. '<p>Every feature must be computable at the moment the prediction is made, from information that exists then. It is remarkably easy to build a brilliant feature out of something that is only known afterwards.</p>'
+						. '<h3>Recap</h3>'
+						. '<p>Derive rather than dump. Prefer ratios where size would otherwise dominate, encode categories without implying an order, keep scales comparable, and check the timing of every input.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Which is the strongest feature for predicting whether a customer is struggling with a product?',
+							'options'  => array(
+								'Total support tickets ever raised',
+								'Support tickets per active user per month',
+								'The customer\'s account ID',
+								'The date the account was created, as a raw number',
+							),
+							'answer'   => 1,
+							'hint'     => 'Which one is not just a proxy for company size?',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'Mapping cities to the numbers 1, 2 and 3 is a safe way to give a model categorical information.',
+							'answer'   => 1,
+							'hint'     => 'What does the model infer from 1 < 2 < 3?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'If salary runs to five digits and years of service to two, features should be put on a comparable ___.',
+							'answer_text' => 'scale',
+							'accept'      => array( 'range' ),
+							'hint'        => 'Otherwise the bigger numbers dominate.',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'You are predicting whether a delivery will be late, and you have: order timestamp, warehouse, postcode, item weight, courier, and the customer\'s order history. Propose five derived features and say what each is meant to capture.',
+							'rubric' => 'A strong answer derives rather than lists — hour and day-of-week from the timestamp, distance or region from the postcode, the courier\'s recent late rate, warehouse load at order time, and something from history such as the customer\'s previous late rate. Each should be justified by what a knowledgeable human would look at, and all must be computable at order time.',
+							'hint'   => 'What would an experienced dispatcher glance at?',
+						),
+					),
+				),
+
+				array(
+					'title'   => 'Choosing the threshold is a business decision',
+					'type'    => 'practice',
+					'est_min' => 11,
+					'xp'      => 25,
+					'topics'  => array( 'Classification', 'Model evaluation' ),
+					'content' => '<h2>Most classifiers do not output a class. They output a probability</h2>'
+						. '<p>A fraud model does not say "fraud". It says 0.73. Something then has to decide that 0.73 counts as fraud — and that something is a <strong>threshold</strong> you choose, not a fact the model discovered.</p>'
+						. '<p>Almost everyone leaves it at 0.5 because that is the default. That default encodes a specific claim: that a missed case and a false alarm cost exactly the same. They almost never do.</p>'
+						. '<h3>Moving the dial</h3>'
+						. '<p>Lower the threshold and you catch more real cases and raise more false alarms — recall up, precision down. Raise it and the reverse. You cannot have both, and the model does not improve either way; you are choosing which error to make.</p>'
+						. '<h3>Price the two errors</h3>'
+						. '<p>Cancer screening: a missed case may be fatal, a false alarm means a follow-up test. Threshold goes low. Automatically blocking a customer\'s card: a false alarm strands someone at a checkout, a missed case is a chargeback the bank absorbs. Threshold goes higher. Same mathematics, opposite decision, and only the domain can settle it.</p>'
+						. '<h3>Do the arithmetic out loud</h3>'
+						. '<p>At a threshold catching 90% of fraud, you review 500 alerts a week for 60 real cases. At 70%, 120 alerts for 47 cases. If your team can review 150 a week, the second is not a compromise — it is the only one that runs. Capacity is part of the model.</p>'
+						. '<blockquote>The threshold is where the model stops and the organisation starts. Leaving it at the default is a decision, just an unexamined one.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Classifiers output probabilities; the cut-off is yours. Set it from the relative cost of the two errors and the capacity of whoever handles the output — never from the default.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Lowering a classifier\'s threshold from 0.5 to 0.3 will:',
+							'options'  => array(
+								'Improve both precision and recall',
+								'Catch more real cases and raise more false alarms',
+								'Make the model more accurate on unseen data',
+								'Have no effect without retraining',
+							),
+							'answer'   => 1,
+							'hint'     => 'You are choosing which error to make, not improving the model.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'A threshold of 0.5 is neutral — it makes no assumption about the relative cost of the two errors.',
+							'answer'   => 1,
+							'hint'     => 'What claim does treating them equally make?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'Most classifiers output a ___ rather than a class, and the cut-off is chosen by you.',
+							'answer_text' => 'probability',
+							'accept'      => array( 'score', 'probability score' ),
+							'hint'        => 'Something like 0.73.',
+						),
+						array(
+							'type'     => 'short_answer',
+							'question' => 'Your model flags suspicious expense claims. Finance can investigate about 30 a month. Explain how you would set the threshold, and what you would tell finance about what they are giving up.',
+							'rubric'   => 'A strong answer sets the threshold from review capacity — high enough that alerts fit within 30 a month — and is explicit about the trade: some genuine cases will go uninvestigated. It should propose measuring what is missed (sampling below the threshold, or tracking cases found by other means) rather than assuming the unflagged are clean.',
+						),
+					),
+				),
+			),
+			'quiz'    => array(
+				'title'     => 'Features and thresholds — quiz',
+				'passing'   => 70,
+				'xp'        => 30,
+				'questions' => array(
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'On most real problems, the biggest gains come from:',
+						'options'  => array(
+							'Switching to a more advanced algorithm',
+							'Better features built from what you know about the domain',
+							'Training for more epochs',
+							'Adding more columns of any kind',
+						),
+						'answer'   => 1,
+					),
+					array(
+						'type'     => 'true_false',
+						'question' => 'Choosing a classification threshold is a business decision, not a purely technical one.',
+						'answer'   => 0,
+					),
+					array(
+						'type'        => 'fill_blank',
+						'question'    => 'Every feature must be computable at the moment the ___ is made, from information available then.',
+						'answer_text' => 'prediction',
+						'accept'      => array( 'decision' ),
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'A team can review 150 alerts a week. A threshold producing 500 alerts is:',
+						'options'  => array(
+							'Better, because it catches more',
+							'Unworkable — capacity is part of the design',
+							'Irrelevant to the model',
+							'Fine if the model is accurate',
+						),
+						'answer'   => 1,
+					),
+				),
+			),
+		),
+
+		/* ---- Unit 4 ------------------------------------------------------ */
+		array(
+			'title'   => 'Validating like you mean it',
+			'lessons' => array(
+
+				array(
+					'title'   => 'Cross-validation and the split you got wrong',
+					'type'    => 'reading',
+					'est_min' => 12,
+					'xp'      => 25,
+					'topics'  => array( 'Model evaluation', 'Overfitting' ),
+					'content' => '<h2>One split can be lucky. Several cannot all be</h2>'
+						. '<p>Hold out 20% of the data, score on it, and you get a number. Do it again with a different 20% and you get a different number — sometimes markedly different, especially on smaller datasets. Neither is wrong; both are one sample of the model\'s behaviour.</p>'
+						. '<p><strong>Cross-validation</strong> removes the luck. Split the data into (say) five parts, train on four and test on the fifth, and rotate until each part has been the test set once. You end up with five scores. Their average is a better estimate, and their <em>spread</em> is the part people ignore: a model scoring 71, 89, 74, 91 and 70 has an average of 79 and is nothing you would deploy.</p>'
+						. '<h3>Three splits, not two</h3>'
+						. '<p>If you use the test set to choose between models, you have tuned to it, and its score is no longer an honest estimate — you have simply overfitted more slowly. The clean structure is three: <strong>train</strong> to fit, <strong>validation</strong> to make choices, and a <strong>test</strong> set opened once, at the end.</p>'
+						. '<h3>Random splitting is wrong more often than you think</h3>'
+						. '<p><strong>Time.</strong> If you are predicting the future, train on the past and test on what came after. A random split lets the model see next month while predicting last month, which flatters it enormously.</p>'
+						. '<p><strong>Groups.</strong> With several rows per customer, a random split puts the same customer in both sets. The model recognises the customer rather than learning the pattern. Split by customer instead.</p>'
+						. '<p><strong>Rarity.</strong> With a rare outcome, a careless split can leave almost none of it in the test set. Stratify so the proportions match.</p>'
+						. '<blockquote>An impossibly good score is not good news. It almost always means information reached the model that will not be there in production.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Average several folds and look at the spread. Keep a test set you open once. Split along time, groups or class proportions whenever a random split would leak.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Five-fold cross-validation gives scores of 71, 89, 74, 91 and 70. What is the right reading?',
+							'options'  => array(
+								'The model scores 79 and is ready',
+								'The wide spread means the result is unstable and not deployable as it stands',
+								'Discard the low folds and report 90',
+								'The folds were the wrong size',
+							),
+							'answer'   => 1,
+							'hint'     => 'The average is not the whole story.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'When predicting future events, splitting the data randomly is an acceptable way to build a test set.',
+							'answer'   => 1,
+							'hint'     => 'What does the model get to see?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'Choices between models should be made on the ___ set, keeping the test set for a single final measurement.',
+							'answer_text' => 'validation',
+							'accept'      => array( 'dev' ),
+							'hint'        => 'The middle one of the three.',
+						),
+						array(
+							'type'     => 'short_answer',
+							'question' => 'Your model predicting repeat purchases scores 0.97 — far above anything the team expected. What do you investigate first, and why?',
+							'rubric'   => 'A strong answer treats the surprise as suspicious rather than successful, and looks for leakage: a feature only known after the purchase, the same customer appearing in both train and test, or a split that ignores time. It should say why — an impossibly good score usually means information reached the model that will not exist in production.',
+						),
+					),
+				),
+
+				array(
+					'title'   => 'A model card for the model you built',
+					'type'    => 'practice',
+					'est_min' => 11,
+					'xp'      => 30,
+					'topics'  => array( 'Model evaluation', 'Classification', 'Regression' ),
+					'content' => '<h2>The document that makes a model safe to hand over</h2>'
+						. '<p>A trained model on its own is an artefact nobody else can judge. A <strong>model card</strong> is the short, honest document that travels with it — what it does, on whom, how well, and where it should not be used. The practice comes out of published research on responsible ML reporting, and it takes half an hour.</p>'
+						. '<h3>What goes in it</h3>'
+						. '<ul>'
+						. '<li><strong>Purpose</strong> — the exact prediction, and the decision it feeds.</li>'
+						. '<li><strong>Training data</strong> — what it was, from when, and who is represented in it.</li>'
+						. '<li><strong>Performance</strong> — the metrics that matter here, on held-out data, against the trivial baseline.</li>'
+						. '<li><strong>Performance by group</strong> — the same numbers broken down by the segments that matter. An overall figure can hide a model that works for the majority and fails for a minority, and that is exactly the failure you must not ship blind.</li>'
+						. '<li><strong>Threshold and why</strong> — the cut-off in use and the cost reasoning behind it.</li>'
+						. '<li><strong>Out of scope</strong> — the populations, regions or periods it was never validated on.</li>'
+						. '<li><strong>Owner and review date.</strong></li>'
+						. '</ul>'
+						. '<h3>The section that earns its place</h3>'
+						. '<p>Performance by group is the one people skip and the one that matters. A model at 88% overall can be 93% for one group and 61% for another. Both numbers are true; only one of them is in the headline; and the person in the second group experiences the model as broken.</p>'
+						. '<blockquote>If you cannot state where a model should <em>not</em> be used, you do not yet know enough about it to hand it to anyone.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Purpose, data, performance, performance by group, threshold, limits, owner. Write it while you still remember, not when someone finally asks.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Which model card section most often reveals a problem the headline metric hides?',
+							'options'  => array(
+								'The owner\'s name',
+								'Performance broken down by group',
+								'The training date',
+								'The file format',
+							),
+							'answer'   => 1,
+							'hint'     => 'An average can conceal two very different experiences.',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'A model card should state the populations and periods the model was never ___ on.',
+							'answer_text' => 'validated',
+							'accept'      => array( 'tested', 'evaluated' ),
+							'hint'        => 'The out-of-scope section.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'A model at 88% overall is necessarily performing acceptably for every group in the data.',
+							'answer'   => 1,
+							'hint'     => 'What can an average conceal?',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'Write a model card for a classifier that predicts which job applicants to shortlist. Cover purpose, training data, performance against a baseline, performance by group, the threshold and its justification, out-of-scope uses, and the owner.',
+							'rubric' => 'A strong answer names a specific target and the decision it feeds, is explicit about who is represented in the training data and who is not, reports against a trivial baseline, breaks performance down by at least one protected or otherwise material group, justifies the threshold in terms of the cost of each error, and states concrete out-of-scope conditions — different regions, roles or periods — rather than a generic caution.',
+							'hint'   => 'Hiring is exactly where the by-group section stops being optional.',
+						),
+						array(
+							'type'     => 'reflection',
+							'question' => 'Think of a model or automated score that has affected you personally. Which section of a model card would you most have wanted to read?',
+							'rubric'   => 'A thoughtful answer connects a specific personal experience to a specific section — typically performance for people like them, the threshold reasoning, or the out-of-scope limits — rather than answering in the abstract.',
+						),
+					),
+				),
+			),
+			'quiz'    => array(
+				'title'     => 'Validating like you mean it — quiz',
+				'passing'   => 70,
+				'xp'        => 35,
+				'questions' => array(
+					array(
+						'type'        => 'fill_blank',
+						'question'    => 'Rotating which part of the data is the test set, and averaging the results, is called cross-___.',
+						'answer_text' => 'validation',
+						'accept'      => array(),
+					),
+					array(
+						'type'     => 'true_false',
+						'question' => 'With several rows per customer, a random train/test split can let the model recognise the customer instead of learning the pattern.',
+						'answer'   => 0,
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'An unexpectedly excellent score should first be treated as:',
+						'options'  => array(
+							'A success worth announcing',
+							'A signal to hunt for leakage',
+							'A reason to reduce the training data',
+							'Proof the algorithm was well chosen',
+						),
+						'answer'   => 1,
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'The purpose of keeping a test set untouched until the end is to:',
+						'options'  => array(
+							'Save computation',
+							'Keep one honest estimate that your model choices have not tuned to',
+							'Make training faster',
+							'Satisfy a file-format requirement',
+						),
+						'answer'   => 1,
 					),
 				),
 			),

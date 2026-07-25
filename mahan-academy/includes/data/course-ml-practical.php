@@ -25,7 +25,7 @@ return array(
 	'track'       => 'machine-learning',
 	'level_rank'  => 3,
 	'level'       => 'advanced',
-	'est_hours'   => 2,
+	'est_hours'   => 3,
 	'featured'    => false,
 	'certificate' => true,
 	'order'       => 3,
@@ -405,6 +405,324 @@ return array(
 						'question'    => 'Watching a live model for a gradual drop in accuracy caused by changing data is watching for model ___.',
 						'answer_text' => 'drift',
 						'accept'      => array( 'drifting' ),
+					),
+				),
+			),
+		),
+
+		/* ---- Unit 3 ------------------------------------------------------ */
+		array(
+			'title'   => 'Life after deployment',
+			'lessons' => array(
+
+				array(
+					'title'   => 'Drift: the model was right last year',
+					'type'    => 'reading',
+					'est_min' => 12,
+					'xp'      => 30,
+					'topics'  => array( 'Deployment & monitoring' ),
+					'content' => '<h2>A deployed model quietly decays</h2>'
+						. '<p>Software either works or throws an error. A model does neither: it keeps returning confident answers while getting steadily worse, and nothing in the system raises its hand. This is <strong>drift</strong>, and it is the single most common way a successful ML project stops being one.</p>'
+						. '<h3>Two kinds, and they need different responses</h3>'
+						. '<p><strong>Data drift</strong> — the inputs change. A new marketing campaign brings in customers unlike any in the training data. The relationship the model learned may still hold; it is just being asked about a population it has never seen.</p>'
+						. '<p><strong>Concept drift</strong> — the relationship itself changes. What predicted churn before the competitor launched no longer predicts it after. The inputs may look entirely normal, which is what makes this the harder one to spot.</p>'
+						. '<h3>Why you cannot just watch accuracy</h3>'
+						. '<p>Accuracy needs the true answer, and the true answer usually arrives late — you learn whether a customer churned ninety days after you predicted it. By the time accuracy visibly falls, the model has been wrong for a quarter.</p>'
+						. '<p>So you monitor the things available immediately:</p>'
+						. '<ul>'
+						. '<li><strong>Input distributions.</strong> Has the average order value shifted? Has a category appeared that was not in training?</li>'
+						. '<li><strong>Prediction distribution.</strong> If the model flagged 3% of cases every week and is now flagging 11%, something changed even if you cannot yet say what.</li>'
+						. '<li><strong>Missingness.</strong> A field that was 2% empty and is now 40% empty usually means an upstream change nobody told you about.</li>'
+						. '<li><strong>Delayed ground truth</strong>, tracked as it arrives, so the accuracy picture builds continuously rather than in an annual review.</li>'
+						. '</ul>'
+						. '<blockquote>The failure mode is not an alarm. It is a model that keeps answering, keeps sounding certain, and is quietly wrong for months.</blockquote>'
+						. '<h3>Decide the response before you need it</h3>'
+						. '<p>Write down in advance what each signal triggers: investigate, retrain, or fall back to the rule the model replaced. A monitoring dashboard nobody has agreed thresholds for is a dashboard nobody acts on.</p>'
+						. '<h3>Recap</h3>'
+						. '<p>Models decay silently. Watch inputs, predictions and missingness because they are available now, track truth as it arrives, and agree the response to each signal before it fires.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Your churn model\'s inputs look completely normal, but it is now performing badly. What is the most likely explanation?',
+							'options'  => array(
+								'Data drift — the inputs have changed',
+								'Concept drift — the relationship between inputs and outcome has changed',
+								'The server is underpowered',
+								'The training set was too large',
+							),
+							'answer'   => 1,
+							'hint'     => 'Normal-looking inputs rules one of the two out.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'Monitoring accuracy alone is sufficient, because a decaying model shows up there first.',
+							'answer'   => 1,
+							'hint'     => 'When does the true answer arrive?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'A field that was 2% empty and is now 40% empty usually signals an ___ change nobody announced.',
+							'answer_text' => 'upstream',
+							'accept'      => array( 'up-stream', 'pipeline' ),
+							'hint'        => 'Something before your model in the chain.',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'Design the monitoring for a model that predicts, at checkout, whether an order will be returned. Ground truth arrives 30 days later. List the signals you would watch weekly, and for each state the threshold and the action it triggers.',
+							'rubric' => 'A strong answer distinguishes immediately available signals (input distributions, prediction rate, missingness, latency) from delayed ground truth, gives concrete thresholds rather than "if it changes a lot", and assigns each signal a specific action — investigate, retrain, or fall back — decided in advance.',
+							'hint'   => 'What can you measure today, not in thirty days?',
+						),
+					),
+				),
+
+				array(
+					'title'   => 'Retraining without breaking things',
+					'type'    => 'practice',
+					'est_min' => 11,
+					'xp'      => 25,
+					'topics'  => array( 'Deployment & monitoring', 'Baselines & tuning' ),
+					'content' => '<h2>The new model is better on average. That is not enough</h2>'
+						. '<p>Retraining feels routine — fresh data in, better numbers out, ship it. The risk is that "better on average" hides "worse on the cases that matter", and the people affected by those cases are precisely the ones who will notice.</p>'
+						. '<h3>Compare on a fixed benchmark, not just the new data</h3>'
+						. '<p>Keep a stable evaluation set that does not change with every retrain, so successive models are comparable at all. If the yardstick moves each time, you cannot tell improvement from a friendlier test.</p>'
+						. '<h3>Look at what moved, not just the average</h3>'
+						. '<p>Compare the two models case by case. Which predictions changed, and in which direction? A model that gains two points overall while losing five on your highest-value segment is a downgrade wearing an upgrade\'s numbers.</p>'
+						. '<h3>Ship it carefully</h3>'
+						. '<p><strong>Shadow mode</strong> runs the new model alongside the old on real traffic without acting on its output — you get true production behaviour at zero risk. Then a <strong>staged rollout</strong>: a small share of traffic, watched, before the rest. And a <strong>rollback</strong> you have actually tested, because the first time you try it should not be during an incident.</p>'
+						. '<h3>Know what you are running</h3>'
+						. '<p>Version the model, the data it was trained on, and the code that made it. When something goes wrong at 3am, "which model is live and what was it trained on?" must have an immediate answer.</p>'
+						. '<blockquote>Retraining is a deployment, not a refresh. It deserves the same care as any other change to production.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Fixed benchmark, per-segment comparison, shadow then staged rollout, a tested rollback, and versions recorded for model, data and code.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'A retrained model gains 2 points overall but loses 5 on your highest-value customer segment. This is:',
+							'options'  => array(
+								'An improvement — the average is what counts',
+								'Potentially a downgrade; the segment loss has to be weighed explicitly',
+								'Irrelevant, since segments are not modelled',
+								'A sign the benchmark is too small',
+							),
+							'answer'   => 1,
+							'hint'     => 'Who experiences the loss?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'Running a new model on live traffic without acting on its output is called ___ mode.',
+							'answer_text' => 'shadow',
+							'accept'      => array( 'shadowing' ),
+							'hint'        => 'It follows along without touching anything.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'A rollback procedure is fine to write down and test for the first time during an incident.',
+							'answer'   => 1,
+							'hint'     => 'When do you least want to discover it does not work?',
+						),
+						array(
+							'type'     => 'short_answer',
+							'question' => 'Your evaluation set is rebuilt from the most recent three months every time you retrain. Why is that a problem, and what would you change?',
+							'rubric'   => 'A strong answer identifies that a moving benchmark makes successive models incomparable — a score can rise because the test got easier — and proposes a stable held-out set kept fixed across retrains, optionally alongside a rolling recent set used separately to detect drift.',
+						),
+					),
+				),
+			),
+			'quiz'    => array(
+				'title'     => 'Life after deployment — quiz',
+				'passing'   => 70,
+				'xp'        => 35,
+				'questions' => array(
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'The characteristic danger of a decaying model is that it:',
+						'options'  => array(
+							'Throws errors that flood the logs',
+							'Keeps returning confident answers while getting steadily worse',
+							'Slows down noticeably',
+							'Refuses new inputs',
+						),
+						'answer'   => 1,
+					),
+					array(
+						'type'        => 'fill_blank',
+						'question'    => 'When the relationship between inputs and outcome changes, that is ___ drift.',
+						'answer_text' => 'concept',
+						'accept'      => array( 'model' ),
+					),
+					array(
+						'type'     => 'true_false',
+						'question' => 'A stable evaluation set kept fixed across retrains is what makes successive models comparable.',
+						'answer'   => 0,
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'Which pair is the safest way to put a retrained model into production?',
+						'options'  => array(
+							'Deploy to everyone at once, monitor afterwards',
+							'Shadow mode, then a staged rollout with a tested rollback',
+							'Deploy on a Friday evening',
+							'Replace the old model and delete it',
+						),
+						'answer'   => 1,
+					),
+				),
+			),
+		),
+
+		/* ---- Unit 4 ------------------------------------------------------ */
+		array(
+			'title'   => 'Fairness, explanation, and the handover',
+			'lessons' => array(
+
+				array(
+					'title'   => 'Bias is in the data before it is in the model',
+					'type'    => 'reading',
+					'est_min' => 12,
+					'xp'      => 30,
+					'topics'  => array( 'Deployment & monitoring', 'Problem framing' ),
+					'content' => '<h2>A model trained on past decisions reproduces past decisions</h2>'
+						. '<p>Machine learning finds patterns in history. Where that history contains human decisions, it contains their biases too — and the model will learn those as faithfully as anything else, then apply them at a scale and speed no human could.</p>'
+						. '<h3>Removing the field does not remove the problem</h3>'
+						. '<p>The common first instinct is to drop the sensitive attribute. It rarely works. Postcode carries ethnicity in many cities; a career gap carries parenthood; the name of a school carries class. A model with enough correlated features reconstructs what you removed, and now you cannot even measure what it is doing.</p>'
+						. '<p>Which is the deeper point: <strong>you have to keep the attribute to check for disparity, even when you forbid the model from using it.</strong> Blindness is not fairness; it is an inability to see the problem.</p>'
+						. '<h3>"Fair" is more than one thing, and they conflict</h3>'
+						. '<p>Equal accuracy across groups, equal false-positive rates, equal selection rates — these are different definitions, and it is mathematically impossible to satisfy all of them at once except in trivial cases. There is no setting that makes a model neutrally fair. You choose which definition matters here, say so, and defend it.</p>'
+						. '<h3>Where the label itself is the problem</h3>'
+						. '<p>The hardest case is when the target is a proxy. "Was arrested" is not "committed a crime"; "was promoted" is not "performed well". A model predicting the proxy predicts the process that produced it, including whatever was unfair about that process.</p>'
+						. '<blockquote>Ask what the label actually records. Often it records a decision somebody made, and the model is learning to imitate that person.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Bias enters through history, proxies and labels. Keep sensitive attributes so you can measure disparity, pick and justify a fairness definition, and interrogate what your target variable really encodes.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'Why is removing a sensitive attribute usually insufficient?',
+							'options'  => array(
+								'Models require every column to run',
+								'Correlated features reconstruct it, and you can no longer measure the disparity',
+								'It makes training slower',
+								'The file becomes invalid',
+							),
+							'answer'   => 1,
+							'hint'     => 'Think about postcode, career gaps, school names.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'A model can be made to satisfy every definition of fairness simultaneously if it is tuned carefully enough.',
+							'answer'   => 1,
+							'hint'     => 'The definitions conflict mathematically.',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => '"Was promoted" is a ___ for performance, and a model predicting it learns the promotion process too.',
+							'answer_text' => 'proxy',
+							'accept'      => array( 'substitute', 'stand-in' ),
+							'hint'        => 'It stands in for the thing you actually care about.',
+						),
+						array(
+							'type'     => 'short_answer',
+							'question' => 'A colleague says "we removed gender from the model, so it cannot be biased". Give the strongest correction you can, in two or three sentences.',
+							'rubric'   => 'A strong answer explains that other features act as proxies so the model can still differentiate, and adds the crucial second point: without the attribute retained for measurement, the team has lost the ability to detect the disparity at all. It should distinguish not using an attribute from not being able to see its effect.',
+						),
+					),
+				),
+
+				array(
+					'title'   => 'Explaining a model to the people it affects',
+					'type'    => 'practice',
+					'est_min' => 11,
+					'xp'      => 30,
+					'topics'  => array( 'Deployment & monitoring', 'Problem framing', 'Baselines & tuning' ),
+					'content' => '<h2>Three audiences, three explanations</h2>'
+						. '<p>"Explainability" is treated as one requirement. It is three, and an explanation aimed at the wrong audience satisfies nobody.</p>'
+						. '<h3>The person affected by the decision</h3>'
+						. '<p>They need one thing: what would have to be different for a different outcome. "Your application was declined; with six months more trading history it would likely be approved" is actionable. A list of feature weights is not. Where the law grants a right to explanation, this is the kind meant.</p>'
+						. '<h3>The person operating the model</h3>'
+						. '<p>A reviewer working through flagged cases needs to know why <em>this</em> case surfaced and how much to trust it — the main contributing factors, and the model\'s confidence. Enough to exercise judgement, not enough to drown in.</p>'
+						. '<h3>The person accountable for it</h3>'
+						. '<p>An auditor or regulator needs the system, not the case: what it optimises, what data it learned from, how it performs by group, what it must not be used for, who owns it. This is the model card from the previous rung, and it is the answer to most compliance questions.</p>'
+						. '<h3>The trap</h3>'
+						. '<p>A plausible-sounding explanation invites more trust than the prediction deserves. Feature-attribution tools are approximations, and a confidently rendered chart of "top factors" can make a shaky prediction look rigorous. State the confidence alongside the explanation, always.</p>'
+						. '<blockquote>Ask who is reading, and what they will do differently. An explanation nobody can act on is documentation, not explanation.</blockquote>'
+						. '<h3>Recap</h3>'
+						. '<p>Affected people need what to change; operators need why this case and how much to trust it; the accountable need the system-level record. Never let the explanation look more certain than the prediction.</p>',
+					'exercises' => array(
+						array(
+							'type'     => 'multiple_choice',
+							'question' => 'A customer declined for credit is best served by which explanation?',
+							'options'  => array(
+								'A ranked list of model feature weights',
+								'What would need to be different for a different outcome',
+								'The model\'s architecture',
+								'The training data size',
+							),
+							'answer'   => 1,
+							'hint'     => 'What can they act on?',
+						),
+						array(
+							'type'        => 'fill_blank',
+							'question'    => 'An explanation must never look more ___ than the prediction it accompanies.',
+							'answer_text' => 'certain',
+							'accept'      => array( 'confident' ),
+							'hint'        => 'Attribution tools are approximations.',
+						),
+						array(
+							'type'     => 'true_false',
+							'question' => 'An auditor and a flagged-case reviewer need the same kind of explanation.',
+							'answer'   => 1,
+							'hint'     => 'One asks about the system, one about this case.',
+						),
+						array(
+							'type'   => 'prompt_task',
+							'task'   => 'Your model decides which insurance claims get fast-tracked. Write the three explanations: one sentence for a claimant whose claim was not fast-tracked, a short block for the handler reviewing it, and the headings of the record you would give an auditor.',
+							'rubric' => 'A strong answer makes the claimant\'s version actionable and free of jargon, gives the handler the contributing factors plus a confidence signal so they can override, and lists system-level headings for the auditor — purpose, data, performance overall and by group, threshold, limits, owner. The three should be visibly different in kind, not the same content at three lengths.',
+							'hint'   => 'Ask what each person will do next with what you tell them.',
+						),
+						array(
+							'type'     => 'reflection',
+							'question' => 'Across this whole track — foundations, supervised learning, and this course — which idea would most change how your organisation currently approaches a data project?',
+							'rubric'   => 'A thoughtful answer names one specific idea (framing and leakage, baselines, thresholds as business decisions, drift monitoring, fairness measurement) and connects it to a concrete practice that would change, rather than praising the material generally.',
+						),
+					),
+				),
+			),
+			'quiz'    => array(
+				'title'     => 'Fairness and explanation — quiz',
+				'passing'   => 70,
+				'xp'        => 40,
+				'questions' => array(
+					array(
+						'type'     => 'true_false',
+						'question' => 'You should keep a sensitive attribute in your data for measurement even when the model is forbidden from using it.',
+						'answer'   => 0,
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'A model trained on historical hiring decisions primarily learns:',
+						'options'  => array(
+							'Who performs well in the role',
+							'Who past decision-makers chose',
+							'Objective candidate quality',
+							'Nothing useful at all',
+						),
+						'answer'   => 1,
+					),
+					array(
+						'type'        => 'fill_blank',
+						'question'    => 'The explanation an affected person needs is what would have to be ___ for a different outcome.',
+						'answer_text' => 'different',
+						'accept'      => array( 'changed' ),
+					),
+					array(
+						'type'     => 'multiple_choice',
+						'question' => 'Different fairness definitions (equal accuracy, equal false-positive rates, equal selection rates):',
+						'options'  => array(
+							'Are equivalent restatements of each other',
+							'Conflict, so you must choose one and justify it',
+							'Can all be satisfied by better tuning',
+							'Apply only to regression',
+						),
+						'answer'   => 1,
 					),
 				),
 			),

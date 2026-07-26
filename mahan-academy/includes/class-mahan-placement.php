@@ -158,28 +158,8 @@ class Mahan_Placement {
 	 * @return int[] original indices, in display order.
 	 */
 	public static function option_order( $key, $seed, $count ) {
-		$idx = range( 0, max( 0, (int) $count - 1 ) );
-		if ( $count < 2 ) {
-			return $idx;
-		}
-		// Seed from the question key too, so two questions in one sitting
-		// don't share a permutation.
-		$state = (int) $seed;
-		$k     = (string) $key;
-		for ( $i = 0; $i < strlen( $k ); $i++ ) {
-			$state = ( $state * 31 + ord( $k[ $i ] ) ) % 2147483647;
-		}
-		if ( $state <= 0 ) {
-			$state = 1;
-		}
-		for ( $i = count( $idx ) - 1; $i > 0; $i-- ) {
-			$state = ( $state * 1103515245 + 12345 ) % 2147483648;
-			$j     = $state % ( $i + 1 );
-			$tmp       = $idx[ $i ];
-			$idx[ $i ] = $idx[ $j ];
-			$idx[ $j ] = $tmp;
-		}
-		return $idx;
+		// Shared with unit quizzes, which have the same slot-bias problem.
+		return Mahan_Utils::option_order( $key, $seed, $count );
 	}
 
 	/**

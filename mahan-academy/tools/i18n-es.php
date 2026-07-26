@@ -844,6 +844,16 @@ return array(
 	'Passed a live assessment'         => 'Aprobó una evaluación en directo',
 	'Completed a course'               => 'Completó un curso',
 
+	/* --- Quizzes (v1.33.0) ----------------------------------------------- */
+	'Select all that apply'            => 'Selecciona todas las que correspondan',
+	'Select all that apply — %s are correct' => 'Selecciona todas las que correspondan: %s son correctas',
+	'Correct (tick every one)'         => 'Correctas (marca todas)',
+	'Explanation'                      => 'Explicación',
+	'Why this is the answer — shown after grading' => 'Por qué esta es la respuesta: se muestra tras la corrección',
+	'Why'                              => 'Por qué',
+	'Accepted — the exact answer is "%s".' => 'Aceptada: la respuesta exacta es «%s».',
+	'attempt %1$s · best %2$s%%'       => 'intento %1$s · mejor %2$s%%',
+
 	/* --- Today's plan + momentum (v1.32.0) ------------------------------- */
 	'Today'                            => 'Hoy',
 	'Also worth doing'                 => 'También vale la pena',

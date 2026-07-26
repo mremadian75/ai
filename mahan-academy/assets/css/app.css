@@ -1857,3 +1857,42 @@ div.mahan-lesson-row:active { transform: translateY(1px); }
 .mahan-momentum-delta.is-down { color: var(--m-danger); background: color-mix(in srgb, var(--m-danger) 14%, transparent); }
 .mahan-momentum-delta.is-flat { color: var(--m-muted); background: var(--m-surface-2); }
 .mahan-momentum-item.is-freeze { color: var(--m-info-text); font-weight: 600; }
+
+/* ====================================================================== */
+/* Quizzes: multi-select, explanations, typo notices (v1.33.0)            */
+/* ====================================================================== */
+
+.mahan-quiz-hint { margin: 0 0 8px; font-size: 13px; color: var(--m-muted); font-weight: 600; }
+
+/* A "select all that apply" must not look like a radio group, or learners
+   pick one and submit. Square corners plus a tick well say "several". */
+/* .mahan-ex-option is a plain block, so the tick well needs an explicit flex
+   context or it lays out on its own line as a bare vertical bar. */
+.mahan-quiz-opts.is-multi .mahan-ex-option {
+	display: flex; align-items: center; border-radius: var(--m-radius-sm);
+}
+.mahan-quiz-opts.is-multi .mahan-ex-option::before {
+	content: ""; flex: 0 0 auto; width: 16px; height: 16px; margin-inline-end: 10px;
+	border: 2px solid var(--m-border); border-radius: 4px; background: var(--m-surface);
+}
+.mahan-quiz-opts.is-multi .mahan-ex-option.is-chosen::before {
+	border-color: var(--m-primary); background: var(--m-primary);
+	box-shadow: inset 0 0 0 2px var(--m-surface);
+}
+
+.mahan-quiz-typo { margin: 8px 0 0; font-size: 13px; color: var(--m-warning-text); font-weight: 600; }
+
+/* The explanation appears only after grading — it is the payoff for having
+   answered, so it gets real presence rather than a footnote. */
+.mahan-quiz-explain {
+	display: flex; gap: 10px; margin: 10px 0 0; padding: 10px 12px;
+	border-radius: var(--m-radius-sm);
+	background: var(--m-surface-2); border: 1px solid var(--m-border);
+}
+.mahan-quiz-explain-label {
+	flex: 0 0 auto; font-size: 11px; font-weight: 800; text-transform: uppercase;
+	letter-spacing: .06em; color: var(--m-primary-text); padding-top: 2px;
+}
+.mahan-quiz-explain-body { font-size: 14px; line-height: 1.55; min-width: 0; }
+.mahan-quiz-explain-body :first-child { margin-top: 0; }
+.mahan-quiz-explain-body :last-child { margin-bottom: 0; }

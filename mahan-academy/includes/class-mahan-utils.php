@@ -139,4 +139,46 @@ class Mahan_Utils {
 		$out = preg_replace( '/\{\{[a-z0-9_]+\}\}/i', '', $out );
 		return $out;
 	}
+
+	/**
+	 * The order a question's options are shown in for a given sitting.
+	 *
+	 * Authored question banks drift toward putting the right answer in the same
+	 * slot — measured across this plugin's own catalog, 77% of multiple-choice
+	 * answers sat in option B, which means "always tap the second one" scored
+	 * 77% against a 70% pass mark. Permuting at serve time makes position carry
+	 * no information however the data is written.
+	 *
+	 * The permutation is derived from (key, seed) rather than stored, so
+	 * grading can reconstruct it with no server-side state between serving a
+	 * question and receiving its answer.
+	 *
+	 * @param string $key   Question key (so two questions in one sitting do not
+	 *                      share a permutation).
+	 * @param int    $seed  Sitting seed.
+	 * @param int    $count Number of options.
+	 * @return int[] Original indices, in display order.
+	 */
+	public static function option_order( $key, $seed, $count ) {
+		$idx = range( 0, max( 0, (int) $count - 1 ) );
+		if ( $count < 2 ) {
+			return $idx;
+		}
+		$state = (int) $seed;
+		$k     = (string) $key;
+		for ( $i = 0; $i < strlen( $k ); $i++ ) {
+			$state = ( $state * 31 + ord( $k[ $i ] ) ) % 2147483647;
+		}
+		if ( $state <= 0 ) {
+			$state = 1;
+		}
+		for ( $i = count( $idx ) - 1; $i > 0; $i-- ) {
+			$state = ( $state * 1103515245 + 12345 ) % 2147483648;
+			$j     = $state % ( $i + 1 );
+			$tmp       = $idx[ $i ];
+			$idx[ $i ] = $idx[ $j ];
+			$idx[ $j ] = $tmp;
+		}
+		return $idx;
+	}
 }

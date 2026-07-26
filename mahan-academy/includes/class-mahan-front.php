@@ -404,6 +404,14 @@ class Mahan_Front {
 			'searchCourses'    => __( 'Search courses…', 'mahan-academy' ),
 			'noResults'        => __( 'No courses match your search.', 'mahan-academy' ),
 			'clearFilters'     => __( 'Clear filters', 'mahan-academy' ),
+			// Quizzes.
+			'pickN'            => __( 'Select all that apply — %s are correct', 'mahan-academy' ),
+			'whyLabel'         => __( 'Why', 'mahan-academy' ),
+			/* translators: %s: the exact expected answer. */
+			'quizTypo'         => __( 'Accepted — the exact answer is "%s".', 'mahan-academy' ),
+			/* translators: 1: attempt number, 2: best score so far. */
+			'quizAttempts'     => __( 'attempt %1$s · best %2$s%%', 'mahan-academy' ),
+
 			'jumpBackIn'       => __( 'Jump back in', 'mahan-academy' ),
 			'nextUp'           => __( 'Next up:', 'mahan-academy' ),
 			'continueLearning' => __( 'Continue learning', 'mahan-academy' ),

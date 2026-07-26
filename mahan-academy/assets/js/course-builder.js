@@ -618,7 +618,7 @@
 			$q.append('<div class="mahan-cb-q-head"><strong>#' + (idx + 1) + '</strong> <button type="button" class="button-link mahan-cb-q-del">' + esc(t('remove', 'Remove')) + '</button></div>');
 
 			var $type = $('<select />');
-			[['multiple_choice', t('multiple_choice', 'Multiple choice')], ['true_false', t('true_false', 'True / False')], ['fill_blank', t('fill_blank', 'Fill in the blank')]].forEach(function (o) {
+			[['multiple_choice', t('multiple_choice', 'Multiple choice')], ['multi_select', t('multi_select', 'Select all that apply')], ['true_false', t('true_false', 'True / False')], ['fill_blank', t('fill_blank', 'Fill in the blank')]].forEach(function (o) {
 				var $o = $('<option/>').val(o[0]).text(o[1]);
 				if (o[0] === q.type) { $o.prop('selected', true); }
 				$type.append($o);
@@ -652,6 +652,34 @@
 				};
 				renderOpts();
 				$q.append(row(t('correct', 'Correct') + ' / ' + t('option', 'Option'), $opts));
+			} else if (q.type === 'multi_select') {
+				if (!Array.isArray(q.options)) { q.options = ['', '']; }
+				if (!Array.isArray(q.answers)) { q.answers = []; }
+				var $mopts = $('<div class="mahan-cb-q-opts" />');
+				var renderM = function () {
+					$mopts.empty();
+					q.options.forEach(function (text, i) {
+						var $r = $('<div class="mahan-cb-q-opt" />');
+						var $cb = $('<input type="checkbox" />').prop('checked', q.answers.indexOf(i) >= 0).on('change', function () {
+							var at = q.answers.indexOf(i);
+							if (this.checked && at < 0) { q.answers.push(i); }
+							if (!this.checked && at >= 0) { q.answers.splice(at, 1); }
+						});
+						var $inp = $('<input type="text" />').val(text).attr('placeholder', t('option', 'Option') + ' ' + (i + 1)).on('input', function () { q.options[i] = $(this).val(); });
+						var $rm = $('<button type="button" class="button-link">×</button>').on('click', function () {
+							q.options.splice(i, 1);
+							// Answer indices shift when an option is removed.
+							q.answers = q.answers.filter(function (a) { return a !== i; })
+								.map(function (a) { return a > i ? a - 1 : a; });
+							renderM();
+						});
+						$r.append($cb).append($inp).append($rm);
+						$mopts.append($r);
+					});
+					$mopts.append($('<button type="button" class="button button-secondary" />').text('+ ' + t('addOption', 'Add option')).on('click', function () { q.options.push(''); renderM(); }));
+				};
+				renderM();
+				$q.append(row(t('correctAll', 'Correct (tick every one)'), $mopts));
 			} else if (q.type === 'true_false') {
 				if (typeof q.answer !== 'number') { q.answer = 0; }
 				var $tf = $('<div class="mahan-cb-q-opts" />');
@@ -667,6 +695,12 @@
 				var $acc = $('<input type="text" />').val((q.accept || []).join(', ')).attr('placeholder', 'synonym1, synonym2').on('input', function () { q.accept = $(this).val().split(',').map(function (s) { return s.trim(); }).filter(Boolean); });
 				$q.append(row(t('alsoAccept', 'Also accept'), $acc));
 			}
+
+			// Shown to the learner only after the attempt is graded.
+			var $exp = $('<textarea rows="2" />').val(q.explain || '')
+				.attr('placeholder', t('explainPh', 'Why this is the answer — shown after grading'))
+				.on('input', function () { q.explain = $(this).val(); });
+			$q.append(row(t('explain', 'Explanation'), $exp));
 
 			$q.on('click', '.mahan-cb-q-del', function () { quiz.questions.splice(idx, 1); renderQuestions(); });
 			return $q;

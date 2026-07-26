@@ -68,9 +68,26 @@ is authored here — you should almost never need to leave this screen.
   units, or reorder whole units.
 - **Duplicate** / **Delete** from the row; the ↗ icon opens the lesson in the
   normal WordPress editor when you prefer it.
-- **Quiz / Add quiz** (per unit) opens the quiz editor — multiple-choice /
-  true-false / fill-blank questions, a passing score and XP. Learners see the
-  quiz card at the end of that unit.
+- **Quiz / Add quiz** (per unit) opens the quiz editor — a passing score, XP,
+  and four question types: multiple choice, **select all that apply**,
+  true/false, and fill-in-the-blank. Learners see the quiz card at the end of
+  that unit. Each question also takes an **Explanation** — the learner sees it
+  only after submitting, so it teaches without giving the answer away.
+
+  Two things the quiz engine does for you, worth knowing when you write
+  questions:
+
+  - **Answer order is shuffled for every learner, on every attempt.** You do
+    not need to vary where you put the right answer, and a learner who fails
+    cannot pass a retake by remembering the position. If an option set only
+    makes sense in order (e.g. it ends with "all of the above"), that
+    question can be marked to keep its order.
+  - **Fill-in-the-blank forgives one typo** on answers of six characters or
+    more, and tells the learner the exact spelling. Short answers and
+    case-sensitive ones are matched exactly.
+
+  "Select all that apply" is graded all-or-nothing, and learners are told how
+  many options are correct.
 
 Everything saves automatically as you edit — watch the "Saved" indicator. Only
 the lesson editor has an explicit **Save lesson** button, because a half-typed

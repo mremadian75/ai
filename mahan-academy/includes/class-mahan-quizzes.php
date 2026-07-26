@@ -17,8 +17,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class Mahan_Quizzes {
 
-	const TYPES       = array( 'multiple_choice', 'true_false', 'fill_blank' );
+	const TYPES        = array( 'multiple_choice', 'true_false', 'fill_blank', 'multi_select' );
 	const DEFAULT_PASS = 70;
+
+	/**
+	 * Fill-in-the-blank answers at least this long tolerate one typo.
+	 *
+	 * Short answers ("0", "RAG", "true") must stay exact — at three characters
+	 * a single edit reaches a genuinely different answer. Longer ones are being
+	 * marked wrong for a slipped key, which measures typing, not knowledge.
+	 */
+	const TYPO_MIN_LEN = 6;
 
 	/* ------------------------------------------------------------------ */
 	/* Storage                                                             */
@@ -108,7 +117,16 @@ class Mahan_Quizzes {
 				'key'      => isset( $q['key'] ) && '' !== trim( (string) $q['key'] ) ? sanitize_key( $q['key'] ) : 'q' . $i,
 				'type'     => $type,
 				'question' => isset( $q['question'] ) ? sanitize_textarea_field( (string) $q['question'] ) : '',
+				// Why the answer is the answer. Never served before grading;
+				// shown once the attempt is in, which is the moment a learner
+				// is actually receptive to it.
+				'explain'  => isset( $q['explain'] ) ? sanitize_textarea_field( (string) $q['explain'] ) : '',
 			);
+			// Escape hatch for the rare option set whose order carries meaning
+			// ("all of the above"). Everything else is permuted at serve time.
+			if ( ! empty( $q['no_shuffle'] ) ) {
+				$row['no_shuffle'] = 1;
+			}
 			if ( 'multiple_choice' === $type ) {
 				$opts = isset( $q['options'] ) && is_array( $q['options'] ) ? array_values( array_map( 'sanitize_text_field', $q['options'] ) ) : array();
 				if ( count( $opts ) < 2 ) {
@@ -116,6 +134,28 @@ class Mahan_Quizzes {
 				}
 				$row['options'] = $opts;
 				$row['answer']  = isset( $q['answer'] ) ? max( 0, min( count( $opts ) - 1, (int) $q['answer'] ) ) : 0;
+			} elseif ( 'multi_select' === $type ) {
+				$opts = isset( $q['options'] ) && is_array( $q['options'] ) ? array_values( array_map( 'sanitize_text_field', $q['options'] ) ) : array();
+				if ( count( $opts ) < 2 ) {
+					continue;
+				}
+				$raw = isset( $q['answers'] ) && is_array( $q['answers'] ) ? $q['answers'] : array();
+				$set = array();
+				foreach ( $raw as $a ) {
+					$a = (int) $a;
+					if ( $a >= 0 && $a < count( $opts ) ) {
+						$set[ $a ] = true;
+					}
+				}
+				$set = array_keys( $set );
+				sort( $set );
+				// A "select all that apply" with nothing correct cannot be
+				// answered; drop it rather than serve an unanswerable question.
+				if ( empty( $set ) ) {
+					continue;
+				}
+				$row['options'] = $opts;
+				$row['answers'] = $set;
 			} elseif ( 'true_false' === $type ) {
 				$row['options'] = array( __( 'True', 'mahan-academy' ), __( 'False', 'mahan-academy' ) );
 				$row['answer']  = ( isset( $q['answer'] ) && 1 === (int) $q['answer'] ) ? 1 : 0;
@@ -134,12 +174,18 @@ class Mahan_Quizzes {
 	/* ------------------------------------------------------------------ */
 
 	/**
-	 * Browser-safe representation: no correct answers.
+	 * Browser-safe representation: no correct answers, no explanations, and
+	 * options permuted for this sitting.
 	 *
-	 * @param array $def Quiz definition.
+	 * Nothing that decides or justifies the answer may leave the server before
+	 * the attempt is graded — an explanation sitting in the payload is a hint
+	 * anyone can read with the network tab open.
+	 *
+	 * @param array $def  Quiz definition.
+	 * @param int   $seed Sitting seed; 0 leaves the authored order alone.
 	 * @return array
 	 */
-	public static function public_quiz( $def ) {
+	public static function public_quiz( $def, $seed = 0 ) {
 		$questions = array();
 		foreach ( (array) $def['questions'] as $q ) {
 			$pub = array(
@@ -148,7 +194,19 @@ class Mahan_Quizzes {
 				'question' => $q['question'],
 			);
 			if ( isset( $q['options'] ) ) {
-				$pub['options'] = array_values( array_map( 'strval', $q['options'] ) );
+				$opts  = array_values( array_map( 'strval', $q['options'] ) );
+				$order = self::order_for( $q, $seed, count( $opts ) );
+				$shown = array();
+				foreach ( $order as $orig ) {
+					$shown[] = $opts[ $orig ];
+				}
+				$pub['options'] = $shown;
+			}
+			if ( 'multi_select' === $q['type'] ) {
+				// The learner has to know how many to pick — "select all that
+				// apply" with no count is a guessing game about scope, not
+				// knowledge.
+				$pub['pick'] = count( $q['answers'] );
 			}
 			$questions[] = $pub;
 		}
@@ -161,17 +219,86 @@ class Mahan_Quizzes {
 		);
 	}
 
+	/**
+	 * The display order of one question's options for a sitting.
+	 *
+	 * @param array $q     Question definition.
+	 * @param int   $seed  Sitting seed.
+	 * @param int   $count Option count.
+	 * @return int[] Original indices in display order.
+	 */
+	private static function order_for( $q, $seed, $count ) {
+		if ( $seed <= 0 || ! empty( $q['no_shuffle'] ) ) {
+			return range( 0, max( 0, (int) $count - 1 ) );
+		}
+		return Mahan_Utils::option_order( (string) $q['key'], (int) $seed, (int) $count );
+	}
+
 	/* ------------------------------------------------------------------ */
 	/* Grading                                                             */
 	/* ------------------------------------------------------------------ */
 
-	private static function grade_question( $q, $answer ) {
+	/**
+	 * Grade one question.
+	 *
+	 * Choice answers arrive as *display* indices — the learner clicked the
+	 * third button they saw, and which original option that was depends on this
+	 * sitting's permutation. Everything is mapped back here, so the rest of the
+	 * grader only ever deals in authored indices.
+	 *
+	 * @param array $q      Question definition (with answers).
+	 * @param mixed $answer Learner's answer, in display space.
+	 * @param int   $seed   Sitting seed.
+	 * @return array {correct, correct_index, correct_indexes, typo}
+	 */
+	public static function grade_question( $q, $answer, $seed = 0 ) {
 		$type = $q['type'];
+
 		if ( 'multiple_choice' === $type || 'true_false' === $type ) {
+			$count   = isset( $q['options'] ) ? count( $q['options'] ) : 0;
+			$order   = self::order_for( $q, $seed, $count );
 			$correct = isset( $q['answer'] ) ? (int) $q['answer'] : -1;
-			$chosen  = is_numeric( $answer ) ? (int) $answer : -1;
-			return array( 'correct' => ( $chosen >= 0 && $chosen === $correct ), 'correct_index' => $correct );
+			$shown   = is_numeric( $answer ) ? (int) $answer : -1;
+			$chosen  = ( $shown >= 0 && isset( $order[ $shown ] ) ) ? (int) $order[ $shown ] : -1;
+			return array(
+				'correct' => ( $chosen >= 0 && $chosen === $correct ),
+				// Reported in display space, because that is what the browser
+				// has to highlight.
+				'correct_index' => self::display_index( $order, $correct ),
+			);
 		}
+
+		if ( 'multi_select' === $type ) {
+			$count = isset( $q['options'] ) ? count( $q['options'] ) : 0;
+			$order = self::order_for( $q, $seed, $count );
+			$want  = isset( $q['answers'] ) ? array_map( 'intval', (array) $q['answers'] ) : array();
+			sort( $want );
+
+			$got = array();
+			foreach ( (array) $answer as $shown ) {
+				$shown = (int) $shown;
+				if ( isset( $order[ $shown ] ) ) {
+					$got[ (int) $order[ $shown ] ] = true;
+				}
+			}
+			$got = array_keys( $got );
+			sort( $got );
+
+			// All or nothing: "select all that apply" is answered correctly
+			// only when the set matches. Partial credit would reward shotgunning
+			// every option, which is the failure mode this type exists to catch.
+			$display = array();
+			foreach ( $want as $orig ) {
+				$display[] = self::display_index( $order, $orig );
+			}
+			sort( $display );
+			return array(
+				'correct'         => ( $want === $got ),
+				'correct_index'   => null,
+				'correct_indexes' => $display,
+			);
+		}
+
 		// fill_blank
 		$given    = trim( is_array( $answer ) ? implode( ' ', $answer ) : (string) $answer );
 		$case     = ! empty( $q['case_sensitive'] );
@@ -188,15 +315,43 @@ class Mahan_Quizzes {
 			$s = trim( preg_replace( '/\s+/', ' ', (string) $s ) );
 			return $case ? $s : mb_strtolower( $s );
 		};
-		$gn = $norm( $given );
-		$ok = false;
+		$gn   = $norm( $given );
+		$ok   = false;
+		$typo = false;
 		foreach ( $accepted as $a ) {
-			if ( '' !== $norm( $a ) && $norm( $a ) === $gn ) {
+			$an = $norm( $a );
+			if ( '' === $an ) {
+				continue;
+			}
+			if ( $an === $gn ) {
 				$ok = true;
 				break;
 			}
+			// One slipped key on a long answer is a typing error, not a wrong
+			// answer. Case-sensitive questions opt out: there, exactness is the
+			// point being tested.
+			if ( ! $case && '' !== $gn
+				&& mb_strlen( $an ) >= self::TYPO_MIN_LEN
+				&& abs( mb_strlen( $an ) - mb_strlen( $gn ) ) <= 1
+				&& 1 === levenshtein( $an, $gn ) ) {
+				$ok   = true;
+				$typo = true;
+				break;
+			}
 		}
-		return array( 'correct' => $ok, 'correct_index' => null );
+		return array( 'correct' => $ok, 'correct_index' => null, 'typo' => $typo );
+	}
+
+	/**
+	 * Where an authored option index ended up on screen.
+	 *
+	 * @param int[] $order Original indices in display order.
+	 * @param int   $orig  Authored index.
+	 * @return int|null Display index, or null when it is not on screen.
+	 */
+	private static function display_index( $order, $orig ) {
+		$pos = array_search( (int) $orig, $order, true );
+		return false === $pos ? null : (int) $pos;
 	}
 
 	/**
@@ -205,10 +360,12 @@ class Mahan_Quizzes {
 	 * @param int    $user_id   User id.
 	 * @param int    $course_id Course id.
 	 * @param string $unit      Unit title.
-	 * @param array  $answers   key => answer.
+	 * @param array  $answers   key => answer (in display space).
+	 * @param int    $seed      The sitting's seed, so grading can reconstruct
+	 *                          the option permutation the learner saw.
 	 * @return array
 	 */
-	public static function grade( $user_id, $course_id, $unit, $answers ) {
+	public static function grade( $user_id, $course_id, $unit, $answers, $seed = 0 ) {
 		$def = self::get( $course_id, $unit );
 		if ( ! $def ) {
 			return array( 'ok' => false, 'error' => 'no_quiz' );
@@ -220,15 +377,28 @@ class Mahan_Quizzes {
 		foreach ( $def['questions'] as $q ) {
 			$key = $q['key'];
 			$ans = isset( $answers[ $key ] ) ? $answers[ $key ] : '';
-			$g   = self::grade_question( $q, $ans );
+			$g   = self::grade_question( $q, $ans, $seed );
 			if ( $g['correct'] ) {
 				$correct++;
 			}
-			$results[] = array(
+			$row = array(
 				'key'           => $key,
 				'correct'       => (bool) $g['correct'],
 				'correct_index' => $g['correct_index'],
 			);
+			if ( isset( $g['correct_indexes'] ) ) {
+				$row['correct_indexes'] = $g['correct_indexes'];
+			}
+			// The explanation is released here and nowhere earlier: the attempt
+			// is graded, so it teaches instead of giving the answer away.
+			if ( '' !== (string) $q['explain'] ) {
+				$row['explain'] = (string) $q['explain'];
+			}
+			if ( ! empty( $g['typo'] ) ) {
+				$row['typo']        = true;
+				$row['answer_text'] = isset( $q['answer_text'] ) ? (string) $q['answer_text'] : '';
+			}
+			$results[] = $row;
 
 			// Queue each wrong quiz question for spaced-repetition review.
 			Mahan_Reviews::record(
@@ -326,7 +496,7 @@ class Mahan_Quizzes {
 		// returns null, and quiz XP is re-awarded on every pass.
 		$row = $wpdb->get_row(
 			$wpdb->prepare(
-				"SELECT MAX(score) AS score, MAX(is_correct) AS ever_passed
+				"SELECT MAX(score) AS score, MAX(is_correct) AS ever_passed, COUNT(*) AS attempts
 				 FROM {$table} WHERE user_id = %d AND course_id = %d AND exercise_key = %s",
 				(int) $user_id,
 				(int) $course_id,
@@ -340,6 +510,7 @@ class Mahan_Quizzes {
 		return array(
 			'score'      => (int) $row['score'],
 			'is_correct' => (int) $row['ever_passed'] ? 1 : 0,
+			'attempts'   => (int) $row['attempts'],
 		);
 	}
 }

@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.32.0
+Stable tag: 1.33.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -46,7 +46,7 @@ Mahan Academy is a self-contained learning plugin built to teach people how to u
 * In-lesson Contents drawer: jump to any lesson in the course without backing out, with your current lesson marked; plus a hairline showing how far through the lesson you've read
 * Keyboard shortcuts: / to search, ← → to move between lessons, C to continue where you left off, ? for the list, Esc to clear
 * Adaptive review: wrong answers are re-asked at the end of the lesson and again on later days (spaced repetition), with an optional AI "ask it a different way" from another model
-* End-of-unit quizzes with instant grading and a passing score
+* End-of-unit quizzes with instant grading and a passing score, four question types including "select all that apply", and a per-question explanation shown the moment the attempt is graded. Options are permuted per sitting — and re-permuted on every retake — so a quiz cannot be passed by remembering which slot the right answer sat in. Fill-in-the-blank accepts a single typo on longer answers and tells you the exact spelling
 * Learning paths — group courses into a guided, ordered program
 * Email notifications (welcome, completion, achievement, streak reminder)
 * Admin analytics dashboard: a date-range view (7/30/90/365 days) with trend charts and vs-previous-period deltas, a learning funnel (enrolled → started → halfway → completed), per-course health including each course's drop-off lesson, the hardest exercises ranked as a revision list, live-assessment pass rates, a study-pattern weekday chart, and day-by-day CSV export — all charts server-rendered SVG, no charting library, plus the register of every issued certificate and the placement-level breakdown
@@ -86,6 +86,9 @@ You don't have to do anything — the starter catalog installs automatically on 
 Each course lists the authoritative references it is grounded in under "Further reading & sources" on the course page — peer-reviewed papers, standards and institutional guidance (NIST AI Risk Management Framework, EU AI Act, UNESCO, OECD, OWASP, C2PA), textbooks, and official provider documentation.
 
 == Changelog ==
+
+= 1.33.0 =
+The quiz engine, and a real integrity bug fixed. Measured across this plugin's own catalog, 77% of multiple-choice answers sat in option B — against a 70% pass mark, which means tapping the second option on every question, reading nothing, passed almost every unit quiz and also cleared the spaced-repetition queue that re-asks the same items. The placement test was hardened against exactly this in v1.22 by permuting options per sitting; unit quizzes and the review queue never were. Now they are, sharing one implementation: a quiz is served in a per-sitting permutation whose seed travels with it and comes back on submit, so grading reconstructs the order without storing anything, and a retake reshuffles — a failed attempt cannot be answered from memory of where the right option was. Review items permute per encounter too, so spaced repetition rehearses the concept rather than a position. After the fix, "always tap B" scores 16.5% instead of 77%. Authors can opt a question out for the rare option set whose order matters. Alongside that: questions gain an explanation, editable in the Course Studio, stripped from everything served before grading and released with the result where it teaches instead of giving the answer away; a new "select all that apply" type graded all-or-nothing that tells the learner how many to pick; and fill-in-the-blank now forgives one slipped key on answers of six characters or more — showing the exact spelling — while short and case-sensitive answers stay exact. The quiz header shows your attempt number and best score. Also fixes a REST sanitiser that cast every answer to a string, which would have flattened every multi-select answer to the literal "Array". No schema change.
 
 = 1.32.0 =
 The learner dashboard, rebuilt around what to do next. It used to stack a review banner, a resume banner and a placement nudge and leave the learner to rank them; now a single "Today" block names the one thing worth doing and lists the rest as quiet one-tap rows underneath. The ranking is by what is actually lost by not doing it today: due review items decay, so they lead; a unit whose lessons are all finished has no next lesson to resume, so its live assessment is the natural next step and outranks starting new material; then continuing the course you were last working on; then placement, once, if it was never taken. This also brings the AI oral exam to the dashboard for the first time — until now you had to walk into a course to discover a unit was waiting. Fixes a real misdirection: the resume card pointed at the course you most recently enrolled in rather than the one you were actually studying, so signing up for something on a whim would hide the course you had been working through all week; both the plan and the In-progress shelf now order by real activity. Adds a momentum line under the week dots — lessons this week against last week, XP this week, and how many more days earn the next streak freeze, promised only when it is genuinely reachable and omitted entirely on a brand-new account. No schema change.

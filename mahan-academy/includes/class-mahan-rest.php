@@ -646,11 +646,19 @@ class Mahan_REST {
 			return new WP_REST_Response( array( 'ok' => false, 'error' => 'no_quiz' ), 404 );
 		}
 		$best = Mahan_Quizzes::best( $user_id, $course_id, $unit );
+		// A fresh permutation per sitting: retaking a failed quiz must not be
+		// answerable from memory of where the right option sat last time.
+		$seed = wp_rand( 1, 2000000 );
 		return rest_ensure_response( array(
 			'ok'       => true,
-			'quiz'     => Mahan_Quizzes::public_quiz( $def ),
+			'seed'     => $seed,
+			'quiz'     => Mahan_Quizzes::public_quiz( $def, $seed ),
 			'enrolled' => Mahan_Enrollment::is_enrolled( $user_id, $course_id ),
-			'best'     => $best ? array( 'score' => (int) $best['score'], 'passed' => (bool) $best['is_correct'] ) : null,
+			'best'     => $best ? array(
+				'score'    => (int) $best['score'],
+				'passed'   => (bool) $best['is_correct'],
+				'attempts' => (int) $best['attempts'],
+			) : null,
 		) );
 	}
 
@@ -660,6 +668,9 @@ class Mahan_REST {
 		$course_id = isset( $body['course_id'] ) ? absint( $body['course_id'] ) : 0;
 		$unit      = isset( $body['unit'] ) ? (string) $body['unit'] : '';
 		$answers   = isset( $body['answers'] ) && is_array( $body['answers'] ) ? $body['answers'] : array();
+		// Travels with the sitting so grading reconstructs the option order the
+		// learner actually saw, without the server storing anything in between.
+		$seed      = isset( $body['seed'] ) ? absint( $body['seed'] ) : 0;
 
 		if ( ! Mahan_Enrollment::is_enrolled( $user_id, $course_id ) ) {
 			return new WP_REST_Response( array( 'ok' => false, 'error' => 'not_enrolled' ), 403 );
@@ -669,14 +680,25 @@ class Mahan_REST {
 		$clean = array();
 		foreach ( $answers as $k => $v ) {
 			$key = sanitize_key( (string) $k );
-			if ( is_numeric( $v ) ) {
+			if ( is_array( $v ) ) {
+				// "Select all that apply" sends a list of chosen positions.
+				// Casting it to a string here would have flattened every
+				// multi-select answer to the literal "Array".
+				$set = array();
+				foreach ( $v as $one ) {
+					if ( is_numeric( $one ) ) {
+						$set[ (int) $one ] = true;
+					}
+				}
+				$clean[ $key ] = array_keys( $set );
+			} elseif ( is_numeric( $v ) ) {
 				$clean[ $key ] = (int) $v;
 			} else {
 				$clean[ $key ] = sanitize_text_field( (string) $v );
 			}
 		}
 
-		$res = Mahan_Quizzes::grade( $user_id, $course_id, $unit, $clean );
+		$res = Mahan_Quizzes::grade( $user_id, $course_id, $unit, $clean, $seed );
 		if ( empty( $res['ok'] ) ) {
 			return new WP_REST_Response( $res, 400 );
 		}
@@ -1100,7 +1122,8 @@ class Mahan_REST {
 		}
 		$answer = isset( $body['answer'] ) ? $body['answer'] : '';
 		$token  = isset( $body['variant_token'] ) ? (string) $body['variant_token'] : '';
-		$res    = Mahan_Reviews::grade( $user_id, $rid, $answer, $token );
+		$seed   = isset( $body['seed'] ) ? absint( $body['seed'] ) : 0;
+		$res    = Mahan_Reviews::grade( $user_id, $rid, $answer, $token, $seed );
 		if ( empty( $res['ok'] ) ) {
 			return new WP_REST_Response( $res, 404 );
 		}

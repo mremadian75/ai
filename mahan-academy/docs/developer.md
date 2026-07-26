@@ -280,6 +280,59 @@ rubric** — added in DB v6). The `stats` table also carries `freezes` and
 
 ---
 
+## Quizzes & assessment integrity
+
+`Mahan_Quizzes` grades end-of-unit quizzes. Question types:
+`multiple_choice`, `multi_select`, `true_false`, `fill_blank`.
+
+**Options are permuted per sitting, and this is not optional.** Authored
+banks drift toward one slot: measured across this plugin's own catalog, 77%
+of multiple-choice answers sat in option B, against a 70% pass mark — so
+"always tap the second one" passed nearly every quiz, and cleared the review
+queue that re-asks the same items. `Mahan_Utils::option_order( $key, $seed,
+$count )` is the single shared derivation, used by quizzes, the review queue
+and the placement test.
+
+The contract, in three parts — break any one and grading silently mis-scores:
+
+1. **`GET /quiz` mints the seed** (`wp_rand`), serves `public_quiz( $def,
+   $seed )` with options in that order, and returns the seed.
+2. **The browser answers in display space** — it posts the *position* it
+   clicked, and echoes the seed back.
+3. **`grade()` maps display → authored** via the same permutation. Nothing is
+   stored between the two calls. A client that lies about the seed only maps
+   its own click onto a different option, which cannot help it.
+
+`correct_index` / `correct_indexes` come back in *display* space, because
+that is what the browser has to highlight. A per-question `no_shuffle` flag
+opts out for option sets whose order carries meaning ("all of the above").
+
+Other rules worth keeping:
+
+- **Explanations never ship before grading.** `explain` is stripped by
+  `public_quiz()` and attached only to graded results — an explanation in the
+  served payload is a hint anyone can read in the network tab.
+- **`multi_select` is all-or-nothing.** Partial credit rewards ticking every
+  option, which is the failure mode the type exists to catch. The served
+  question carries `pick` (how many are correct) because guessing the scope
+  is not the skill being tested; a question with no correct option is dropped
+  at sanitise time rather than served unanswerable.
+- **Typo tolerance is length-gated.** `fill_blank` accepts one Levenshtein
+  edit at `TYPO_MIN_LEN` (6) characters or more, flags it as a typo so the UI
+  can show the exact spelling, and refuses tolerance entirely on
+  case-sensitive questions, where exactness is the point.
+- **The review queue permutes too**, seeded from the row id *and* its box, so
+  a repeated item is laid out differently once the learner moves it up a box.
+  `Mahan_Reviews::public_item()` returns that seed; `grade()` takes it back.
+
+Verified by `test-quiz.php` (42 assertions, including a direct measurement
+that "always tap B" now scores ~16% rather than 77%) and `quiz-render.mjs`
+(21 headless checks on the modal). Note for anyone writing paint assertions
+against options: `.mahan-ex-option` transitions `border-color` over 120ms, so
+measure after the transition settles or you read an interpolated colour.
+
+---
+
 ## Course Studio (admin builder)
 
 `Mahan_Course_Builder` + `assets/js/course-builder.js` render a Tutor-LMS-style

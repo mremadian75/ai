@@ -1709,11 +1709,11 @@
 	function openQuiz(courseId, unit) {
 		api('/quiz?course_id=' + courseId + '&unit=' + encodeURIComponent(unit)).then(function (j) {
 			if (!j.ok) { toast(t('error', 'Something went wrong.'), 'error'); return; }
-			renderQuizModal(courseId, unit, j.quiz);
+			renderQuizModal(courseId, unit, j.quiz, j.seed, j.best);
 		}).catch(function () { toast(t('error', 'Something went wrong.'), 'error'); });
 	}
 
-	function renderQuizModal(courseId, unit, quiz) {
+	function renderQuizModal(courseId, unit, quiz, seed, best) {
 		var answers = {};
 		var total = quiz.questions.length;
 		var counter = h('span', { class: 'mahan-quiz-count', 'aria-live': 'polite' });
@@ -1722,6 +1722,8 @@
 			var n = 0;
 			Object.keys(answers).forEach(function (k) {
 				var v = answers[k];
+				// An empty multi-select is "nothing picked yet", not an answer.
+				if (Array.isArray(v)) { if (v.length) { n++; } return; }
 				if (v !== '' && v !== null && v !== undefined) { n++; }
 			});
 			return n;
@@ -1734,7 +1736,29 @@
 		quiz.questions.forEach(function (q, i) {
 			var block = h('div', { class: 'mahan-quiz-q' });
 			block.appendChild(h('div', { class: 'mahan-quiz-q-title', html: (i + 1) + '. ' + mdToHtml(q.question) }));
-			if ((q.type === 'multiple_choice' || q.type === 'true_false') && q.options) {
+			if (q.type === 'multi_select' && q.options) {
+				// "Select all that apply" — say how many, because guessing the
+				// scope is not the skill being tested.
+				block.appendChild(h('p', { class: 'mahan-quiz-hint',
+					text: fmt(t('pickN', 'Select all that apply — %s are correct'), q.pick) }));
+				answers[q.key] = [];
+				var mopts = h('div', { class: 'mahan-quiz-opts is-multi' }, q.options.map(function (o, oi) {
+					return h('button', { class: 'mahan-ex-option', type: 'button', text: o,
+						role: 'checkbox', 'aria-checked': 'false',
+						onClick: function (e) {
+							var btn = e.currentTarget;
+							var on = !btn.classList.contains('is-chosen');
+							btn.classList.toggle('is-chosen', on);
+							btn.setAttribute('aria-checked', on ? 'true' : 'false');
+							var set = answers[q.key];
+							var at = set.indexOf(oi);
+							if (on && at < 0) { set.push(oi); }
+							if (!on && at >= 0) { set.splice(at, 1); }
+							updateCounter();
+						} });
+				}));
+				block.appendChild(mopts);
+			} else if ((q.type === 'multiple_choice' || q.type === 'true_false') && q.options) {
 				var opts = h('div', { class: 'mahan-quiz-opts' }, q.options.map(function (o, oi) {
 					return h('button', { class: 'mahan-ex-option', type: 'button', text: o, 'aria-pressed': 'false',
 						onClick: function (e) {
@@ -1774,7 +1798,7 @@
 				}
 				var restore = setBusy(btn, t('loading', 'Loading…'));
 				msg.textContent = '';
-				api('/quiz', 'POST', { course_id: courseId, unit: unit, answers: answers }).then(function (r) {
+				api('/quiz', 'POST', { course_id: courseId, unit: unit, answers: answers, seed: seed }).then(function (r) {
 					modal.submitted = true;
 					showQuizResult(modal, form, unit, r);
 				}).catch(function () { restore(); msg.textContent = t('error', 'Something went wrong.'); });
@@ -1782,7 +1806,8 @@
 
 		var dialog = h('div', { class: 'mahan-modal mahan-quiz-modal' }, [
 			h('h2', { text: quiz.title }),
-			h('p', { class: 'mahan-modal-sub', text: quiz.count + ' ' + t('questions', 'questions') + ' · ' + t('passMark', 'pass') + ' ' + quiz.passing + '%' }),
+			h('p', { class: 'mahan-modal-sub', text: quiz.count + ' ' + t('questions', 'questions') + ' · ' + t('passMark', 'pass') + ' ' + quiz.passing + '%'
+				+ (best && best.attempts ? ' · ' + fmt(t('quizAttempts', 'attempt %s · best %s%%'), best.attempts + 1, best.score) : '') }),
 			form,
 			msg,
 			h('div', { class: 'mahan-modal-actions mahan-quiz-actions' }, [
@@ -1820,11 +1845,30 @@
 			var qtitle = block.querySelector('.mahan-quiz-q-title');
 			if (qtitle) { qtitle.insertBefore(h('span', { class: 'mahan-grade-cue', 'aria-label': res.correct ? t('correct', 'Correct!') : t('incorrect', 'Not quite'), text: (res.correct ? '✓' : '✕') + ' ' }), qtitle.firstChild); }
 			var opts = block.querySelectorAll('.mahan-ex-option');
-			if (opts.length && typeof res.correct_index === 'number' && opts[res.correct_index]) {
-				opts[res.correct_index].classList.add('is-correct');
-				opts[res.correct_index].appendChild(h('span', { class: 'mahan-sr-only', text: ' (' + t('correctAnswer', 'correct answer') + ')' }));
+			function markCorrect(i) {
+				if (!opts.length || typeof i !== 'number' || !opts[i]) { return; }
+				opts[i].classList.add('is-correct');
+				opts[i].appendChild(h('span', { class: 'mahan-sr-only', text: ' (' + t('correctAnswer', 'correct answer') + ')' }));
 			}
+			markCorrect(res.correct_index);
+			// "Select all that apply" has a set of right answers, not one.
+			(res.correct_indexes || []).forEach(markCorrect);
 			block.querySelectorAll('.mahan-ex-option, .mahan-ex-input').forEach(function (el) { el.disabled = true; });
+
+			// A near-miss was accepted: say so, or the learner never learns the
+			// spelling they actually got wrong.
+			if (res.typo && res.answer_text) {
+				block.appendChild(h('p', { class: 'mahan-quiz-typo',
+					text: fmt(t('quizTypo', 'Accepted — the exact answer is "%s".'), res.answer_text) }));
+			}
+			// The explanation only exists once the attempt is graded, which is
+			// the moment it teaches instead of giving the answer away.
+			if (res.explain) {
+				block.appendChild(h('div', { class: 'mahan-quiz-explain' }, [
+					h('span', { class: 'mahan-quiz-explain-label', text: t('whyLabel', 'Why') }),
+					h('div', { class: 'mahan-quiz-explain-body', html: mdToHtml(res.explain) })
+				]));
+			}
 		});
 		celebrateXp(r);
 
@@ -4381,7 +4425,7 @@
 					}
 					msg.textContent = '';
 					var restore = setBusy(e.currentTarget);
-					api('/review', 'POST', { review_id: item.review_id, answer: ans, variant_token: variantToken }).then(function (r) {
+					api('/review', 'POST', { review_id: item.review_id, answer: ans, variant_token: variantToken, seed: item.seed || 0 }).then(function (r) {
 						if (!r.ok) { restore(); toast(t('error', 'Something went wrong.'), 'error'); return; }
 						rc.lock();
 						rc.markResult(r);

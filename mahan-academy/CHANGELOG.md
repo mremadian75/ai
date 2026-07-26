@@ -4,6 +4,66 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.33.0]
+
+The quiz engine. **No schema change — DB stays v6.**
+
+### Fixed: unit quizzes could be passed without reading them
+
+Measured across this plugin's own catalog, **77% of multiple-choice answers
+sat in option B**. The pass mark is 70%. Tapping the second option on every
+question — reading nothing — passed almost every unit quiz in the academy,
+and cleared the spaced-repetition queue that re-asks the same items.
+
+The placement test was hardened against exactly this in v1.22 by permuting
+options per sitting; unit quizzes and the review queue never were. Now they
+are, using the same derivation, moved into `Mahan_Utils::option_order()` and
+shared by all three:
+
+- `GET /quiz` mints a sitting seed, serves options in that permutation, and
+  gets the seed echoed back on submit — so grading reconstructs the order
+  with no server-side state between the two calls. **Retaking a failed quiz
+  reshuffles**, so a second attempt cannot be answered from memory of where
+  the right option sat.
+- Review items permute per encounter (seeded from the row id *and* its box),
+  so spaced repetition rehearses the concept rather than a position.
+- Authors can opt a question out with `no_shuffle` for the rare option set
+  whose order carries meaning ("all of the above").
+
+Measured after the fix: "always tap B" scores **16.5%**, not 77%.
+
+### Explanations that teach at the right moment
+
+Questions gain an **explanation** field, editable in the Course Studio. It is
+stripped from everything served before grading — an explanation sitting in the
+payload is a hint anyone can read with the network tab open — and released
+with the graded result, where it teaches instead of giving the answer away.
+
+### "Select all that apply"
+
+A new `multi_select` question type: several correct options, graded
+all-or-nothing (partial credit would reward ticking everything, which is the
+failure mode the type exists to catch). The learner is told **how many** to
+pick, because guessing the scope is not the skill being tested. Rendered as
+real checkboxes with `role="checkbox"`, and a select-all with no correct
+option is dropped at save rather than served unanswerable.
+
+### One slipped key is not ignorance
+
+Fill-in-the-blank answers of six characters or more now accept a single
+edit — "contex" for "context" — and say so, showing the exact spelling.
+Short answers ("RAG", "0") stay exact, because at three characters one edit
+is a genuinely different answer; case-sensitive questions opt out entirely,
+since there exactness is the point being tested.
+
+Also: the quiz header shows attempt number and best score; a REST sanitiser
+that cast every answer to a string (which would have flattened every
+multi-select to the literal `"Array"`) now handles lists.
+
+42 logic assertions cover the permutation, the exploit itself, multi-select
+grading, typo tolerance and the explanation embargo; 21 headless checks cover
+the modal end to end.
+
 ## [1.32.0]
 
 The learner dashboard, rebuilt around **what to do next**.

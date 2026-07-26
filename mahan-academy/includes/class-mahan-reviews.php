@@ -300,9 +300,38 @@ class Mahan_Reviews {
 			'is_variant' => ! empty( $variant ),
 		);
 		if ( ( 'multiple_choice' === $type || 'true_false' === $type ) && ! empty( $q['options'] ) ) {
-			$out['options'] = array_values( array_map( 'strval', $q['options'] ) );
+			// Permuted for the same reason unit quizzes are: the queue re-asks
+			// questions from a bank whose right answer sat in option B 77% of
+			// the time, so an unshuffled review can be cleared by position
+			// memory instead of the concept it is meant to rehearse.
+			$opts  = array_values( array_map( 'strval', $q['options'] ) );
+			$seed  = self::seed_for( $row );
+			$order = Mahan_Utils::option_order( (string) $row['item_key'], $seed, count( $opts ) );
+			$shown = array();
+			foreach ( $order as $orig ) {
+				$shown[] = $opts[ $orig ];
+			}
+			$out['options'] = $shown;
+			// Echoed back on submit so grading reconstructs the same order with
+			// no state kept between serving and answering. A client that lies
+			// about it only maps its own click onto a different option.
+			$out['seed'] = $seed;
 		}
 		return $out;
+	}
+
+	/**
+	 * This encounter's permutation seed.
+	 *
+	 * Derived from the row's id and box, so the same item is laid out
+	 * differently once the learner has moved it up a box — otherwise spaced
+	 * repetition would rehearse "the answer is the third one".
+	 *
+	 * @param array $row Review row.
+	 * @return int
+	 */
+	public static function seed_for( $row ) {
+		return ( (int) $row['id'] * 977 ) + (int) $row['box'] + 1;
 	}
 
 	/* ------------------------------------------------------------------ */
@@ -316,15 +345,24 @@ class Mahan_Reviews {
 	 * @param mixed $answer Submitted answer.
 	 * @return array { correct, correct_index, correct_text }
 	 */
-	public static function grade_question( $q, $answer ) {
+	public static function grade_question( $q, $answer, $seed = 0, $item_key = '' ) {
 		$type = isset( $q['type'] ) ? (string) $q['type'] : 'multiple_choice';
 		if ( 'multiple_choice' === $type || 'true_false' === $type ) {
 			$correct = isset( $q['answer'] ) ? (int) $q['answer'] : -1;
-			$chosen  = is_numeric( $answer ) ? (int) $answer : -1;
 			$ctext   = ( isset( $q['options'] ) && isset( $q['options'][ $correct ] ) ) ? (string) $q['options'][ $correct ] : '';
+			$count   = isset( $q['options'] ) ? count( $q['options'] ) : 0;
+			// The learner clicked a position on screen; turn that back into the
+			// authored option before comparing.
+			$order   = $seed > 0
+				? Mahan_Utils::option_order( (string) $item_key, (int) $seed, $count )
+				: range( 0, max( 0, $count - 1 ) );
+			$shown   = is_numeric( $answer ) ? (int) $answer : -1;
+			$chosen  = ( $shown >= 0 && isset( $order[ $shown ] ) ) ? (int) $order[ $shown ] : -1;
+			$at      = array_search( $correct, $order, true );
 			return array(
 				'correct'       => ( $chosen >= 0 && $chosen === $correct ),
-				'correct_index' => $correct,
+				// Display space, because that is what the browser highlights.
+				'correct_index' => ( false === $at ) ? $correct : (int) $at,
 				'correct_text'  => $ctext,
 			);
 		}
@@ -366,9 +404,11 @@ class Mahan_Reviews {
 	 * @param int    $review_id     Review row id (must belong to the user).
 	 * @param mixed  $answer        Submitted answer.
 	 * @param string $variant_token Optional token identifying an AI variant to grade against.
+	 * @param int    $seed          The seed the item was served with, so the option
+	 *                              permutation can be reconstructed.
 	 * @return array
 	 */
-	public static function grade( $user_id, $review_id, $answer, $variant_token = '' ) {
+	public static function grade( $user_id, $review_id, $answer, $variant_token = '', $seed = 0 ) {
 		global $wpdb;
 		$table   = self::table();
 		$user_id = (int) $user_id;
@@ -417,7 +457,7 @@ class Mahan_Reviews {
 		$was_due   = ( (string) $row['due_at'] <= $now );
 		$paid_today = ( (string) $row['last_xp_date'] === $today );
 
-		$graded  = self::grade_question( $q, $answer );
+		$graded  = self::grade_question( $q, $answer, $seed, (string) $row['item_key'] );
 		$correct = (bool) $graded['correct'];
 
 		$eligible = ( $correct && $was_due && ! $paid_today );

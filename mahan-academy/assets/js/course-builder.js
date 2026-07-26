@@ -1,8 +1,15 @@
 /**
- * Mahan Academy — Course Builder.
- * A drag-and-drop curriculum editor for the Course edit screen: units and
- * lessons in one tree, inline add/rename, quick per-lesson settings, and
- * persistence over admin-ajax. Requires jQuery + jQuery UI sortable (bundled).
+ * Mahan Academy — Course Studio (curriculum builder).
+ *
+ * One screen builds the whole course, Tutor-LMS style: collapsible unit cards,
+ * inline add/rename, drag-and-drop reordering, a per-unit quiz editor, and a
+ * full lesson editor in a modal — title, type, video, minutes, XP, and the
+ * lesson body in a real TinyMCE (with the media library behind Add Media) so
+ * nobody has to leave the course to write a lesson.
+ *
+ * Requires jQuery (+ jQuery UI sortable when available — everything else
+ * degrades: no sortable means no dragging, no wp.editor means a plain
+ * textarea, and both are still fully usable).
  */
 (function ($) {
 	'use strict';
@@ -11,6 +18,39 @@
 	var I = CFG.i18n || {};
 
 	function t(key, fallback) { return I[key] || fallback || key; }
+	function esc(s) { return $('<div>').text(s == null ? '' : String(s)).html(); }
+
+	/**
+	 * Mirror of the server's video whitelist (Mahan_Courses::video_embed), so
+	 * the studio can show "✓ YouTube" / a live preview before saving. The
+	 * server remains the authority — this only predicts what it will say.
+	 */
+	function parseVideo(url) {
+		url = String(url == null ? '' : url).trim();
+		if (!url) { return { type: '', src: '' }; }
+		var m;
+		if ((m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([A-Za-z0-9_-]{6,})/))) {
+			return { type: 'youtube', src: 'https://www.youtube.com/embed/' + m[1] };
+		}
+		if ((m = url.match(/vimeo\.com\/(?:video\/)?(\d+)/))) {
+			return { type: 'vimeo', src: 'https://player.vimeo.com/video/' + m[1] };
+		}
+		if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(url)) {
+			return { type: 'file', src: url };
+		}
+		return { type: '', src: '' };
+	}
+
+	var TYPES = [
+		['reading', 'dashicons-media-document'],
+		['video', 'dashicons-video-alt3'],
+		['practice', 'dashicons-edit']
+	];
+	function typeIcon(type) {
+		for (var i = 0; i < TYPES.length; i++) { if (TYPES[i][0] === type) { return TYPES[i][1]; } }
+		return TYPES[0][1];
+	}
+	function typeLabel(type) { return t(type, type.charAt(0).toUpperCase() + type.slice(1)); }
 
 	$(function () {
 		var $root = $('#mahan-cb');
@@ -23,6 +63,9 @@
 		this.courseId = parseInt($root.attr('data-course'), 10) || 0;
 		try { this.model = JSON.parse($root.attr('data-tree') || '[]'); } catch (e) { this.model = []; }
 		if (!Array.isArray(this.model)) { this.model = []; }
+		// Units start open — an editor that greets you with closed boxes makes
+		// you pay a click to see your own course.
+		this.model.forEach(function (u) { if (u._open === undefined) { u._open = true; } });
 		this.$units = $root.find('#mahan-cb-units');
 		this.$empty = $root.find('#mahan-cb-empty');
 		this.$saving = $root.find('#mahan-cb-saving');
@@ -59,6 +102,12 @@
 	Builder.prototype.bind = function () {
 		var self = this;
 		this.$root.on('click', '#mahan-cb-add-unit', function () { self.addUnit(); });
+		this.$root.on('click', '#mahan-cb-toggle-all', function () {
+			// If anything is open, close everything; otherwise open everything.
+			var anyOpen = self.model.some(function (u) { return u._open; });
+			self.model.forEach(function (u) { u._open = !anyOpen; });
+			self.render();
+		});
 	};
 
 	/* ---------------------------------------------------------------- */
@@ -71,52 +120,126 @@
 		this.model.forEach(function (unit, ui) {
 			self.$units.append(self.renderUnit(unit, ui));
 		});
-		this.$empty.toggle(this.totalLessons() === 0);
+		this.$empty.toggle(this.model.length === 0);
 		this.makeSortable();
 		this.updateStats();
 	};
 
+	Builder.prototype.unitSummary = function (unit) {
+		var lessons = unit.lessons || [];
+		var min = 0;
+		lessons.forEach(function (n) { min += (n.est_min || 0); });
+		var parts = [lessons.length + ' ' + t('lessons', 'lessons')];
+		if (min) { parts.push(min + ' ' + t('minutes', 'min')); }
+		var qn = (unit.quiz && unit.quiz.questions) ? unit.quiz.questions.length : 0;
+		if (qn) { parts.push('✓ ' + t('quiz', 'Quiz')); }
+		return parts.join(' · ');
+	};
+
 	Builder.prototype.renderUnit = function (unit, ui) {
 		var self = this;
-		var $u = $('<div class="mahan-cb-unit" />').attr('data-unit', ui);
+		var $u = $('<section class="mahan-cb-unit" />').attr('data-unit', ui).toggleClass('is-closed', !unit._open);
 		$u.data('quiz', unit.quiz || null);
+
 		var $head = $('<div class="mahan-cb-unit-head" />');
 		$head.append('<span class="mahan-cb-drag dashicons dashicons-move" title="' + esc(t('dragUnit', 'Drag to reorder unit')) + '"></span>');
+
+		var $toggle = $('<button type="button" class="mahan-cb-toggle" aria-expanded="' + (unit._open ? 'true' : 'false') + '"><span class="dashicons dashicons-arrow-down-alt2"></span></button>');
+		$toggle.attr('title', unit._open ? t('collapse', 'Collapse') : t('expand', 'Expand'));
+		$toggle.on('click', function () { unit._open = !unit._open; self.render(); });
+		$head.append($toggle);
+
+		$head.append('<span class="mahan-cb-unit-n">' + (ui + 1) + '</span>');
+
+		var $titleWrap = $('<div class="mahan-cb-unit-titles" />');
 		var $title = $('<input type="text" class="mahan-cb-unit-title" />').val(unit.title || '');
 		$title.attr('placeholder', t('unitName', 'Unit name'));
 		$title.on('change blur', function () { unit.title = $(this).val(); self.saveStructure(); });
-		$head.append($title);
-		$head.append('<span class="mahan-cb-unit-count">' + (unit.lessons ? unit.lessons.length : 0) + ' ' + esc(t('lessons', 'lessons')) + '</span>');
+		// The head doubles as the collapse toggle, but typing a name is not
+		// asking for a collapse.
+		$title.on('click', function (e) { e.stopPropagation(); });
+		$titleWrap.append($title);
+		$titleWrap.append('<span class="mahan-cb-unit-sum">' + esc(this.unitSummary(unit)) + '</span>');
+		$head.append($titleWrap);
+
 		var qn = (unit.quiz && unit.quiz.questions) ? unit.quiz.questions.length : 0;
-		var $quiz = $('<button type="button" class="button button-small mahan-cb-quiz-btn"></button>')
-			.html('<span class="dashicons dashicons-forms"></span> ' + esc(t('quiz', 'Quiz')) + (qn ? ' (' + qn + ')' : ''));
+		var $quiz = $('<button type="button" class="button mahan-cb-quiz-btn"></button>')
+			.html('<span class="dashicons dashicons-forms"></span> ' + (qn ? esc(t('quiz', 'Quiz')) + ' (' + qn + ')' : esc(t('addQuiz', 'Add quiz'))));
 		if (qn) { $quiz.addClass('has-quiz'); }
-		$quiz.on('click', function () { self.editQuiz(unit, $u, $quiz); });
+		$quiz.on('click', function (e) { e.stopPropagation(); self.editQuiz(unit, $u, $quiz); });
 		$head.append($quiz);
+
 		var $del = $('<button type="button" class="button-link mahan-cb-unit-del" title="' + esc(t('deleteUnit', 'Delete empty unit')) + '"><span class="dashicons dashicons-trash"></span></button>');
-		$del.on('click', function () { self.deleteUnit(ui); });
+		$del.on('click', function (e) { e.stopPropagation(); self.deleteUnit(ui); });
 		$head.append($del);
+
+		// The whole header row toggles — the affordance every accordion
+		// teaches — except its interactive children.
+		$head.on('click', function (e) {
+			if (e.target === $head[0] || $(e.target).hasClass('mahan-cb-unit-sum') || $(e.target).hasClass('mahan-cb-unit-n')) {
+				unit._open = !unit._open;
+				self.render();
+			}
+		});
+
 		$u.append($head);
 
+		var $body = $('<div class="mahan-cb-unit-body" />');
 		var $lessons = $('<div class="mahan-cb-lessons" />').attr('data-unit', ui);
 		(unit.lessons || []).forEach(function (node) {
 			$lessons.append(self.renderLesson(node));
 		});
-		$u.append($lessons);
-
-		var $add = $('<button type="button" class="button button-secondary mahan-cb-add-lesson">+ ' + esc(t('addLesson', 'Add lesson')) + '</button>');
-		$add.on('click', function () { self.addLesson(ui, $lessons); });
-		$u.append($('<div class="mahan-cb-unit-foot" />').append($add));
+		if (!(unit.lessons || []).length) {
+			$lessons.append('<p class="mahan-cb-unit-empty">' + esc(t('emptyUnit', 'No lessons in this unit yet — add the first one below.')) + '</p>');
+		}
+		$body.append($lessons);
+		$body.append(this.renderAddRow(unit, ui));
+		$u.append($body);
 		return $u;
+	};
+
+	/**
+	 * Tutor-LMS-style inline add: type the title, pick a type, press Enter.
+	 * Focus stays in the field so a whole unit can be sketched in one breath.
+	 */
+	Builder.prototype.renderAddRow = function (unit, ui) {
+		var self = this;
+		var $row = $('<div class="mahan-cb-addrow" />');
+		var $type = $('<select class="mahan-cb-addrow-type" aria-label="' + esc(t('type', 'Type')) + '" />');
+		TYPES.forEach(function (tp) {
+			$type.append($('<option/>').val(tp[0]).text(typeLabel(tp[0])));
+		});
+		var $inp = $('<input type="text" class="mahan-cb-addrow-title" />')
+			.attr('placeholder', '+ ' + t('addLessonPh', 'Add a lesson — type its title and press Enter'));
+		var $btn = $('<button type="button" class="button button-primary mahan-cb-addrow-btn">' + esc(t('add', 'Add')) + '</button>');
+
+		function submit() {
+			var title = $inp.val().trim();
+			if (!title) { $inp.focus(); return; }
+			$btn.prop('disabled', true);
+			self.ajax('mahan_cb_add_lesson', { course_id: self.courseId, unit: unit.title || '', title: title, type: $type.val() })
+				.then(function (d) {
+					unit.lessons = unit.lessons || [];
+					unit.lessons.push(d.lesson);
+					self.render();
+					self.saveStructure();
+					self.flash(t('lessonAdded', 'Lesson added'));
+					// Re-focus the fresh add-row of the same unit for the next one.
+					self.$units.find('.mahan-cb-unit[data-unit="' + ui + '"] .mahan-cb-addrow-title').focus();
+				})
+				.fail(function (m) { $btn.prop('disabled', false); self.flash(m, true); });
+		}
+		$inp.on('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); submit(); } });
+		$btn.on('click', submit);
+
+		return $row.append($type).append($inp).append($btn);
 	};
 
 	Builder.prototype.renderLesson = function (node) {
 		var self = this;
 		var $l = $('<div class="mahan-cb-lesson" />').attr('data-id', node.id).data('node', node);
 		$l.append('<span class="mahan-cb-drag dashicons dashicons-menu" title="' + esc(t('dragLesson', 'Drag to reorder')) + '"></span>');
-
-		var typeIcon = node.type === 'video' ? 'dashicons-video-alt3' : (node.type === 'practice' ? 'dashicons-edit' : 'dashicons-media-document');
-		$l.append('<span class="mahan-cb-lesson-icon dashicons ' + typeIcon + '"></span>');
+		$l.append('<span class="mahan-cb-lesson-icon is-' + esc(node.type || 'reading') + ' dashicons ' + typeIcon(node.type) + '" title="' + esc(typeLabel(node.type || 'reading')) + '"></span>');
 
 		var $title = $('<input type="text" class="mahan-cb-lesson-title" />').val(node.title || '');
 		$title.on('change blur', function () {
@@ -128,53 +251,34 @@
 		});
 		$l.append($title);
 
-		var $meta = $('<div class="mahan-cb-lesson-meta" />');
-
-		var $type = $('<select class="mahan-cb-lesson-type" />');
-		[['reading', t('reading', 'Reading')], ['practice', t('practice', 'Practice')], ['video', t('video', 'Video')]].forEach(function (o) {
-			var $o = $('<option/>').val(o[0]).text(o[1]);
-			if (o[0] === node.type) { $o.prop('selected', true); }
-			$type.append($o);
-		});
-		$type.on('change', function () {
-			node.type = $(this).val();
-			self.ajax('mahan_cb_update_lesson', { lesson_id: node.id, type: node.type })
-				.then(function () { self.render(); self.flash(t('saved', 'Saved')); })
-				.fail(function (m) { self.flash(m, true); });
-		});
-		$meta.append($wrapField(t('type', 'Type'), $type));
-
-		var $xp = $('<input type="number" min="0" class="mahan-cb-lesson-xp small-text" />').val(node.xp || 0);
-		$xp.on('change', function () {
-			node.xp = parseInt($(this).val(), 10) || 0;
-			self.ajax('mahan_cb_update_lesson', { lesson_id: node.id, xp: node.xp })
-				.then(function () { self.updateStats(); self.flash(t('saved', 'Saved')); })
-				.fail(function (m) { self.flash(m, true); });
-		});
-		$meta.append($wrapField('XP', $xp));
-
-		var $min = $('<input type="number" min="0" class="mahan-cb-lesson-min small-text" />').val(node.est_min || 0);
-		$min.on('change', function () {
-			node.est_min = parseInt($(this).val(), 10) || 0;
-			self.ajax('mahan_cb_update_lesson', { lesson_id: node.id, est_min: node.est_min })
-				.then(function () { self.flash(t('saved', 'Saved')); })
-				.fail(function (m) { self.flash(m, true); });
-		});
-		$meta.append($wrapField(t('minutes', 'Min'), $min));
-
-		if (node.exercises) {
-			$meta.append('<span class="mahan-cb-badge">' + node.exercises + ' ' + esc(t('exercises', 'exercises')) + '</span>');
+		var $badges = $('<div class="mahan-cb-lesson-badges" />');
+		if (node.video_ok) {
+			$badges.append('<span class="mahan-cb-badge is-video" title="' + esc(t('hasVideo', 'Has a video')) + '"><span class="dashicons dashicons-video-alt3"></span></span>');
 		}
-		$l.append($meta);
+		if (node.est_min) { $badges.append('<span class="mahan-cb-badge">' + node.est_min + ' ' + esc(t('minutes', 'min')) + '</span>'); }
+		if (node.xp) { $badges.append('<span class="mahan-cb-badge">' + node.xp + ' XP</span>'); }
+		if (node.exercises) { $badges.append('<span class="mahan-cb-badge">' + node.exercises + ' ' + esc(t('exercises', 'exercises')) + '</span>'); }
+		if (node.status && node.status !== 'publish') {
+			$badges.append('<span class="mahan-cb-badge is-draft">' + esc(t('draft', 'Draft')) + '</span>');
+		}
+		if (!node.has_content) {
+			// The one flag an author actually needs at a glance: which lessons
+			// are still hollow.
+			$badges.append('<span class="mahan-cb-badge is-warn" title="' + esc(t('noContent', 'No content yet')) + '">' + esc(t('noContentShort', 'empty')) + '</span>');
+		}
+		$l.append($badges);
 
 		var $actions = $('<div class="mahan-cb-lesson-actions" />');
+		var $edit = $('<button type="button" class="button mahan-cb-edit-btn"><span class="dashicons dashicons-edit-large"></span> ' + esc(t('edit', 'Edit')) + '</button>');
+		$edit.on('click', function () { self.editLesson(node, $l); });
+		$actions.append($edit);
 		if (node.edit_url) {
-			$actions.append('<a class="button button-small" href="' + esc(node.edit_url) + '" target="_blank" rel="noopener">' + esc(t('editContent', 'Edit content')) + '</a>');
+			$actions.append('<a class="button button-small mahan-cb-iconbtn" href="' + esc(node.edit_url) + '" target="_blank" rel="noopener" title="' + esc(t('openWp', 'Open in the WordPress editor')) + '"><span class="dashicons dashicons-external"></span></a>');
 		}
-		var $dup = $('<button type="button" class="button button-small" title="' + esc(t('duplicate', 'Duplicate')) + '"><span class="dashicons dashicons-admin-page"></span></button>');
+		var $dup = $('<button type="button" class="button button-small mahan-cb-iconbtn" title="' + esc(t('duplicate', 'Duplicate')) + '"><span class="dashicons dashicons-admin-page"></span></button>');
 		$dup.on('click', function () { self.duplicateLesson(node); });
 		$actions.append($dup);
-		var $del = $('<button type="button" class="button button-small mahan-cb-lesson-del" title="' + esc(t('delete', 'Delete')) + '"><span class="dashicons dashicons-trash"></span></button>');
+		var $del = $('<button type="button" class="button button-small mahan-cb-iconbtn mahan-cb-lesson-del" title="' + esc(t('delete', 'Delete')) + '"><span class="dashicons dashicons-trash"></span></button>');
 		$del.on('click', function () { self.deleteLesson(node, $l); });
 		$actions.append($del);
 		$l.append($actions);
@@ -182,9 +286,197 @@
 		return $l;
 	};
 
-	function $wrapField(label, $input) {
-		return $('<label class="mahan-cb-field" />').append('<span>' + esc(label) + '</span>').append($input);
-	}
+	/* ---------------------------------------------------------------- */
+	/* Modal chrome (shared by the lesson editor and the quiz editor)    */
+	/* ---------------------------------------------------------------- */
+
+	/**
+	 * Open a studio modal. `opts.beforeClose` may veto an accidental
+	 * dismissal (overlay click / Escape); explicit buttons call close(true).
+	 */
+	Builder.prototype.openModal = function ($modal, opts) {
+		opts = opts || {};
+		var $overlay = $('<div class="mahan-cb-overlay" role="dialog" aria-modal="true" />').append($modal);
+		function close(force) {
+			if (!force && opts.beforeClose && !opts.beforeClose()) { return; }
+			$(document).off('keydown.mahancb');
+			if (opts.onClose) { opts.onClose(); }
+			$overlay.remove();
+		}
+		$overlay.on('mousedown', function (e) { if (e.target === this) { close(); } });
+		$(document).on('keydown.mahancb', function (e) { if (e.key === 'Escape') { close(); } });
+		$('body').append($overlay);
+		return { $overlay: $overlay, close: close };
+	};
+
+	/* ---------------------------------------------------------------- */
+	/* Lesson editor (the studio's centrepiece)                          */
+	/* ---------------------------------------------------------------- */
+
+	Builder.prototype.editLesson = function (node, $l) {
+		var self = this;
+		var editorId = 'mahan-cb-editor-' + node.id;
+		var dirty = false;
+		var handle = null;
+
+		var $modal = $('<div class="mahan-cb-modal mahan-cb-modal-lesson" />');
+		$modal.append(
+			'<div class="mahan-cb-modal-head"><h2><span class="dashicons dashicons-welcome-write-blog"></span> '
+			+ esc(t('editLesson', 'Edit lesson')) + '</h2>'
+			+ '<button type="button" class="mahan-cb-modal-x" aria-label="' + esc(t('cancel', 'Cancel')) + '">×</button></div>'
+		);
+		var $body = $('<div class="mahan-cb-modal-body" />');
+		$modal.append($body);
+		$body.append('<p class="mahan-cb-loading"><span class="spinner is-active"></span> ' + esc(t('loading', 'Loading…')) + '</p>');
+
+		handle = this.openModal($modal, {
+			beforeClose: function () {
+				if (!dirty) { return true; }
+				return window.confirm(t('discard', 'Discard unsaved changes to this lesson?'));
+			},
+			onClose: function () {
+				if (window.wp && wp.editor && wp.editor.remove) { try { wp.editor.remove(editorId); } catch (e) { /* not initialised */ } }
+			}
+		});
+		$modal.on('click', '.mahan-cb-modal-x', function () { handle.close(); });
+
+		this.ajax('mahan_cb_get_lesson', { lesson_id: node.id })
+			.then(function (d) { build(d.lesson, d.content || ''); })
+			.fail(function (m) { handle.close(true); self.flash(m, true); });
+
+		function markDirty() { dirty = true; }
+
+		function build(fresh, content) {
+			$body.empty();
+			var type = fresh.type || 'reading';
+			var video = fresh.video || '';
+
+			// Title.
+			var $title = $('<input type="text" class="mahan-cb-modal-title" />').val(fresh.title || '')
+				.attr('placeholder', t('lessonTitle', 'Lesson title')).on('input', markDirty);
+			$body.append(field(t('lessonTitle', 'Lesson title'), $title));
+
+			// Type — a segmented control, not a dropdown: three choices you
+			// can see beat three choices you have to open.
+			var $seg = $('<div class="mahan-cb-seg" role="radiogroup" />');
+			TYPES.forEach(function (tp) {
+				var $b = $('<button type="button" class="mahan-cb-seg-btn" data-type="' + tp[0] + '"><span class="dashicons ' + tp[1] + '"></span> ' + esc(typeLabel(tp[0])) + '</button>');
+				if (tp[0] === type) { $b.addClass('is-on'); }
+				$b.on('click', function () {
+					type = tp[0];
+					$seg.find('.mahan-cb-seg-btn').removeClass('is-on');
+					$b.addClass('is-on');
+					$videoField.toggleClass('is-suggested', type === 'video');
+					markDirty();
+				});
+				$seg.append($b);
+			});
+			$body.append(field(t('type', 'Type'), $seg));
+
+			// Video URL + live verdict + preview.
+			var $video = $('<input type="url" class="mahan-cb-video-url" />').val(video)
+				.attr('placeholder', 'https://www.youtube.com/watch?v=…');
+			var $verdict = $('<span class="mahan-cb-video-verdict" />');
+			var $preview = $('<div class="mahan-cb-video-preview" />');
+			function paintVideo() {
+				var v = parseVideo($video.val());
+				$preview.empty();
+				if (!$video.val().trim()) {
+					$verdict.text(t('videoHint', 'YouTube, Vimeo, or a direct .mp4 / .webm link')).attr('class', 'mahan-cb-video-verdict');
+					return;
+				}
+				if (!v.type) {
+					$verdict.text('✗ ' + t('videoBad', 'Not a supported video link')).attr('class', 'mahan-cb-video-verdict is-bad');
+					return;
+				}
+				var providerName = { youtube: 'YouTube', vimeo: 'Vimeo', file: t('videoFile', 'Video file') };
+				$verdict.text('✓ ' + (providerName[v.type] || v.type)).attr('class', 'mahan-cb-video-verdict is-ok');
+				$preview.append(
+					v.type === 'file'
+						? $('<video controls preload="metadata" />').attr('src', v.src)
+						: $('<iframe frameborder="0" allowfullscreen />').attr('src', v.src)
+				);
+			}
+			$video.on('input', function () { paintVideo(); markDirty(); });
+			var $videoField = field(t('videoUrl', 'Video'), $('<div/>').append($video).append($verdict).append($preview))
+				.addClass('mahan-cb-video-field').toggleClass('is-suggested', type === 'video');
+			$body.append($videoField);
+			paintVideo();
+
+			// Minutes + XP, side by side.
+			var $min = $('<input type="number" min="0" class="small-text" />').val(fresh.est_min || 0).on('input', markDirty);
+			var $xp = $('<input type="number" min="0" class="small-text" />').val(fresh.xp || 0).on('input', markDirty);
+			var $pair = $('<div class="mahan-cb-pair" />')
+				.append($('<label/>').append('<span>' + esc(t('minutesFull', 'Minutes')) + '</span>').append($min))
+				.append($('<label/>').append('<span>XP</span>').append($xp));
+			$body.append(field(t('settings', 'Settings'), $pair));
+
+			// Content — a real TinyMCE when WordPress provides one.
+			var $ta = $('<textarea rows="12" />').attr('id', editorId).val(content);
+			$body.append(field(t('content', 'Lesson content'), $('<div class="mahan-cb-editor-wrap" />').append($ta)));
+			var richEditor = false;
+			if (window.wp && wp.editor && wp.editor.initialize) {
+				richEditor = true;
+				// Deferred so the textarea is in the DOM before TinyMCE mounts.
+				window.setTimeout(function () {
+					wp.editor.initialize(editorId, {
+						tinymce: {
+							wpautop: true,
+							height: 320,
+							toolbar1: 'formatselect,bold,italic,bullist,numlist,blockquote,link,unlink,wp_add_media,undo,redo',
+							setup: function (ed) { ed.on('change keyup', markDirty); }
+						},
+						quicktags: true,
+						mediaButtons: true
+					});
+				}, 0);
+			} else {
+				$ta.on('input', markDirty);
+			}
+
+			function readContent() {
+				if (richEditor && window.wp && wp.editor && wp.editor.getContent) {
+					try { return wp.editor.getContent(editorId) || ''; } catch (e) { /* fall through */ }
+				}
+				return $ta.val() || '';
+			}
+
+			// Footer.
+			var $save = $('<button type="button" class="button button-primary button-large" />').text(t('saveLesson', 'Save lesson'));
+			var $cancel = $('<button type="button" class="button button-large" />').text(t('cancel', 'Cancel'));
+			$cancel.on('click', function () { handle.close(); });
+			$save.on('click', function () {
+				$save.prop('disabled', true).text(t('saving', 'Saving…'));
+				self.ajax('mahan_cb_update_lesson', {
+					lesson_id: node.id,
+					title: $title.val(),
+					type: type,
+					video: $video.val(),
+					est_min: parseInt($min.val(), 10) || 0,
+					xp: parseInt($xp.val(), 10) || 0,
+					content: readContent()
+				}).then(function (d) {
+					// Adopt the server's node wholesale and repaint just this row.
+					$.extend(node, d.lesson);
+					dirty = false;
+					handle.close(true);
+					$l.replaceWith(self.renderLesson(node));
+					self.updateStats();
+					self.flash(t('lessonSaved', 'Lesson saved'));
+				}).fail(function (m) {
+					$save.prop('disabled', false).text(t('saveLesson', 'Save lesson'));
+					self.flash(m, true);
+				});
+			});
+			$modal.append($('<div class="mahan-cb-modal-actions" />').append($cancel).append($save));
+		}
+
+		function field(label, $input) {
+			return $('<div class="mahan-cb-fieldrow" />')
+				.append('<label class="mahan-cb-fieldrow-label">' + esc(label) + '</label>')
+				.append($('<div class="mahan-cb-fieldrow-input" />').append($input));
+		}
+	};
 
 	/* ---------------------------------------------------------------- */
 	/* Sortable                                                          */
@@ -226,14 +518,15 @@
 			$u.find('.mahan-cb-lesson').each(function () {
 				lessons.push($(this).data('node'));
 			});
-			model.push({ title: title, quiz: $u.data('quiz') || null, lessons: lessons });
+			model.push({ title: title, quiz: $u.data('quiz') || null, lessons: lessons, _open: !$u.hasClass('is-closed') });
 		});
 		this.model = model;
-		// Re-attach unit indices + counts without a full re-render (keeps focus).
+		// Re-attach unit indices + summaries without a full re-render (keeps focus).
 		this.$units.find('.mahan-cb-unit').each(function (i) {
 			$(this).attr('data-unit', i);
 			$(this).find('.mahan-cb-lessons').attr('data-unit', i);
-			$(this).find('.mahan-cb-unit-count').text($(this).find('.mahan-cb-lesson').length + ' ' + t('lessons', 'lessons'));
+			$(this).find('.mahan-cb-unit-n').text(i + 1);
+			$(this).find('.mahan-cb-unit-sum').text(self.unitSummary(self.model[i]));
 		});
 		this.updateStats();
 		this.saveStructure();
@@ -244,7 +537,7 @@
 	/* ---------------------------------------------------------------- */
 
 	Builder.prototype.addUnit = function () {
-		this.model.push({ title: t('newUnit', 'New unit'), lessons: [] });
+		this.model.push({ title: t('newUnit', 'New unit'), lessons: [], _open: true });
 		this.render();
 		this.saveStructure();
 		this.$units.find('.mahan-cb-unit').last().find('.mahan-cb-unit-title').focus().select();
@@ -260,23 +553,6 @@
 		this.model.splice(ui, 1);
 		this.render();
 		this.saveStructure();
-	};
-
-	Builder.prototype.addLesson = function (ui, $lessons) {
-		var self = this;
-		var unit = this.model[ui];
-		if (!unit) { return; }
-		var title = window.prompt(t('lessonTitle', 'Lesson title'), '');
-		if (title === null) { return; }
-		this.ajax('mahan_cb_add_lesson', { course_id: this.courseId, unit: unit.title || '', title: title })
-			.then(function (d) {
-				unit.lessons = unit.lessons || [];
-				unit.lessons.push(d.lesson);
-				self.render();
-				self.saveStructure();
-				self.flash(t('lessonAdded', 'Lesson added'));
-			})
-			.fail(function (m) { self.flash(m, true); });
 	};
 
 	Builder.prototype.duplicateLesson = function (node) {
@@ -358,7 +634,7 @@
 				if (!Array.isArray(q.options)) { q.options = ['', '']; }
 				if (typeof q.answer !== 'number') { q.answer = 0; }
 				var $opts = $('<div class="mahan-cb-q-opts" />');
-				function renderOpts() {
+				var renderOpts = function () {
 					$opts.empty();
 					q.options.forEach(function (text, i) {
 						var $r = $('<div class="mahan-cb-q-opt" />');
@@ -373,16 +649,16 @@
 						$opts.append($r);
 					});
 					$opts.append($('<button type="button" class="button button-secondary" />').text('+ ' + t('addOption', 'Add option')).on('click', function () { q.options.push(''); renderOpts(); }));
-				}
+				};
 				renderOpts();
 				$q.append(row(t('correct', 'Correct') + ' / ' + t('option', 'Option'), $opts));
 			} else if (q.type === 'true_false') {
 				if (typeof q.answer !== 'number') { q.answer = 0; }
 				var $tf = $('<div class="mahan-cb-q-opts" />');
 				[[0, t('true_', 'True')], [1, t('false_', 'False')]].forEach(function (o) {
-					var $l = $('<label style="margin-right:14px" />');
-					$l.append($('<input type="radio" name="tf_' + idx + '" />').prop('checked', q.answer === o[0]).on('change', function () { q.answer = o[0]; })).append(' ' + o[1]);
-					$tf.append($l);
+					var $lb = $('<label style="margin-right:14px" />');
+					$lb.append($('<input type="radio" name="tf_' + idx + '" />').prop('checked', q.answer === o[0]).on('change', function () { q.answer = o[0]; })).append(' ' + o[1]);
+					$tf.append($lb);
 				});
 				$q.append(row(t('correct', 'Correct'), $tf));
 			} else {
@@ -405,33 +681,36 @@
 		var $addQ = $('<button type="button" class="button button-secondary" />').text('+ ' + t('addQuestion', 'Add question')).on('click', function () {
 			quiz.questions.push({ type: 'multiple_choice', question: '', options: ['', ''], answer: 0 });
 			renderQuestions();
+			// The new question is at the bottom — bring it into view.
+			var $sc = $modal.find('.mahan-cb-modal-body');
+			$sc.scrollTop($sc[0].scrollHeight);
 		});
 
 		var $meta = $('<div class="mahan-cb-quiz-meta" />')
 			.append(row(t('passingScore', 'Passing score (%)'), $pass))
 			.append(row(t('quizXp', 'XP on pass (0 = auto)'), $xp));
 
-		var $save = $('<button type="button" class="button button-primary" />').text(t('save', 'Save quiz')).on('click', function () {
+		var handle;
+		var $save = $('<button type="button" class="button button-primary button-large" />').text(t('save', 'Save quiz')).on('click', function () {
 			quiz.questions = quiz.questions.filter(function (q) { return (q.question || '').trim() !== ''; });
 			unit.quiz = quiz.questions.length ? quiz : null;
 			$u.data('quiz', unit.quiz);
 			var n = unit.quiz ? unit.quiz.questions.length : 0;
-			$quizBtn.html('<span class="dashicons dashicons-forms"></span> ' + esc(t('quiz', 'Quiz')) + (n ? ' (' + n + ')' : '')).toggleClass('has-quiz', !!n);
+			$quizBtn.html('<span class="dashicons dashicons-forms"></span> ' + (n ? esc(t('quiz', 'Quiz')) + ' (' + n + ')' : esc(t('addQuiz', 'Add quiz')))).toggleClass('has-quiz', !!n);
 			self.saveStructure();
-			$overlay.remove();
+			handle.close(true);
 		});
-		var $cancel = $('<button type="button" class="button" />').text(t('cancel', 'Cancel')).on('click', function () { $overlay.remove(); });
+		var $cancel = $('<button type="button" class="button button-large" />').text(t('cancel', 'Cancel')).on('click', function () { handle.close(true); });
 
-		var $modal = $('<div class="mahan-cb-modal" />')
-			.append('<h2>' + esc(t('unitQuiz', 'Unit quiz')) + ' — ' + esc(unit.title || '') + '</h2>')
-			.append($meta)
-			.append($body)
-			.append($('<p />').append($addQ))
-			.append($('<div class="mahan-cb-modal-actions" />').append($cancel).append(' ').append($save));
+		var $modal = $('<div class="mahan-cb-modal mahan-cb-modal-quiz" />')
+			.append('<div class="mahan-cb-modal-head"><h2><span class="dashicons dashicons-forms"></span> ' + esc(t('unitQuiz', 'Unit quiz')) + ' — ' + esc(unit.title || '') + '</h2>'
+				+ '<button type="button" class="mahan-cb-modal-x" aria-label="' + esc(t('cancel', 'Cancel')) + '">×</button></div>')
+			.append($('<div class="mahan-cb-modal-body" />').append($meta).append($body).append($('<p />').append($addQ)))
+			.append($('<div class="mahan-cb-modal-actions" />').append($cancel).append($save));
 
-		var $overlay = $('<div class="mahan-cb-overlay" />').append($modal).on('click', function (e) { if (e.target === this) { $overlay.remove(); } });
+		handle = this.openModal($modal, {});
+		$modal.on('click', '.mahan-cb-modal-x', function () { handle.close(true); });
 		renderQuestions();
-		$('body').append($overlay);
 	};
 
 	/* ---------------------------------------------------------------- */
@@ -460,15 +739,14 @@
 
 	Builder.prototype.updateStats = function () {
 		var units = this.model.length;
-		var lessons = 0, xp = 0;
+		var lessons = 0, xp = 0, min = 0;
 		this.model.forEach(function (u) {
-			(u.lessons || []).forEach(function (n) { lessons++; xp += (n.xp || 0); });
+			(u.lessons || []).forEach(function (n) { lessons++; xp += (n.xp || 0); min += (n.est_min || 0); });
 		});
 		this.$root.find('[data-cb-count="units"]').text(units);
 		this.$root.find('[data-cb-count="lessons"]').text(lessons);
 		this.$root.find('[data-cb-count="xp"]').text(xp);
-		this.$empty.toggle(lessons === 0);
+		this.$root.find('[data-cb-count="min"]').text(min);
+		this.$empty.toggle(units === 0);
 	};
-
-	function esc(s) { return $('<div>').text(s == null ? '' : String(s)).html(); }
 })(jQuery);

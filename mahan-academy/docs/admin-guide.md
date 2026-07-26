@@ -42,26 +42,39 @@ Publish the course.
 
 ---
 
-## 3. Build the curriculum (the Course Builder)
+## 3. Build the curriculum (the Course Studio)
 
-Scroll to the **Curriculum builder** box on the course editor. This is where you
-assemble units and lessons visually.
+Scroll to the **Curriculum builder** box on the course editor. The whole course
+is authored here — you should almost never need to leave this screen.
 
-- **+ Add unit** — creates a section (e.g. "Getting started"). Click the unit
-  title to rename it.
-- **+ Add lesson** — type a title; the lesson is created and added to that unit.
-- **Drag** the handle (⣿ / ↕) to reorder lessons within a unit, move them
-  between units, or reorder whole units.
-- Per lesson you can set **Type** (Reading / Practice / Video), **XP**, and
-  **estimated minutes** right there.
-- **Edit content** opens the lesson in the full block editor (for rich text,
-  images, embeds, and exercises).
-- **Duplicate** or **Delete** a lesson from its row.
-- **Quiz** (per unit): the "Quiz" button on a unit header opens a quiz editor —
-  add multiple-choice / true-false / fill-blank questions, set a passing score
-  and XP. Learners see a quiz card at the end of that unit.
+- **+ Add unit** — creates a numbered section card. Click its title to rename;
+  the chevron (or the header itself) collapses it, and the toolbar has an
+  **Expand / collapse all**. Each card shows a live summary: lessons, minutes,
+  and whether it has a quiz.
+- **Add a lesson inline** — every unit ends with a dashed row: pick a type,
+  type the title, press **Enter**. Focus stays put, so you can sketch a whole
+  unit in one sitting.
+- **Edit** (on every lesson row) opens the full lesson editor right there:
+  - the **lesson body** in the rich-text editor, with **Add Media** for images;
+  - a **Video** field — paste a YouTube, Vimeo, or direct `.mp4`/`.webm` link
+    and you get an instant "✓ YouTube"-style verdict plus a live preview.
+    Learners see the video as a responsive player above the lesson text;
+  - **Type** (Reading / Video / Practice), **Minutes**, and **XP**;
+  - closing with unsaved changes asks first.
+- **Status badges** on each row tell you what still needs work: a video mark,
+  minutes, XP, exercise count, **Draft**, and an **"empty"** warning on any
+  lesson that has no body yet.
+- **Drag** the handle to reorder lessons within a unit, move them between
+  units, or reorder whole units.
+- **Duplicate** / **Delete** from the row; the ↗ icon opens the lesson in the
+  normal WordPress editor when you prefer it.
+- **Quiz / Add quiz** (per unit) opens the quiz editor — multiple-choice /
+  true-false / fill-blank questions, a passing score and XP. Learners see the
+  quiz card at the end of that unit.
 
-Everything saves automatically as you edit — watch the "Saved" indicator.
+Everything saves automatically as you edit — watch the "Saved" indicator. Only
+the lesson editor has an explicit **Save lesson** button, because a half-typed
+lesson body should never autosave over the real one.
 
 > Ordering and unit grouping are stored on each lesson, so the builder and the
 > individual lesson editor always stay in sync.

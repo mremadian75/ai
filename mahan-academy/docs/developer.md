@@ -41,7 +41,7 @@ mahan-academy/
 │   ├── class-mahan-ai-stream.php         # SSE tutor + non-streaming fallback
 │   ├── class-mahan-rest.php              # mahan/v1 REST API
 │   ├── class-mahan-front.php             # [mahan_academy] SPA mount + assets
-│   ├── class-mahan-course-builder.php    # admin: curriculum builder + quiz editor + AJAX
+│   ├── class-mahan-course-builder.php    # admin: Course Studio (curriculum + lesson editor + quiz) + AJAX
 │   ├── class-mahan-ai-author.php         # admin: AI authoring + AJAX
 │   ├── class-mahan-reports.php           # admin: analytics + CSV export
 │   ├── class-mahan-meta-boxes-course.php # admin: course fields
@@ -79,7 +79,9 @@ mahan-academy/
   surfaced on `course_summary()` so a catalog card can say "Step 2 of 4").
 - `mahan_lesson` — a lesson, linked to its course by meta.
   Keys: `M_COURSE_ID`, `M_UNIT`, `M_UNIT_ORDER`, `M_ORDER`, `M_XP`, `M_EST_MIN`,
-  `M_TYPE`, `M_EXERCISES` (JSON array of exercise definitions), `M_VARIANTS`
+  `M_TYPE`, `M_VIDEO` (a pasted video URL — normalized for the app by
+  `Mahan_Courses::lesson_video()`), `M_EXERCISES` (JSON array of exercise
+  definitions), `M_VARIANTS`
   (per-department blocks, read via `Mahan_Courses::lesson_variants()`).
 - `mahan_path` — a learning path / **bundle** (Coursera-style specialization).
   Meta (on `Mahan_Paths`): `M_COURSES` (ordered course IDs), `M_SUBTITLE`.
@@ -275,6 +277,40 @@ rubric** — added in DB v6). The `stats` table also carries `freezes` and
 
 > The 1.1.0 features (badges, level titles, course options) added **no** new
 > tables — `MAHAN_DB_VERSION` is unchanged.
+
+---
+
+## Course Studio (admin builder)
+
+`Mahan_Course_Builder` + `assets/js/course-builder.js` render a Tutor-LMS-style
+studio on the Course edit screen: collapsible unit cards, drag-and-drop
+(jQuery UI sortable — optional), inline lesson add, a per-unit quiz editor, and
+a **lesson editor modal** (title, segmented type, video, minutes, XP, and the
+body in `wp.editor.initialize` TinyMCE with `mediaButtons`, falling back to a
+textarea).
+
+Rules that hold it together:
+
+- **The tree stays light.** `tree()` ships titles + flags (`has_content`,
+  `video_ok`); the lesson body is fetched only when its editor opens
+  (`mahan_cb_get_lesson`). A course of 40 lessons must not embed 40 bodies in a
+  data attribute.
+- **The server re-decides everything.** Content saved from the studio passes
+  `wp_kses_post`; the video URL passes `esc_url_raw` on write and
+  `Mahan_Courses::video_embed()` on read — a **whitelist** that only lets
+  YouTube, Vimeo, and direct media files become an embed `src`, so the SPA
+  never iframes an arbitrary admin-pasted origin. The JS `parseVideo()` is a
+  mirror used purely for the live "✓ YouTube" verdict and preview.
+- **Modal CSS tokens live on `.mahan-cb-overlay` too.** Modals are appended to
+  `<body>`, outside `.mahan-cb` — declare a token on only one root and every
+  `var()` inside a modal silently resolves to nothing (this shipped once as a
+  white-on-white segmented control).
+- Capability checks are per-object: `edit_post` on the specific course for
+  structure, on the specific lesson for content (`guard()`), and new lessons
+  are drafts for roles without `publish_posts`.
+
+Verified by `builder-render.mjs` (32 checks driving the real JS with real
+jQuery and a mocked `$.post`) and `test-video.php` (17 whitelist assertions).
 
 ---
 

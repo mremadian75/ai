@@ -199,6 +199,15 @@ class Mahan_Admin {
 		if ( $screen && Mahan_CPT::COURSE === $screen->post_type && 'post' === $screen->base ) {
 			wp_enqueue_style( 'mahan-course-builder', MAHAN_URL . 'assets/css/course-builder.css', array(), MAHAN_VERSION );
 			wp_enqueue_script( 'mahan-course-builder', MAHAN_URL . 'assets/js/course-builder.js', array( 'jquery', 'jquery-ui-sortable' ), MAHAN_VERSION, true );
+			// The studio's lesson editor is a real TinyMCE (wp.editor.initialize)
+			// with the media library behind its Add Media button — not a bare
+			// textarea. Both degrade gracefully when unavailable.
+			if ( function_exists( 'wp_enqueue_editor' ) ) {
+				wp_enqueue_editor();
+			}
+			if ( function_exists( 'wp_enqueue_media' ) ) {
+				wp_enqueue_media();
+			}
 			wp_localize_script(
 				'mahan-course-builder',
 				'MahanCB',
@@ -207,18 +216,41 @@ class Mahan_Admin {
 					'nonce'   => wp_create_nonce( Mahan_Course_Builder::NONCE ),
 					'i18n'    => array(
 						'addUnit'      => __( 'Add unit', 'mahan-academy' ),
-						'addLesson'    => __( 'Add lesson', 'mahan-academy' ),
 						'newUnit'      => __( 'New unit', 'mahan-academy' ),
 						'unitName'     => __( 'Unit name', 'mahan-academy' ),
 						'lessonTitle'  => __( 'Lesson title', 'mahan-academy' ),
 						'lessons'      => __( 'lessons', 'mahan-academy' ),
 						'exercises'    => __( 'exercises', 'mahan-academy' ),
 						'type'         => __( 'Type', 'mahan-academy' ),
-						'minutes'      => __( 'Min', 'mahan-academy' ),
+						'minutes'      => __( 'min', 'mahan-academy' ),
+						'minutesFull'  => __( 'Minutes', 'mahan-academy' ),
 						'reading'      => __( 'Reading', 'mahan-academy' ),
 						'practice'     => __( 'Practice', 'mahan-academy' ),
 						'video'        => __( 'Video', 'mahan-academy' ),
-						'editContent'  => __( 'Edit content', 'mahan-academy' ),
+						'edit'         => __( 'Edit', 'mahan-academy' ),
+						'editLesson'   => __( 'Edit lesson', 'mahan-academy' ),
+						'openWp'       => __( 'Open in the WordPress editor', 'mahan-academy' ),
+						'collapse'     => __( 'Collapse', 'mahan-academy' ),
+						'expand'       => __( 'Expand', 'mahan-academy' ),
+						'emptyUnit'    => __( 'No lessons in this unit yet — add the first one below.', 'mahan-academy' ),
+						'addLessonPh'  => __( 'Add a lesson — type its title and press Enter', 'mahan-academy' ),
+						'add'          => __( 'Add', 'mahan-academy' ),
+						'draft'        => __( 'Draft', 'mahan-academy' ),
+						'hasVideo'     => __( 'Has a video', 'mahan-academy' ),
+						'noContent'    => __( 'No content yet', 'mahan-academy' ),
+						'noContentShort' => __( 'empty', 'mahan-academy' ),
+						'settings'     => __( 'Settings', 'mahan-academy' ),
+						'content'      => __( 'Lesson content', 'mahan-academy' ),
+						'videoUrl'     => __( 'Video', 'mahan-academy' ),
+						'videoHint'    => __( 'YouTube, Vimeo, or a direct .mp4 / .webm link', 'mahan-academy' ),
+						'videoBad'     => __( 'Not a supported video link', 'mahan-academy' ),
+						'videoFile'    => __( 'Video file', 'mahan-academy' ),
+						'saveLesson'   => __( 'Save lesson', 'mahan-academy' ),
+						'saving'       => __( 'Saving…', 'mahan-academy' ),
+						'lessonSaved'  => __( 'Lesson saved', 'mahan-academy' ),
+						'loading'      => __( 'Loading…', 'mahan-academy' ),
+						'discard'      => __( 'Discard unsaved changes to this lesson?', 'mahan-academy' ),
+						'addQuiz'      => __( 'Add quiz', 'mahan-academy' ),
 						'duplicate'    => __( 'Duplicate', 'mahan-academy' ),
 						'delete'       => __( 'Delete', 'mahan-academy' ),
 						'dragUnit'     => __( 'Drag to reorder unit', 'mahan-academy' ),

@@ -52,6 +52,7 @@ class Mahan_Lesson_Meta {
 		$xp         = Mahan_Utils::meta_int( $post->ID, Mahan_Courses::M_XP, 0 );
 		$est_min    = Mahan_Utils::meta_int( $post->ID, Mahan_Courses::M_EST_MIN, 0 );
 		$type       = Mahan_Utils::meta_str( $post->ID, Mahan_Courses::M_TYPE, 'reading' );
+		$video      = Mahan_Utils::meta_str( $post->ID, Mahan_Courses::M_VIDEO, '' );
 
 		$courses = Mahan_Courses::get_courses();
 		?>
@@ -91,6 +92,11 @@ class Mahan_Lesson_Meta {
 				}
 				?>
 			</select>
+		</p>
+		<p>
+			<label for="mahan_video"><strong><?php esc_html_e( 'Video', 'mahan-academy' ); ?></strong></label><br />
+			<input type="url" id="mahan_video" name="mahan_video" value="<?php echo esc_attr( $video ); ?>" style="width:100%" placeholder="https://www.youtube.com/watch?v=…" />
+			<small><?php esc_html_e( 'YouTube, Vimeo, or a direct .mp4 / .webm link', 'mahan-academy' ); ?></small>
 		</p>
 		<p>
 			<label for="mahan_xp"><?php esc_html_e( 'XP reward (0 = default)', 'mahan-academy' ); ?></label>
@@ -160,6 +166,14 @@ class Mahan_Lesson_Meta {
 		update_post_meta( $post_id, Mahan_Courses::M_XP, $xp );
 		update_post_meta( $post_id, Mahan_Courses::M_EST_MIN, $est_min );
 		update_post_meta( $post_id, Mahan_Courses::M_TYPE, $type );
+
+		// Same rule as the studio: empty clears the meta rather than storing ''.
+		$video = isset( $_POST['mahan_video'] ) ? esc_url_raw( trim( wp_unslash( (string) $_POST['mahan_video'] ) ) ) : '';
+		if ( '' === $video ) {
+			delete_post_meta( $post_id, Mahan_Courses::M_VIDEO );
+		} else {
+			update_post_meta( $post_id, Mahan_Courses::M_VIDEO, $video );
+		}
 
 		// Exercises (built by JS, posted as JSON).
 		$raw = isset( $_POST['mahan_exercises_json'] ) ? wp_unslash( (string) $_POST['mahan_exercises_json'] ) : '';

@@ -23,6 +23,7 @@ class Mahan_Course_Builder {
 	public static function init() {
 		add_action( 'add_meta_boxes', array( __CLASS__, 'register' ) );
 		add_action( 'wp_ajax_mahan_cb_add_lesson', array( __CLASS__, 'ajax_add_lesson' ) );
+		add_action( 'wp_ajax_mahan_cb_get_lesson', array( __CLASS__, 'ajax_get_lesson' ) );
 		add_action( 'wp_ajax_mahan_cb_update_lesson', array( __CLASS__, 'ajax_update_lesson' ) );
 		add_action( 'wp_ajax_mahan_cb_delete_lesson', array( __CLASS__, 'ajax_delete_lesson' ) );
 		add_action( 'wp_ajax_mahan_cb_duplicate_lesson', array( __CLASS__, 'ajax_duplicate_lesson' ) );
@@ -55,20 +56,25 @@ class Mahan_Course_Builder {
 			data-tree="<?php echo esc_attr( wp_json_encode( $tree, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ) ); ?>">
 			<div class="mahan-cb-toolbar">
 				<div class="mahan-cb-stats">
-					<span class="mahan-cb-stat" data-cb-count="units">0</span> <?php esc_html_e( 'units', 'mahan-academy' ); ?>
-					·
-					<span class="mahan-cb-stat" data-cb-count="lessons">0</span> <?php esc_html_e( 'lessons', 'mahan-academy' ); ?>
-					·
-					<span class="mahan-cb-stat" data-cb-count="xp">0</span> XP
+					<span class="mahan-cb-pill"><span class="mahan-cb-stat" data-cb-count="units">0</span> <?php esc_html_e( 'units', 'mahan-academy' ); ?></span>
+					<span class="mahan-cb-pill"><span class="mahan-cb-stat" data-cb-count="lessons">0</span> <?php esc_html_e( 'lessons', 'mahan-academy' ); ?></span>
+					<span class="mahan-cb-pill"><span class="mahan-cb-stat" data-cb-count="min">0</span> <?php esc_html_e( 'min', 'mahan-academy' ); ?></span>
+					<span class="mahan-cb-pill"><span class="mahan-cb-stat" data-cb-count="xp">0</span> XP</span>
 				</div>
-				<button type="button" class="button button-primary" id="mahan-cb-add-unit">
-					+ <?php esc_html_e( 'Add unit', 'mahan-academy' ); ?>
-				</button>
+				<div class="mahan-cb-toolbar-actions">
+					<button type="button" class="button" id="mahan-cb-toggle-all">
+						<?php esc_html_e( 'Expand / collapse all', 'mahan-academy' ); ?>
+					</button>
+					<button type="button" class="button button-primary" id="mahan-cb-add-unit">
+						+ <?php esc_html_e( 'Add unit', 'mahan-academy' ); ?>
+					</button>
+				</div>
 			</div>
 			<div class="mahan-cb-units" id="mahan-cb-units"></div>
-			<p class="mahan-cb-empty" id="mahan-cb-empty" style="display:none">
-				<?php esc_html_e( 'No lessons yet. Add a unit, then add lessons inside it — drag to reorder anytime.', 'mahan-academy' ); ?>
-			</p>
+			<div class="mahan-cb-empty" id="mahan-cb-empty" style="display:none">
+				<span class="dashicons dashicons-welcome-add-page"></span>
+				<p><?php esc_html_e( 'Build your course right here: add a unit, then add lessons inside it. Everything is drag-and-drop, and every lesson opens a full editor — text, video, minutes, XP — without leaving this page.', 'mahan-academy' ); ?></p>
+			</div>
 			<div class="mahan-cb-saving" id="mahan-cb-saving" aria-live="polite"></div>
 		</div>
 		<?php
@@ -105,15 +111,21 @@ class Mahan_Course_Builder {
 
 	private static function node( $lesson_id ) {
 		$lesson_id = (int) $lesson_id;
+		$video     = Mahan_Utils::meta_str( $lesson_id, Mahan_Courses::M_VIDEO, '' );
 		return array(
-			'id'        => $lesson_id,
-			'title'     => get_the_title( $lesson_id ),
-			'type'      => Mahan_Utils::meta_str( $lesson_id, Mahan_Courses::M_TYPE, 'reading' ),
-			'xp'        => Mahan_Utils::meta_int( $lesson_id, Mahan_Courses::M_XP, 0 ),
-			'est_min'   => Mahan_Utils::meta_int( $lesson_id, Mahan_Courses::M_EST_MIN, 0 ),
-			'exercises' => count( Mahan_Courses::get_exercises( $lesson_id ) ),
-			'edit_url'  => get_edit_post_link( $lesson_id, 'raw' ),
-			'status'    => get_post_status( $lesson_id ),
+			'id'          => $lesson_id,
+			'title'       => get_the_title( $lesson_id ),
+			'type'        => Mahan_Utils::meta_str( $lesson_id, Mahan_Courses::M_TYPE, 'reading' ),
+			'xp'          => Mahan_Utils::meta_int( $lesson_id, Mahan_Courses::M_XP, 0 ),
+			'est_min'     => Mahan_Utils::meta_int( $lesson_id, Mahan_Courses::M_EST_MIN, 0 ),
+			'exercises'   => count( Mahan_Courses::get_exercises( $lesson_id ) ),
+			'edit_url'    => get_edit_post_link( $lesson_id, 'raw' ),
+			'status'      => get_post_status( $lesson_id ),
+			// The studio flags at a glance what still needs work: a lesson with
+			// no body, or a "video" lesson with no video behind it.
+			'has_content' => '' !== trim( (string) get_post_field( 'post_content', $lesson_id ) ),
+			'video'       => $video,
+			'video_ok'    => '' !== Mahan_Courses::video_embed( $video )['type'],
 		);
 	}
 
@@ -188,7 +200,34 @@ class Mahan_Course_Builder {
 	}
 
 	/* ------------------------------------------------------------------ */
-	/* AJAX: update lesson (title / type / xp / minutes)                   */
+	/* AJAX: read one lesson for the studio editor                         */
+	/* ------------------------------------------------------------------ */
+
+	/**
+	 * The tree stays light (titles + flags); the full body is fetched only
+	 * when a lesson's editor actually opens.
+	 */
+	public static function ajax_get_lesson() {
+		$lesson_id = isset( $_POST['lesson_id'] ) ? absint( $_POST['lesson_id'] ) : 0;
+		self::guard( 0 );
+
+		if ( ! $lesson_id || Mahan_CPT::LESSON !== get_post_type( $lesson_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'Lesson not found.', 'mahan-academy' ) ), 404 );
+		}
+		if ( ! current_user_can( 'edit_post', $lesson_id ) ) {
+			wp_send_json_error( array( 'message' => __( 'Forbidden', 'mahan-academy' ) ), 403 );
+		}
+
+		wp_send_json_success(
+			array(
+				'lesson'  => self::node( $lesson_id ),
+				'content' => (string) get_post_field( 'post_content', $lesson_id ),
+			)
+		);
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* AJAX: update lesson (title / type / xp / minutes / video / content) */
 	/* ------------------------------------------------------------------ */
 
 	public static function ajax_update_lesson() {
@@ -202,12 +241,23 @@ class Mahan_Course_Builder {
 			wp_send_json_error( array( 'message' => __( 'Forbidden', 'mahan-academy' ) ), 403 );
 		}
 
+		$post_fields = array();
 		if ( isset( $_POST['title'] ) ) {
 			$title = sanitize_text_field( wp_unslash( $_POST['title'] ) );
 			if ( '' !== trim( $title ) ) {
-				wp_update_post( array( 'ID' => $lesson_id, 'post_title' => $title ) );
+				$post_fields['post_title'] = $title;
 			}
 		}
+		if ( isset( $_POST['content'] ) ) {
+			// Same filter the classic editor applies: rich HTML stays, scripts
+			// and event handlers do not — regardless of the sender's browser.
+			$post_fields['post_content'] = wp_kses_post( wp_unslash( (string) $_POST['content'] ) );
+		}
+		if ( ! empty( $post_fields ) ) {
+			$post_fields['ID'] = $lesson_id;
+			wp_update_post( $post_fields );
+		}
+
 		if ( isset( $_POST['type'] ) ) {
 			update_post_meta( $lesson_id, Mahan_Courses::M_TYPE, self::sanitize_type( wp_unslash( $_POST['type'] ) ) );
 		}
@@ -216,6 +266,14 @@ class Mahan_Course_Builder {
 		}
 		if ( isset( $_POST['est_min'] ) ) {
 			update_post_meta( $lesson_id, Mahan_Courses::M_EST_MIN, absint( $_POST['est_min'] ) );
+		}
+		if ( isset( $_POST['video'] ) ) {
+			$url = esc_url_raw( trim( wp_unslash( (string) $_POST['video'] ) ) );
+			if ( '' === $url ) {
+				delete_post_meta( $lesson_id, Mahan_Courses::M_VIDEO );
+			} else {
+				update_post_meta( $lesson_id, Mahan_Courses::M_VIDEO, $url );
+			}
 		}
 
 		wp_send_json_success( array( 'lesson' => self::node( $lesson_id ) ) );
@@ -273,6 +331,7 @@ class Mahan_Course_Builder {
 			Mahan_Courses::M_COURSE_ID,
 			Mahan_Courses::M_UNIT,
 			Mahan_Courses::M_TYPE,
+			Mahan_Courses::M_VIDEO,
 			Mahan_Courses::M_XP,
 			Mahan_Courses::M_EST_MIN,
 			Mahan_Courses::M_EXERCISES,

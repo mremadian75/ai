@@ -33,6 +33,7 @@ class Mahan_Courses {
 	const M_XP         = '_mahan_xp';
 	const M_EST_MIN    = '_mahan_est_min';
 	const M_TYPE       = '_mahan_type';
+	const M_VIDEO      = '_mahan_video';
 	const M_EXERCISES  = '_mahan_exercises';
 	const M_VARIANTS   = '_mahan_variants';
 
@@ -173,12 +174,35 @@ class Mahan_Courses {
 	 * @return array { type: 'youtube'|'vimeo'|'file'|'', src: string }
 	 */
 	public static function promo_video( $course_id ) {
-		$url = Mahan_Utils::meta_str( $course_id, self::M_PROMO_VIDEO, '' );
-		$url = trim( $url );
+		return self::video_embed( Mahan_Utils::meta_str( $course_id, self::M_PROMO_VIDEO, '' ) );
+	}
+
+	/**
+	 * The lesson's own video, if any — set from the Course Studio.
+	 *
+	 * @param int $lesson_id Lesson id.
+	 * @return array { type, src }
+	 */
+	public static function lesson_video( $lesson_id ) {
+		return self::video_embed( Mahan_Utils::meta_str( $lesson_id, self::M_VIDEO, '' ) );
+	}
+
+	/**
+	 * Normalize a pasted video URL into an embeddable { type, src }.
+	 *
+	 * Whitelist, not blocklist: only YouTube, Vimeo, and direct media files come
+	 * out the other side, so the SPA can build an iframe/video tag from `src`
+	 * without ever embedding an arbitrary admin-supplied origin.
+	 *
+	 * @param string $url Pasted URL (watch page, short link, embed, or file).
+	 * @return array { type: 'youtube'|'vimeo'|'file'|'', src }
+	 */
+	public static function video_embed( $url ) {
+		$url = trim( (string) $url );
 		if ( '' === $url ) {
 			return array( 'type' => '', 'src' => '' );
 		}
-		if ( preg_match( '~(?:youtube\.com/watch\?v=|youtu\.be/|youtube\.com/embed/)([A-Za-z0-9_-]{6,})~', $url, $m ) ) {
+		if ( preg_match( '~(?:youtube\.com/watch\?v=|youtu\.be/|youtube\.com/embed/|youtube\.com/shorts/)([A-Za-z0-9_-]{6,})~', $url, $m ) ) {
 			return array( 'type' => 'youtube', 'src' => 'https://www.youtube.com/embed/' . $m[1] );
 		}
 		if ( preg_match( '~vimeo\.com/(?:video/)?(\d+)~', $url, $m ) ) {

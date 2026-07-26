@@ -532,6 +532,9 @@ class Mahan_REST {
 			// learner (AI configured + a profile to personalize from).
 			'personalize'  => ( Mahan_Settings::ai_ready() && '' !== Mahan_Profile::signature( $user_id ) ),
 			'type'         => Mahan_Utils::meta_str( $lesson_id, Mahan_Courses::M_TYPE, 'reading' ),
+			// Normalized to { type, src } server-side — the app never embeds an
+			// arbitrary URL, only what the whitelist let through.
+			'video'        => Mahan_Courses::lesson_video( $lesson_id ),
 			'est_min'      => Mahan_Utils::meta_int( $lesson_id, Mahan_Courses::M_EST_MIN, 0 ),
 			'xp'           => Mahan_Courses::lesson_xp( $lesson_id ),
 			'exercises'    => $exercises,

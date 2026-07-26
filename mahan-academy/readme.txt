@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.28.1
+Stable tag: 1.29.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,7 +29,8 @@ Mahan Academy is a self-contained learning plugin built to teach people how to u
 * Smart Practice: a one-tap "Generate practice" on any lesson that asks AI for fresh questions tuned to the lesson's concepts and your level (with misconception-targeting distractors), grades them instantly, and feeds anything you miss into spaced repetition
 * Category filter + bundle discovery right in the catalog (Coursera/Duolingo-style domains and specializations)
 * Browse by subject & topic: the catalog groups courses into category sections and offers a "Browse by topic" panel to filter by any concept (مباحث); course topic chips are clickable to pivot to everything on the same topic
-* Visual drag-and-drop Course Builder — build the whole curriculum on one screen
+* Visual drag-and-drop Course Studio — build the whole curriculum on one screen, Tutor-LMS style: collapsible unit cards with live summaries, inline lesson add (type a title, press Enter), status badges (video, draft, still-empty), and a full lesson editor in a modal — rich text with the media library, a video field with live preview (YouTube / Vimeo / mp4), minutes and XP — without ever leaving the course
+* Lesson videos: paste a video link on any lesson and learners get a responsive player above the lesson text; URLs pass a strict whitelist so only YouTube, Vimeo and direct media files ever embed
 * AI authoring assistant — generate outcomes, draft lessons, and create exercises
 * Beautiful single-page application front-end (Coursera structure + Duolingo energy)
 * Automatic course cover art: every course gets a generated CSS gradient cover — hue by category so a subject area reads as a colour family, and one of six pattern families (weave, dot grid, ruled grid, rays, arcs, cross-hatch) plus angle and tone by title, so sibling courses never look like the same card twice. No uploads, no image requests, and it looks right in both light and dark themes
@@ -83,6 +84,9 @@ You don't have to do anything — the starter catalog installs automatically on 
 Each course lists the authoritative references it is grounded in under "Further reading & sources" on the course page — peer-reviewed papers, standards and institutional guidance (NIST AI Risk Management Framework, EU AI Act, UNESCO, OECD, OWASP, C2PA), textbooks, and official provider documentation.
 
 == Changelog ==
+
+= 1.29.0 =
+The Course Studio: the admin course builder rebuilt in Tutor-LMS style so a whole course is authored on one screen. Every lesson row gains an Edit button that opens a full editor in place — the lesson body in the classic rich-text editor with the media library, a video field that validates and previews YouTube / Vimeo / direct-file links as you paste them, a segmented type control, minutes and XP — with a dirty-guard so closing an edited lesson asks first. Lessons can now carry a video that learners see as a responsive player above the lesson text; pasted URLs pass a strict server-side whitelist so only YouTube, Vimeo and direct media files ever embed. The curriculum tree became collapsible unit cards with live summaries, per-lesson status badges (video, draft, and an "empty" warning on lessons with no body yet), and inline lesson add — type a title, pick a type, press Enter. Content saved from the studio passes wp_kses_post, exactly like the classic editor. Also fixes a CSS-token scoping bug that rendered the modal's selected type segment white-on-white. No schema change.
 
 = 1.28.1 =
 A deep bug hunt over the new live-assessment code, with a regression test behind every fix. A provider failure at a stage boundary used to bank that stage's score without moving off the stage, so answering it again counted it twice — a sitting could score 320 out of 300 and report 107%; all three failure paths now leave the sitting exactly as they found it, which also stops a provider hiccup from spending one of the learner's two attempts. Two final answers landing together (a double tap, a retried request) could both be paid the 60 XP; the closing transition is now guarded so MySQL picks one winner. A grading failure persisted the learner's turn even though the browser still held the text, so re-sending showed the same answer twice. A unit whose title had a trailing space could never be examined, because the title was cleaned before being matched against the course's own titles. And a four-unit course page issued sixteen queries it did not need, re-fetching the lesson list and progress map once per unit; the whole course now costs two queries and one fetch. Also adds a daily cap on new sittings — resuming is always free — because nothing else bounded what a learner could spend of the site's API budget. No schema change.

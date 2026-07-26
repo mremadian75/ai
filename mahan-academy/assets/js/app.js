@@ -2187,6 +2187,20 @@
 			// own work (lazy-loaded + server-cached; hidden if unavailable).
 			var forYou = forYouCard(L);
 			if (forYou) { col.appendChild(forYou); }
+			// Lesson video, above the prose — same embed pattern as the course
+			// promo (the server already reduced the URL to a safe type/src).
+			if (L.video && L.video.src) {
+				var lv = L.video;
+				col.appendChild(h('div', { class: 'mahan-lesson-video' }, [
+					lv.type === 'file'
+						? h('video', { class: 'mahan-promo', src: lv.src, controls: 'controls', preload: 'metadata' })
+						: h('div', { class: 'mahan-promo mahan-promo-embed' }, [
+							h('iframe', { src: lv.src, frameborder: '0', title: L.title,
+								allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
+								allowfullscreen: 'allowfullscreen' })
+						])
+				]));
+			}
 			var article = h('article', { class: 'mahan-prose', html: L.content || '' });
 			col.appendChild(article);
 			// How far through *this* lesson you are. (The bar in the header

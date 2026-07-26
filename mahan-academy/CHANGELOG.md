@@ -4,6 +4,74 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.29.0]
+
+The **Course Studio** — the admin course builder rebuilt in Tutor-LMS style,
+so a whole course is authored on one screen. **No schema change — DB stays v6.**
+
+### The lesson editor moves into the builder
+
+The old builder could name and arrange lessons but sent you to the WordPress
+editor to write one. Now every lesson row has an **Edit** button that opens a
+full editor in place:
+
+- **Lesson body** in a real TinyMCE (the classic WordPress editor, with the
+  media library behind its Add Media button) — falling back to a plain
+  textarea when `wp.editor` isn't available.
+- **Video** — paste a YouTube, Vimeo, or direct `.mp4`/`.webm` link and get an
+  instant verdict ("✓ YouTube" / "✗ not supported") plus a live preview,
+  before anything is saved.
+- **Type** as a segmented control (Reading / Video / Practice), and minutes +
+  XP beside it.
+- A dirty-guard: closing an edited lesson asks before discarding.
+
+Saved content passes through `wp_kses_post` server-side — the same filter the
+classic editor applies — and the video URL through a **whitelist** normalizer
+(`Mahan_Courses::video_embed()`): only YouTube, Vimeo, and direct media files
+come out the other side, so the learner app never iframes an arbitrary
+admin-pasted origin. 17 assertions cover the parser, including the lookalike
+hosts and the `javascript:` URL it must reject.
+
+### Lesson videos reach the learner
+
+New lesson meta `_mahan_video`, surfaced through `/lesson` as a normalized
+`{ type, src }` and rendered above the prose as a responsive 16:9 embed (or a
+native `<video>` for files). The classic lesson meta box gained the same field,
+so the two editors can't disagree about where the video lives.
+
+### The tree tells you what still needs work
+
+- Unit cards are **collapsible** (chevron, header click, and an
+  expand/collapse-all in the toolbar), numbered, with a live summary line —
+  "2 lessons · 14 min · ✓ Quiz".
+- Lesson rows carry status badges: **video ✓**, minutes, XP, exercises,
+  **Draft**, and an **"empty"** warning on any lesson that still has no body —
+  the one flag an author actually needs at a glance.
+- **Inline add**: type a title into the dashed row at the bottom of a unit,
+  pick a type, press Enter — no more `window.prompt`. Focus returns to the
+  add-row so a whole unit can be sketched in one sitting.
+- A unit with no quiz now says **"Add quiz"** instead of a bare "Quiz" button.
+- Toolbar stats gained total minutes, and the quiz/lesson editors share one
+  modal chrome with a sticky footer.
+
+### A CSS-variable bug the harness caught
+
+The studio's modals are appended to `<body>` — outside `.mahan-cb`, where the
+`--cb-accent` token was declared. Every `var()` inside a modal silently
+resolved to nothing; the selected segment of the type control rendered
+white-on-white. The tokens are now declared on both roots. Found by the new
+headless harness's screenshot, which is exactly what it is for.
+
+### Delivery
+
+- A new **32-check headless harness** drives the real builder JS with real
+  jQuery: render, badges, collapse, inline add, the whole lesson-editor round
+  trip (content + video + minutes payload), the dirty-guard `confirm`, and the
+  quiz editor.
+- A 17-assertion logic suite for the video whitelist.
+- The lesson-view harness now asserts the video embed renders above the prose.
+- Spanish complete: 733/733 strings.
+
 ## [1.28.1]
 
 A deep bug hunt over 1.28.0's new code. Five real defects, every one of them

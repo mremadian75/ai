@@ -4,6 +4,72 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.28.1]
+
+A deep bug hunt over 1.28.0's new code. Five real defects, every one of them
+now covered by a test that failed before the fix.
+
+### The score could exceed the maximum
+
+If the provider failed while setting the *next* stage's question, the stage that
+had just been passed was banked anyway — but the sitting stayed on that stage.
+Answering it again added its score a second time. Three stages could total 320
+out of 300, and the certificate-adjacent number a learner sees read **107%**.
+
+All three failure paths in `answer()` now persist nothing at all: the sitting is
+left exactly as it was found, and the browser (which still holds the typed text)
+re-sends. The same fix stopped a provider failure from charging the learner one
+of their two attempts for something that was never their mistake.
+
+### Two final answers could be paid twice
+
+A double tap, or a retried request, meant two calls read an active sitting, both
+decided "passed", and both reached the XP award before either had written the
+status the anti-farm check reads. Sixty XP twice.
+
+The terminal transition is now a guarded `UPDATE ... WHERE status = 'active'`,
+so MySQL picks one winner; the loser is told the sitting is already closed. The
+"have they passed this before" question is asked *before* that write — asking it
+after meant the sitting became its own prior pass and nobody was ever paid.
+
+### A grader failure showed the learner their own answer twice
+
+The learner's turn was persisted on a grading failure, in the name of not losing
+their words. But the browser had not lost them — it restores the text and
+re-sends — so the only thing the write achieved was a transcript containing the
+same answer twice.
+
+### Unit titles
+
+`start()` ran the unit title through `sanitize_text_field()` and then matched the
+result against the course's stored titles. A unit whose title had a trailing
+space could therefore never be examined: the row rendered as available and the
+request 404'd. The title is now matched verbatim, and clamped to the column width
+only at the database boundary — where a longer title would otherwise be silently
+truncated on write, leaving the sitting invisible to both the resume lookup and
+the once-per-unit XP guard.
+
+### A course page cost sixteen queries it did not need
+
+Every unit's viva state was computed independently, each one re-fetching the
+course's lesson list and the learner's progress map that the page had already
+loaded. `Mahan_Viva::course_states()` now answers the whole course in **two
+queries and one lesson fetch**, down from eight queries and four fetches on a
+four-unit course.
+
+### Also
+
+- A daily cap (12) on *new* sittings. Resuming one is always free, and XP was
+  already once-per-unit — this is about a provider bill nobody agreed to, since
+  nothing else stopped a learner looping start → fail → start.
+- Two taps on "Live assessment" opened two modals over one sitting.
+
+### Delivery
+
+- 108 assertions in the viva suite (up from 87) — 21 of them regressions for the
+  defects above, including a modelled two-request race.
+- All 11 logic suites and 17 render harnesses pass. Spanish at 713/713.
+
 ## [1.28.0]
 
 A live AI examiner, and the course that explains why any of this feels personal.

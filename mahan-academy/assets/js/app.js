@@ -1863,17 +1863,26 @@
 		if (code === 'generation_failed') { return t('vivaNoQuestion', "The examiner couldn't set a question — please try again in a moment."); }
 		if (code === 'grading_failed') { return t('vivaNoGrade', "The examiner couldn't read that answer — send it again."); }
 		if (code === 'empty_answer') { return t('vivaEmpty', 'Write an answer first.'); }
+		if (code === 'daily_limit') { return t('vivaDailyLimit', "That's enough live assessments for today — come back tomorrow."); }
 		return t('error', 'Something went wrong.');
 	}
 
+	// One sitting opens at a time. Two taps used to fire two /viva/start calls;
+	// the second resumes the same sitting and stacks a second modal on the first.
+	var vivaOpening = false;
+
 	function openViva(courseId, unit) {
+		if (vivaOpening) { return; }
+		vivaOpening = true;
 		// Setting the first question is a live model call — say so, or the tap
 		// looks like it did nothing.
 		toast('🎙 ' + esc(t('vivaOpening', 'The examiner is preparing your first question…')), 'info');
 		api('/viva/start', 'POST', { course_id: courseId, unit: unit }).then(function (r) {
+			vivaOpening = false;
 			if (!r.ok) { toast(esc(t('error', 'Something went wrong.')), 'error'); return; }
 			renderVivaModal(courseId, unit, r.session);
 		}).catch(function (err) {
+			vivaOpening = false;
 			toast(esc(vivaError(err)), 'error');
 		});
 	}

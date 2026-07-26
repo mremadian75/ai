@@ -112,6 +112,8 @@ Things worth knowing as an owner:
   A sitting nobody touches for a day is retired automatically.
 - **Passing pays 60 XP once per unit, ever.** Retaking for a better score costs
   nothing and pays nothing.
+- **A learner may open at most 12 new sittings a day.** Resuming one they are
+  already in the middle of is always free and never counts.
 - With **no API key configured, the row does not appear at all.**
 
 ---

@@ -771,6 +771,7 @@ return array(
 	'The AI examiner is unavailable right now.' => 'El examinador de IA no está disponible ahora mismo.',
 	'The examiner couldn\'t set a question — please try again in a moment.' => 'El examinador no ha podido plantear una pregunta. Inténtalo de nuevo en un momento.',
 	'The examiner couldn\'t read that answer — send it again.' => 'El examinador no ha podido leer esa respuesta. Vuelve a enviarla.',
+	'That\'s enough live assessments for today — come back tomorrow.' => 'Ya son suficientes evaluaciones en directo por hoy. Vuelve mañana.',
 
 	/* --- Language ---------------------------------------------------------------- */
 	'Language'                         => 'Idioma',

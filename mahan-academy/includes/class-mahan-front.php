@@ -380,6 +380,7 @@ class Mahan_Front {
 			'vivaUnavailable'  => __( 'The AI examiner is unavailable right now.', 'mahan-academy' ),
 			'vivaNoQuestion'   => __( 'The examiner couldn\'t set a question — please try again in a moment.', 'mahan-academy' ),
 			'vivaNoGrade'      => __( 'The examiner couldn\'t read that answer — send it again.', 'mahan-academy' ),
+			'vivaDailyLimit'   => __( 'That\'s enough live assessments for today — come back tomorrow.', 'mahan-academy' ),
 			'paths'            => __( 'Paths', 'mahan-academy' ),
 			'learningPaths'    => __( 'Learning paths', 'mahan-academy' ),
 			'pathsSub'         => __( 'Guided programs — courses in a recommended order.', 'mahan-academy' ),

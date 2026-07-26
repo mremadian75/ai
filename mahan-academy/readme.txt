@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.28.0
+Stable tag: 1.28.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -83,6 +83,9 @@ You don't have to do anything — the starter catalog installs automatically on 
 Each course lists the authoritative references it is grounded in under "Further reading & sources" on the course page — peer-reviewed papers, standards and institutional guidance (NIST AI Risk Management Framework, EU AI Act, UNESCO, OECD, OWASP, C2PA), textbooks, and official provider documentation.
 
 == Changelog ==
+
+= 1.28.1 =
+A deep bug hunt over the new live-assessment code, with a regression test behind every fix. A provider failure at a stage boundary used to bank that stage's score without moving off the stage, so answering it again counted it twice — a sitting could score 320 out of 300 and report 107%; all three failure paths now leave the sitting exactly as they found it, which also stops a provider hiccup from spending one of the learner's two attempts. Two final answers landing together (a double tap, a retried request) could both be paid the 60 XP; the closing transition is now guarded so MySQL picks one winner. A grading failure persisted the learner's turn even though the browser still held the text, so re-sending showed the same answer twice. A unit whose title had a trailing space could never be examined, because the title was cleaned before being matched against the course's own titles. And a four-unit course page issued sixteen queries it did not need, re-fetching the lesson list and progress map once per unit; the whole course now costs two queries and one fetch. Also adds a daily cap on new sittings — resuming is always free — because nothing else bounded what a learner could spend of the site's API budget. No schema change.
 
 = 1.28.0 =
 A live AI examiner. Every assessment in the plugin until now asked you to recognise the right answer; this one asks you to say it. At the end of each unit — once its lessons are done — an AI examiner runs a three-stage viva: explain the core idea in your own words, apply it to a scenario built from your own role, tools and goal, then judge a trade-off or a limit. Answers are prose, graded 0–100 against a rubric the examiner wrote when it set the question. Pass a stage and the next opens; answer partly right and it probes once on the exact gap before the attempt counts. The score is the server's — a model that says "pass" on a 30 is overruled, and the rubric is stripped before the session reaches the browser, so there is nothing to forge and nothing to read the answer off. Stages, attempts, turns and answer length are all capped, and the sitting is a database row rather than a transient, so closing the tab mid-exam loses nothing. Passing pays XP once per unit ever. With no API key configured the feature does not appear at all. Alongside it, a nineteenth course — "Personalizing AI: Make It Work Like You Do" — teaches what the rest of the catalog had been assuming: why answers are generic by default, the four levers that change it, and how to check whether your setup actually helped. The per-lesson "For you" note now has to end with one thing you could try today. Fixes: "remove all data" left the certificates table behind, and five CSS rules pointed at colour tokens that do not exist. Schema change: DB goes to v6.

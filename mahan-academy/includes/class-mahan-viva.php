@@ -65,6 +65,9 @@ class Mahan_Viva {
 	/** Abandon an untouched sitting after this many seconds. */
 	const STALE_AFTER = 86400;
 
+	/** New sittings a learner may open per day. Resuming one is always free. */
+	const MAX_SITTINGS_PER_DAY = 12;
+
 	/* ------------------------------------------------------------------ */
 	/* Stage definitions                                                   */
 	/* ------------------------------------------------------------------ */
@@ -141,6 +144,7 @@ class Mahan_Viva {
 			'max_attempts' => self::MAX_ATTEMPTS,
 			'answer_max'   => self::ANSWER_MAX,
 			'xp'           => self::XP_AWARD,
+			'daily_limit'  => self::MAX_SITTINGS_PER_DAY,
 		);
 	}
 
@@ -155,6 +159,27 @@ class Mahan_Viva {
 	/* ------------------------------------------------------------------ */
 	/* Eligibility                                                         */
 	/* ------------------------------------------------------------------ */
+
+	/**
+	 * The unit title as it is stored in, and matched against, the `unit` column.
+	 *
+	 * Clamped to the column width on purpose. MySQL would otherwise truncate a
+	 * longer title on write while every later lookup kept using the full string
+	 * — so the sitting would be invisible to `active_row()` and `passed_before()`,
+	 * which is not merely a lost session but an XP award that could be collected
+	 * again and again.
+	 *
+	 * Deliberately NOT `sanitize_text_field()`: this value is a key matched
+	 * against titles the course already holds, never markup that gets echoed.
+	 * Trimming or collapsing whitespace here would just stop it matching a unit
+	 * whose title has a trailing space, turning a visible row into a 404.
+	 *
+	 * @param string $unit Unit title.
+	 * @return string
+	 */
+	private static function unit_key( $unit ) {
+		return mb_substr( (string) $unit, 0, 190 );
+	}
 
 	/**
 	 * Lessons belonging to a unit of a course, in order.
@@ -177,17 +202,21 @@ class Mahan_Viva {
 	 * A viva opens once every lesson in its unit is complete — it examines the
 	 * unit, so there has to be a unit behind it.
 	 *
-	 * @param int    $user_id   User id.
-	 * @param int    $course_id Course id.
-	 * @param string $unit      Unit title.
+	 * @param int        $user_id   User id.
+	 * @param int        $course_id Course id.
+	 * @param string     $unit      Unit title.
+	 * @param array|null $status    Pre-fetched lesson-status map, to avoid
+	 *                              re-querying it once per unit.
 	 * @return bool
 	 */
-	public static function unit_ready( $user_id, $course_id, $unit ) {
+	public static function unit_ready( $user_id, $course_id, $unit, $status = null ) {
 		$lessons = self::unit_lessons( $course_id, $unit );
 		if ( empty( $lessons ) ) {
 			return false;
 		}
-		$status = Mahan_Progress::course_lesson_status( (int) $user_id, (int) $course_id );
+		if ( ! is_array( $status ) ) {
+			$status = Mahan_Progress::course_lesson_status( (int) $user_id, (int) $course_id );
+		}
 		foreach ( $lessons as $lesson ) {
 			$s = isset( $status[ (int) $lesson->ID ] ) ? $status[ (int) $lesson->ID ] : 'not_started';
 			if ( 'completed' !== $s ) {
@@ -216,6 +245,61 @@ class Mahan_Viva {
 	}
 
 	/**
+	 * Close a sitting, exactly once.
+	 *
+	 * Returns true only for the request that actually moved the row out of
+	 * 'active'. Two final answers submitted together — a double tap, a retried
+	 * request — would otherwise both read an active row, both decide "passed",
+	 * and both reach {@see finish_reward()} before either had written the status
+	 * the anti-farm check reads. The `status` column in the WHERE clause makes
+	 * that transition the thing being raced for, and MySQL picks one winner.
+	 *
+	 * @param int    $id     Session id.
+	 * @param string $status 'passed' or 'failed'.
+	 * @return bool
+	 */
+	private static function close_once( $id, $status ) {
+		global $wpdb;
+		$now = Mahan_Utils::now_mysql();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$done = $wpdb->update(
+			Mahan_DB::viva(),
+			array(
+				'status'       => (string) $status,
+				'completed_at' => $now,
+				'pending'      => '',
+				'updated_at'   => $now,
+			),
+			array(
+				'id'     => (int) $id,
+				'status' => 'active',
+			)
+		);
+		return 1 === (int) $done;
+	}
+
+	/**
+	 * Sittings this learner has opened today (site timezone).
+	 *
+	 * A viva is the most expensive surface in the plugin — a full sitting can be
+	 * a dozen model calls — and nothing else stops a learner looping
+	 * start → fail → start. XP is already paid only once per unit, so this is
+	 * not about farming; it is about a bill nobody agreed to.
+	 */
+	private static function sittings_today( $user_id ) {
+		global $wpdb;
+		$table = Mahan_DB::viva();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
+		return (int) $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$table} WHERE user_id = %d AND DATE( started_at ) = %s",
+				(int) $user_id,
+				Mahan_Utils::today()
+			)
+		);
+	}
+
+	/**
 	 * The learner's live sitting for a unit, if any. A sitting nobody has
 	 * touched for a day is retired rather than resumed — coming back a week
 	 * later to a half-remembered question helps no one.
@@ -231,7 +315,7 @@ class Mahan_Viva {
 				"SELECT * FROM {$table} WHERE user_id = %d AND course_id = %d AND unit = %s AND status = 'active' ORDER BY id DESC LIMIT 1",
 				(int) $user_id,
 				(int) $course_id,
-				(string) $unit
+				self::unit_key( $unit )
 			),
 			ARRAY_A
 		);
@@ -258,7 +342,7 @@ class Mahan_Viva {
 				"SELECT COUNT(*) FROM {$table} WHERE user_id = %d AND course_id = %d AND unit = %s AND status = 'passed'",
 				(int) $user_id,
 				(int) $course_id,
-				(string) $unit
+				self::unit_key( $unit )
 			)
 		) > 0;
 	}
@@ -267,12 +351,13 @@ class Mahan_Viva {
 	 * Per-unit summary for the course page: is it open, has it been passed,
 	 * is a sitting already in progress.
 	 *
-	 * @param int    $user_id   User id.
-	 * @param int    $course_id Course id.
-	 * @param string $unit      Unit title.
+	 * @param int        $user_id   User id.
+	 * @param int        $course_id Course id.
+	 * @param string     $unit      Unit title.
+	 * @param array|null $status    Pre-fetched lesson-status map.
 	 * @return array
 	 */
-	public static function unit_state( $user_id, $course_id, $unit ) {
+	public static function unit_state( $user_id, $course_id, $unit, $status = null ) {
 		$user_id = (int) $user_id;
 		$out     = array(
 			'available' => self::available(),
@@ -284,7 +369,7 @@ class Mahan_Viva {
 		if ( ! $user_id || ! $out['available'] ) {
 			return $out;
 		}
-		$out['unlocked'] = self::unit_ready( $user_id, $course_id, $unit );
+		$out['unlocked'] = self::unit_ready( $user_id, $course_id, $unit, $status );
 
 		$best = self::best( $user_id, $course_id, $unit );
 		if ( $best ) {
@@ -294,6 +379,108 @@ class Mahan_Viva {
 		if ( self::active_row( $user_id, $course_id, $unit ) ) {
 			$out['status'] = 'passed' === $out['status'] ? 'passed' : 'active';
 			$out['resume'] = true;
+		}
+		return $out;
+	}
+
+	/**
+	 * Every unit's state for one course, in two queries instead of four per unit.
+	 *
+	 * The per-unit path re-read the lesson list and the progress map for each
+	 * unit in turn — four units meant four extra `get_posts()` calls and a dozen
+	 * extra queries on a page that had already fetched both. The course view
+	 * calls this instead; `unit_state()` stays for single-unit callers.
+	 *
+	 * @param int   $user_id   User id.
+	 * @param int   $course_id Course id.
+	 * @param array $status    The lesson-status map the caller already has.
+	 * @return array unit title => state
+	 */
+	public static function course_states( $user_id, $course_id, $status ) {
+		$user_id   = (int) $user_id;
+		$course_id = (int) $course_id;
+		$units     = Mahan_Courses::get_course_units( $course_id );
+
+		$base = array(
+			'available' => self::available(),
+			'unlocked'  => false,
+			'status'    => 'none',
+			'percent'   => null,
+			'stages'    => self::stage_count(),
+		);
+		$out = array();
+		foreach ( $units as $u ) {
+			$out[ (string) $u['title'] ] = $base;
+		}
+		if ( ! $user_id || ! $base['available'] || empty( $out ) ) {
+			return $out;
+		}
+
+		global $wpdb;
+		$table = Mahan_DB::viva();
+
+		// Best pass per unit, and any live sitting — both in one pass each.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
+		$passed = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT unit, MAX( ROUND( score / GREATEST( max_score, 1 ) * 100 ) ) AS pct
+				 FROM {$table} WHERE user_id = %d AND course_id = %d AND status = 'passed' GROUP BY unit",
+				$user_id,
+				$course_id
+			),
+			ARRAY_A
+		);
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.NotPrepared
+		$live = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT unit, MAX( updated_at ) AS touched
+				 FROM {$table} WHERE user_id = %d AND course_id = %d AND status = 'active' GROUP BY unit",
+				$user_id,
+				$course_id
+			),
+			ARRAY_A
+		);
+
+		$best_by_unit = array();
+		foreach ( (array) $passed as $r ) {
+			$best_by_unit[ (string) $r['unit'] ] = (int) $r['pct'];
+		}
+		$live_by_unit = array();
+		foreach ( (array) $live as $r ) {
+			// A sitting nobody has touched for a day is not offered for resume.
+			// It is retired lazily by active_row() when the learner opens it.
+			$touched = strtotime( (string) $r['touched'] );
+			if ( $touched && ( time() - $touched ) <= self::STALE_AFTER ) {
+				$live_by_unit[ (string) $r['unit'] ] = true;
+			}
+		}
+
+		foreach ( $units as $u ) {
+			$title = (string) $u['title'];
+			$key   = self::unit_key( $title );
+			$state = $base;
+
+			// Readiness computed from the units already in hand. Calling
+			// unit_ready() here would send each one back through
+			// get_course_units(), which is the fetch this method exists to avoid.
+			$ready = ! empty( $u['lessons'] );
+			foreach ( (array) $u['lessons'] as $lesson ) {
+				$lid = (int) $lesson->ID;
+				if ( 'completed' !== ( isset( $status[ $lid ] ) ? $status[ $lid ] : 'not_started' ) ) {
+					$ready = false;
+					break;
+				}
+			}
+			$state['unlocked'] = $ready;
+			if ( isset( $best_by_unit[ $key ] ) ) {
+				$state['status']  = 'passed';
+				$state['percent'] = $best_by_unit[ $key ];
+			}
+			if ( isset( $live_by_unit[ $key ] ) ) {
+				$state['status'] = 'passed' === $state['status'] ? 'passed' : 'active';
+				$state['resume'] = true;
+			}
+			$out[ $title ] = $state;
 		}
 		return $out;
 	}
@@ -314,7 +501,7 @@ class Mahan_Viva {
 				 ORDER BY score DESC, id DESC LIMIT 1",
 				(int) $user_id,
 				(int) $course_id,
-				(string) $unit
+				self::unit_key( $unit )
 			),
 			ARRAY_A
 		);
@@ -359,7 +546,10 @@ class Mahan_Viva {
 	public static function start( $user_id, $course_id, $unit ) {
 		$user_id   = (int) $user_id;
 		$course_id = (int) $course_id;
-		$unit      = sanitize_text_field( (string) $unit );
+		// Kept verbatim: it is matched against the course's own unit titles
+		// below, so it is checked rather than cleaned — see unit_key(), which
+		// is applied at the database boundary and nowhere else.
+		$unit      = (string) $unit;
 
 		if ( ! $user_id ) {
 			return array( 'ok' => false, 'error' => 'not_logged_in' );
@@ -386,6 +576,13 @@ class Mahan_Viva {
 			return array( 'ok' => true, 'session' => self::public_session( $existing ), 'resumed' => true );
 		}
 
+		// Resuming is free; opening a new sitting is not. Checked after the
+		// resume branch so a learner is never locked out of an exam they are
+		// already halfway through.
+		if ( self::sittings_today( $user_id ) >= self::MAX_SITTINGS_PER_DAY ) {
+			return array( 'ok' => false, 'error' => 'daily_limit' );
+		}
+
 		global $wpdb;
 		$now = Mahan_Utils::now_mysql();
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
@@ -394,7 +591,7 @@ class Mahan_Viva {
 			array(
 				'user_id'    => $user_id,
 				'course_id'  => $course_id,
-				'unit'       => $unit,
+				'unit'       => self::unit_key( $unit ),
 				'stage'      => 1,
 				'turn'       => 1,
 				'attempt'    => 1,
@@ -501,9 +698,11 @@ class Mahan_Viva {
 
 		$grade = self::grade_answer( $user_id, $row, $pending, $answer, $transcript );
 		if ( ! $grade ) {
-			// The answer is already in the transcript; persisting it means a
-			// retry re-grades rather than losing what they typed.
-			self::update( (int) $row['id'], array( 'transcript' => wp_json_encode( $transcript ) ) );
+			// Persist nothing. Banking the learner's turn here felt like
+			// "don't lose their words", but the browser still holds the text
+			// and re-sends it — so the only thing the write achieved was a
+			// transcript showing the same answer twice. Every failure path in
+			// this method now leaves the sitting exactly as it found it.
 			return array( 'ok' => false, 'error' => 'grading_failed' );
 		}
 
@@ -553,20 +752,30 @@ class Mahan_Viva {
 			$fields['turn']      = $turn + 1;
 			$result['outcome']   = 'probe';
 		} elseif ( $passed ) {
-			$fields['score'] = (int) $row['score'] + $score;
-
 			if ( $stage_n >= self::stage_count() ) {
-				// Whole sitting cleared.
-				$fields['status']       = 'passed';
-				$fields['completed_at'] = Mahan_Utils::now_mysql();
-				$fields['pending']      = '';
-				$result['outcome']      = 'passed';
-				$result                += self::finish_reward( $user_id, $row );
+				// Read the anti-farm answer BEFORE closing: once this sitting is
+				// marked passed it is itself a prior pass, and finish_reward()
+				// would refuse to pay for the very sitting that earned it.
+				$retake = self::passed_before( $user_id, (int) $row['course_id'], (string) $row['unit'] );
+
+				// Now flip it out of 'active'. Only the request that wins that
+				// transition banks the score and gets paid, so two finals
+				// landing together can't be paid twice.
+				if ( ! self::close_once( (int) $row['id'], 'passed' ) ) {
+					return array( 'ok' => false, 'error' => 'finished' );
+				}
+				$fields['score']   = (int) $row['score'] + $score;
+				$result['outcome'] = 'passed';
+				$result           += self::finish_reward( $user_id, $row, $retake );
 			} else {
+				$fields['score'] = (int) $row['score'] + $score;
 				$next     = $stage_n + 1;
 				$question = self::ask_question( $user_id, (int) $row['course_id'], (string) $row['unit'], $next, $transcript );
 				if ( ! $question ) {
-					self::update( (int) $row['id'], array( 'transcript' => wp_json_encode( $transcript ), 'score' => (int) $fields['score'] ) );
+					// Persist NOTHING. Banking this stage's score without moving
+					// off the stage means the same question gets answered — and
+					// its score added — a second time, which is how a sitting
+					// ends up scoring 320 out of 300.
 					return array( 'ok' => false, 'error' => 'generation_failed' );
 				}
 				$transcript[] = array(
@@ -585,14 +794,16 @@ class Mahan_Viva {
 			// stage; running out ends the sitting.
 			$attempt = (int) $row['attempt'];
 			if ( $attempt >= self::MAX_ATTEMPTS ) {
-				$fields['status']       = 'failed';
-				$fields['completed_at'] = Mahan_Utils::now_mysql();
-				$fields['pending']      = '';
-				$result['outcome']      = 'failed';
+				if ( ! self::close_once( (int) $row['id'], 'failed' ) ) {
+					return array( 'ok' => false, 'error' => 'finished' );
+				}
+				$result['outcome'] = 'failed';
 			} else {
 				$question = self::ask_question( $user_id, (int) $row['course_id'], (string) $row['unit'], $stage_n, $transcript );
 				if ( ! $question ) {
-					self::update( (int) $row['id'], array( 'transcript' => wp_json_encode( $transcript ) ) );
+					// Same rule: leave the sitting exactly as it was. Charging an
+					// attempt for a failure that was the provider's, not the
+					// learner's, is the one outcome nobody would accept.
 					return array( 'ok' => false, 'error' => 'generation_failed' );
 				}
 				$transcript[] = array(
@@ -620,13 +831,19 @@ class Mahan_Viva {
 	/**
 	 * XP + celebration payload for a cleared sitting. XP is paid once per unit,
 	 * ever — retaking for a better score is welcome, farming it is not.
+	 *
+	 * @param int   $user_id User id.
+	 * @param array $row     The sitting, as it was before it closed.
+	 * @param bool  $retake  Whether this unit had already been passed. Decided by
+	 *                       the caller, before the close, for the reason above.
+	 * @return array
 	 */
-	private static function finish_reward( $user_id, $row ) {
+	private static function finish_reward( $user_id, $row, $retake ) {
 		$out = array(
 			'xp_awarded' => 0,
 			'leveled_up' => false,
 		);
-		if ( self::passed_before( $user_id, (int) $row['course_id'], (string) $row['unit'] ) ) {
+		if ( $retake ) {
 			return $out;
 		}
 		Mahan_Gamification::record_activity( $user_id );

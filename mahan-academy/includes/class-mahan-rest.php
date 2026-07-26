@@ -362,6 +362,12 @@ class Mahan_REST {
 			}
 		}
 
+		// Every unit's viva state in two queries, rather than four per unit —
+		// the lesson list and the status map are already in hand here.
+		$viva_states = ( $user_id && $enrolled )
+			? Mahan_Viva::course_states( $user_id, $course_id, $status_map )
+			: array();
+
 		$units = array();
 		foreach ( Mahan_Courses::get_course_units( $course_id ) as $unit ) {
 			$lessons = array();
@@ -401,7 +407,7 @@ class Mahan_REST {
 				// Live oral exam for this unit. Only meaningful for an enrolled
 				// learner with a provider configured; otherwise the row simply
 				// doesn't appear.
-				'viva'    => ( $user_id && $enrolled ) ? Mahan_Viva::unit_state( $user_id, $course_id, $unit['title'] ) : null,
+				'viva'    => isset( $viva_states[ $unit['title'] ] ) ? $viva_states[ $unit['title'] ] : null,
 			);
 		}
 
@@ -1123,6 +1129,8 @@ class Mahan_REST {
 				return 503;
 			case 'empty_answer':
 				return 400;
+			case 'daily_limit':
+				return 429;
 			default:
 				return 422;
 		}

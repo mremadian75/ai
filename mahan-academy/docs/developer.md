@@ -197,9 +197,33 @@ when it set the question. Three properties are load-bearing:
   question a week later helps nobody.
 
 A viva opens only when every lesson in its unit is complete, and it is hidden
-entirely when no provider is configured — the same rule as the tutor. XP is paid
-once per unit ever (`passed_before()`), so retaking for a better score is welcome
-and farming it is not. The middle stage is where the personalization thread
+entirely when no provider is configured — the same rule as the tutor.
+
+Four rules earned by bugs, worth keeping:
+
+- **Every failure path persists nothing.** A grading or question-generation
+  failure leaves the sitting exactly as it was found. Banking a passed stage
+  without moving off it meant re-answering counted its score twice (320 out of
+  300); banking the learner's turn on a grading failure meant re-sending showed
+  the same answer twice — the browser had never lost it.
+- **The terminal transition is guarded.** `close_once()` writes the closing
+  status with `WHERE status = 'active'`, so two finals landing together produce
+  one winner and one `finished`. `passed_before()` is read *before* that write,
+  or the sitting becomes its own prior pass and XP is never paid at all. XP is
+  paid once per unit ever, so retaking for a better score is welcome and farming
+  it is not.
+- **The unit title is matched, not cleaned.** `unit_key()` clamps it to the
+  column width at the database boundary and nowhere else. Running it through
+  `sanitize_text_field()` before matching made a unit whose title had a trailing
+  space impossible to examine, and letting MySQL truncate a long one made the
+  sitting invisible to both the resume lookup and the once-per-unit XP guard.
+- **Course pages use `course_states()`.** Two queries and one lesson fetch for
+  the whole course; the per-unit path re-fetched both once per unit.
+
+`MAX_SITTINGS_PER_DAY` caps *new* sittings — resuming is always free. XP is
+already once-per-unit, so this is not about farming; it is about a provider bill
+nobody agreed to, since nothing else stopped a learner looping start → fail →
+start. The middle stage is where the personalization thread
 lands: its question is generated from `Mahan_Personalization::learner_context()`,
 so two learners finishing the same unit are examined on the same concept inside
 their own jobs.

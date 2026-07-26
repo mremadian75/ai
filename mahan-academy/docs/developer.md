@@ -314,6 +314,49 @@ jQuery and a mocked `$.post`) and `test-video.php` (17 whitelist assertions).
 
 ---
 
+## Students (admin roster)
+
+`Mahan_Students` renders **Mahan Academy → Students**: a roster of everyone
+who is actually learning, and a per-student file with enrollment,
+certificate, and activity management. Server-rendered, no SPA — every
+mutation is an `admin-post.php` action behind `manage_options` +
+`check_admin_referer` (`guard()`).
+
+The roster query joins `wp_users` against three aggregates — stats, an
+enrollment rollup, and a certificate count with `revoked = 0` — and keeps a
+row only when `e.user_id IS NOT NULL OR s.user_id IS NOT NULL`, so admins and
+subscribers who never enrolled don't appear.
+
+**Nothing user-controlled reaches SQL unlaundered:**
+
+- `ORDER BY` is looked up in the `ORDERBY` constant map
+  (`'xp' => 'xp DESC'`, …); an unknown key falls back to the default. The
+  sort key is never concatenated in.
+- `normalize_args()` clamps everything else: search through
+  `sanitize_text_field` (then `esc_like` + `prepare` at query time), course
+  to `absint`, activity to a fixed set, `per_page` to `1…100`, and `paged`
+  to `1…10000` with a plain `(int)` cast — **not** `absint()`, because
+  `absint(-5)` is `5` and turns a negative page into page five instead of
+  clamping it to one.
+
+**Mutation semantics** (the part worth memorizing before touching this file):
+
+| Method | Deletes | Must never touch |
+| ------ | ------- | ---------------- |
+| `unenroll()` | the enrollments row only | progress, attempts, reviews — progress returns on re-enroll |
+| `reset_progress()` | progress + attempts + reviews for the (user, course) pair; enrollment is *reset* (active / 0% / no completed_at), not deleted | certificates, xp_log |
+| `handle_cert()` | nothing — flips `revoked` 0/1, with `cert_id` **and** `user_id` both in the WHERE so a cert can only be flipped from its own student's file | the row itself |
+
+CSV export reuses the live query (filters applied, `per_page` 10000) and runs
+name/email through `csv_safe()`, which prefixes `=`, `+`, `-`, `@` with an
+apostrophe so exported cells can't execute as spreadsheet formulas.
+
+Verified by `test-students.php` (31 assertions on the generated SQL and on
+exactly which rows each mutation touches) and `students-shot.mjs` (23
+headless-browser checks on the rendered list + detail screens).
+
+---
+
 ## AI providers
 
 `Mahan_AI::complete( $messages, $opts )` normalizes messages to

@@ -24,6 +24,7 @@ class Mahan_Admin {
 		Mahan_Lesson_Meta::init();
 		Mahan_Path_Meta::init();
 		Mahan_Course_Builder::init();
+		Mahan_Students::init();
 		Mahan_AI_Author::init();
 	}
 
@@ -48,6 +49,14 @@ class Mahan_Admin {
 			'manage_options',
 			'mahan-academy',
 			array( __CLASS__, 'render_dashboard' )
+		);
+		add_submenu_page(
+			'mahan-academy',
+			__( 'Students', 'mahan-academy' ),
+			__( 'Students', 'mahan-academy' ),
+			'manage_options',
+			Mahan_Students::PAGE,
+			array( 'Mahan_Students', 'render' )
 		);
 		add_submenu_page(
 			'mahan-academy',

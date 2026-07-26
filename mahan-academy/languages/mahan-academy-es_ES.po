@@ -26,7 +26,7 @@ msgstr "%s (copia)"
 msgid "%s fading — a quick review locks them in"
 msgstr "%s se están olvidando: un repaso rápido los fija"
 
-#: includes/class-mahan-admin.php:644
+#: includes/class-mahan-admin.php:653
 msgid "%s learners have taken the placement test. This is who your catalog is actually being read by."
 msgstr "%s estudiantes han hecho la prueba de nivel. Este es el público que realmente lee tu catálogo."
 
@@ -46,9 +46,13 @@ msgstr "%s fallos: vamos a corregirlos antes de seguir"
 msgid "%s quick questions, no time limit. We use them to put you on the right rung of each course ladder — so you are not bored, and not lost."
 msgstr "%s preguntas rápidas, sin límite de tiempo. Nos sirven para situarte en el escalón adecuado de cada itinerario: ni te aburres ni te pierdes."
 
-#: includes/class-mahan-admin.php:442
+#: includes/class-mahan-admin.php:451
 msgid "(%d existing course(s) were left untouched.)"
 msgstr "(%d curso(s) existente(s) no se han tocado.)"
+
+#: includes/class-mahan-students.php:674
+msgid "(deleted course)"
+msgstr "(curso eliminado)"
 
 #: includes/class-mahan-reports.php:128 includes/class-mahan-reports.php:186
 msgid "(deleted user)"
@@ -58,7 +62,7 @@ msgstr "(usuario eliminado)"
 msgid "A quick check on the questions you missed in this lesson."
 msgstr "Una comprobación rápida de las preguntas que fallaste en esta lección."
 
-#: includes/class-mahan-admin.php:449
+#: includes/class-mahan-admin.php:458
 msgid "A standalone AI-learning platform — Coursera structure, Duolingo practice, a real-time AI tutor."
 msgstr "Una plataforma de aprendizaje de IA independiente: estructura tipo Coursera, práctica tipo Duolingo y un tutor de IA en tiempo real."
 
@@ -66,7 +70,7 @@ msgstr "Una plataforma de aprendizaje de IA independiente: estructura tipo Cours
 msgid "AI Pro"
 msgstr "Pro de la IA"
 
-#: includes/class-mahan-admin.php:715
+#: includes/class-mahan-admin.php:724
 msgid "AI Provider"
 msgstr "Proveedor de IA"
 
@@ -86,11 +90,11 @@ msgstr "Asistente de IA"
 msgid "AI examiner"
 msgstr "Examinador de IA"
 
-#: includes/class-mahan-admin.php:464
+#: includes/class-mahan-admin.php:473
 msgid "AI not configured"
 msgstr "IA sin configurar"
 
-#: includes/class-mahan-admin.php:464
+#: includes/class-mahan-admin.php:473
 msgid "AI provider connected"
 msgstr "Proveedor de IA conectado"
 
@@ -98,7 +102,7 @@ msgstr "Proveedor de IA conectado"
 msgid "AI provider is not configured."
 msgstr "El proveedor de IA no está configurado."
 
-#: includes/class-mahan-admin.php:750 includes/class-mahan-admin.php:763 includes/class-mahan-admin.php:776
+#: includes/class-mahan-admin.php:759 includes/class-mahan-admin.php:772 includes/class-mahan-admin.php:785
 msgid "API key"
 msgstr "Clave de API"
 
@@ -106,15 +110,15 @@ msgstr "Clave de API"
 msgid "Academy"
 msgstr "Academia"
 
-#: includes/class-mahan-admin.php:1007 includes/class-mahan-i18n.php:362
+#: includes/class-mahan-admin.php:1016 includes/class-mahan-i18n.php:362
 msgid "Academy language"
 msgstr "Idioma de la academia"
 
-#: includes/class-mahan-admin.php:1051
+#: includes/class-mahan-admin.php:1060
 msgid "Academy page"
 msgstr "Página de la academia"
 
-#: includes/class-mahan-admin.php:970
+#: includes/class-mahan-admin.php:979
 msgid "Accent color"
 msgstr "Color de acento"
 
@@ -122,23 +126,35 @@ msgstr "Color de acento"
 msgid "Achievement unlocked:"
 msgstr "Logro desbloqueado:"
 
-#: includes/class-mahan-admin.php:876 includes/class-mahan-front.php:326
+#: includes/class-mahan-admin.php:885 includes/class-mahan-front.php:326
 msgid "Achievements"
 msgstr "Logros"
+
+#: includes/class-mahan-students.php:654
+msgid "Actions"
+msgstr "Acciones"
+
+#: includes/class-mahan-students.php:638
+msgid "Active days"
+msgstr "Días activos"
+
+#: includes/class-mahan-students.php:489
+msgid "Active in the last 7 days"
+msgstr "Activos en los últimos 7 días"
 
 #: includes/class-mahan-front.php:237
 msgid "Active on %1$s of the last %2$s days"
 msgstr "Activo %1$s de los últimos %2$s días"
 
-#: includes/class-mahan-admin.php:730
+#: includes/class-mahan-admin.php:739
 msgid "Active provider"
 msgstr "Proveedor activo"
 
-#: includes/class-mahan-admin.php:549
+#: includes/class-mahan-admin.php:558
 msgid "Active this week"
 msgstr "Activos esta semana"
 
-#: includes/class-mahan-admin.php:548
+#: includes/class-mahan-admin.php:557
 msgid "Active today"
 msgstr "Activos hoy"
 
@@ -146,11 +162,11 @@ msgstr "Activos hoy"
 msgid "Activity"
 msgstr "Actividad"
 
-#: includes/class-mahan-admin.php:864
+#: includes/class-mahan-admin.php:873
 msgid "Adaptive review"
 msgstr "Repaso adaptativo"
 
-#: includes/class-mahan-admin.php:237
+#: includes/class-mahan-admin.php:246
 msgid "Add"
 msgstr "Añadir"
 
@@ -182,7 +198,7 @@ msgstr "Añadir nuevo tema"
 msgid "Add Path"
 msgstr "Añadir ruta"
 
-#: includes/class-mahan-admin.php:236
+#: includes/class-mahan-admin.php:245
 msgid "Add a lesson — type its title and press Enter"
 msgstr "Añade una lección: escribe su título y pulsa Intro"
 
@@ -194,23 +210,23 @@ msgstr "Añade una clave de proveedor de IA en Mahan Academy → Ajustes para ac
 msgid "Add course"
 msgstr "Añadir curso"
 
-#: includes/class-mahan-admin.php:334 includes/class-mahan-meta-boxes-lesson.php:125
+#: includes/class-mahan-admin.php:343 includes/class-mahan-meta-boxes-lesson.php:125
 msgid "Add exercise"
 msgstr "Añadir ejercicio"
 
-#: includes/class-mahan-admin.php:503
+#: includes/class-mahan-admin.php:512
 msgid "Add interactive exercises to lessons to make them Duolingo-style."
 msgstr "Añade ejercicios interactivos a las lecciones para darles un estilo Duolingo."
 
-#: includes/class-mahan-admin.php:273 includes/class-mahan-admin.php:339
+#: includes/class-mahan-admin.php:282 includes/class-mahan-admin.php:348
 msgid "Add option"
 msgstr "Añadir opción"
 
-#: includes/class-mahan-admin.php:268
+#: includes/class-mahan-admin.php:277
 msgid "Add question"
 msgstr "Añadir pregunta"
 
-#: includes/class-mahan-admin.php:253
+#: includes/class-mahan-admin.php:262
 msgid "Add quiz"
 msgstr "Añadir cuestionario"
 
@@ -218,25 +234,29 @@ msgstr "Añadir cuestionario"
 msgid "Add some lesson content first, or write a topic."
 msgstr "Añade primero contenido a la lección, o escribe un tema."
 
-#: includes/class-mahan-admin.php:218 includes/class-mahan-course-builder.php:69
+#: includes/class-mahan-admin.php:227 includes/class-mahan-course-builder.php:69
 msgid "Add unit"
 msgstr "Añadir unidad"
 
-#: includes/class-mahan-admin.php:501
+#: includes/class-mahan-admin.php:510
 msgid "Add your AI provider API key in Settings (Anthropic, OpenAI, or Google)."
 msgstr "Añade la clave de API de tu proveedor de IA en Ajustes (Anthropic, OpenAI o Google)."
 
-#: includes/class-mahan-admin.php:494
+#: includes/class-mahan-admin.php:503
 msgid "Adds courses, bundles, categories, and topics. Nothing you already made is changed."
 msgstr "Añade cursos, paquetes, categorías y temas. No cambia nada de lo que ya has creado."
 
-#: includes/class-mahan-admin.php:656 includes/class-mahan-admin.php:720 includes/class-mahan-front.php:302 includes/class-mahan-meta-boxes-course.php:57 includes/class-mahan-variants.php:98
+#: includes/class-mahan-admin.php:665 includes/class-mahan-admin.php:729 includes/class-mahan-front.php:302 includes/class-mahan-meta-boxes-course.php:57 includes/class-mahan-variants.php:98
 msgid "Advanced"
 msgstr "Avanzado"
 
 #: includes/class-mahan-cpt.php:135
 msgid "All Topics"
 msgstr "Todos los temas"
+
+#: includes/class-mahan-students.php:482
+msgid "All courses"
+msgstr "Todos los cursos"
 
 #: includes/class-mahan-front.php:200
 msgid "All levels"
@@ -254,15 +274,15 @@ msgstr "Todos los temas"
 msgid "Almost there"
 msgstr "Casi"
 
-#: includes/class-mahan-admin.php:278
+#: includes/class-mahan-admin.php:287
 msgid "Also accept"
 msgstr "Aceptar también"
 
-#: includes/class-mahan-admin.php:355
+#: includes/class-mahan-admin.php:364
 msgid "Also accept (comma separated)"
 msgstr "Aceptar también (separadas por comas)"
 
-#: includes/class-mahan-admin.php:276 includes/class-mahan-admin.php:353
+#: includes/class-mahan-admin.php:285 includes/class-mahan-admin.php:362
 msgid "Answer"
 msgstr "Respuesta"
 
@@ -286,7 +306,11 @@ msgstr "Respuesta registrada. (Conecta un proveedor de IA en los ajustes para re
 msgid "Answer:"
 msgstr "Respuesta:"
 
-#: includes/class-mahan-admin.php:718
+#: includes/class-mahan-students.php:488
+msgid "Any activity"
+msgstr "Cualquier actividad"
+
+#: includes/class-mahan-admin.php:727
 msgid "Appearance"
 msgstr "Apariencia"
 
@@ -298,7 +322,7 @@ msgstr "Aplica"
 msgid "Ask a different way"
 msgstr "Pregúntalo de otra forma"
 
-#: includes/class-mahan-admin.php:1038
+#: includes/class-mahan-admin.php:1047
 msgid "Ask learners to complete their profile before their first lesson"
 msgstr "Pedir que se complete el perfil antes de la primera lección"
 
@@ -314,11 +338,11 @@ msgstr "Pregúntale al tutor lo que quieras sobre esta lección…"
 msgid "Assessment passed!"
 msgstr "¡Evaluación superada!"
 
-#: includes/class-mahan-admin.php:580
+#: includes/class-mahan-admin.php:589
 msgid "Avg progress"
 msgstr "Progreso medio"
 
-#: includes/class-mahan-admin.php:879
+#: includes/class-mahan-admin.php:888
 msgid "Award badges for milestones (lessons, courses, streaks, levels)"
 msgstr "Conceder insignias por hitos (lecciones, cursos, rachas, niveles)"
 
@@ -337,6 +361,10 @@ msgstr "Volver al catálogo"
 #: includes/class-mahan-front.php:172
 msgid "Back to course"
 msgstr "Volver al curso"
+
+#: includes/class-mahan-students.php:588
+msgid "Back to the list"
+msgstr "Volver a la lista"
 
 #: includes/class-mahan-course-builder.php:360
 msgid "Bad structure."
@@ -358,15 +386,15 @@ msgstr "Según tu puesto en %s."
 msgid "Before you start"
 msgstr "Antes de empezar"
 
-#: includes/class-mahan-admin.php:654 includes/class-mahan-front.php:300 includes/class-mahan-meta-boxes-course.php:55 includes/class-mahan-variants.php:103
+#: includes/class-mahan-admin.php:663 includes/class-mahan-front.php:300 includes/class-mahan-meta-boxes-course.php:55 includes/class-mahan-variants.php:103
 msgid "Beginner"
 msgstr "Principiante"
 
-#: includes/class-mahan-admin.php:955
+#: includes/class-mahan-admin.php:964
 msgid "Body"
 msgstr "Cuerpo"
 
-#: includes/class-mahan-admin.php:835
+#: includes/class-mahan-admin.php:844
 msgid "Bonus XP per full week of streak (capped at +50%). 0 disables. Example: 10% → a 14-day streak earns +20% XP."
 msgstr "XP extra por cada semana completa de racha (máximo +50 %). 0 lo desactiva. Ejemplo: 10 % → una racha de 14 días gana +20 % de XP."
 
@@ -390,19 +418,19 @@ msgstr "Ver cursos"
 msgid "Build your course right here: add a unit, then add lessons inside it. Everything is drag-and-drop, and every lesson opens a full editor — text, video, minutes, XP — without leaving this page."
 msgstr "Construye tu curso aquí mismo: añade una unidad y luego lecciones dentro. Todo es arrastrar y soltar, y cada lección abre un editor completo (texto, vídeo, minutos, XP) sin salir de esta página."
 
-#: includes/class-mahan-admin.php:285
+#: includes/class-mahan-admin.php:294
 msgid "Cancel"
 msgstr "Cancelar"
 
-#: includes/class-mahan-admin.php:356
+#: includes/class-mahan-admin.php:365
 msgid "Case sensitive"
 msgstr "Distinguir mayúsculas"
 
-#: includes/class-mahan-admin.php:983
+#: includes/class-mahan-admin.php:992
 msgid "Catalog headline"
 msgstr "Titular del catálogo"
 
-#: includes/class-mahan-admin.php:990
+#: includes/class-mahan-admin.php:999
 msgid "Catalog tagline"
 msgstr "Lema del catálogo"
 
@@ -422,15 +450,23 @@ msgstr "Certificado"
 msgid "Certificate of completion"
 msgstr "Certificado de finalización"
 
+#: includes/class-mahan-students.php:441
+msgid "Certificate restored."
+msgstr "Certificado restaurado."
+
+#: includes/class-mahan-students.php:440
+msgid "Certificate revoked. It no longer verifies."
+msgstr "Certificado revocado. Ya no se verifica."
+
 #: includes/class-mahan-front.php:292
 msgid "Certificate serial"
 msgstr "Número de serie del certificado"
 
-#: includes/class-mahan-admin.php:890 includes/class-mahan-front.php:285
+#: includes/class-mahan-admin.php:899 includes/class-mahan-front.php:285 includes/class-mahan-students.php:503 includes/class-mahan-students.php:707
 msgid "Certificates"
 msgstr "Certificados"
 
-#: includes/class-mahan-admin.php:670
+#: includes/class-mahan-admin.php:679
 msgid "Certificates issued"
 msgstr "Certificados emitidos"
 
@@ -454,6 +490,10 @@ msgstr "Quitar filtros"
 msgid "Clear filters / close"
 msgstr "Quitar filtros / cerrar"
 
+#: includes/class-mahan-students.php:779
+msgid "Cleared a review"
+msgstr "Superó un repaso"
+
 #: includes/class-mahan-front.php:400
 msgid "Close"
 msgstr "Cerrar"
@@ -462,7 +502,7 @@ msgstr "Cerrar"
 msgid "Close — try again"
 msgstr "Cerca: inténtalo otra vez"
 
-#: includes/class-mahan-admin.php:233
+#: includes/class-mahan-admin.php:242
 msgid "Collapse"
 msgstr "Contraer"
 
@@ -510,11 +550,19 @@ msgstr "Completa tu primer curso"
 msgid "Complete your first lesson"
 msgstr "Completa tu primera lección"
 
-#: includes/class-mahan-admin.php:578 includes/class-mahan-front.php:242 includes/class-mahan-front.php:331
+#: includes/class-mahan-admin.php:587 includes/class-mahan-front.php:242 includes/class-mahan-front.php:331 includes/class-mahan-students.php:502 includes/class-mahan-students.php:653
 msgid "Completed"
 msgstr "Completado"
 
-#: includes/class-mahan-admin.php:579
+#: includes/class-mahan-students.php:782
+msgid "Completed a course"
+msgstr "Completó un curso"
+
+#: includes/class-mahan-students.php:776
+msgid "Completed a lesson"
+msgstr "Completó una lección"
+
+#: includes/class-mahan-admin.php:588
 msgid "Completion"
 msgstr "Finalización"
 
@@ -522,7 +570,7 @@ msgstr "Finalización"
 msgid "Congratulations {{name}}!\n\nYou finished <strong>{{course}}</strong>. That's a real milestone. Keep the momentum going and explore what's next on {{site}}."
 msgstr "¡Enhorabuena, {{name}}!\n\nHas terminado <strong>{{course}}</strong>. Es todo un hito. Mantén el ritmo y descubre qué viene después en {{site}}."
 
-#: includes/class-mahan-admin.php:380
+#: includes/class-mahan-admin.php:389
 msgid "Connection successful!"
 msgstr "¡Conexión correcta!"
 
@@ -538,15 +586,15 @@ msgstr "Continuar"
 msgid "Continue learning"
 msgstr "Seguir aprendiendo"
 
-#: includes/class-mahan-admin.php:321
+#: includes/class-mahan-admin.php:330
 msgid "Copied!"
 msgstr "¡Copiado!"
 
-#: includes/class-mahan-admin.php:320 includes/class-mahan-ai-author.php:62
+#: includes/class-mahan-admin.php:329 includes/class-mahan-ai-author.php:62
 msgid "Copy"
 msgstr "Copiar"
 
-#: includes/class-mahan-admin.php:274 includes/class-mahan-admin.php:340
+#: includes/class-mahan-admin.php:283 includes/class-mahan-admin.php:349
 msgid "Correct"
 msgstr "Correcto"
 
@@ -574,7 +622,7 @@ msgstr "Ahora mismo no se pudo generar la práctica. Inténtalo de nuevo."
 msgid "Couldn't rephrase that one — here's the original."
 msgstr "No se pudo reformular: aquí tienes la original."
 
-#: includes/class-mahan-admin.php:576 includes/class-mahan-admin.php:680 includes/class-mahan-cpt.php:31 includes/class-mahan-meta-boxes-lesson.php:60
+#: includes/class-mahan-admin.php:585 includes/class-mahan-admin.php:689 includes/class-mahan-cpt.php:31 includes/class-mahan-meta-boxes-lesson.php:60 includes/class-mahan-students.php:650 includes/class-mahan-students.php:711
 msgid "Course"
 msgstr "Curso"
 
@@ -590,11 +638,11 @@ msgstr "¡Curso completado!"
 msgid "Course complete! 🎉"
 msgstr "¡Curso completado! 🎉"
 
-#: includes/class-mahan-admin.php:929
+#: includes/class-mahan-admin.php:938
 msgid "Course completed"
 msgstr "Curso completado"
 
-#: includes/class-mahan-admin.php:547
+#: includes/class-mahan-admin.php:556
 msgid "Course completions"
 msgstr "Cursos completados"
 
@@ -606,11 +654,15 @@ msgstr "Contenido del curso"
 msgid "Course not found."
 msgstr "Curso no encontrado."
 
+#: includes/class-mahan-students.php:439
+msgid "Course progress reset."
+msgstr "Progreso del curso reiniciado."
+
 #: includes/class-mahan-meta-boxes-course.php:24
 msgid "Course settings"
 msgstr "Ajustes del curso"
 
-#: includes/class-mahan-admin.php:570 includes/class-mahan-cpt.php:28 includes/class-mahan-cpt.php:30 includes/class-mahan-cpt.php:40 includes/class-mahan-front.php:477
+#: includes/class-mahan-admin.php:579 includes/class-mahan-cpt.php:28 includes/class-mahan-cpt.php:30 includes/class-mahan-cpt.php:40 includes/class-mahan-front.php:477
 msgid "Courses"
 msgstr "Cursos"
 
@@ -622,7 +674,7 @@ msgstr "Cursos de esta ruta"
 msgid "Courses in this path (drag to reorder)"
 msgstr "Cursos de esta ruta (arrastra para reordenar)"
 
-#: includes/class-mahan-admin.php:502
+#: includes/class-mahan-admin.php:511
 msgid "Create a Course, then add Lessons and assign them to the course."
 msgstr "Crea un curso, después añade lecciones y asígnalas al curso."
 
@@ -634,7 +686,7 @@ msgstr "Crear cuenta"
 msgid "Curriculum builder"
 msgstr "Constructor del temario"
 
-#: includes/class-mahan-admin.php:996
+#: includes/class-mahan-admin.php:1005
 msgid "Custom CSS"
 msgstr "CSS personalizado"
 
@@ -650,23 +702,23 @@ msgstr "¡Meta diaria alcanzada!"
 msgid "Daily goal updated"
 msgstr "Meta diaria actualizada"
 
-#: includes/class-mahan-admin.php:843
+#: includes/class-mahan-admin.php:852
 msgid "Daily streak"
 msgstr "Racha diaria"
 
-#: includes/class-mahan-admin.php:931
+#: includes/class-mahan-admin.php:940
 msgid "Daily streak reminder"
 msgstr "Recordatorio de racha diaria"
 
-#: includes/class-mahan-admin.php:978
+#: includes/class-mahan-admin.php:987
 msgid "Dark"
 msgstr "Oscuro"
 
-#: includes/class-mahan-admin.php:46 includes/class-mahan-admin.php:47
+#: includes/class-mahan-admin.php:47 includes/class-mahan-admin.php:48
 msgid "Dashboard"
 msgstr "Panel"
 
-#: includes/class-mahan-admin.php:1068
+#: includes/class-mahan-admin.php:1077
 msgid "Debug logging"
 msgstr "Registro de depuración"
 
@@ -674,31 +726,31 @@ msgstr "Registro de depuración"
 msgid "Dedicated"
 msgstr "Constante"
 
-#: includes/class-mahan-admin.php:838
+#: includes/class-mahan-admin.php:847
 msgid "Default daily XP goal"
 msgstr "Meta diaria de XP por defecto"
 
-#: includes/class-mahan-admin.php:1043
+#: includes/class-mahan-admin.php:1052
 msgid "Defines the personalization questions. Each field: key, label, type (text|textarea|select|multiselect), required, options."
 msgstr "Define las preguntas de personalización. Cada campo: key, label, type (text|textarea|select|multiselect), required, options."
 
-#: includes/class-mahan-admin.php:255
+#: includes/class-mahan-admin.php:264
 msgid "Delete"
 msgstr "Eliminar"
 
-#: includes/class-mahan-admin.php:258
+#: includes/class-mahan-admin.php:267
 msgid "Delete empty unit"
 msgstr "Eliminar unidad vacía"
 
-#: includes/class-mahan-admin.php:260
+#: includes/class-mahan-admin.php:269
 msgid "Delete this lesson? It will be moved to Trash."
 msgstr "¿Eliminar esta lección? Se moverá a la papelera."
 
-#: includes/class-mahan-admin.php:262
+#: includes/class-mahan-admin.php:271
 msgid "Deleted"
 msgstr "Eliminado"
 
-#: includes/class-mahan-admin.php:252
+#: includes/class-mahan-admin.php:261
 msgid "Discard unsaved changes to this lesson?"
 msgstr "¿Descartar los cambios sin guardar de esta lección?"
 
@@ -706,7 +758,7 @@ msgstr "¿Descartar los cambios sin guardar de esta lección?"
 msgid "Done"
 msgstr "Listo"
 
-#: includes/class-mahan-admin.php:238
+#: includes/class-mahan-admin.php:247
 msgid "Draft"
 msgstr "Borrador"
 
@@ -714,19 +766,19 @@ msgstr "Borrador"
 msgid "Draft this lesson from a topic"
 msgstr "Redactar esta lección a partir de un tema"
 
-#: includes/class-mahan-admin.php:257
+#: includes/class-mahan-admin.php:266
 msgid "Drag to reorder"
 msgstr "Arrastra para reordenar"
 
-#: includes/class-mahan-admin.php:256
+#: includes/class-mahan-admin.php:265
 msgid "Drag to reorder unit"
 msgstr "Arrastra para reordenar la unidad"
 
-#: includes/class-mahan-admin.php:254
+#: includes/class-mahan-admin.php:263
 msgid "Duplicate"
 msgstr "Duplicar"
 
-#: includes/class-mahan-admin.php:263
+#: includes/class-mahan-admin.php:272
 msgid "Duplicated"
 msgstr "Duplicado"
 
@@ -734,11 +786,11 @@ msgstr "Duplicado"
 msgid "Dynamo"
 msgstr "Dinamo"
 
-#: includes/class-mahan-admin.php:1025
+#: includes/class-mahan-admin.php:1034
 msgid "Each learner's choice applies to the academy only — the rest of the site stays in its own language."
 msgstr "La elección de cada estudiante se aplica solo a la academia: el resto del sitio conserva su idioma."
 
-#: includes/class-mahan-admin.php:855
+#: includes/class-mahan-admin.php:864
 msgid "Earn 1 freeze every"
 msgstr "Ganar 1 congelación cada"
 
@@ -754,7 +806,7 @@ msgstr "Gana 5000 XP"
 msgid "Earn badges by completing lessons and courses, keeping streaks, and leveling up."
 msgstr "Consigue insignias completando lecciones y cursos, manteniendo rachas y subiendo de nivel."
 
-#: includes/class-mahan-admin.php:853
+#: includes/class-mahan-admin.php:862
 msgid "Earned freezes automatically cover missed days so the streak survives"
 msgstr "Las congelaciones ganadas cubren automáticamente los días perdidos para que la racha sobreviva"
 
@@ -762,7 +814,7 @@ msgstr "Las congelaciones ganadas cubren automáticamente los días perdidos par
 msgid "Earned:"
 msgstr "Conseguido:"
 
-#: includes/class-mahan-admin.php:230
+#: includes/class-mahan-admin.php:239
 msgid "Edit"
 msgstr "Editar"
 
@@ -782,15 +834,15 @@ msgstr "Editar ruta"
 msgid "Edit Topic"
 msgstr "Editar tema"
 
-#: includes/class-mahan-admin.php:231
+#: includes/class-mahan-admin.php:240
 msgid "Edit lesson"
 msgstr "Editar lección"
 
-#: includes/class-mahan-admin.php:910
+#: includes/class-mahan-admin.php:919
 msgid "Email notifications"
 msgstr "Notificaciones por correo"
 
-#: includes/class-mahan-admin.php:717
+#: includes/class-mahan-admin.php:726
 msgid "Emails"
 msgstr "Correos"
 
@@ -798,11 +850,11 @@ msgstr "Correos"
 msgid "Empty message."
 msgstr "Mensaje vacío."
 
-#: includes/class-mahan-admin.php:893
+#: includes/class-mahan-admin.php:902
 msgid "Enable completion certificates (per-course toggle in the course editor)"
 msgstr "Activar certificados de finalización (se activa por curso en el editor)"
 
-#: includes/class-mahan-admin.php:938
+#: includes/class-mahan-admin.php:947
 msgid "Enabled"
 msgstr "Activado"
 
@@ -814,6 +866,10 @@ msgstr "Ingeniería"
 msgid "Enroll first — it takes one tap and it's free."
 msgstr "Inscríbete primero: es un toque y es gratis."
 
+#: includes/class-mahan-students.php:702
+msgid "Enroll in course"
+msgstr "Inscribir en el curso"
+
 #: includes/class-mahan-front.php:431
 msgid "Enroll in this course to access its lessons."
 msgstr "Inscríbete en este curso para acceder a sus lecciones."
@@ -822,15 +878,15 @@ msgstr "Inscríbete en este curso para acceder a sus lecciones."
 msgid "Enroll — free"
 msgstr "Inscríbete — gratis"
 
-#: includes/class-mahan-admin.php:577 includes/class-mahan-front.php:159
+#: includes/class-mahan-admin.php:586 includes/class-mahan-front.php:159 includes/class-mahan-students.php:501 includes/class-mahan-students.php:652
 msgid "Enrolled"
 msgstr "Inscrito"
 
-#: includes/class-mahan-admin.php:928
+#: includes/class-mahan-admin.php:937
 msgid "Enrollment / welcome"
 msgstr "Inscripción / bienvenida"
 
-#: includes/class-mahan-admin.php:546
+#: includes/class-mahan-admin.php:555 includes/class-mahan-students.php:646
 msgid "Enrollments"
 msgstr "Inscripciones"
 
@@ -866,15 +922,19 @@ msgstr "¡Exacto!"
 msgid "Examiner"
 msgstr "Examinador"
 
-#: includes/class-mahan-admin.php:553
+#: includes/class-mahan-admin.php:562
 msgid "Exercise accuracy"
 msgstr "Acierto en ejercicios"
+
+#: includes/class-mahan-students.php:637
+msgid "Exercises correct"
+msgstr "Ejercicios correctos"
 
 #: includes/class-mahan-front.php:441
 msgid "Exit review"
 msgstr "Salir del repaso"
 
-#: includes/class-mahan-admin.php:234
+#: includes/class-mahan-admin.php:243
 msgid "Expand"
 msgstr "Expandir"
 
@@ -882,11 +942,11 @@ msgstr "Expandir"
 msgid "Expand / collapse all"
 msgstr "Expandir / contraer todo"
 
-#: includes/class-mahan-admin.php:277
+#: includes/class-mahan-admin.php:286
 msgid "Expected answer"
 msgstr "Respuesta esperada"
 
-#: includes/class-mahan-admin.php:657 includes/class-mahan-front.php:303 includes/class-mahan-variants.php:100
+#: includes/class-mahan-admin.php:666 includes/class-mahan-front.php:303 includes/class-mahan-variants.php:100
 msgid "Expert"
 msgstr "Experto"
 
@@ -902,15 +962,15 @@ msgstr "Explica %s de forma sencilla"
 msgid "Explore"
 msgstr "Explorar"
 
-#: includes/class-mahan-admin.php:571
+#: includes/class-mahan-admin.php:580 includes/class-mahan-students.php:474
 msgid "Export CSV"
 msgstr "Exportar CSV"
 
-#: includes/class-mahan-admin.php:674
+#: includes/class-mahan-admin.php:683
 msgid "Export certificates (CSV)"
 msgstr "Exportar certificados (CSV)"
 
-#: includes/class-mahan-admin.php:283 includes/class-mahan-admin.php:352 includes/class-mahan-ai-author.php:243 includes/class-mahan-meta-boxes-lesson.php:216 includes/class-mahan-practice.php:221 includes/class-mahan-quizzes.php:120
+#: includes/class-mahan-admin.php:292 includes/class-mahan-admin.php:361 includes/class-mahan-ai-author.php:243 includes/class-mahan-meta-boxes-lesson.php:216 includes/class-mahan-practice.php:221 includes/class-mahan-quizzes.php:120
 msgid "False"
 msgstr "Falso"
 
@@ -922,9 +982,13 @@ msgstr "Destacar este curso (aparece primero, con una cinta)"
 msgid "Featured"
 msgstr "Destacado"
 
-#: includes/class-mahan-admin.php:281 includes/class-mahan-admin.php:347
+#: includes/class-mahan-admin.php:290 includes/class-mahan-admin.php:356
 msgid "Fill in the blank"
 msgstr "Rellenar el hueco"
+
+#: includes/class-mahan-students.php:492
+msgid "Filter"
+msgstr "Filtrar"
 
 #: includes/class-mahan-variants.php:183
 msgid "Finance"
@@ -954,7 +1018,7 @@ msgstr "Termina todas las lecciones de esta unidad para desbloquear la evaluaci�
 msgid "First Steps"
 msgstr "Primeros pasos"
 
-#: includes/class-mahan-admin.php:1010
+#: includes/class-mahan-admin.php:1019
 msgid "Follow the site language"
 msgstr "Seguir el idioma del sitio"
 
@@ -962,15 +1026,15 @@ msgstr "Seguir el idioma del sitio"
 msgid "For you"
 msgstr "Para ti"
 
-#: includes/class-mahan-admin.php:372 includes/class-mahan-ai-author.php:77 includes/class-mahan-course-builder.php:139 includes/class-mahan-course-builder.php:148 includes/class-mahan-course-builder.php:218 includes/class-mahan-course-builder.php:241
+#: includes/class-mahan-admin.php:381 includes/class-mahan-ai-author.php:77 includes/class-mahan-course-builder.php:139 includes/class-mahan-course-builder.php:148 includes/class-mahan-course-builder.php:218 includes/class-mahan-course-builder.php:241
 msgid "Forbidden"
 msgstr "Prohibido"
 
-#: includes/class-mahan-admin.php:921
+#: includes/class-mahan-admin.php:930
 msgid "From email"
 msgstr "Correo del remitente"
 
-#: includes/class-mahan-admin.php:917
+#: includes/class-mahan-admin.php:926
 msgid "From name"
 msgstr "Nombre del remitente"
 
@@ -978,7 +1042,7 @@ msgstr "Nombre del remitente"
 msgid "Further reading & sources"
 msgstr "Lecturas y fuentes"
 
-#: includes/class-mahan-admin.php:716
+#: includes/class-mahan-admin.php:725
 msgid "Gamification"
 msgstr "Gamificación"
 
@@ -990,7 +1054,7 @@ msgstr "General"
 msgid "Generate draft"
 msgstr "Generar borrador"
 
-#: includes/class-mahan-admin.php:318
+#: includes/class-mahan-admin.php:327
 msgid "Generate exercises with AI"
 msgstr "Generar ejercicios con IA"
 
@@ -1006,15 +1070,15 @@ msgstr "Generar más"
 msgid "Generate practice"
 msgstr "Generar práctica"
 
-#: includes/class-mahan-admin.php:317
+#: includes/class-mahan-admin.php:326
 msgid "Generate with AI"
 msgstr "Generar con IA"
 
-#: includes/class-mahan-admin.php:786
+#: includes/class-mahan-admin.php:795
 msgid "Generation"
 msgstr "Generación"
 
-#: includes/class-mahan-admin.php:499
+#: includes/class-mahan-admin.php:508
 msgid "Getting started"
 msgstr "Primeros pasos"
 
@@ -1054,7 +1118,7 @@ msgstr "RR. HH. y Personas"
 msgid "Hands-on guides to popular AI tools — ChatGPT, Claude, Gemini, and image generators."
 msgstr "Guías prácticas de las herramientas de IA más usadas: ChatGPT, Claude, Gemini y generadores de imágenes."
 
-#: includes/class-mahan-admin.php:239
+#: includes/class-mahan-admin.php:248
 msgid "Has a video"
 msgstr "Tiene vídeo"
 
@@ -1078,7 +1142,7 @@ msgstr "¡Hola! Soy tu tutor de IA. Pregúntame lo que quieras sobre esta lecci�
 msgid "Hint"
 msgstr "Pista"
 
-#: includes/class-mahan-admin.php:343
+#: includes/class-mahan-admin.php:352
 msgid "Hint (optional)"
 msgstr "Pista (opcional)"
 
@@ -1094,17 +1158,21 @@ msgstr "En %s"
 msgid "In progress"
 msgstr "En curso"
 
-#: includes/class-mahan-admin.php:491
+#: includes/class-mahan-students.php:490
+msgid "Inactive for 30+ days"
+msgstr "Inactivos durante 30+ días"
+
+#: includes/class-mahan-admin.php:500
 msgid "Install %d starter course"
 msgid_plural "Install %d starter courses"
 msgstr[0] "Instalar %d curso inicial"
 msgstr[1] "Instalar %d cursos iniciales"
 
-#: includes/class-mahan-admin.php:476
+#: includes/class-mahan-admin.php:485
 msgid "Install a ready-made catalog of professionally written courses — Prompt Engineering, Machine Learning, Generative AI, and AI for Productivity — organized into categories and Coursera-style bundles, with interactive exercises and unit quizzes. Great for launching quickly or as a template to adapt."
 msgstr "Instala un catálogo listo de cursos escritos profesionalmente —Ingeniería de prompts, Aprendizaje automático, IA generativa e IA para la productividad— organizados en categorías y paquetes tipo Coursera, con ejercicios interactivos y cuestionarios de unidad. Ideal para lanzar rápido o como plantilla que adaptar."
 
-#: includes/class-mahan-admin.php:482
+#: includes/class-mahan-admin.php:491
 msgid "Installed"
 msgstr "Instalado"
 
@@ -1112,7 +1180,7 @@ msgstr "Instalado"
 msgid "Interactive exercises"
 msgstr "Ejercicios interactivos"
 
-#: includes/class-mahan-admin.php:655 includes/class-mahan-front.php:301 includes/class-mahan-meta-boxes-course.php:56 includes/class-mahan-variants.php:96
+#: includes/class-mahan-admin.php:664 includes/class-mahan-front.php:301 includes/class-mahan-meta-boxes-course.php:56 includes/class-mahan-variants.php:96
 msgid "Intermediate"
 msgstr "Intermedio"
 
@@ -1120,7 +1188,7 @@ msgstr "Intermedio"
 msgid "Invalid or missing nonce."
 msgstr "Nonce no válido o ausente."
 
-#: includes/class-mahan-admin.php:681 includes/class-mahan-front.php:286
+#: includes/class-mahan-admin.php:690 includes/class-mahan-front.php:286 includes/class-mahan-students.php:712
 msgid "Issued"
 msgstr "Emitido"
 
@@ -1164,7 +1232,7 @@ msgstr "Mantén viva tu racha de {{streak}} días 🔥"
 msgid "Keyboard shortcuts"
 msgstr "Atajos de teclado"
 
-#: includes/class-mahan-admin.php:1001 includes/class-mahan-front.php:222
+#: includes/class-mahan-admin.php:1010 includes/class-mahan-front.php:222
 msgid "Language"
 msgstr "Idioma"
 
@@ -1176,39 +1244,43 @@ msgstr "El cambio de idioma está desactivado en este sitio."
 msgid "Language updated"
 msgstr "Idioma actualizado"
 
+#: includes/class-mahan-students.php:504
+msgid "Last active"
+msgstr "Última actividad"
+
 #: includes/class-mahan-front.php:271
 msgid "Last time you placed at %s."
 msgstr "La última vez quedaste en %s."
 
-#: includes/class-mahan-admin.php:883 includes/class-mahan-front.php:325
+#: includes/class-mahan-admin.php:892 includes/class-mahan-front.php:325
 msgid "Leaderboard"
 msgstr "Clasificación"
 
-#: includes/class-mahan-admin.php:985 includes/class-mahan-front.php:109
+#: includes/class-mahan-admin.php:994 includes/class-mahan-front.php:109
 msgid "Learn to use AI at work"
 msgstr "Aprende a usar la IA en el trabajo"
 
-#: includes/class-mahan-admin.php:604 includes/class-mahan-admin.php:623 includes/class-mahan-front.php:336
+#: includes/class-mahan-admin.php:613 includes/class-mahan-admin.php:632 includes/class-mahan-front.php:336
 msgid "Learner"
 msgstr "Estudiante"
 
-#: includes/class-mahan-admin.php:1021
+#: includes/class-mahan-admin.php:1030
 msgid "Learner choice"
 msgstr "Elección del estudiante"
 
-#: includes/class-mahan-admin.php:545 includes/class-mahan-admin.php:650
+#: includes/class-mahan-admin.php:554 includes/class-mahan-admin.php:659
 msgid "Learners"
 msgstr "Estudiantes"
 
-#: includes/class-mahan-admin.php:871
+#: includes/class-mahan-admin.php:880
 msgid "Learners can also ask the AI to re-pose a missed question a different way (from a different provider when more than one is configured)."
 msgstr "También se puede pedir a la IA que reformule una pregunta fallada (desde otro proveedor si hay más de uno configurado)."
 
-#: includes/class-mahan-admin.php:840
+#: includes/class-mahan-admin.php:849
 msgid "Learners can pick their own goal on the dashboard; this is the starting value. 0 hides the goal."
 msgstr "Cada persona puede elegir su meta en el panel; este es el valor inicial. 0 oculta la meta."
 
-#: includes/class-mahan-admin.php:820
+#: includes/class-mahan-admin.php:829
 msgid "Learners gain a level for every this-many XP."
 msgstr "Se sube de nivel cada esta cantidad de XP."
 
@@ -1232,7 +1304,7 @@ msgstr "Actividad de aprendizaje de los últimos %s días"
 msgid "Learning paths"
 msgstr "Rutas de aprendizaje"
 
-#: includes/class-mahan-admin.php:623 includes/class-mahan-cpt.php:59 includes/class-mahan-front.php:410
+#: includes/class-mahan-admin.php:632 includes/class-mahan-cpt.php:59 includes/class-mahan-front.php:410
 msgid "Lesson"
 msgstr "Lección"
 
@@ -1240,7 +1312,7 @@ msgstr "Lección"
 msgid "Lesson Legend"
 msgstr "Leyenda de las lecciones"
 
-#: includes/class-mahan-admin.php:264
+#: includes/class-mahan-admin.php:273
 msgid "Lesson added"
 msgstr "Lección añadida"
 
@@ -1248,7 +1320,7 @@ msgstr "Lección añadida"
 msgid "Lesson complete!"
 msgstr "¡Lección completada!"
 
-#: includes/class-mahan-admin.php:243
+#: includes/class-mahan-admin.php:252
 msgid "Lesson content"
 msgstr "Contenido de la lección"
 
@@ -1260,7 +1332,7 @@ msgstr "Lección no encontrada."
 msgid "Lesson order"
 msgstr "Orden de la lección"
 
-#: includes/class-mahan-admin.php:250
+#: includes/class-mahan-admin.php:259
 msgid "Lesson saved"
 msgstr "Lección guardada"
 
@@ -1268,7 +1340,7 @@ msgstr "Lección guardada"
 msgid "Lesson settings"
 msgstr "Ajustes de la lección"
 
-#: includes/class-mahan-admin.php:221
+#: includes/class-mahan-admin.php:230
 msgid "Lesson title"
 msgstr "Título de la lección"
 
@@ -1276,7 +1348,7 @@ msgstr "Título de la lección"
 msgid "Lessons"
 msgstr "Lecciones"
 
-#: includes/class-mahan-admin.php:552
+#: includes/class-mahan-admin.php:561 includes/class-mahan-students.php:636
 msgid "Lessons completed"
 msgstr "Lecciones completadas"
 
@@ -1284,7 +1356,7 @@ msgstr "Lecciones completadas"
 msgid "Lessons sharing a unit title are grouped together."
 msgstr "Las lecciones con el mismo título de unidad se agrupan."
 
-#: includes/class-mahan-admin.php:604 includes/class-mahan-admin.php:650 includes/class-mahan-front.php:161 includes/class-mahan-front.php:211 includes/class-mahan-meta-boxes-course.php:50
+#: includes/class-mahan-admin.php:613 includes/class-mahan-admin.php:659 includes/class-mahan-front.php:161 includes/class-mahan-front.php:211 includes/class-mahan-meta-boxes-course.php:50 includes/class-mahan-students.php:634
 msgid "Level"
 msgstr "Nivel"
 
@@ -1292,11 +1364,11 @@ msgstr "Nivel"
 msgid "Level %d"
 msgstr "Nivel %d"
 
-#: includes/class-mahan-admin.php:823
+#: includes/class-mahan-admin.php:832
 msgid "Level curve"
 msgstr "Curva de niveles"
 
-#: includes/class-mahan-admin.php:897
+#: includes/class-mahan-admin.php:906
 msgid "Level titles"
 msgstr "Títulos de nivel"
 
@@ -1304,11 +1376,11 @@ msgstr "Títulos de nivel"
 msgid "Level up!"
 msgstr "¡Subiste de nivel!"
 
-#: includes/class-mahan-admin.php:977
+#: includes/class-mahan-admin.php:986
 msgid "Light"
 msgstr "Claro"
 
-#: includes/class-mahan-admin.php:826
+#: includes/class-mahan-admin.php:835
 msgid "Linear — every level costs the same"
 msgstr "Lineal: todos los niveles cuestan lo mismo"
 
@@ -1320,7 +1392,7 @@ msgstr "Evaluación en directo"
 msgid "Loading the academy…"
 msgstr "Cargando la academia…"
 
-#: includes/class-mahan-admin.php:251 includes/class-mahan-front.php:401
+#: includes/class-mahan-admin.php:260 includes/class-mahan-front.php:401
 msgid "Loading…"
 msgstr "Cargando…"
 
@@ -1344,23 +1416,23 @@ msgstr "Más larga"
 msgid "Luminary"
 msgstr "Referente"
 
-#: includes/class-mahan-admin.php:36 includes/class-mahan-admin.php:37 includes/class-mahan-admin.php:448 includes/class-mahan-i18n.php:359
+#: includes/class-mahan-admin.php:37 includes/class-mahan-admin.php:38 includes/class-mahan-admin.php:457 includes/class-mahan-i18n.php:359
 msgid "Mahan Academy"
 msgstr "Mahan Academy"
 
-#: includes/class-mahan-admin.php:558
+#: includes/class-mahan-admin.php:567
 msgid "Mahan Academy — Reports"
 msgstr "Mahan Academy — Informes"
 
-#: includes/class-mahan-admin.php:713
+#: includes/class-mahan-admin.php:722
 msgid "Mahan Academy — Settings"
 msgstr "Mahan Academy — Ajustes"
 
-#: includes/class-mahan-admin.php:455
+#: includes/class-mahan-admin.php:464
 msgid "Manage courses"
 msgstr "Gestionar cursos"
 
-#: includes/class-mahan-admin.php:460
+#: includes/class-mahan-admin.php:469
 msgid "Manage lessons"
 msgstr "Gestionar lecciones"
 
@@ -1380,7 +1452,7 @@ msgstr "Corrigiendo…"
 msgid "Mastered! You won't see this one for a while."
 msgstr "¡Dominada! No la verás en un tiempo."
 
-#: includes/class-mahan-admin.php:789
+#: includes/class-mahan-admin.php:798
 msgid "Max tokens"
 msgstr "Tokens máximos"
 
@@ -1388,15 +1460,19 @@ msgstr "Tokens máximos"
 msgid "Member since"
 msgstr "Miembro desde"
 
+#: includes/class-mahan-students.php:610
+msgid "Member since %s"
+msgstr "Miembro desde %s"
+
 #: includes/class-mahan-front.php:402
 msgid "Menu"
 msgstr "Menú"
 
-#: includes/class-mahan-admin.php:226
+#: includes/class-mahan-admin.php:235
 msgid "Minutes"
 msgstr "Minutos"
 
-#: includes/class-mahan-admin.php:754 includes/class-mahan-admin.php:767 includes/class-mahan-admin.php:780
+#: includes/class-mahan-admin.php:763 includes/class-mahan-admin.php:776 includes/class-mahan-admin.php:789
 msgid "Model"
 msgstr "Modelo"
 
@@ -1404,11 +1480,11 @@ msgstr "Modelo"
 msgid "More courses"
 msgstr "Más cursos"
 
-#: includes/class-mahan-admin.php:259
+#: includes/class-mahan-admin.php:268
 msgid "Move or delete its lessons first."
 msgstr "Mueve o elimina antes sus lecciones."
 
-#: includes/class-mahan-admin.php:279 includes/class-mahan-admin.php:345
+#: includes/class-mahan-admin.php:288 includes/class-mahan-admin.php:354
 msgid "Multiple choice"
 msgstr "Opción múltiple"
 
@@ -1440,7 +1516,7 @@ msgstr "Nueva ruta"
 msgid "New Topic Name"
 msgstr "Nombre del nuevo tema"
 
-#: includes/class-mahan-admin.php:930
+#: includes/class-mahan-admin.php:939
 msgid "New achievement"
 msgstr "Nuevo logro"
 
@@ -1452,7 +1528,7 @@ msgstr "Nuevo logro desbloqueado: {{badge}}"
 msgid "New level unlocked!"
 msgstr "¡Nuevo nivel desbloqueado!"
 
-#: includes/class-mahan-admin.php:219
+#: includes/class-mahan-admin.php:228
 msgid "New unit"
 msgstr "Nueva unidad"
 
@@ -1468,7 +1544,7 @@ msgstr "A continuación:"
 msgid "Nice work {{name}}!\n\nYou just earned <strong>{{badge}}</strong>. Check your dashboard to see all your badges."
 msgstr "¡Buen trabajo, {{name}}!\n\nAcabas de conseguir <strong>{{badge}}</strong>. Entra en tu panel para ver todas tus insignias."
 
-#: includes/class-mahan-admin.php:626
+#: includes/class-mahan-admin.php:635 includes/class-mahan-students.php:755
 msgid "No activity yet."
 msgstr "Todavía no hay actividad."
 
@@ -1480,11 +1556,15 @@ msgstr "No se han enviado respuestas."
 msgid "No certificate found"
 msgstr "No se encontró ningún certificado"
 
-#: includes/class-mahan-admin.php:685
+#: includes/class-mahan-admin.php:694
 msgid "No certificates issued yet."
 msgstr "Todavía no se ha emitido ningún certificado."
 
-#: includes/class-mahan-admin.php:240
+#: includes/class-mahan-students.php:717
+msgid "No certificates yet."
+msgstr "Aún no hay certificados."
+
+#: includes/class-mahan-admin.php:249
 msgid "No content yet"
 msgstr "Aún sin contenido"
 
@@ -1504,19 +1584,19 @@ msgstr "No hay cursos en la papelera"
 msgid "No courses match your search."
 msgstr "Ningún curso coincide con tu búsqueda."
 
-#: includes/class-mahan-admin.php:301
+#: includes/class-mahan-admin.php:310
 msgid "No courses yet — add some below."
 msgstr "Todavía no hay cursos: añade alguno abajo."
 
-#: includes/class-mahan-admin.php:585
+#: includes/class-mahan-admin.php:594
 msgid "No courses yet."
 msgstr "Todavía no hay cursos."
 
-#: includes/class-mahan-admin.php:358
+#: includes/class-mahan-admin.php:367
 msgid "No exercises yet. Add one to make this lesson interactive."
 msgstr "Todavía no hay ejercicios. Añade uno para hacer interactiva esta lección."
 
-#: includes/class-mahan-admin.php:607
+#: includes/class-mahan-admin.php:616
 msgid "No learners yet."
 msgstr "Todavía no hay estudiantes."
 
@@ -1528,7 +1608,7 @@ msgstr "Todavía no hay rutas de aprendizaje."
 msgid "No lessons found"
 msgstr "No se encontraron lecciones"
 
-#: includes/class-mahan-admin.php:235
+#: includes/class-mahan-admin.php:244
 msgid "No lessons in this unit yet — add the first one below."
 msgstr "Esta unidad aún no tiene lecciones: añade la primera abajo."
 
@@ -1548,7 +1628,7 @@ msgstr "No se encontraron rutas"
 msgid "No paths in trash"
 msgstr "No hay rutas en la papelera"
 
-#: includes/class-mahan-admin.php:267
+#: includes/class-mahan-admin.php:276
 msgid "No questions yet. Add one below."
 msgstr "Todavía no hay preguntas. Añade una abajo."
 
@@ -1556,9 +1636,17 @@ msgstr "Todavía no hay preguntas. Añade una abajo."
 msgid "No ranked learners yet — earn some XP!"
 msgstr "Todavía no hay clasificación: ¡consigue algo de XP!"
 
-#: includes/class-mahan-admin.php:246
+#: includes/class-mahan-students.php:509
+msgid "No students match these filters."
+msgstr "Ningún estudiante coincide con estos filtros."
+
+#: includes/class-mahan-admin.php:255
 msgid "Not a supported video link"
 msgstr "No es un enlace de vídeo compatible"
+
+#: includes/class-mahan-students.php:659
+msgid "Not enrolled in any course yet."
+msgstr "Aún no está inscrito en ningún curso."
 
 #: includes/class-mahan-front.php:188
 msgid "Not now"
@@ -1620,11 +1708,11 @@ msgstr "En línea"
 msgid "Open"
 msgstr "Abrir"
 
-#: includes/class-mahan-admin.php:232
+#: includes/class-mahan-admin.php:241
 msgid "Open in the WordPress editor"
 msgstr "Abrir en el editor de WordPress"
 
-#: includes/class-mahan-admin.php:465
+#: includes/class-mahan-admin.php:474
 msgid "Open settings"
 msgstr "Abrir ajustes"
 
@@ -1632,11 +1720,11 @@ msgstr "Abrir ajustes"
 msgid "Operations"
 msgstr "Operaciones"
 
-#: includes/class-mahan-admin.php:272 includes/class-mahan-admin.php:338
+#: includes/class-mahan-admin.php:281 includes/class-mahan-admin.php:347
 msgid "Option"
 msgstr "Opción"
 
-#: includes/class-mahan-admin.php:900
+#: includes/class-mahan-admin.php:909
 msgid "Optional. One title per line, mapped to levels 1, 2, 3… The last title is reused for higher levels. Leave empty to show \"Level N\"."
 msgstr "Opcional. Un título por línea, asignados a los niveles 1, 2, 3… El último se reutiliza para los niveles superiores. Déjalo vacío para mostrar «Nivel N»."
 
@@ -1652,11 +1740,19 @@ msgstr "Aprueba 10 cuestionarios de unidad"
 msgid "Pass your first unit quiz"
 msgstr "Aprueba tu primer cuestionario de unidad"
 
+#: includes/class-mahan-students.php:781
+msgid "Passed a live assessment"
+msgstr "Aprobó una evaluación en directo"
+
+#: includes/class-mahan-students.php:778
+msgid "Passed a unit quiz"
+msgstr "Aprobó un cuestionario de unidad"
+
 #: includes/class-mahan-front.php:343
 msgid "Passed!"
 msgstr "¡Aprobado!"
 
-#: includes/class-mahan-admin.php:269
+#: includes/class-mahan-admin.php:278
 msgid "Passing score (%)"
 msgstr "Nota para aprobar (%)"
 
@@ -1696,7 +1792,7 @@ msgstr "Elige una respuesta primero."
 msgid "Pick your first course and start earning XP today."
 msgstr "Elige tu primer curso y empieza a ganar XP hoy."
 
-#: includes/class-mahan-admin.php:515
+#: includes/class-mahan-admin.php:524
 msgid "Place the shortcode %s on any page to render the academy."
 msgstr "Coloca el shortcode %s en cualquier página para mostrar la academia."
 
@@ -1704,15 +1800,19 @@ msgstr "Coloca el shortcode %s en cualquier página para mostrar la academia."
 msgid "Placed at"
 msgstr "Nivel asignado:"
 
-#: includes/class-mahan-admin.php:925
+#: includes/class-mahan-students.php:623
+msgid "Placed: %s"
+msgstr "Nivelación: %s"
+
+#: includes/class-mahan-admin.php:934
 msgid "Placeholders: {{name}}, {{course}}, {{badge}}, {{streak}}, {{site}}, {{academy_url}}, {{login_url}}. Basic HTML is allowed in the body."
 msgstr "Marcadores: {{name}}, {{course}}, {{badge}}, {{streak}}, {{site}}, {{academy_url}}, {{login_url}}. Se admite HTML básico en el cuerpo."
 
-#: includes/class-mahan-admin.php:800
+#: includes/class-mahan-admin.php:809
 msgid "Placeholders: {{name}}, {{role}}, {{company_type}}, {{seniority}}, {{ai_level}}, {{primary_goal}}, {{learning_style}}, {{daily_tools}} — filled from the learner profile. The tutor also receives a live \"learner context\" block (progress + an adaptive target difficulty) automatically."
 msgstr "Marcadores: {{name}}, {{role}}, {{company_type}}, {{seniority}}, {{ai_level}}, {{primary_goal}}, {{learning_style}}, {{daily_tools}}: se rellenan desde el perfil. El tutor también recibe automáticamente un bloque de «contexto del estudiante» en vivo (progreso + una dificultad objetivo adaptativa)."
 
-#: includes/class-mahan-admin.php:639
+#: includes/class-mahan-admin.php:648
 msgid "Placement levels"
 msgstr "Niveles de la prueba"
 
@@ -1744,7 +1844,7 @@ msgstr "Aprendiz de élite"
 msgid "Practical, safe ways to use AI to get everyday work done faster."
 msgstr "Formas prácticas y seguras de usar la IA para acelerar el trabajo diario."
 
-#: includes/class-mahan-admin.php:228 includes/class-mahan-front.php:311 includes/class-mahan-meta-boxes-lesson.php:88
+#: includes/class-mahan-admin.php:237 includes/class-mahan-front.php:311 includes/class-mahan-meta-boxes-lesson.php:88
 msgid "Practice"
 msgstr "Práctica"
 
@@ -1768,7 +1868,7 @@ msgstr "Anterior"
 msgid "Previous / next lesson"
 msgstr "Lección anterior / siguiente"
 
-#: includes/class-mahan-admin.php:966
+#: includes/class-mahan-admin.php:975
 msgid "Primary color"
 msgstr "Color principal"
 
@@ -1784,23 +1884,27 @@ msgstr "Producto"
 msgid "Profile"
 msgstr "Perfil"
 
-#: includes/class-mahan-admin.php:719
+#: includes/class-mahan-admin.php:728
 msgid "Profile Form"
 msgstr "Formulario de perfil"
 
-#: includes/class-mahan-admin.php:1042
+#: includes/class-mahan-admin.php:1051
 msgid "Profile form schema (JSON)"
 msgstr "Esquema del formulario de perfil (JSON)"
 
-#: includes/class-mahan-admin.php:1035
+#: includes/class-mahan-admin.php:1044
 msgid "Profile gate"
 msgstr "Perfil obligatorio"
 
-#: includes/class-mahan-admin.php:827
+#: includes/class-mahan-students.php:651
+msgid "Progress"
+msgstr "Progreso"
+
+#: includes/class-mahan-admin.php:836
 msgid "Progressive — each level costs more (RPG-style)"
 msgstr "Progresiva: cada nivel cuesta más (estilo RPG)"
 
-#: includes/class-mahan-admin.php:829
+#: includes/class-mahan-admin.php:838
 msgid "Progressive: level N costs N × \"XP per level\". Early levels come fast, later ones are earned."
 msgstr "Progresiva: el nivel N cuesta N × «XP por nivel». Los primeros niveles llegan rápido; los últimos se ganan."
 
@@ -1808,19 +1912,19 @@ msgstr "Progresiva: el nivel N cuesta N × «XP por nivel». Los primeros nivele
 msgid "Promo video URL"
 msgstr "URL del vídeo promocional"
 
-#: includes/class-mahan-admin.php:350
+#: includes/class-mahan-admin.php:359
 msgid "Prompt-writing task (AI graded)"
 msgstr "Tarea de escritura de prompts (corregida por IA)"
 
-#: includes/class-mahan-admin.php:454
+#: includes/class-mahan-admin.php:463
 msgid "Published courses"
 msgstr "Cursos publicados"
 
-#: includes/class-mahan-admin.php:459
+#: includes/class-mahan-admin.php:468
 msgid "Published lessons"
 msgstr "Lecciones publicadas"
 
-#: includes/class-mahan-admin.php:271 includes/class-mahan-admin.php:336
+#: includes/class-mahan-admin.php:280 includes/class-mahan-admin.php:345
 msgid "Question"
 msgstr "Pregunta"
 
@@ -1832,7 +1936,7 @@ msgstr "Pregunta %1$s de %2$s"
 msgid "Questions you missed come back here until you master them."
 msgstr "Las preguntas que fallas vuelven aquí hasta que las dominas."
 
-#: includes/class-mahan-admin.php:265 includes/class-mahan-front.php:339
+#: includes/class-mahan-admin.php:274 includes/class-mahan-front.php:339
 msgid "Quiz"
 msgstr "Cuestionario"
 
@@ -1840,7 +1944,7 @@ msgstr "Cuestionario"
 msgid "Quiz Whiz"
 msgstr "As de los cuestionarios"
 
-#: includes/class-mahan-admin.php:554
+#: includes/class-mahan-admin.php:563
 msgid "Quiz pass rate"
 msgstr "Tasa de aprobados"
 
@@ -1848,15 +1952,15 @@ msgstr "Tasa de aprobados"
 msgid "Rank"
 msgstr "Puesto"
 
-#: includes/class-mahan-admin.php:867
+#: includes/class-mahan-admin.php:876
 msgid "Re-ask questions the learner got wrong — at the end of the lesson and, with spaced repetition, on later days."
 msgstr "Vuelve a preguntar lo que se falló: al final de la lección y, con repetición espaciada, en días posteriores."
 
-#: includes/class-mahan-admin.php:484
+#: includes/class-mahan-admin.php:493
 msgid "Re-check / add new courses"
 msgstr "Revisar / añadir cursos nuevos"
 
-#: includes/class-mahan-admin.php:486
+#: includes/class-mahan-admin.php:495
 msgid "Re-running never duplicates or overwrites your content."
 msgstr "Volver a ejecutarlo nunca duplica ni sobrescribe tu contenido."
 
@@ -1872,15 +1976,19 @@ msgstr "Alcanza el nivel 20"
 msgid "Reach level 5"
 msgstr "Alcanza el nivel 5"
 
-#: includes/class-mahan-admin.php:227 includes/class-mahan-front.php:322 includes/class-mahan-meta-boxes-lesson.php:87
+#: includes/class-mahan-admin.php:236 includes/class-mahan-front.php:322 includes/class-mahan-meta-boxes-lesson.php:87
 msgid "Reading"
 msgstr "Lectura"
 
-#: includes/class-mahan-admin.php:621
+#: includes/class-mahan-students.php:746
+msgid "Recent activity"
+msgstr "Actividad reciente"
+
+#: includes/class-mahan-admin.php:630
 msgid "Recent completions"
 msgstr "Finalizaciones recientes"
 
-#: includes/class-mahan-admin.php:679
+#: includes/class-mahan-admin.php:688
 msgid "Recipient"
 msgstr "Destinatario"
 
@@ -1896,11 +2004,11 @@ msgstr "Recomendado para ti"
 msgid "Recommended to complete first (shown as a note; not enforced)."
 msgstr "Se recomienda completarlo antes (es solo una nota; no se exige)."
 
-#: includes/class-mahan-admin.php:349
+#: includes/class-mahan-admin.php:358
 msgid "Reflection (AI graded)"
 msgstr "Reflexión (corregida por IA)"
 
-#: includes/class-mahan-admin.php:275 includes/class-mahan-admin.php:335
+#: includes/class-mahan-admin.php:284 includes/class-mahan-admin.php:344
 msgid "Remove"
 msgstr "Quitar"
 
@@ -1916,9 +2024,21 @@ msgstr "Quitar de guardados"
 msgid "Removed from saved"
 msgstr "Quitado de guardados"
 
-#: includes/class-mahan-admin.php:54 includes/class-mahan-admin.php:55
+#: includes/class-mahan-admin.php:63 includes/class-mahan-admin.php:64
 msgid "Reports"
 msgstr "Informes"
+
+#: includes/class-mahan-students.php:686
+msgid "Reset ALL progress in this course? Lessons, exercise attempts and their review queue for it are permanently deleted. Certificates are kept."
+msgstr "¿Reiniciar TODO el progreso de este curso? Las lecciones, los intentos de ejercicios y su cola de repaso se eliminan de forma permanente. Los certificados se conservan."
+
+#: includes/class-mahan-students.php:686
+msgid "Reset progress"
+msgstr "Reiniciar progreso"
+
+#: includes/class-mahan-students.php:734
+msgid "Restore"
+msgstr "Restaurar"
 
 #: includes/class-mahan-front.php:160
 msgid "Resume"
@@ -1968,11 +2088,23 @@ msgstr "Repasa tus fallos"
 msgid "Revisit lesson"
 msgstr "Volver a la lección"
 
+#: includes/class-mahan-students.php:737
+msgid "Revoke"
+msgstr "Revocar"
+
+#: includes/class-mahan-students.php:737
+msgid "Revoke this certificate? It will stop verifying until restored."
+msgstr "¿Revocar este certificado? Dejará de verificarse hasta que se restaure."
+
+#: includes/class-mahan-students.php:733
+msgid "Revoked"
+msgstr "Revocado"
+
 #: includes/class-mahan-badges.php:74
 msgid "Rising Star"
 msgstr "Promesa"
 
-#: includes/class-mahan-admin.php:341
+#: includes/class-mahan-admin.php:350
 msgid "Rubric (how the AI should grade)"
 msgstr "Rúbrica (cómo debe corregir la IA)"
 
@@ -1988,15 +2120,15 @@ msgstr "Guardar y continuar"
 msgid "Save for later"
 msgstr "Guardar para después"
 
-#: includes/class-mahan-admin.php:248
+#: includes/class-mahan-admin.php:257
 msgid "Save lesson"
 msgstr "Guardar lección"
 
-#: includes/class-mahan-admin.php:284
+#: includes/class-mahan-admin.php:293
 msgid "Save quiz"
 msgstr "Guardar cuestionario"
 
-#: includes/class-mahan-admin.php:261 includes/class-mahan-front.php:243
+#: includes/class-mahan-admin.php:270 includes/class-mahan-front.php:243
 msgid "Saved"
 msgstr "Guardado"
 
@@ -2004,7 +2136,7 @@ msgstr "Guardado"
 msgid "Saved for later"
 msgstr "Guardado para después"
 
-#: includes/class-mahan-admin.php:249
+#: includes/class-mahan-admin.php:258
 msgid "Saving…"
 msgstr "Guardando…"
 
@@ -2048,6 +2180,10 @@ msgstr "Buscar cursos"
 msgid "Search courses…"
 msgstr "Buscar cursos…"
 
+#: includes/class-mahan-students.php:480
+msgid "Search name or email…"
+msgstr "Buscar por nombre o correo…"
+
 #: includes/class-mahan-ai-stream.php:41
 msgid "Security check failed. Please refresh and try again."
 msgstr "La comprobación de seguridad falló. Recarga la página e inténtalo de nuevo."
@@ -2060,7 +2196,7 @@ msgstr "Selecciona un curso"
 msgid "Send"
 msgstr "Enviar"
 
-#: includes/class-mahan-admin.php:944
+#: includes/class-mahan-admin.php:953
 msgid "Send a daily reminder to learners with an active streak (requires wp-cron)."
 msgstr "Envía un recordatorio diario a quienes tengan una racha activa (requiere wp-cron)."
 
@@ -2068,15 +2204,15 @@ msgstr "Envía un recordatorio diario a quienes tengan una racha activa (requier
 msgid "Send answer"
 msgstr "Enviar respuesta"
 
-#: includes/class-mahan-admin.php:913
+#: includes/class-mahan-admin.php:922
 msgid "Send notification emails"
 msgstr "Enviar correos de notificación"
 
-#: includes/class-mahan-admin.php:945
+#: includes/class-mahan-admin.php:954
 msgid "Send this email"
 msgstr "Enviar este correo"
 
-#: includes/class-mahan-admin.php:678
+#: includes/class-mahan-admin.php:687 includes/class-mahan-students.php:710
 msgid "Serial"
 msgstr "Número de serie"
 
@@ -2088,11 +2224,11 @@ msgstr "Sesión finalizada"
 msgid "Set a daily XP goal to build a habit."
 msgstr "Fija una meta diaria de XP para crear el hábito."
 
-#: includes/class-mahan-admin.php:62 includes/class-mahan-admin.php:63 includes/class-mahan-admin.php:242
+#: includes/class-mahan-admin.php:71 includes/class-mahan-admin.php:72 includes/class-mahan-admin.php:251
 msgid "Settings"
 msgstr "Ajustes"
 
-#: includes/class-mahan-admin.php:348
+#: includes/class-mahan-admin.php:357
 msgid "Short answer (AI graded)"
 msgstr "Respuesta corta (corregida por IA)"
 
@@ -2100,11 +2236,11 @@ msgstr "Respuesta corta (corregida por IA)"
 msgid "Short one-line tagline shown on the course card and hero."
 msgstr "Lema breve de una línea que se muestra en la tarjeta y la cabecera del curso."
 
-#: includes/class-mahan-admin.php:1024
+#: includes/class-mahan-admin.php:1033
 msgid "Show a language switcher so learners can pick their own"
 msgstr "Mostrar un selector para que cada estudiante elija su idioma"
 
-#: includes/class-mahan-admin.php:886
+#: includes/class-mahan-admin.php:895
 msgid "Show a public XP leaderboard (top 20 learners)"
 msgstr "Mostrar una clasificación pública de XP (20 mejores)"
 
@@ -2140,13 +2276,17 @@ msgstr "Saltar"
 msgid "Skip to content"
 msgstr "Saltar al contenido"
 
-#: includes/class-mahan-front.php:317
+#: includes/class-mahan-front.php:317 includes/class-mahan-students.php:780
 msgid "Smart practice"
 msgstr "Práctica inteligente"
 
 #: includes/class-mahan-badges.php:88
 msgid "Solve 50 exercises correctly"
 msgstr "Resuelve 50 ejercicios correctamente"
+
+#: includes/class-mahan-students.php:777
+msgid "Solved an exercise"
+msgstr "Resolvió un ejercicio"
 
 #: includes/class-mahan-front.php:413
 msgid "Some questions are unanswered — tap Submit again to send anyway."
@@ -2184,39 +2324,63 @@ msgstr "Empezar el curso"
 msgid "Start here"
 msgstr "Empieza aquí"
 
-#: includes/class-mahan-admin.php:436
+#: includes/class-mahan-admin.php:445
 msgid "Starter content installed: %1$d courses, %2$d lessons, %3$d quizzes, and %4$d bundles. Open your academy page to explore."
 msgstr "Contenido inicial instalado: %1$d cursos, %2$d lecciones, %3$d cuestionarios y %4$d paquetes. Abre la página de tu academia para explorarlo."
 
-#: includes/class-mahan-admin.php:439
+#: includes/class-mahan-admin.php:448
 msgid "Starter content is already installed — nothing new to add."
 msgstr "El contenido inicial ya está instalado: no hay nada nuevo que añadir."
 
-#: includes/class-mahan-admin.php:474
+#: includes/class-mahan-admin.php:483
 msgid "Starter content library"
 msgstr "Biblioteca de contenido inicial"
+
+#: includes/class-mahan-students.php:713
+msgid "Status"
+msgstr "Estado"
 
 #: includes/class-mahan-front.php:215
 msgid "Step %1$s of %2$s"
 msgstr "Paso %1$s de %2$s"
 
-#: includes/class-mahan-admin.php:833
+#: includes/class-mahan-students.php:500 includes/class-mahan-students.php:635
+msgid "Streak"
+msgstr "Racha"
+
+#: includes/class-mahan-admin.php:842
 msgid "Streak XP bonus (%)"
 msgstr "Bonus de XP por racha (%)"
 
-#: includes/class-mahan-admin.php:850
+#: includes/class-mahan-admin.php:859
 msgid "Streak freezes"
 msgstr "Congelaciones de racha"
 
-#: includes/class-mahan-admin.php:992 includes/class-mahan-front.php:110
+#: includes/class-mahan-admin.php:1001 includes/class-mahan-front.php:110
 msgid "Structured courses. Hands-on practice. A tutor that answers in real time."
 msgstr "Cursos estructurados. Práctica real. Un tutor que responde al instante."
+
+#: includes/class-mahan-students.php:498
+msgid "Student"
+msgstr "Estudiante"
+
+#: includes/class-mahan-students.php:437
+msgid "Student enrolled."
+msgstr "Estudiante inscrito."
+
+#: includes/class-mahan-students.php:438
+msgid "Student unenrolled. Their progress is kept."
+msgstr "Estudiante dado de baja. Su progreso se conserva."
+
+#: includes/class-mahan-admin.php:55 includes/class-mahan-admin.php:56 includes/class-mahan-students.php:472 includes/class-mahan-students.php:587 includes/class-mahan-students.php:597
+msgid "Students"
+msgstr "Estudiantes"
 
 #: includes/class-mahan-front.php:433
 msgid "Study today to keep it!"
 msgstr "¡Estudia hoy para mantenerla!"
 
-#: includes/class-mahan-admin.php:951
+#: includes/class-mahan-admin.php:960
 msgid "Subject"
 msgstr "Materia"
 
@@ -2248,7 +2412,7 @@ msgstr "Hacer el cuestionario"
 msgid "Tap the star on any course to keep it for later."
 msgstr "Toca la estrella de cualquier curso para guardarlo para después."
 
-#: includes/class-mahan-admin.php:342
+#: includes/class-mahan-admin.php:351
 msgid "Task for the student"
 msgstr "Tarea para el estudiante"
 
@@ -2256,21 +2420,25 @@ msgstr "Tarea para el estudiante"
 msgid "Tell us about you"
 msgstr "Cuéntanos sobre ti"
 
-#: includes/class-mahan-admin.php:793
+#: includes/class-mahan-admin.php:802
 msgid "Temperature"
 msgstr "Temperatura"
 
-#: includes/class-mahan-admin.php:740
+#: includes/class-mahan-admin.php:749
 msgid "Test connection"
 msgstr "Probar conexión"
 
-#: includes/class-mahan-admin.php:359
+#: includes/class-mahan-admin.php:368
 msgid "Testing…"
 msgstr "Probando…"
 
 #: includes/class-mahan-rest.php:1357
 msgid "That language is not available."
 msgstr "Ese idioma no está disponible."
+
+#: includes/class-mahan-students.php:588
+msgid "That user no longer exists."
+msgstr "Ese usuario ya no existe."
 
 #: includes/class-mahan-front.php:383
 msgid "That's enough live assessments for today — come back tomorrow."
@@ -2288,15 +2456,15 @@ msgstr "El tutor de IA todavía no está configurado."
 msgid "The AI tutor is not configured yet. Add an API key in Mahan Academy settings."
 msgstr "El tutor de IA todavía no está configurado. Añade una clave de API en los ajustes de Mahan Academy."
 
-#: includes/class-mahan-admin.php:1003
+#: includes/class-mahan-admin.php:1012
 msgid "The academy interface ships in English and Spanish. Only the interface is translated — course text, quiz questions, and email templates stay exactly as they were written."
 msgstr "La interfaz de la academia está disponible en inglés y español. Solo se traduce la interfaz: el texto de los cursos, las preguntas de los cuestionarios y las plantillas de correo se quedan tal y como se escribieron."
 
-#: includes/class-mahan-admin.php:986
+#: includes/class-mahan-admin.php:995
 msgid "The big title on the course catalog. Leave empty for the default."
 msgstr "El título grande del catálogo de cursos. Déjalo vacío para usar el predeterminado."
 
-#: includes/class-mahan-admin.php:354
+#: includes/class-mahan-admin.php:363
 msgid "The exact word/phrase for the blank"
 msgstr "La palabra o frase exacta del hueco"
 
@@ -2324,11 +2492,11 @@ msgstr "El idioma en el que este estudiante lee la academia. No cambia el resto 
 msgid "The more you share, the more your lessons, exercises, and AI tutor adapt to your role, level, and goals."
 msgstr "Cuanto más compartas, más se adaptarán tus lecciones, ejercicios y tutor de IA a tu puesto, tu nivel y tus objetivos."
 
-#: includes/class-mahan-admin.php:1064
+#: includes/class-mahan-admin.php:1073
 msgid "The page that contains the [mahan_academy] shortcode."
 msgstr "La página que contiene el shortcode [mahan_academy]."
 
-#: includes/class-mahan-admin.php:742
+#: includes/class-mahan-admin.php:751
 msgid "The tutor and AI grading use this provider. Save your key first, then test."
 msgstr "El tutor y la corrección con IA usan este proveedor. Guarda la clave primero y después haz la prueba."
 
@@ -2340,7 +2508,7 @@ msgstr "Falló la conexión con el tutor. Inténtalo de nuevo."
 msgid "The tutor took too long to respond. Please try again."
 msgstr "El tutor tardó demasiado en responder. Inténtalo de nuevo."
 
-#: includes/class-mahan-admin.php:974
+#: includes/class-mahan-admin.php:983
 msgid "Theme"
 msgstr "Tema"
 
@@ -2368,11 +2536,11 @@ msgstr "Este curso se apoya en estas referencias; profundiza cuando quieras."
 msgid "This week"
 msgstr "Esta semana"
 
-#: includes/class-mahan-admin.php:357
+#: includes/class-mahan-admin.php:366
 msgid "Tip: use ___ (three underscores) in the question to mark the blank."
 msgstr "Consejo: usa ___ (tres guiones bajos) en la pregunta para marcar el hueco."
 
-#: includes/class-mahan-admin.php:602
+#: includes/class-mahan-admin.php:611
 msgid "Top learners"
 msgstr "Mejores estudiantes"
 
@@ -2388,11 +2556,11 @@ msgstr "Tema:"
 msgid "Topics"
 msgstr "Temas"
 
-#: includes/class-mahan-admin.php:550
+#: includes/class-mahan-admin.php:559
 msgid "Total XP"
 msgstr "XP total"
 
-#: includes/class-mahan-admin.php:846
+#: includes/class-mahan-admin.php:855
 msgid "Track daily learning streaks"
 msgstr "Registrar rachas de aprendizaje diarias"
 
@@ -2400,11 +2568,11 @@ msgstr "Registrar rachas de aprendizaje diarias"
 msgid "Trailblazer"
 msgstr "Pionero"
 
-#: includes/class-mahan-admin.php:282 includes/class-mahan-admin.php:351 includes/class-mahan-ai-author.php:243 includes/class-mahan-meta-boxes-lesson.php:216 includes/class-mahan-practice.php:221 includes/class-mahan-quizzes.php:120
+#: includes/class-mahan-admin.php:291 includes/class-mahan-admin.php:360 includes/class-mahan-ai-author.php:243 includes/class-mahan-meta-boxes-lesson.php:216 includes/class-mahan-practice.php:221 includes/class-mahan-quizzes.php:120
 msgid "True"
 msgstr "Verdadero"
 
-#: includes/class-mahan-admin.php:280 includes/class-mahan-admin.php:346
+#: includes/class-mahan-admin.php:289 includes/class-mahan-admin.php:355
 msgid "True / False"
 msgstr "Verdadero / Falso"
 
@@ -2428,11 +2596,11 @@ msgstr "Intenta desarrollar tu respuesta con más detalle."
 msgid "Tutor conversation"
 msgstr "Conversación con el tutor"
 
-#: includes/class-mahan-admin.php:797
+#: includes/class-mahan-admin.php:806
 msgid "Tutor system prompt"
 msgstr "Prompt de sistema del tutor"
 
-#: includes/class-mahan-admin.php:224 includes/class-mahan-admin.php:337 includes/class-mahan-meta-boxes-lesson.php:83
+#: includes/class-mahan-admin.php:233 includes/class-mahan-admin.php:346 includes/class-mahan-meta-boxes-lesson.php:83
 msgid "Type"
 msgstr "Tipo"
 
@@ -2448,6 +2616,14 @@ msgstr "No disponible"
 msgid "Understand and use generative AI and large language models with confidence."
 msgstr "Entiende y usa con confianza la IA generativa y los grandes modelos de lenguaje."
 
+#: includes/class-mahan-students.php:684
+msgid "Unenroll"
+msgstr "Dar de baja"
+
+#: includes/class-mahan-students.php:684
+msgid "Unenroll from this course? Their progress is kept and comes back if they re-enroll."
+msgstr "¿Dar de baja de este curso? Su progreso se conserva y vuelve si se inscribe de nuevo."
+
 #: includes/class-mahan-seed.php:389 includes/class-mahan-seed.php:517
 msgid "Unit %d"
 msgstr "Unidad %d"
@@ -2456,7 +2632,7 @@ msgstr "Unidad %d"
 msgid "Unit (section) title"
 msgstr "Título de la unidad (sección)"
 
-#: includes/class-mahan-admin.php:220
+#: includes/class-mahan-admin.php:229
 msgid "Unit name"
 msgstr "Nombre de la unidad"
 
@@ -2464,7 +2640,7 @@ msgstr "Nombre de la unidad"
 msgid "Unit order"
 msgstr "Orden de la unidad"
 
-#: includes/class-mahan-admin.php:266 includes/class-mahan-quizzes.php:156 includes/class-mahan-rest.php:395
+#: includes/class-mahan-admin.php:275 includes/class-mahan-quizzes.php:156 includes/class-mahan-rest.php:395
 msgid "Unit quiz"
 msgstr "Cuestionario de la unidad"
 
@@ -2492,6 +2668,10 @@ msgstr "Usa la IA de forma defendible: riesgo, equidad, transparencia y las norm
 msgid "Use it on a situation from your own work."
 msgstr "Aplícala a una situación de tu propio trabajo."
 
+#: includes/class-mahan-students.php:736
+msgid "Valid"
+msgstr "Válido"
+
 #: includes/class-mahan-front.php:294
 msgid "Verified"
 msgstr "Verificado"
@@ -2508,11 +2688,11 @@ msgstr "Verificar un certificado"
 msgid "Verify at"
 msgstr "Verifícalo en"
 
-#: includes/class-mahan-admin.php:229 includes/class-mahan-admin.php:244 includes/class-mahan-meta-boxes-lesson.php:89 includes/class-mahan-meta-boxes-lesson.php:97
+#: includes/class-mahan-admin.php:238 includes/class-mahan-admin.php:253 includes/class-mahan-meta-boxes-lesson.php:89 includes/class-mahan-meta-boxes-lesson.php:97
 msgid "Video"
 msgstr "Vídeo"
 
-#: includes/class-mahan-admin.php:247
+#: includes/class-mahan-admin.php:256
 msgid "Video file"
 msgstr "Archivo de vídeo"
 
@@ -2560,7 +2740,11 @@ msgstr "Sopesa un equilibrio, un límite o un riesgo."
 msgid "Welcome to {{course}} 🎉"
 msgstr "Te damos la bienvenida a {{course}} 🎉"
 
-#: includes/class-mahan-admin.php:1017
+#: includes/class-mahan-students.php:750
+msgid "What"
+msgstr "Qué"
+
+#: includes/class-mahan-admin.php:1026
 msgid "What a learner sees before they choose anything."
 msgstr "Lo que ve un estudiante antes de elegir nada."
 
@@ -2568,13 +2752,17 @@ msgstr "Lo que ve un estudiante antes de elegir nada."
 msgid "What you'll learn"
 msgstr "Lo que aprenderás"
 
-#: includes/class-mahan-admin.php:623
+#: includes/class-mahan-admin.php:632 includes/class-mahan-students.php:749
 msgid "When"
 msgstr "Cuándo"
 
 #: includes/class-mahan-front.php:265
 msgid "Why does this matter?"
 msgstr "¿Por qué importa esto?"
+
+#: includes/class-mahan-students.php:607
+msgid "WordPress profile"
+msgstr "Perfil de WordPress"
 
 #: includes/class-mahan-front.php:379
 msgid "Write an answer first."
@@ -2584,7 +2772,7 @@ msgstr "Escribe primero una respuesta."
 msgid "Write clear, reliable prompts and build repeatable prompting workflows."
 msgstr "Escribe prompts claros y fiables, y crea flujos de trabajo repetibles."
 
-#: includes/class-mahan-admin.php:1071
+#: includes/class-mahan-admin.php:1080
 msgid "Write logs to the PHP error log"
 msgstr "Escribir registros en el log de errores de PHP"
 
@@ -2592,27 +2780,31 @@ msgstr "Escribir registros en el log de errores de PHP"
 msgid "Write your answer…"
 msgstr "Escribe tu respuesta…"
 
-#: includes/class-mahan-admin.php:344 includes/class-mahan-front.php:162
+#: includes/class-mahan-admin.php:353 includes/class-mahan-front.php:162 includes/class-mahan-students.php:633
 msgid "XP"
 msgstr "XP"
 
-#: includes/class-mahan-admin.php:270
+#: includes/class-mahan-students.php:499
+msgid "XP / Level"
+msgstr "XP / Nivel"
+
+#: includes/class-mahan-admin.php:279
 msgid "XP on pass (0 = auto)"
 msgstr "XP al aprobar (0 = automático)"
 
-#: includes/class-mahan-admin.php:869
+#: includes/class-mahan-admin.php:878
 msgid "XP per cleared review:"
 msgstr "XP por repaso superado:"
 
-#: includes/class-mahan-admin.php:814
+#: includes/class-mahan-admin.php:823
 msgid "XP per exercise"
 msgstr "XP por ejercicio"
 
-#: includes/class-mahan-admin.php:810
+#: includes/class-mahan-admin.php:819
 msgid "XP per lesson"
 msgstr "XP por lección"
 
-#: includes/class-mahan-admin.php:818
+#: includes/class-mahan-admin.php:827
 msgid "XP per level"
 msgstr "XP por nivel"
 
@@ -2620,7 +2812,7 @@ msgstr "XP por nivel"
 msgid "XP reward (0 = default)"
 msgstr "Recompensa de XP (0 = predeterminada)"
 
-#: includes/class-mahan-admin.php:551
+#: includes/class-mahan-admin.php:560
 msgid "XP this week"
 msgstr "XP esta semana"
 
@@ -2640,7 +2832,7 @@ msgstr "Estás aquí"
 msgid "You completed {{course}}! 🎓"
 msgstr "¡Has completado {{course}}! 🎓"
 
-#: includes/class-mahan-admin.php:395
+#: includes/class-mahan-admin.php:404
 msgid "You do not have permission to do this."
 msgstr "No tienes permiso para hacer esto."
 
@@ -2684,11 +2876,11 @@ msgstr "Volverás a verla antes de terminar esta sesión."
 msgid "You're all caught up — no reviews due. Nice!"
 msgstr "Estás al día: no hay repasos pendientes. ¡Bien!"
 
-#: includes/class-mahan-admin.php:245 includes/class-mahan-meta-boxes-lesson.php:99
+#: includes/class-mahan-admin.php:254 includes/class-mahan-meta-boxes-lesson.php:99
 msgid "YouTube, Vimeo, or a direct .mp4 / .webm link"
 msgstr "YouTube, Vimeo o un enlace directo .mp4 / .webm"
 
-#: includes/class-mahan-admin.php:509
+#: includes/class-mahan-admin.php:518
 msgid "Your academy page is ready: %s"
 msgstr "Tu página de la academia está lista: %s"
 
@@ -2720,7 +2912,7 @@ msgstr "Perderás la respuesta sin enviar: cierra otra vez para confirmar."
 msgid "a short test so courses start where you actually are"
 msgstr "una prueba corta para que los cursos empiecen donde estás de verdad"
 
-#: includes/class-mahan-admin.php:631
+#: includes/class-mahan-admin.php:640
 msgid "ago"
 msgstr "atrás"
 
@@ -2772,23 +2964,23 @@ msgstr "pendiente de repaso"
 msgid "e.g. Writing effective prompts for email"
 msgstr "p. ej. Escribir prompts eficaces para el correo"
 
-#: includes/class-mahan-admin.php:756
+#: includes/class-mahan-admin.php:765
 msgid "e.g. claude-sonnet-4-6, claude-opus-4-8, claude-haiku-4-5"
 msgstr "p. ej. claude-sonnet-4-6, claude-opus-4-8, claude-haiku-4-5"
 
-#: includes/class-mahan-admin.php:782
+#: includes/class-mahan-admin.php:791
 msgid "e.g. gemini-1.5-flash, gemini-1.5-pro"
 msgstr "p. ej. gemini-1.5-flash, gemini-1.5-pro"
 
-#: includes/class-mahan-admin.php:769
+#: includes/class-mahan-admin.php:778
 msgid "e.g. gpt-4o, gpt-4o-mini"
 msgstr "p. ej. gpt-4o, gpt-4o-mini"
 
-#: includes/class-mahan-admin.php:241
+#: includes/class-mahan-admin.php:250
 msgid "empty"
 msgstr "vacía"
 
-#: includes/class-mahan-admin.php:223
+#: includes/class-mahan-admin.php:232
 msgid "exercises"
 msgstr "ejercicios"
 
@@ -2796,11 +2988,11 @@ msgstr "ejercicios"
 msgid "exercises correct"
 msgstr "ejercicios correctos"
 
-#: includes/class-mahan-admin.php:859
+#: includes/class-mahan-admin.php:868
 msgid "freezes."
 msgstr "congelaciones."
 
-#: includes/class-mahan-admin.php:319
+#: includes/class-mahan-admin.php:328
 msgid "from this lesson's content"
 msgstr "del contenido de esta lección"
 
@@ -2824,7 +3016,7 @@ msgstr "aprendiendo"
 msgid "lesson"
 msgstr "lección"
 
-#: includes/class-mahan-admin.php:222 includes/class-mahan-course-builder.php:60 includes/class-mahan-front.php:164
+#: includes/class-mahan-admin.php:231 includes/class-mahan-course-builder.php:60 includes/class-mahan-front.php:164
 msgid "lessons"
 msgstr "lecciones"
 
@@ -2840,7 +3032,7 @@ msgstr "racha más larga"
 msgid "mastered"
 msgstr "dominadas"
 
-#: includes/class-mahan-admin.php:225 includes/class-mahan-course-builder.php:61 includes/class-mahan-front.php:436
+#: includes/class-mahan-admin.php:234 includes/class-mahan-course-builder.php:61 includes/class-mahan-front.php:436
 msgid "min"
 msgstr "min"
 
@@ -2880,7 +3072,7 @@ msgstr "fase"
 msgid "stages"
 msgstr "fases"
 
-#: includes/class-mahan-admin.php:857
+#: includes/class-mahan-admin.php:866
 msgid "streak days, holding at most"
 msgstr "días de racha, con un máximo de"
 
@@ -2932,15 +3124,15 @@ msgstr "tu organización"
 msgid "your role"
 msgstr "tu puesto"
 
-#: includes/class-mahan-admin.php:1059 includes/class-mahan-meta-boxes-course.php:85
+#: includes/class-mahan-admin.php:1068 includes/class-mahan-meta-boxes-course.php:85
 msgid "— None —"
 msgstr "— Ninguno —"
 
-#: includes/class-mahan-admin.php:300
+#: includes/class-mahan-admin.php:309
 msgid "— all courses added —"
 msgstr "— todos los cursos añadidos —"
 
-#: includes/class-mahan-admin.php:299
+#: includes/class-mahan-admin.php:308
 msgid "— choose a course —"
 msgstr "— elige un curso —"
 

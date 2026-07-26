@@ -210,7 +210,33 @@ groups several courses in a recommended order.
 - Placeholders: `{{name}}`, `{{course}}`, `{{badge}}`, `{{streak}}`, `{{site}}`,
   `{{academy_url}}`, `{{login_url}}`. Basic HTML is allowed in the body.
 
-## 8. Reports & analytics
+## 8. Students
+
+**Mahan Academy → Students.** Everyone who is actually learning — enrolled in
+at least one course or carrying stats — with XP, level, streak, last-active
+date, enrollments, completions, and valid certificates per row. Not a list of
+every WordPress user.
+
+- **Find people**: search by name or email, filter by course, filter by
+  recency (active in the last 7 / 30 days, or inactive), sort by any column.
+- **Export CSV** exports what you're looking at — the current search, course
+  and activity filters stay applied.
+- Click a name to open the **student file**: profile + placement tags, six
+  lifetime stat tiles, and four sections you can act from.
+
+Actions on the student file — and what they really do:
+
+| Action | What happens | What is kept |
+| ------ | ------------ | ------------ |
+| **Enroll in course** | Adds an enrollment, same as if they enrolled themselves. | Everything. |
+| **Unenroll** | Removes the enrollment only. | **All progress** — it comes back if they re-enroll. |
+| **Reset progress** | Deletes lesson progress, exercise attempts and the review queue *for that course*, and rewinds the enrollment to 0%. | **Certificates and the XP log** — earned credentials and the audit trail survive a reset. |
+| **Revoke certificate** | The certificate stops verifying on the public page. The row is kept and struck through. | Everything — **Restore** undoes it completely. |
+
+Destructive actions ask for confirmation and say exactly what they will and
+won't delete. Nothing on this screen can silently destroy a credential.
+
+## 9. Reports & analytics
 
 **Mahan Academy → Reports.** A read-only dashboard:
 
@@ -220,7 +246,7 @@ groups several courses in a recommended order.
   with an **Export CSV** button.
 - Top learners and a recent-completions feed.
 
-## 9. Appearance & profile
+## 10. Appearance & profile
 
 - **Settings → Appearance**: primary/accent colors, light/dark theme, custom CSS.
   - **Catalog headline** and **Catalog tagline** set the hero copy at the top of
@@ -257,7 +283,7 @@ duplicate it like any other WordPress content.
 
 ---
 
-## 10. Go live
+## 11. Go live
 
 Share the **Academy** page (Settings → Advanced shows which page it is). Learners
 sign in with normal WordPress accounts, enroll for free, and progress through

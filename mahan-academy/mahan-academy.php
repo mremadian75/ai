@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Mahan Academy
  * Description: A standalone AI-learning platform for WordPress — Coursera-style course structure, Duolingo-style interactive practice, and a real-time AI tutor powered by Anthropic, OpenAI, or Google. Visual course builder, AI authoring, unit quizzes, live AI oral exams, learning paths, achievements, email notifications, and admin analytics. No LMS dependency, no external automation services.
- * Version: 1.29.0
+ * Version: 1.30.0
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * Author: Mahan Academy
@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'MAHAN_VERSION', '1.29.0' );
+define( 'MAHAN_VERSION', '1.30.0' );
 define( 'MAHAN_DB_VERSION', '6' );
 define( 'MAHAN_FILE', __FILE__ );
 define( 'MAHAN_DIR', plugin_dir_path( __FILE__ ) );
@@ -61,6 +61,7 @@ if ( is_admin() ) {
 	require_once MAHAN_DIR . 'includes/class-mahan-course-builder.php';
 	require_once MAHAN_DIR . 'includes/class-mahan-ai-author.php';
 	require_once MAHAN_DIR . 'includes/class-mahan-reports.php';
+	require_once MAHAN_DIR . 'includes/class-mahan-students.php';
 	require_once MAHAN_DIR . 'includes/class-mahan-admin.php';
 }
 

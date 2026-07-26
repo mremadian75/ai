@@ -4,7 +4,52 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
-## [1.29.0]
+## [1.30.0]
+
+The **Students** screen — real student management in the admin panel.
+**No schema change — DB stays v6.**
+
+### A roster that answers questions
+
+**Mahan Academy → Students** lists everyone who is actually learning (enrolled
+in something, or carrying stats) — not every WordPress user. Each row shows
+XP, level, streak, last-active date, enrollments, completions, and valid
+certificates. The roster is searchable by name or email, filterable by course
+and by recency (active in the last 7 / 30 days, or inactive), sortable by any
+column, paginated, and exportable to CSV **with the current filters applied**.
+
+Everything that reaches SQL is whitelisted or clamped first:
+
+- `ORDER BY` comes from a constant map (`name` → `u.display_name ASC`, …) —
+  a hostile `orderby` falls back to the default, it never lands in SQL.
+- Search terms go through `$wpdb->esc_like` + `prepare`; the page number is
+  clamped to `1…10000` with a plain `(int)` cast, because `absint(-5)` is `5`
+  and would have quietly turned a negative page into page five.
+- CSV cells that could be spreadsheet formulas (`=`, `+`, `-`, `@` prefixes)
+  are neutralised with a leading apostrophe before export.
+
+### A student file, not just a row
+
+Clicking a student opens their file: avatar, profile + placement tags,
+six lifetime stat tiles, and four working sections —
+
+- **Enrollments** with live progress meters, plus **Enroll in course**,
+  **Unenroll**, and **Reset progress** actions.
+- **Certificates** with per-certificate **Revoke / Restore** (the row is kept
+  and struck through — revocation is reversible and auditable).
+- **Recent activity** — the last XP-log entries with human labels
+  ("Passed a live assessment", "Completed a lesson", …).
+
+The destructive semantics are deliberate and documented on the buttons
+themselves: **Unenroll keeps progress** (it comes back on re-enroll);
+**Reset progress destroys** lesson progress, exercise attempts and the review
+queue for that course but **never** certificates or the XP audit log;
+certificates are only ever revoked/restored, never deleted. Every mutation is
+an `admin-post` action behind `manage_options`, a nonce, and a JS confirm.
+
+31 logic assertions cover the SQL whitelisting and exactly which rows each
+mutation touches (and must not touch); a 23-check headless-browser pass
+asserts the rendered list + detail screens.
 
 The **Course Studio** — the admin course builder rebuilt in Tutor-LMS style,
 so a whole course is authored on one screen. **No schema change — DB stays v6.**

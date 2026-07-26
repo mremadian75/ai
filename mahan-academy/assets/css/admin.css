@@ -70,3 +70,38 @@
 @media (min-width: 1100px) { .mahan-report-cols { grid-template-columns: 1fr 1fr; } }
 .mahan-report-cols h2 { margin-top: 20px; }
 .mahan-muted { color: #787c82; }
+
+/* ====================================================================== */
+/* Students screen (v1.30.0)                                              */
+/* ====================================================================== */
+
+.mahan-students-filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0; }
+.mahan-students-filters input[type="search"] { min-width: 260px; }
+
+.mahan-students-table .mahan-students-who { display: flex; align-items: center; gap: 10px; }
+.mahan-students-table .mahan-students-who img { border-radius: 50%; flex: 0 0 auto; }
+.mahan-students-mail { color: #787c82; font-size: 12px; }
+.mahan-students-none { text-align: center; color: #787c82; padding: 26px !important; font-style: italic; }
+.mahan-students-sort { text-decoration: none; color: inherit; font-weight: 600; }
+.mahan-students-sort.is-on { color: #4f46e5; }
+.mahan-students-danger { color: #b32d2e !important; }
+
+.mahan-students-back { text-decoration: none; font-size: 14px; font-weight: 500; }
+
+.mahan-student-head { display: flex; gap: 16px; align-items: center; margin: 18px 0 6px; padding: 16px 18px; background: #fff; border: 1px solid #e2e4e9; border-radius: 10px; }
+.mahan-student-head img { border-radius: 50%; flex: 0 0 auto; }
+.mahan-student-id h2 { margin: 0 0 2px; }
+.mahan-student-id p { margin: 2px 0; color: #50575e; }
+.mahan-student-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.mahan-student-tag { display: inline-block; padding: 2px 10px; border-radius: 999px; background: #eef2ff; color: #4f46e5; font-size: 12px; font-weight: 600; }
+.mahan-student-tag.is-placement { background: #ecfdf5; color: #047857; }
+
+.mahan-student-cards { margin: 14px 0 20px; }
+
+.mahan-student-meter { display: inline-block; vertical-align: middle; width: 90px; height: 8px; margin-right: 8px; border-radius: 999px; background: #eef0f4; overflow: hidden; }
+.mahan-student-meter span { display: block; height: 100%; border-radius: 999px; background: #4f46e5; }
+
+.mahan-students-actions-col { width: 220px; }
+.mahan-student-enroll { display: flex; gap: 8px; align-items: center; margin: 12px 0 26px; }
+.mahan-cert-revoked td { opacity: .6; }
+.mahan-cert-revoked code { text-decoration: line-through; }

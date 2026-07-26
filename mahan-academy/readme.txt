@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.29.0
+Stable tag: 1.30.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -49,6 +49,7 @@ Mahan Academy is a self-contained learning plugin built to teach people how to u
 * Learning paths — group courses into a guided, ordered program
 * Email notifications (welcome, completion, achievement, streak reminder)
 * Admin reports & analytics with CSV export — including a register of every issued certificate (serial, recipient, course, date) and a breakdown of what level your learners actually placed at
+* Student management: a Students screen listing everyone actually learning — searchable, filterable by course and recency, sortable, paginated, and exportable to CSV with the filters applied. Each student opens into a full file: stats, enrollments with progress meters, enroll / unenroll / reset-progress actions with honest semantics (unenroll keeps progress; reset destroys it but never certificates or the XP log), reversible certificate revoke/restore, and a recent-activity feed
 * Placement test: a short assessment that measures where a learner actually is and starts them on the matching rung of every course ladder. Authored questions and arithmetic scoring — no API key needed, same answer twice. Options are shuffled per sitting, so guessing the same slot every time gets you nowhere
 * Verifiable certificates: issued automatically the moment a course is completed, with the date actually earned and a unique serial. Anyone can check a serial at the public verification page without logging in, and it reveals only who completed what, and when
 * Featured courses, promo videos, prerequisites, and printable completion certificates
@@ -84,6 +85,9 @@ You don't have to do anything — the starter catalog installs automatically on 
 Each course lists the authoritative references it is grounded in under "Further reading & sources" on the course page — peer-reviewed papers, standards and institutional guidance (NIST AI Risk Management Framework, EU AI Act, UNESCO, OECD, OWASP, C2PA), textbooks, and official provider documentation.
 
 == Changelog ==
+
+= 1.30.0 =
+Student management. A new Students screen lists everyone who is actually learning — enrolled in something or carrying stats, not every WordPress user — with XP, level, streak, last-active date, enrollments, completions and valid certificates per row; searchable by name or email, filterable by course and by recency (active in the last 7 or 30 days, or inactive), sortable, paginated, and exportable to CSV with the current filters applied. Clicking a student opens their file: profile and placement tags, six lifetime stat tiles, enrollments with live progress meters and enroll / unenroll / reset-progress actions, certificates with reversible revoke and restore, and a recent-activity feed with human labels. The destructive semantics are deliberate: unenrolling keeps progress (it comes back on re-enroll); resetting progress deletes lesson progress, exercise attempts and the review queue for that course but never certificates or the XP audit log; certificates are only ever revoked or restored, never deleted. Every value that reaches SQL is whitelisted or clamped first, every mutation sits behind a capability check, a nonce and a confirm, and CSV cells that could be spreadsheet formulas are neutralised on export. No schema change.
 
 = 1.29.0 =
 The Course Studio: the admin course builder rebuilt in Tutor-LMS style so a whole course is authored on one screen. Every lesson row gains an Edit button that opens a full editor in place — the lesson body in the classic rich-text editor with the media library, a video field that validates and previews YouTube / Vimeo / direct-file links as you paste them, a segmented type control, minutes and XP — with a dirty-guard so closing an edited lesson asks first. Lessons can now carry a video that learners see as a responsive player above the lesson text; pasted URLs pass a strict server-side whitelist so only YouTube, Vimeo and direct media files ever embed. The curriculum tree became collapsible unit cards with live summaries, per-lesson status badges (video, draft, and an "empty" warning on lessons with no body yet), and inline lesson add — type a title, pick a type, press Enter. Content saved from the studio passes wp_kses_post, exactly like the classic editor. Also fixes a CSS-token scoping bug that rendered the modal's selected type segment white-on-white. No schema change.

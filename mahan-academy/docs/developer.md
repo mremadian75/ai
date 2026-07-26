@@ -357,6 +357,64 @@ headless-browser checks on the rendered list + detail screens).
 
 ---
 
+## Analytics dashboard (admin Reports)
+
+`Mahan_Analytics` renders **Mahan Academy → Reports** (`Mahan_Admin::
+render_reports()` just delegates) and owns everything windowed;
+`Mahan_Reports` keeps the all-time aggregates, top learners, recent
+completions, placement spread and certificate register it always had.
+
+**The window.** `range_days()` whitelists `?range` against `RANGES`
+(7/30/90/365, default 30) — the only request value that reaches SQL.
+`series($days)` queries **2× the window once per metric** (`GROUP BY
+DATE(...)`), then splits current vs previous in PHP: the previous window
+exists only to answer "up or down?", so it needs sums, not its own rows.
+Sparse date maps are zero-filled onto dense day runs by `fill_days()`.
+
+Semantics worth keeping intact:
+
+- `delta()` — something-from-nothing is `{dir: 'new'}`, never a division by
+  zero dressed up as +∞%; both-zero is `flat`.
+- The **Active learners** window total is `COUNT(DISTINCT user_id)` over the
+  window (two extra cheap queries), *not* the sum of the daily-actives
+  series — one person on 30 days is one learner.
+- The funnel query counts `status='completed'` into every stage, so the
+  funnel is monotonic even when a completed enrollment's `progress_pct` row
+  is stale.
+- Rates are `int|null`, and `null` renders as "—": *no data* must not read
+  as *0%*.
+- `weekday_counts()` maps MySQL `DAYOFWEEK` (1 = Sunday) onto a Monday-first
+  week — the `($dw + 5) % 7` is load-bearing and tested.
+- **Drop-off point**: one query joins each unfinished enrollment to the
+  learner's `MAX(completed_at)` progress row, grouped by (course, lesson);
+  `reduce_stalls()` picks each course's worst lesson deterministically
+  (higher count wins, ties keep the lower lesson id).
+- **Hardest exercises** are noise-gated in SQL (`HAVING COUNT(*) >=
+  MIN_ATTEMPTS`, 5) and exclude `type = 'quiz'`.
+- Viva pass rate divides by *decided* sittings (passed + failed) — active
+  and abandoned sittings don't dilute it.
+
+**Charts are server-rendered inline SVG** (`svg_spark`, `svg_chart`,
+`svg_bars`) — pure functions of internal numbers, no charting library,
+nothing user-controlled inside the markup. They are NaN-proof by
+construction (`max(1, …)` denominators; empty/one-point series return `''`)
+and the y axis rounds up via `nice_max()`'s 1/2/5×10ⁿ ladder. Colors come
+from CSS classes (`.mahan-an-line.is-lessons` …), not attributes, so
+theming stays in `admin.css`.
+
+`export_activity_csv()` (admin-post `mahan_export_activity`, nonce +
+`manage_options`) re-runs `series()` for the requested range and streams the
+same day-by-day rows the charts draw — `activity_rows()` keeps the two
+aligned by index.
+
+Verified by `test-analytics.php` (68 assertions: window splitting, delta
+semantics, axis ladder, DAYOFWEEK mapping, SVG scaling and NaN-freedom,
+funnel monotonicity, stall reduction, the noise gate in the SQL) and
+`analytics-shot.mjs` (28 headless checks on the rendered dashboard,
+including the all-zeros empty state).
+
+---
+
 ## AI providers
 
 `Mahan_AI::complete( $messages, $opts )` normalizes messages to

@@ -238,13 +238,38 @@ won't delete. Nothing on this screen can silently destroy a credential.
 
 ## 9. Reports & analytics
 
-**Mahan Academy → Reports.** A read-only dashboard:
+**Mahan Academy → Reports.** A read-only analytics dashboard. Pick a window
+at the top — **7 / 30 / 90 days or a year** — and the top of the page follows.
 
-- KPI cards: learners, enrollments, completions, active today / this week, total
-  XP, lessons completed, exercise accuracy, and quiz pass rate.
-- A per-course table (enrolled / completed / completion % / average progress)
-  with an **Export CSV** button.
-- Top learners and a recent-completions feed.
+**The trend view:**
+
+- Four hero cards — enrollments, active learners, lessons completed, XP
+  awarded — each with a sparkline and a change vs the previous window
+  ("+18% vs previous period"). "New" means there was nothing to compare
+  against, and *active learners* counts distinct people, not visit-days.
+- An **Activity** chart overlaying lessons completed, enrollments and course
+  completions day by day.
+- **Export activity (CSV)** — the same day-by-day numbers, with your current
+  range applied.
+
+**Where learners get stuck:**
+
+- **Learning funnel** — of everyone who ever enrolled, how many started, got
+  halfway, and finished.
+- **Course health** — per course: enrolled, completed, completion %, average
+  progress, exercise accuracy, quiz pass, live-assessment pass, and the
+  **drop-off point**: the lesson where most non-finishers stopped, linked so
+  you can go fix it. A dash means "no data yet", not zero.
+- **Hardest exercises** — the exercises learners fail the most, ranked. This
+  is your revision list. Exercises with fewer than 5 attempts aren't ranked,
+  so one unlucky guess can't top the chart.
+- **Study pattern** — which weekdays your learners actually study.
+- **Live assessments** — sittings, passes, pass rate and the average passing
+  score of the AI oral exams.
+
+Below the windowed view: the all-time totals, top learners, a
+recent-completions feed, the placement-level breakdown, and the register of
+every issued certificate (with its own CSV export).
 
 ## 10. Appearance & profile
 

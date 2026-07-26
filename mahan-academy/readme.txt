@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.30.0
+Stable tag: 1.31.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -48,7 +48,7 @@ Mahan Academy is a self-contained learning plugin built to teach people how to u
 * End-of-unit quizzes with instant grading and a passing score
 * Learning paths — group courses into a guided, ordered program
 * Email notifications (welcome, completion, achievement, streak reminder)
-* Admin reports & analytics with CSV export — including a register of every issued certificate (serial, recipient, course, date) and a breakdown of what level your learners actually placed at
+* Admin analytics dashboard: a date-range view (7/30/90/365 days) with trend charts and vs-previous-period deltas, a learning funnel (enrolled → started → halfway → completed), per-course health including each course's drop-off lesson, the hardest exercises ranked as a revision list, live-assessment pass rates, a study-pattern weekday chart, and day-by-day CSV export — all charts server-rendered SVG, no charting library, plus the register of every issued certificate and the placement-level breakdown
 * Student management: a Students screen listing everyone actually learning — searchable, filterable by course and recency, sortable, paginated, and exportable to CSV with the filters applied. Each student opens into a full file: stats, enrollments with progress meters, enroll / unenroll / reset-progress actions with honest semantics (unenroll keeps progress; reset destroys it but never certificates or the XP log), reversible certificate revoke/restore, and a recent-activity feed
 * Placement test: a short assessment that measures where a learner actually is and starts them on the matching rung of every course ladder. Authored questions and arithmetic scoring — no API key needed, same answer twice. Options are shuffled per sitting, so guessing the same slot every time gets you nowhere
 * Verifiable certificates: issued automatically the moment a course is completed, with the date actually earned and a unique serial. Anyone can check a serial at the public verification page without logging in, and it reveals only who completed what, and when
@@ -85,6 +85,9 @@ You don't have to do anything — the starter catalog installs automatically on 
 Each course lists the authoritative references it is grounded in under "Further reading & sources" on the course page — peer-reviewed papers, standards and institutional guidance (NIST AI Risk Management Framework, EU AI Act, UNESCO, OECD, OWASP, C2PA), textbooks, and official provider documentation.
 
 == Changelog ==
+
+= 1.31.0 =
+The Reports screen becomes a real analytics dashboard. A date-range switcher (7/30/90/365 days) drives four hero cards — enrollments, active learners, lessons completed, XP awarded — each with a sparkline and an honest delta against the previous window: something-from-nothing reads "New" rather than an infinite percentage, and active learners are distinct people over the window, never a sum of daily actives. An activity chart overlays lessons, enrollments and completions day by day; every chart is server-rendered inline SVG, so there is no charting library and the dashboard works with scripts disabled. Below it, the parts that say where learners get stuck: a learning funnel (enrolled → started → halfway → completed) that can never go back up; a course-health table extended with exercise accuracy, quiz pass rate, live-assessment pass rate and each course's drop-off point — the lesson most often the last thing a non-finisher completed, linked and annotated; a hardest-exercises ranking noise-gated to five attempts so one unlucky guess can't top the chart; a weekday study-pattern chart; and live-assessment tiles whose pass rate is computed over decided sittings only. Rates with no data render as a dash, not a misleading 0%. The day-by-day series exports to CSV with the current range applied. All-time totals, top learners, recent completions, the placement spread and the certificate register remain. No schema change.
 
 = 1.30.0 =
 Student management. A new Students screen lists everyone who is actually learning — enrolled in something or carrying stats, not every WordPress user — with XP, level, streak, last-active date, enrollments, completions and valid certificates per row; searchable by name or email, filterable by course and by recency (active in the last 7 or 30 days, or inactive), sortable, paginated, and exportable to CSV with the current filters applied. Clicking a student opens their file: profile and placement tags, six lifetime stat tiles, enrollments with live progress meters and enroll / unenroll / reset-progress actions, certificates with reversible revoke and restore, and a recent-activity feed with human labels. The destructive semantics are deliberate: unenrolling keeps progress (it comes back on re-enroll); resetting progress deletes lesson progress, exercise attempts and the review queue for that course but never certificates or the XP audit log; certificates are only ever revoked or restored, never deleted. Every value that reaches SQL is whitelisted or clamped first, every mutation sits behind a capability check, a nonce and a confirm, and CSV cells that could be spreadsheet formulas are neutralised on export. No schema change.

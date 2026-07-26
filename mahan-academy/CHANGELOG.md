@@ -4,7 +4,57 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
-## [1.30.0]
+## [1.31.0]
+
+The Reports screen becomes a real **analytics dashboard**.
+**No schema change — DB stays v6.**
+
+### Trends, not just totals
+
+The old Reports page was ten all-time numbers and three tables — it could not
+answer "is this month better than last month?". Now it can:
+
+- A **date-range switcher** (7 / 30 / 90 / 365 days) drives the whole top of
+  the page. The range is the only request value that reaches SQL, and it is
+  whitelisted — anything else falls back to 30.
+- **Four hero cards** — Enrollments, Active learners, Lessons completed, XP
+  awarded — each with its windowed total, a sparkline, and a delta vs the
+  previous window. Deltas are honest: something-from-nothing reads **"New"**,
+  not "+∞%", and *active learners* is distinct people over the window, never
+  a sum of daily actives.
+- An **Activity chart** overlays lessons completed, enrollments and course
+  completions day by day. Charts are **server-rendered inline SVG** — no
+  charting library, no JS, nothing user-controlled in the markup, and the
+  whole dashboard still works with scripts disabled.
+- **Export activity (CSV)** downloads the same day-by-day series with the
+  current range applied.
+
+### Where learners get stuck
+
+- A **learning funnel** — Enrolled → Started → Halfway → Completed — that is
+  monotonic by construction (completed learners count as started, whatever
+  their progress row says).
+- **Course health** extends the per-course table with exercise accuracy, quiz
+  pass rate, live-assessment pass rate, and a **drop-off point**: the lesson
+  most often the *last* thing a non-finisher completed, linked and annotated
+  ("7 learners stopped here"). One query for the whole catalog.
+- **Hardest exercises** ranks the exercises learners fail the most — the
+  course author's revision list — noise-gated to ≥5 attempts so one unlucky
+  guess can't top the chart. Sub-40% rates are flagged red.
+- A **study pattern** panel shows XP events by weekday (Monday-first, mapped
+  from MySQL's Sunday-first DAYOFWEEK — with a test on the off-by-one).
+- **Live assessments** get their own tiles: sittings, passed, pass rate over
+  *decided* sittings (passed + failed — abandoned ones don't dilute it), and
+  the average passing score.
+
+Rates render as **"—" when there is no data** instead of a misleading 0%.
+All-time totals, top learners, recent completions, the placement spread and
+the certificate register stay, below the new windowed view.
+
+68 logic assertions cover the series math (window splitting, zero-fill,
+delta semantics, the 1/2/5 axis ladder, DAYOFWEEK mapping, NaN-free SVG on
+empty data) and the SQL (noise gate, orderings); a 28-check headless pass
+covers the rendered dashboard, including the all-zeros empty state.
 
 The **Students** screen — real student management in the admin panel.
 **No schema change — DB stays v6.**

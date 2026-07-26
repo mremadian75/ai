@@ -120,7 +120,7 @@ class Mahan_Admin {
 		// core options.php already wp_unslash()es posted values before this
 		// filter runs, so we must NOT unslash again (it would strip
 		// backslashes the admin actually typed).
-		$int_keys  = array( 'max_tokens', 'xp_per_lesson', 'xp_per_exercise', 'level_curve', 'hearts_max', 'ai_cache_ttl', 'app_page_id', 'xp_streak_bonus', 'daily_goal_default', 'freeze_earn_days', 'freeze_max', 'review_xp' );
+		$int_keys  = array( 'max_tokens', 'xp_per_lesson', 'xp_per_exercise', 'level_curve', 'hearts_max', 'ai_cache_ttl', 'app_page_id', 'xp_streak_bonus', 'daily_goal_default', 'daily_goal_bonus', 'freeze_earn_days', 'freeze_max', 'review_xp' );
 		$bool_keys = array( 'gate_enabled', 'streak_enabled', 'hearts_enabled', 'debug', 'badges_enabled', 'leaderboard_enabled', 'certificate_enabled', 'emails_enabled', 'email_welcome', 'email_complete', 'email_badge', 'email_streak', 'streak_freeze_enabled', 'review_enabled', 'learner_language' );
 
 		if ( in_array( $key, $int_keys, true ) ) {
@@ -686,6 +686,11 @@ class Mahan_Admin {
 							<th scope="row"><label for="mahan_daily_goal_default"><?php esc_html_e( 'Default daily XP goal', 'mahan-academy' ); ?></label></th>
 							<td><input type="number" min="0" class="small-text" id="mahan_daily_goal_default" name="mahan_daily_goal_default" value="<?php echo esc_attr( $g( 'daily_goal_default' ) ); ?>" />
 							<p class="description"><?php esc_html_e( 'Learners can pick their own goal on the dashboard; this is the starting value. 0 hides the goal.', 'mahan-academy' ); ?></p></td>
+						</tr>
+						<tr>
+							<th scope="row"><label for="mahan_daily_goal_bonus"><?php esc_html_e( 'Daily goal bonus XP', 'mahan-academy' ); ?></label></th>
+							<td><input type="number" min="0" class="small-text" id="mahan_daily_goal_bonus" name="mahan_daily_goal_bonus" value="<?php echo esc_attr( $g( 'daily_goal_bonus' ) ); ?>" />
+							<p class="description"><?php esc_html_e( 'Paid once the day a learner reaches their goal — the payoff that makes the target worth aiming at. 0 records the day without paying anything.', 'mahan-academy' ); ?></p></td>
 						</tr>
 						<tr>
 							<th scope="row"><?php esc_html_e( 'Daily streak', 'mahan-academy' ); ?></th>

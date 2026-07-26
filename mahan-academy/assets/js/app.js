@@ -596,13 +596,20 @@
 		// Merge the streak/goal celebrations into ONE toast so a big moment
 		// (xp + streak + goal + level + badge) doesn't evict its own toasts.
 		var parts = [];
-		if (old && res.stats) {
-			if (res.stats.streak > (old.streak || 0)) {
-				parts.push('🔥 ' + res.stats.streak + ' ' + esc(t('streak', 'day streak')) + '!');
+		if (old && res.stats && res.stats.streak > (old.streak || 0)) {
+			parts.push('🔥 ' + res.stats.streak + ' ' + esc(t('streak', 'day streak')) + '!');
+		}
+		// The server says whether the goal was banked *this* request, and pays
+		// the bonus. Inferring it from before/after XP used to fire on every
+		// award once you were past the goal, and stayed silent when two
+		// requests landed together.
+		if (res.goal_met) {
+			var goalMsg = '🎯 ' + esc(tv('goalVariants', 'goalHit', 'Daily goal reached!'));
+			if (res.goal_met.bonus > 0) { goalMsg += ' +' + res.goal_met.bonus + ' XP'; }
+			if (res.goal_met.streak > 1) {
+				goalMsg += ' · ' + esc(fmt(t('goalStreakDays', '%s days in a row'), res.goal_met.streak));
 			}
-			if ((res.stats.daily_goal || 0) > 0 && (old.daily_xp || 0) < (old.daily_goal || 0) && (res.stats.daily_xp || 0) >= res.stats.daily_goal) {
-				parts.push('🎯 ' + esc(tv('goalVariants', 'goalHit', 'Daily goal reached!')));
-			}
+			parts.push(goalMsg);
 		}
 		if (parts.length) {
 			setTimeout(function () { toast(parts.join(' · '), 'level'); }, 350);
@@ -4037,7 +4044,13 @@
 				h('div', { class: 'mahan-progress-bar' }, [h('span', { style: 'width:' + pct + '%' })]),
 				h('span', { class: 'mahan-progress-label', text: xpToday + ' / ' + goal + ' XP' })
 			]) : h('p', { class: 'mahan-goal-pick-msg', text: t('pickGoal', 'Set a daily XP goal to build a habit.') }),
-			done ? h('p', { class: 'mahan-goal-done-msg', text: t('goalDone', 'Goal reached — nice work! Everything extra is a bonus.') }) : null
+			done ? h('p', { class: 'mahan-goal-done-msg', text: t('goalDone', 'Goal reached — nice work! Everything extra is a bonus.') }) : null,
+			// A run of met goals is the habit the target exists to build, so it
+			// is worth showing once there is one.
+			(s.goal_streak || 0) > 1 ? h('p', { class: 'mahan-goal-run',
+				text: '🎯 ' + fmt(t('goalStreakDays', '%s days in a row'), s.goal_streak)
+					+ ((s.longest_goal_streak || 0) > s.goal_streak
+						? ' · ' + t('best', 'best') + ' ' + s.longest_goal_streak : '') }) : null
 		]);
 		return card;
 	}

@@ -404,6 +404,11 @@ class Mahan_Front {
 			'searchCourses'    => __( 'Search courses…', 'mahan-academy' ),
 			'noResults'        => __( 'No courses match your search.', 'mahan-academy' ),
 			'clearFilters'     => __( 'Clear filters', 'mahan-academy' ),
+			// Daily goal.
+			/* translators: %s: number of consecutive days the goal was met. */
+			'goalStreakDays'   => __( '%s days in a row', 'mahan-academy' ),
+			'best'             => __( 'best', 'mahan-academy' ),
+
 			// Quizzes.
 			'pickN'            => __( 'Select all that apply — %s are correct', 'mahan-academy' ),
 			'whyLabel'         => __( 'Why', 'mahan-academy' ),

@@ -4,6 +4,55 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.34.0]
+
+Gamification: the daily goal becomes real. **Schema change: DB goes to v7.**
+
+### Fixed: meeting your goal did nothing, and the record moved
+
+The daily goal was a progress bar with nothing behind it. You set a target,
+the ring filled, and *nothing happened* — no reward, no acknowledgement,
+nothing recorded.
+
+Worse, whether a **past** day counted was recomputed against your **current**
+goal every time the week strip rendered. Lower your goal from 50 to 10 and
+days you had missed retroactively sprouted ticks; raise it and days you had
+genuinely earned went dark. The seven-day strip is supposed to be a record of
+what you did, and it was being rewritten by a settings change.
+
+Meeting the goal is now an **event**, not an opinion:
+
+- Crossing the target pays a **bonus** (`daily_goal_bonus`, default 15 XP) and
+  writes a `goal` row into the XP log. That row *is* the permanent record, so
+  history stops moving when the setting does.
+- The claim is a **guarded UPDATE** (`WHERE goal_date <> today`), so two
+  requests finishing together cannot both pay it. MySQL picks one winner; the
+  loser pays nothing.
+- Set the bonus to 0 and the day is still recorded — you just aren't paid for
+  it.
+
+### Goal streaks
+
+A run of met goals is a stronger signal than the activity streak: it means you
+hit a target you set yourself, not that you opened one lesson. The run and
+your personal best show on the goal card (once there is a run worth showing —
+"1 day in a row" is noise), and three new achievements track it: **On Target**,
+**Week of Wins** (7 days), **Ironclad** (30 days).
+
+### Also fixed
+
+The goal bonus is paid after the XP award, so a learner could cross a level
+threshold *on the bonus* and not level up until their next action. Level
+resolution is now a single `sync_level()` that both paths call, and the
+level-up is reported to the caller so it still gets celebrated. The
+celebration itself now comes from the server's goal event rather than being
+inferred from before/after XP — the old inference re-fired on every award once
+you were past the goal, and stayed silent when two requests landed together.
+
+31 logic assertions cover the claim (including losing the race), the streak
+across gaps and personal bests, the zero-bonus case, the history that must
+stop moving, and the level-up on the bonus; 11 headless checks cover the card.
+
 ## [1.33.0]
 
 The quiz engine. **No schema change — DB stays v6.**

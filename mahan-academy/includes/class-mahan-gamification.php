@@ -55,6 +55,9 @@ class Mahan_Gamification {
 				'last_active_date'  => null,
 				'freezes'           => 0,
 				'daily_goal'        => 0,
+				'goal_date'         => null,
+				'goal_streak'       => 0,
+				'longest_goal_streak' => 0,
 				'updated_at'        => Mahan_Utils::now_mysql(),
 			);
 		}
@@ -66,6 +69,10 @@ class Mahan_Gamification {
 		$row['hearts']         = (int) $row['hearts'];
 		$row['freezes']        = isset( $row['freezes'] ) ? (int) $row['freezes'] : 0;
 		$row['daily_goal']     = isset( $row['daily_goal'] ) ? (int) $row['daily_goal'] : 0;
+		// Added in DB v7; rows written before it read as nulls/zeroes.
+		$row['goal_date']           = isset( $row['goal_date'] ) ? $row['goal_date'] : null;
+		$row['goal_streak']         = isset( $row['goal_streak'] ) ? (int) $row['goal_streak'] : 0;
+		$row['longest_goal_streak'] = isset( $row['longest_goal_streak'] ) ? (int) $row['longest_goal_streak'] : 0;
 		return $row;
 	}
 
@@ -79,6 +86,9 @@ class Mahan_Gamification {
 			'hearts'         => (int) Mahan_Settings::get( 'hearts_max', 5 ),
 			'freezes'        => 0,
 			'daily_goal'     => 0,
+			'goal_date'      => null,
+			'goal_streak'    => 0,
+			'longest_goal_streak' => 0,
 		);
 	}
 
@@ -210,29 +220,50 @@ class Mahan_Gamification {
 			array( '%d', '%d', '%s', '%d', '%s' )
 		);
 
-		// Recompute level from XP under the active curve.
-		$row        = self::get_stats( $user_id );
-		$resolved   = self::level_for_xp( $row['xp'] );
-		$leveled_up = false;
-		if ( $resolved['level'] !== $row['level'] ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-			$wpdb->query(
-				$wpdb->prepare(
-					"UPDATE {$table} SET level = %d, updated_at = %s WHERE user_id = %d",
-					$resolved['level'],
-					$now,
-					$user_id
-				)
-			);
-			$leveled_up   = ( $resolved['level'] > $row['level'] );
-			$row['level'] = $resolved['level'];
-			if ( $leveled_up ) {
-				do_action( 'mahan_level_up', $user_id, $resolved['level'] );
-			}
+		$leveled_up = self::sync_level( $user_id );
+
+		// Checked after the award is written, so today's total includes it.
+		// It can pay a bonus, which may itself cross a level threshold — hence
+		// the second sync rather than trusting the one above.
+		$goal = self::maybe_award_goal( $user_id );
+		if ( $goal && $goal['bonus'] > 0 ) {
+			$leveled_up = self::sync_level( $user_id ) || $leveled_up;
 		}
+
+		$row               = self::get_stats( $user_id );
 		$row['awarded']    = $total;
 		$row['leveled_up'] = $leveled_up;
+		$row['goal_met']   = $goal;
 		return $row;
+	}
+
+	/**
+	 * Bring the stored level in line with total XP under the active curve.
+	 *
+	 * @param int $user_id Learner.
+	 * @return bool Whether the learner moved up (never true on a drop).
+	 */
+	private static function sync_level( $user_id ) {
+		global $wpdb;
+		$row      = self::get_stats( $user_id );
+		$resolved = self::level_for_xp( $row['xp'] );
+		if ( $resolved['level'] === $row['level'] ) {
+			return false;
+		}
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$wpdb->query(
+			$wpdb->prepare(
+				'UPDATE ' . Mahan_DB::stats() . ' SET level = %d, updated_at = %s WHERE user_id = %d',
+				$resolved['level'],
+				Mahan_Utils::now_mysql(),
+				(int) $user_id
+			)
+		);
+		if ( $resolved['level'] > $row['level'] ) {
+			do_action( 'mahan_level_up', $user_id, $resolved['level'] );
+			return true;
+		}
+		return false;
 	}
 
 	/**
@@ -292,8 +323,12 @@ class Mahan_Gamification {
 			$per_day[ $r['d'] ] = (int) $r['s'];
 		}
 
-		$goal = self::daily_goal( $user_id );
-		$out  = array();
+		// Which days were banked, as recorded at the time — not recomputed
+		// against today's goal, which would let a settings change rewrite the
+		// past in both directions.
+		$banked = self::goal_days( $user_id, $since );
+
+		$out = array();
 		for ( $i = 6; $i >= 0; $i-- ) {
 			$day = $today->modify( '-' . $i . ' days' );
 			$key = $day->format( 'Y-m-d' );
@@ -301,7 +336,7 @@ class Mahan_Gamification {
 			$out[] = array(
 				'label'    => wp_date( 'D', $day->getTimestamp(), $tz ),
 				'active'   => $xp > 0,
-				'goal_met' => $goal > 0 ? ( $xp >= $goal ) : ( $xp > 0 ),
+				'goal_met' => isset( $banked[ $key ] ),
 				'today'    => 0 === $i,
 			);
 		}
@@ -467,6 +502,147 @@ class Mahan_Gamification {
 	/* ------------------------------------------------------------------ */
 
 	/**
+	 * Bank today's daily goal if it has just been reached.
+	 *
+	 * The goal used to be a progress bar with nothing behind it: you set a
+	 * target, the ring filled, and nothing happened. Worse, whether a *past*
+	 * day counted was recomputed against your *current* goal every time the
+	 * week strip rendered — so lowering your goal retroactively ticked days you
+	 * had missed, and raising it un-ticked days you had earned.
+	 *
+	 * Meeting the goal is now an event: it pays a bonus and writes a `goal` row
+	 * into the XP log. That row is the permanent record, so history stops
+	 * moving when the setting does.
+	 *
+	 * The claim is a guarded UPDATE — `WHERE goal_date <> today` — so two
+	 * requests finishing at the same moment cannot both pay the bonus. MySQL
+	 * picks one winner; the loser sees 0 affected rows and pays nothing.
+	 *
+	 * @param int $user_id Learner.
+	 * @return array|null { bonus, goal, streak } when banked this call, else null.
+	 */
+	public static function maybe_award_goal( $user_id ) {
+		$user_id = (int) $user_id;
+		if ( ! $user_id ) {
+			return null;
+		}
+		$goal = self::daily_goal( $user_id );
+		if ( $goal <= 0 ) {
+			return null; // No goal set (and none by default) — nothing to meet.
+		}
+		$row = self::get_stats( $user_id );
+		$today = Mahan_Utils::today();
+		if ( (string) $row['goal_date'] === $today ) {
+			return null; // Already banked today.
+		}
+		if ( self::xp_today( $user_id ) < $goal ) {
+			return null; // Not there yet.
+		}
+
+		// Yesterday's claim makes this a run; anything older restarts it.
+		$streak = 1;
+		if ( $row['goal_date'] ) {
+			$diff = Mahan_Utils::date_diff_days( (string) $row['goal_date'], $today );
+			if ( 1 === $diff ) {
+				$streak = (int) $row['goal_streak'] + 1;
+			}
+		}
+		$longest = max( (int) $row['longest_goal_streak'], $streak );
+
+		global $wpdb;
+		$table = Mahan_DB::stats();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$claimed = $wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$table}
+				 SET goal_date = %s, goal_streak = %d, longest_goal_streak = %d, updated_at = %s
+				 WHERE user_id = %d AND ( goal_date IS NULL OR goal_date <> %s )",
+				$today,
+				$streak,
+				$longest,
+				Mahan_Utils::now_mysql(),
+				$user_id,
+				$today
+			)
+		);
+		if ( ! $claimed ) {
+			return null; // Another request banked it first.
+		}
+
+		$bonus = max( 0, (int) Mahan_Settings::get( 'daily_goal_bonus', 15 ) );
+		if ( $bonus > 0 ) {
+			// Logged with reason 'goal' — this row is both the reward and the
+			// record that the day was met. add_xp() would re-enter this method,
+			// so the XP is written directly.
+			self::log_flat_xp( $user_id, $bonus, 'goal' );
+		}
+		do_action( 'mahan_daily_goal_met', $user_id, $streak );
+
+		return array( 'bonus' => $bonus, 'goal' => $goal, 'streak' => $streak );
+	}
+
+	/**
+	 * Add XP without the streak bonus and without re-checking the daily goal.
+	 *
+	 * Used for the goal bonus itself: paying it through add_xp() would recurse
+	 * into maybe_award_goal(), and a bonus for hitting a target should not
+	 * itself be multiplied by the streak.
+	 *
+	 * @param int    $user_id Learner.
+	 * @param int    $amount  XP.
+	 * @param string $reason  Log slug.
+	 */
+	private static function log_flat_xp( $user_id, $amount, $reason ) {
+		global $wpdb;
+		$now = Mahan_Utils::now_mysql();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$wpdb->query(
+			$wpdb->prepare( 'UPDATE ' . Mahan_DB::stats() . ' SET xp = xp + %d, updated_at = %s WHERE user_id = %d', (int) $amount, $now, (int) $user_id )
+		);
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$wpdb->insert(
+			Mahan_DB::xp_log(),
+			array(
+				'user_id'    => (int) $user_id,
+				'amount'     => (int) $amount,
+				'reason'     => sanitize_key( $reason ),
+				'ref_id'     => 0,
+				'created_at' => $now,
+			),
+			array( '%d', '%d', '%s', '%d', '%s' )
+		);
+	}
+
+	/**
+	 * The days in a range whose daily goal was actually banked.
+	 *
+	 * Read from the `goal` rows in the XP log — facts recorded on the day —
+	 * rather than recomputed against whatever the goal happens to be now.
+	 *
+	 * @param int    $user_id Learner.
+	 * @param string $since   'Y-m-d H:i:s' lower bound.
+	 * @return array Y-m-d => true
+	 */
+	public static function goal_days( $user_id, $since ) {
+		global $wpdb;
+		$table = Mahan_DB::xp_log();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$rows = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT DISTINCT DATE(created_at) FROM {$table}
+				 WHERE user_id = %d AND reason = 'goal' AND created_at >= %s",
+				(int) $user_id,
+				$since
+			)
+		);
+		$out = array();
+		foreach ( (array) $rows as $d ) {
+			$out[ (string) $d ] = true;
+		}
+		return $out;
+	}
+
+	/**
 	 * The user's daily XP goal (their choice, else the site default).
 	 */
 	public static function daily_goal( $user_id ) {
@@ -544,6 +720,13 @@ class Mahan_Gamification {
 			'level_title'    => self::level_title( $resolved['level'] ),
 			'daily_xp'       => $user_id ? self::xp_today( $user_id ) : 0,
 			'daily_goal'     => $user_id ? self::daily_goal( $user_id ) : 0,
+			// Whether today's goal has actually been banked, and the run of
+			// consecutive days it belongs to. A goal streak is a stronger
+			// signal than the activity streak: it means the learner hit the
+			// target they set, not that they opened one lesson.
+			'goal_done'      => $user_id ? ( (string) $row['goal_date'] === Mahan_Utils::today() ) : false,
+			'goal_streak'    => (int) $row['goal_streak'],
+			'longest_goal_streak' => (int) $row['longest_goal_streak'],
 			// Carried on every stats payload so the SPA's reviews-due badge
 			// stays live after grading (a new miss must surface immediately,
 			// not wait for a full /me refetch).

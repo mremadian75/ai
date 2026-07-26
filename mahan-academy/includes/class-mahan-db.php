@@ -173,6 +173,9 @@ class Mahan_DB {
 			last_active_date DATE NULL DEFAULT NULL,
 			freezes TINYINT UNSIGNED NOT NULL DEFAULT 0,
 			daily_goal SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+			goal_date DATE NULL DEFAULT NULL,
+			goal_streak INT UNSIGNED NOT NULL DEFAULT 0,
+			longest_goal_streak INT UNSIGNED NOT NULL DEFAULT 0,
 			updated_at DATETIME NOT NULL,
 			PRIMARY KEY  (user_id)
 		) {$charset};";

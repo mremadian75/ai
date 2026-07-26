@@ -844,6 +844,18 @@ return array(
 	'Passed a live assessment'         => 'Aprobó una evaluación en directo',
 	'Completed a course'               => 'Completó un curso',
 
+	/* --- Daily goal + gamification (v1.34.0) ----------------------------- */
+	'%s days in a row'                 => '%s días seguidos',
+	'best'                             => 'mejor',
+	'Daily goal bonus XP'              => 'XP extra por la meta diaria',
+	'Paid once the day a learner reaches their goal — the payoff that makes the target worth aiming at. 0 records the day without paying anything.' => 'Se paga una vez el día en que el estudiante alcanza su meta: la recompensa que hace que valga la pena. Con 0 el día se registra sin pagar nada.',
+	'On Target'                        => 'En el blanco',
+	'Reach your daily goal'            => 'Alcanza tu meta diaria',
+	'Week of Wins'                     => 'Semana de victorias',
+	'Reach your daily goal 7 days running' => 'Alcanza tu meta diaria 7 días seguidos',
+	'Ironclad'                         => 'Inquebrantable',
+	'Reach your daily goal 30 days running' => 'Alcanza tu meta diaria 30 días seguidos',
+
 	/* --- Quizzes (v1.33.0) ----------------------------------------------- */
 	'Select all that apply'            => 'Selecciona todas las que correspondan',
 	'Select all that apply — %s are correct' => 'Selecciona todas las que correspondan: %s son correctas',

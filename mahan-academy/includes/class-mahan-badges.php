@@ -89,6 +89,12 @@ class Mahan_Badges {
 
 			// Learning paths.
 			array( 'key' => 'path_1', 'icon' => '🧭', 'metric' => 'paths_completed', 'need' => 1, 'title' => __( 'Trailblazer', 'mahan-academy' ), 'desc' => __( 'Complete a learning path', 'mahan-academy' ) ),
+
+			// Daily goals — hitting a target you set yourself is a stronger
+			// signal than simply showing up, so it earns its own tier.
+			array( 'key' => 'goal_1', 'icon' => '🎯', 'metric' => 'goal_streak', 'need' => 1, 'title' => __( 'On Target', 'mahan-academy' ), 'desc' => __( 'Reach your daily goal', 'mahan-academy' ) ),
+			array( 'key' => 'goal_7', 'icon' => '🎪', 'metric' => 'goal_streak', 'need' => 7, 'title' => __( 'Week of Wins', 'mahan-academy' ), 'desc' => __( 'Reach your daily goal 7 days running', 'mahan-academy' ) ),
+			array( 'key' => 'goal_30', 'icon' => '🛡️', 'metric' => 'goal_streak', 'need' => 30, 'title' => __( 'Ironclad', 'mahan-academy' ), 'desc' => __( 'Reach your daily goal 30 days running', 'mahan-academy' ) ),
 		);
 		return apply_filters( 'mahan_badge_defs', $defs );
 	}
@@ -165,6 +171,9 @@ class Mahan_Badges {
 			'perfect_quizzes'   => self::perfect_quizzes( $user_id ),
 			'exercises_correct' => self::exercises_correct( $user_id ),
 			'paths_completed'   => self::paths_completed( $user_id ),
+			// Best goal run ever, so a badge earned is never lost when the run
+			// breaks — the same rule the activity-streak metric follows.
+			'goal_streak'       => max( (int) $stats['goal_streak'], (int) $stats['longest_goal_streak'] ),
 		);
 	}
 

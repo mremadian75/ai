@@ -160,6 +160,13 @@ Things worth knowing as an owner:
   Rewards consistency; set 0 to disable.
 - **Default daily XP goal** — learners see a 🎯 goal in the HUD and a progress
   card on the dashboard, and can pick their own target (10–100 XP).
+- **Daily goal bonus XP** — what reaching the goal pays. This is the payoff
+  that makes the target worth aiming at; without it the goal is just a bar
+  that fills. Set it to 0 to keep the record without paying anything.
+  The bonus is paid **once** on the day the goal is reached, and that day is
+  recorded permanently — changing the goal later never rewrites past days on
+  the week strip. Consecutive days build a **goal streak**, shown to the
+  learner with their personal best and backed by three achievements.
 - **Daily streak** tracking, plus **streak freezes**: learners earn a freeze
   every N consecutive days (default 7, holding up to 2). If they miss a day,
   a freeze is consumed automatically and the streak survives — shown as ❄️

@@ -1896,3 +1896,6 @@ div.mahan-lesson-row:active { transform: translateY(1px); }
 .mahan-quiz-explain-body { font-size: 14px; line-height: 1.55; min-width: 0; }
 .mahan-quiz-explain-body :first-child { margin-top: 0; }
 .mahan-quiz-explain-body :last-child { margin-bottom: 0; }
+
+/* Daily-goal run (v1.34.0): the habit the target exists to build. */
+.mahan-goal-run { margin: 6px 0 0; font-size: 13px; font-weight: 700; color: var(--m-primary-text); }

@@ -280,6 +280,47 @@ rubric** — added in DB v6). The `stats` table also carries `freezes` and
 
 ---
 
+## Gamification: XP, streaks, and the daily goal
+
+`Mahan_Gamification` owns XP, levels, the activity streak, and the daily goal.
+Every award goes through `add_xp()`, which applies the streak multiplier,
+appends to the XP log, and syncs the level.
+
+**Award order matters.** Every caller must run `record_activity()` *before*
+`add_xp()`, so the streak reflects today when the bonus is computed. All six
+award paths (lesson, exercise, quiz, review, practice, viva) do.
+
+**The daily goal is an event, not a computed opinion.** This is the rule to
+preserve:
+
+- `maybe_award_goal()` runs at the end of `add_xp()` (after the award lands,
+  so today's total includes it). If today's XP has reached the goal and the day
+  is not already banked, it claims the day with a **guarded UPDATE** —
+  `WHERE goal_date IS NULL OR goal_date <> today` — and only pays if that
+  affected a row. Two requests finishing together cannot both pay.
+- The bonus is written by `log_flat_xp()`, not `add_xp()`: routing it through
+  `add_xp()` would recurse into the goal check, and a reward for hitting a
+  target should not itself be multiplied by the streak.
+- The `goal` row in the XP log **is the record**. `week_activity()` and the
+  profile read banked days via `goal_days()` rather than comparing each past
+  day's XP to the current goal — which used to let a settings change rewrite
+  history in both directions.
+- `sync_level()` is called again after a paid bonus, because the bonus can
+  itself cross a level threshold; the caller is told via `leveled_up` so the
+  level-up is still celebrated.
+
+`add_xp()` returns `goal_met` (`{bonus, goal, streak}` or null) so the SPA
+celebrates the real event instead of inferring it from before/after XP.
+
+Stats columns added in **DB v7**: `goal_date`, `goal_streak`,
+`longest_goal_streak`. Badges read `goal_streak` as
+`max(current, longest)`, the same rule the activity-streak metric uses, so a
+badge already earned is never lost when a run breaks.
+
+Verified by `test-goal.php` (31 assertions) and `goal-render.mjs` (11 checks).
+
+---
+
 ## Quizzes & assessment integrity
 
 `Mahan_Quizzes` grades end-of-unit quizzes. Question types:

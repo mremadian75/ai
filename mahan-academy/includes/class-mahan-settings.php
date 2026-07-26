@@ -55,6 +55,7 @@ class Mahan_Settings {
 			'level_mode'          => 'linear',
 			'xp_streak_bonus'     => 10,
 			'daily_goal_default'  => 30,
+			'daily_goal_bonus'    => 15,
 			'streak_freeze_enabled' => 1,
 			'freeze_earn_days'    => 7,
 			'freeze_max'          => 2,

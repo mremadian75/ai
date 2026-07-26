@@ -4,6 +4,62 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.32.0]
+
+The learner dashboard, rebuilt around **what to do next**.
+**No schema change — DB stays v6.**
+
+### One ranked plan instead of three competing banners
+
+The dashboard stacked a review banner, a resume banner and a placement nudge
+and left the learner to rank them. Now a single **Today** block names the one
+thing worth doing, and lists the rest quietly underneath. The ranking is by
+what is actually lost by not doing it today:
+
+1. **Review items decay** — that is the premise of spaced repetition, so due
+   items lead whenever there are any.
+2. **A finished unit's live assessment** — all its lessons are done, so there
+   is no next lesson to resume; the viva *is* the next step, and it outranks
+   starting new material.
+3. **Continue** the course you were last working on.
+4. **Placement**, once, if it was never taken.
+5. Nothing enrolled → go and pick something.
+
+The winner is the page's only dominant block; the others become one-line rows
+that still route in a tap. The primary panel is tinted by task, so "review"
+(amber) and "assessment" (green) read before the words do.
+
+### The live assessment finally reaches the dashboard
+
+v1.28 shipped the AI oral exam and the dashboard never mentioned it — you had
+to walk into a course to discover a unit was waiting. `/me` now carries a
+`viva_ready` unit, computed only for the course the learner is actually
+mid-way through, so a dashboard load costs one course's worth of viva queries
+rather than one per enrollment.
+
+### Fixed: "Jump back in" pointed at the wrong course
+
+`/me` lists courses by enrolment date, so the resume card pointed at whatever
+you signed up for most recently — not the course you had been working through
+all week. Enrol in something on a whim and the dashboard would send you back
+into it and hide the course you were actually studying. `/me` now carries each
+course's `last_activity` (one grouped query), and both the plan **and** the
+In-progress shelf order by it, so the two agree.
+
+### Momentum: this week against last week
+
+A total that only ever rises cannot tell a learner they are drifting. Under
+the week dots: lessons this week with a delta against the previous seven days,
+XP this week, and how many more days of studying earn the next streak freeze —
+promised only when it is actually reachable (freezes on, holder not full,
+streak started). On a brand-new account the whole row is omitted: zeroes are
+not momentum.
+
+21 logic assertions cover the new server facts (last-activity mapping, the
+two week windows never sharing a day, and every branch of the freeze promise);
+35 headless checks cover the plan's ranking across five learner states, the
+ordering fix, the momentum copy, and the block in dark mode and at phone width.
+
 ## [1.31.0]
 
 The Reports screen becomes a real **analytics dashboard**.

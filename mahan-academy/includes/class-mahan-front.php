@@ -407,6 +407,29 @@ class Mahan_Front {
 			'jumpBackIn'       => __( 'Jump back in', 'mahan-academy' ),
 			'nextUp'           => __( 'Next up:', 'mahan-academy' ),
 			'continueLearning' => __( 'Continue learning', 'mahan-academy' ),
+
+			// Today's plan — the dashboard's ranked "what to do now".
+			'todayPlan'        => __( 'Today', 'mahan-academy' ),
+			'alsoToday'        => __( 'Also worth doing', 'mahan-academy' ),
+			/* translators: %s: course title. */
+			'continueTitle'    => __( 'Continue "%s"', 'mahan-academy' ),
+			/* translators: %s: minutes of unfinished lessons left in the course. */
+			'minutesLeft'      => __( '%s min left', 'mahan-academy' ),
+			/* translators: %s: unit title the learner just finished. */
+			'vivaReadyTitle'   => __( 'You finished "%s"', 'mahan-academy' ),
+			'vivaReadySub'     => __( 'Its live assessment is waiting — explain it in your own words.', 'mahan-academy' ),
+			'vivaStartCta'     => __( 'Take the assessment', 'mahan-academy' ),
+			'vivaResume'       => __( 'Resume assessment', 'mahan-academy' ),
+
+			// Momentum — this week against last week.
+			'lessonThisWeek'   => __( 'lesson this week', 'mahan-academy' ),
+			'lessonsThisWeek'  => __( 'lessons this week', 'mahan-academy' ),
+			'xpThisWeek'       => __( 'XP this week', 'mahan-academy' ),
+			'momentumNew'      => __( 'new', 'mahan-academy' ),
+			'momentumSteady'   => __( 'steady', 'mahan-academy' ),
+			'freezeTomorrow'   => __( '1 more day earns a streak freeze ❄️', 'mahan-academy' ),
+			/* translators: %s: number of days of studying left before a streak freeze is earned. */
+			'freezeIn'         => __( '%s more days earn a streak freeze ❄️', 'mahan-academy' ),
 			'lesson'           => __( 'Lesson', 'mahan-academy' ),
 			'of'               => __( 'of', 'mahan-academy' ),
 			'answered'         => __( 'answered', 'mahan-academy' ),

@@ -735,8 +735,14 @@ class Mahan_REST {
 		// dashboard can deep-link straight into the lesson player.
 		$courses = Mahan_Enrollment::get_user_courses( $user_id );
 		$saved   = Mahan_Learner::saved( $user_id );
+		$touched = Mahan_Learner::last_activity_map( $user_id );
 		foreach ( $courses as &$c ) {
-			$c['saved'] = in_array( (int) $c['id'], $saved, true );
+			$cid        = (int) $c['id'];
+			$c['saved'] = in_array( $cid, $saved, true );
+			// When the learner last worked on this course, so the dashboard can
+			// resume the course they were actually studying rather than the one
+			// they most recently enrolled in.
+			$c['last_activity'] = isset( $touched[ $cid ] ) ? $touched[ $cid ] : '';
 			if ( (int) $c['progress_pct'] < 100 ) {
 				$next = Mahan_Courses::next_lesson( $user_id, $c['id'] );
 				if ( $next ) {
@@ -768,7 +774,64 @@ class Mahan_REST {
 			'certificates' => Mahan_Certificates::for_user( $user_id ),
 			'placement'   => Mahan_Placement::get( $user_id ),
 			'leaderboard' => (bool) Mahan_Settings::get( 'leaderboard_enabled', 0 ),
+			// Pace, so the dashboard can say whether this week beats last week
+			// instead of only ever counting upwards.
+			'week_summary' => Mahan_Learner::week_summary( $user_id ),
+			'next_freeze'  => Mahan_Learner::next_freeze( $stats ),
+			// The one unit that is finished and waiting to be examined. Computed
+			// only for the course the learner is actually mid-way through, so a
+			// dashboard load costs one course's worth of viva queries, not one
+			// per enrollment.
+			'viva_ready'   => self::viva_ready( $user_id, $courses ),
 		) );
+	}
+
+	/**
+	 * The first unit of the learner's current course whose live assessment is
+	 * unlocked and not yet passed.
+	 *
+	 * The viva is the highest-value action in the product and the dashboard
+	 * never mentioned it — you had to walk into the course to discover a unit
+	 * was waiting.
+	 *
+	 * @param int     $user_id Learner.
+	 * @param array[] $courses /me course list (already ordered).
+	 * @return array|null { course_id, course_title, unit, resume }
+	 */
+	private static function viva_ready( $user_id, $courses ) {
+		if ( ! class_exists( 'Mahan_Viva' ) || ! Mahan_Viva::available() ) {
+			return null;
+		}
+		// The course they were last working on — the same one the "continue"
+		// card points at, so the dashboard never offers two different courses.
+		$focus = null;
+		foreach ( (array) $courses as $c ) {
+			if ( (int) $c['progress_pct'] >= 100 ) {
+				continue;
+			}
+			if ( null === $focus || (string) $c['last_activity'] > (string) $focus['last_activity'] ) {
+				$focus = $c;
+			}
+		}
+		if ( ! $focus ) {
+			return null;
+		}
+
+		$course_id = (int) $focus['id'];
+		$status    = Mahan_Progress::course_lesson_status( $user_id, $course_id );
+		$states    = Mahan_Viva::course_states( $user_id, $course_id, $status );
+		foreach ( $states as $unit => $state ) {
+			if ( empty( $state['unlocked'] ) || 'passed' === $state['status'] ) {
+				continue;
+			}
+			return array(
+				'course_id'    => $course_id,
+				'course_title' => (string) $focus['title'],
+				'unit'         => (string) $unit,
+				'resume'       => ! empty( $state['resume'] ),
+			);
+		}
+		return null;
 	}
 
 	/**

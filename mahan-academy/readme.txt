@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.31.0
+Stable tag: 1.32.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -40,6 +40,7 @@ Mahan Academy is a self-contained learning plugin built to teach people how to u
 * Five exercise types: multiple choice, true/false, fill-in-the-blank, short answer, and prompt-writing (open answers graded by AI)
 * Adaptive personalization engine: a professional onboarding intake builds a rich learner profile that (with a live progress + difficulty signal) tailors the tutor, AI grading, and generated practice questions to each learner's role, level, and goals
 * Gamification: XP with a full audit log, streak XP multipliers, linear or RPG-style progressive levels & titles, daily XP goals, streaks with earned streak freezes, weekly activity dots, 21 tiered achievements with live unlock notifications and progress bars, and weekly + all-time leaderboards
+* A dashboard that answers "what do I do now?": a single Today block names the one thing worth doing — fading review items first, then a finished unit's live assessment, then the course you were last working on — with everything else as quiet one-tap rows underneath, plus a momentum line showing this week against last and how close the next streak freeze is
 * Polished learner UX: instant catalog search, "Jump back in" resume, lesson wayfinding (unit · lesson X of Y), confetti course-completion celebrations, offline-aware errors, and instant back/forward navigation
 * Filters that explain themselves: a live result count ("Showing 3 of 18 courses") with a removable pill for every active filter — search, level, category, topic — and one Clear all
 * In-lesson Contents drawer: jump to any lesson in the course without backing out, with your current lesson marked; plus a hairline showing how far through the lesson you've read
@@ -85,6 +86,9 @@ You don't have to do anything — the starter catalog installs automatically on 
 Each course lists the authoritative references it is grounded in under "Further reading & sources" on the course page — peer-reviewed papers, standards and institutional guidance (NIST AI Risk Management Framework, EU AI Act, UNESCO, OECD, OWASP, C2PA), textbooks, and official provider documentation.
 
 == Changelog ==
+
+= 1.32.0 =
+The learner dashboard, rebuilt around what to do next. It used to stack a review banner, a resume banner and a placement nudge and leave the learner to rank them; now a single "Today" block names the one thing worth doing and lists the rest as quiet one-tap rows underneath. The ranking is by what is actually lost by not doing it today: due review items decay, so they lead; a unit whose lessons are all finished has no next lesson to resume, so its live assessment is the natural next step and outranks starting new material; then continuing the course you were last working on; then placement, once, if it was never taken. This also brings the AI oral exam to the dashboard for the first time — until now you had to walk into a course to discover a unit was waiting. Fixes a real misdirection: the resume card pointed at the course you most recently enrolled in rather than the one you were actually studying, so signing up for something on a whim would hide the course you had been working through all week; both the plan and the In-progress shelf now order by real activity. Adds a momentum line under the week dots — lessons this week against last week, XP this week, and how many more days earn the next streak freeze, promised only when it is genuinely reachable and omitted entirely on a brand-new account. No schema change.
 
 = 1.31.0 =
 The Reports screen becomes a real analytics dashboard. A date-range switcher (7/30/90/365 days) drives four hero cards — enrollments, active learners, lessons completed, XP awarded — each with a sparkline and an honest delta against the previous window: something-from-nothing reads "New" rather than an infinite percentage, and active learners are distinct people over the window, never a sum of daily actives. An activity chart overlays lessons, enrollments and completions day by day; every chart is server-rendered inline SVG, so there is no charting library and the dashboard works with scripts disabled. Below it, the parts that say where learners get stuck: a learning funnel (enrolled → started → halfway → completed) that can never go back up; a course-health table extended with exercise accuracy, quiz pass rate, live-assessment pass rate and each course's drop-off point — the lesson most often the last thing a non-finisher completed, linked and annotated; a hardest-exercises ranking noise-gated to five attempts so one unlucky guess can't top the chart; a weekday study-pattern chart; and live-assessment tiles whose pass rate is computed over decided sittings only. Rates with no data render as a dash, not a misleading 0%. The day-by-day series exports to CSV with the current range applied. All-time totals, top learners, recent completions, the placement spread and the certificate register remain. No schema change.

@@ -2946,6 +2946,206 @@
 		]);
 	}
 
+	// The course the learner was last actually working on.
+	//
+	// /me lists courses by enrolment date, which points at whatever you signed
+	// up for most recently — not the course you have been grinding through all
+	// week. Sorting by last_activity fixes a dashboard that used to send you
+	// back into a course you had opened once and abandoned.
+	function focusCourse(courses) {
+		var open = (courses || []).filter(function (c) {
+			return c.next_lesson_id && (c.progress_pct || 0) < 100;
+		});
+		// Stable sort: courses with no recorded activity keep enrolment order,
+		// which is the right fallback for "you have never studied any of these".
+		open.sort(function (a, b) {
+			return String(b.last_activity || '').localeCompare(String(a.last_activity || ''));
+		});
+		return open[0] || null;
+	}
+
+	// What to do now, ranked — a pure function of the /me payload.
+	//
+	// The dashboard's one job is to answer that question, and it used to stack
+	// three banners (review, resume, placement) and leave the learner to rank
+	// them. The ranking here is by what is actually lost by not doing it today:
+	//   1. Review items decay — that is the whole premise of spaced repetition,
+	//      so they lead whenever any are due.
+	//   2. A unit whose lessons are all done has no next lesson to resume; its
+	//      live assessment IS the next step, so it outranks starting new material.
+	//   3. Continue the course you were last working on.
+	//   4. Placement, once, if it was never taken.
+	//   5. Nothing enrolled → go and pick something.
+	// The winner becomes the page's single primary action; the others are
+	// listed under it, so nothing is hidden but only one thing is shouted.
+	function dashboardPlan(j) {
+		j = j || {};
+		var s = j.stats || {};
+		var rv = s.reviews || {};
+		var tasks = [];
+
+		if ((rv.due || 0) > 0) {
+			tasks.push({
+				key: 'review', icon: '🎯',
+				title: t('reviewTitle', 'Practice your mistakes'),
+				sub: fmt(t('reviewFading', '%s fading — a 2-minute review locks them in'), rv.due),
+				cta: t('reviewNow', 'Review now'),
+				view: 'review', params: null
+			});
+		}
+
+		var vr = j.viva_ready;
+		if (vr && vr.unit) {
+			tasks.push({
+				key: 'viva', icon: '🎓',
+				title: fmt(t('vivaReadyTitle', 'You finished "%s"'), vr.unit),
+				sub: t('vivaReadySub', 'Its live assessment is waiting — explain it in your own words.'),
+				cta: vr.resume ? t('vivaResume', 'Resume assessment') : t('vivaStartCta', 'Take the assessment'),
+				view: 'course', params: { course: vr.course_id }
+			});
+		}
+
+		var focus = focusCourse(j.courses);
+		if (focus) {
+			// Minutes left is the number that decides whether someone starts;
+			// the lesson title is what tells them where they are.
+			var bits = [];
+			if (focus.next_lesson_title) { bits.push(focus.next_lesson_title); }
+			if (focus.minutes_left) { bits.push(fmt(t('minutesLeft', '%s min left'), focus.minutes_left)); }
+			tasks.push({
+				key: 'continue', icon: '▶',
+				title: fmt(t('continueTitle', 'Continue "%s"'), focus.title),
+				sub: bits.join(' · '),
+				cta: t('continueLearning', 'Continue learning'),
+				pct: focus.progress_pct || 0,
+				view: 'lesson', params: { course: focus.id, lesson: focus.next_lesson_id }
+			});
+		}
+
+		if (!j.placement) {
+			tasks.push({
+				key: 'placement', icon: '📍',
+				title: t('placementTitle', 'Find your level'),
+				sub: t('placementCta', 'a short test so courses start where you actually are'),
+				cta: t('placementStart', 'Start'),
+				view: 'placement', params: null
+			});
+		}
+
+		if (!tasks.length) {
+			tasks.push({
+				key: 'browse', icon: '📚',
+				title: t('emptyDashboard', 'Pick your first course and start earning XP today.'),
+				sub: '',
+				cta: t('browseCourses', 'Browse courses'),
+				view: 'catalog', params: null
+			});
+		}
+
+		// Three secondary tasks is a list; six is a backlog nobody reads.
+		return { primary: tasks[0], rest: tasks.slice(1, 4) };
+	}
+
+	function planCard(plan) {
+		var p = plan.primary;
+		var box = h('div', { class: 'mahan-plan' });
+
+		box.appendChild(h('h2', { class: 'mahan-plan-kicker', text: t('todayPlan', 'Today') }));
+
+		var head = h('div', { class: 'mahan-plan-primary is-' + p.key }, [
+			h('span', { class: 'mahan-plan-icon', 'aria-hidden': 'true', text: p.icon }),
+			h('div', { class: 'mahan-plan-body' }, [
+				h('h3', { class: 'mahan-plan-title', text: p.title }),
+				p.sub ? h('p', { class: 'mahan-plan-sub', text: p.sub }) : null,
+				'number' === typeof p.pct ? h('div', { class: 'mahan-progress' }, [
+					h('div', { class: 'mahan-progress-bar' }, [h('span', { style: 'width:' + p.pct + '%' })]),
+					h('span', { class: 'mahan-progress-label', text: p.pct + '%' })
+				]) : null
+			]),
+			h('button', {
+				class: 'mahan-btn mahan-btn-lg mahan-btn-primary mahan-plan-go', text: p.cta,
+				onClick: function () { go(p.view, p.params); }
+			})
+		]);
+		box.appendChild(head);
+
+		if (plan.rest.length) {
+			var list = h('ul', { class: 'mahan-plan-rest' });
+			plan.rest.forEach(function (task) {
+				var btn = h('button', {
+					class: 'mahan-plan-rest-btn', type: 'button',
+					onClick: function () { go(task.view, task.params); }
+				}, [
+					h('span', { class: 'mahan-plan-rest-icon', 'aria-hidden': 'true', text: task.icon }),
+					h('span', { class: 'mahan-plan-rest-text' }, [
+						h('strong', { text: task.title }),
+						task.sub ? h('span', { class: 'mahan-plan-rest-sub', text: task.sub }) : null
+					]),
+					h('span', { class: 'mahan-plan-rest-cta', 'aria-hidden': 'true', text: '→' })
+				]);
+				list.appendChild(h('li', {}, [btn]));
+			});
+			box.appendChild(h('p', { class: 'mahan-plan-also', text: t('alsoToday', 'Also worth doing') }));
+			box.appendChild(list);
+		}
+		return box;
+	}
+
+	// Pace: this week against last week, plus how close the next streak freeze
+	// is. A counter that only ever goes up cannot tell you that you are drifting.
+	function momentumStrip(j) {
+		var w = j.week_summary;
+		var freeze = j.next_freeze;
+		if (!w) { return null; }
+
+		var lessons = w.lessons || 0;
+		var prev    = w.prev_lessons || 0;
+		// Nothing has happened in a fortnight and no freeze is coming: a row of
+		// zeroes is not momentum, it is noise on someone's first day.
+		if (!lessons && !prev && !(w.xp || 0) && !freeze) { return null; }
+
+		var items = [];
+
+		var deltaText = '', deltaCls = 'is-flat';
+		if (prev > 0 && lessons !== prev) {
+			var pct = Math.round(((lessons - prev) / prev) * 100);
+			deltaCls = pct > 0 ? 'is-up' : 'is-down';
+			deltaText = (pct > 0 ? '+' : '') + pct + '%';
+		} else if (prev === 0 && lessons > 0) {
+			deltaCls = 'is-up';
+			deltaText = t('momentumNew', 'new');
+		} else if (lessons === prev && lessons > 0) {
+			deltaText = t('momentumSteady', 'steady');
+		}
+
+		items.push(h('span', { class: 'mahan-momentum-item' }, [
+			h('strong', { text: String(lessons) }),
+			document.createTextNode(' ' + (lessons === 1
+				? t('lessonThisWeek', 'lesson this week')
+				: t('lessonsThisWeek', 'lessons this week'))),
+			deltaText ? h('span', { class: 'mahan-momentum-delta ' + deltaCls, text: deltaText }) : null
+		]));
+
+		if (w.xp) {
+			items.push(h('span', { class: 'mahan-momentum-item' }, [
+				h('strong', { text: String(w.xp) }),
+				document.createTextNode(' ' + t('xpThisWeek', 'XP this week'))
+			]));
+		}
+
+		// Only promised when it is actually reachable — next_freeze is null when
+		// freezes are off, the holder is full, or no streak has started.
+		if (freeze) {
+			items.push(h('span', { class: 'mahan-momentum-item is-freeze' }, [
+				document.createTextNode(freeze === 1
+					? t('freezeTomorrow', '1 more day earns a streak freeze ❄️')
+					: fmt(t('freezeIn', '%s more days earn a streak freeze ❄️'), freeze))
+			]));
+		}
+
+		return h('div', { class: 'mahan-momentum' }, items);
+	}
+
 	function renderDashboard() {
 		if (!D.loggedIn) { mount(loginGate()); return; }
 		setTitle(t('dashboard', 'My Learning'));
@@ -2974,6 +3174,7 @@
 					(s.freezes || 0) > 0 ? statBig('', s.freezes, t('freezes', 'streak freezes')) : null
 				]),
 				weekDots(s.week),
+				momentumStrip(j),
 				h('div', { class: 'mahan-level-bar' }, [
 					h('div', { class: 'mahan-level-bar-track' }, [h('span', { style: 'width:' + levelPct(s) + '%' })]),
 					h('span', { class: 'mahan-level-bar-label', text: (s.xp_into_level || 0) + ' / ' + (s.xp_per_level || 100) + ' XP → ' + t('level', 'Level') + ' ' + ((s.level || 1) + 1) })
@@ -2982,68 +3183,10 @@
 			]);
 
 			var courses = j.courses || [];
-			var rv = s.reviews || {};
-			var hasReview = (rv.due || 0) > 0;
 
-			// Adaptive review first — it's the time-sensitive task (due items
-			// fade from memory unless refreshed on schedule).
-			// Compact strip, not a second full-height banner: the page can only
-			// have one dominant block, and that's "what to study next" below.
-			// This still leads because review is the time-sensitive task.
-			if (hasReview) {
-				wrap.appendChild(h('div', { class: 'mahan-review-cta' }, [
-					h('div', { class: 'mahan-review-cta-body' }, [
-						h('span', { class: 'mahan-review-cta-icon', 'aria-hidden': 'true', text: '🎯' }),
-						h('p', { class: 'mahan-review-cta-title' }, [
-							h('strong', { text: t('reviewTitle', 'Practice your mistakes') }),
-							h('span', { class: 'mahan-review-cta-sub',
-								text: ' — ' + fmt(t('reviewFading', '%s fading — a 2-minute review locks them in'), rv.due) + (rv.mastered ? ' · ' + rv.mastered + ' ' + t('reviewMastered', 'mastered') : '') })
-						])
-					]),
-					h('button', { class: 'mahan-btn mahan-btn-sm mahan-btn-primary', text: t('reviewNow', 'Review now'),
-						onClick: function () { go('review'); } })
-				]));
-			}
-
-			// "Jump back in": one tap straight into the next lesson of the most
-			// recent in-progress course (no course-page detour). Demoted to a
-			// ghost button when the review CTA is present so the page keeps a
-			// single primary action.
-			var inProgress = courses.filter(function (c) { return c.next_lesson_id && (c.progress_pct || 0) < 100; });
-			if (inProgress.length) {
-				var jb = inProgress[0];
-				wrap.appendChild(h('div', { class: 'mahan-jump' }, [
-					h('div', { class: 'mahan-jump-body' }, [
-						h('span', { class: 'mahan-jump-kicker', text: '▶ ' + t('jumpBackIn', 'Jump back in') }),
-						h('h2', { class: 'mahan-jump-title', text: jb.title }),
-						jb.next_lesson_title ? h('p', { class: 'mahan-jump-next', text: t('nextUp', 'Next up:') + ' ' + jb.next_lesson_title }) : null,
-						h('div', { class: 'mahan-progress' }, [
-							h('div', { class: 'mahan-progress-bar' }, [h('span', { style: 'width:' + (jb.progress_pct || 0) + '%' })]),
-							h('span', { class: 'mahan-progress-label', text: (jb.progress_pct || 0) + '%' })
-						])
-					]),
-					// Always the primary action now — the review strip above is
-					// no longer a competing block, so this one can lead.
-					h('button', { class: 'mahan-btn mahan-btn-lg mahan-btn-primary', text: t('continueLearning', 'Continue learning'),
-						onClick: function () { go('lesson', { course: jb.id, lesson: jb.next_lesson_id }); } })
-				]));
-			}
-
-			// Never placed? Offer it once, quietly, above the stats — knowing
-			// your level is worth more than knowing your XP.
-			if (!j.placement) {
-				wrap.appendChild(h('div', { class: 'mahan-placement-cta' }, [
-					h('div', { class: 'mahan-placement-cta-body' }, [
-						h('span', { class: 'mahan-placement-cta-icon', 'aria-hidden': 'true', text: '🎯' }),
-						h('p', { class: 'mahan-placement-cta-text' }, [
-							h('strong', { text: t('placementTitle', 'Find your level') }),
-							h('span', { class: 'mahan-review-cta-sub', text: ' — ' + t('placementCta', 'a short test so courses start where you actually are') })
-						])
-					]),
-					h('button', { class: 'mahan-btn mahan-btn-sm mahan-btn-ghost', text: t('placementStart', 'Start'),
-						onClick: function () { go('placement'); } })
-				]));
-			}
+			// One ranked plan instead of three competing banners. See
+			// dashboardPlan() for how the ranking is decided.
+			wrap.appendChild(planCard(dashboardPlan(j)));
 
 			// Stats after the actions: what to DO comes before how it's going.
 			wrap.appendChild(hero);
@@ -3052,7 +3195,13 @@
 			// course sitting in "Continue" is noise, and a course you were
 			// curious about had nowhere to live at all.
 			courses.forEach(function (c) { c.enrolled = true; });
-			var inProgressList = courses.filter(function (c) { return (c.progress_pct || 0) < 100; });
+			// Most recently studied first, so the first card on the shelf is the
+			// course the plan above is pointing at. Ordered by enrolment date,
+			// the two disagreed and the shelf looked like it had ignored you.
+			var inProgressList = courses.filter(function (c) { return (c.progress_pct || 0) < 100; })
+				.sort(function (a, b) {
+					return String(b.last_activity || '').localeCompare(String(a.last_activity || ''));
+				});
 			var completedList  = courses.filter(function (c) { return (c.progress_pct || 0) >= 100; });
 			var savedList      = j.saved || [];
 
@@ -3065,13 +3214,10 @@
 					empty: t('emptySaved', 'Tap the star on any course to keep it for later.') }
 			];
 
-			if (!courses.length && !savedList.length) {
-				wrap.appendChild(h('div', { class: 'mahan-empty' }, [
-					h('div', { class: 'mahan-empty-icon', 'aria-hidden': 'true', text: '📚' }),
-					h('p', { text: t('emptyDashboard', 'Pick your first course and start earning XP today.') }),
-					h('button', { class: 'mahan-btn mahan-btn-primary', text: t('browseCourses', 'Browse courses'), onClick: function () { go('catalog'); } })
-				]));
-			} else {
+			// With nothing enrolled and nothing saved, the plan card above is
+			// already the empty state ("Pick your first course…" plus the
+			// button) — repeating it under three empty tabs said it twice.
+			if (courses.length || savedList.length) {
 				wrap.appendChild(shelfTabs(shelves));
 			}
 

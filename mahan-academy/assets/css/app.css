@@ -666,13 +666,6 @@ button.mahan-quiz-row:hover { border-color: var(--m-primary); background: color-
 .mahan-quiz-count { margin-right: auto; color: var(--m-muted); font-size: 13px; font-weight: 700; }
 
 /* Jump back in (dashboard) */
-.mahan-jump { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; background: linear-gradient(120deg, color-mix(in srgb, var(--m-primary) 10%, var(--m-surface)), var(--m-surface) 65%); border: 1px solid color-mix(in srgb, var(--m-primary) 30%, var(--m-border)); border-radius: var(--m-radius); padding: 20px 22px; margin-bottom: 26px; box-shadow: var(--m-shadow-sm); }
-.mahan-jump-body { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 6px; }
-.mahan-jump-kicker { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--m-primary); }
-.mahan-jump-title { margin: 0; font-size: 20px; }
-.mahan-jump-next { margin: 0; color: var(--m-muted); font-size: 14px; }
-.mahan-jump .mahan-progress { max-width: 340px; }
-@media (max-width: 640px) { .mahan-jump .mahan-btn { width: 100%; } }
 
 /* Weekly activity dots (Duolingo-style) */
 .mahan-week { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
@@ -765,12 +758,6 @@ button.mahan-quiz-row:hover { border-color: var(--m-primary); background: color-
 /* ==================================================================== */
 
 /* Dashboard call-to-action */
-.mahan-review-cta { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; margin-bottom: 26px; padding: 18px 22px; border-radius: var(--m-radius); border: 1px solid color-mix(in srgb, var(--m-warning) 35%, var(--m-border)); background: linear-gradient(120deg, color-mix(in srgb, var(--m-warning) 12%, var(--m-surface)), var(--m-surface) 60%); box-shadow: var(--m-shadow-sm); }
-.mahan-review-cta-body { display: flex; align-items: center; gap: 14px; }
-.mahan-review-cta-icon { font-size: 34px; line-height: 1; }
-.mahan-review-cta-title { margin: 0; font-size: 20px; }
-.mahan-review-cta-sub { margin: 2px 0 0; color: var(--m-muted); font-size: 14px; font-weight: 600; }
-@media (max-width: 640px) { .mahan-review-cta .mahan-btn { width: 100%; } }
 
 /* Review session */
 .mahan-review-hero { text-align: center; }
@@ -892,7 +879,7 @@ div.mahan-lesson-row { cursor: pointer; }
 
 /* Balanced headings — no orphan last word on multi-line titles */
 .mahan-hero h1, .mahan-course-hero h1, .mahan-lesson-title, .mahan-card-title,
-.mahan-jump-title, .mahan-dash-title, .mahan-modal h2, .mahan-section h2 {
+.mahan-plan-title, .mahan-dash-title, .mahan-modal h2, .mahan-section h2 {
 	text-wrap: balance;
 }
 /* Longer body sub-copy reads better with pretty wrapping */
@@ -986,7 +973,7 @@ div.mahan-lesson-row { cursor: pointer; }
 /* --- Contrast: repoint text/icon usages at the AA-legible *-text tokens
    (fills like buttons/chips.is-active keep the raw --m-primary). --------- */
 .mahan-brand span, .mahan-hud-xp, .mahan-card-cat, .mahan-tag, .mahan-lesson-xp,
-.mahan-quiz-tag, .mahan-lb-xp, .mahan-jump-kicker, .mahan-lesson-pos-unit,
+.mahan-quiz-tag, .mahan-lb-xp, .mahan-plan-kicker, .mahan-lesson-pos-unit,
 .mahan-review-variant-tag { color: var(--m-primary-text); }
 .mahan-nav-link.is-active { color: var(--m-primary-text); }
 .mahan-hud-level, .mahan-progress-label, .mahan-check, .mahan-quiz-score { color: var(--m-accent-text); }
@@ -1056,7 +1043,7 @@ div.mahan-lesson-row:active { transform: translateY(1px); }
 .mahan-dash-h2 { margin: var(--m-section-gap) 0 16px; font-size: 22px; letter-spacing: -.01em; }
 .mahan-dash-hero h1:last-child { margin-bottom: 0; }
 .mahan-dash-title, .mahan-dash-hero h1, .mahan-modal h2, .mahan-section h2,
-.mahan-jump-title, .mahan-review-cta-title { letter-spacing: -.01em; }
+.mahan-plan-title { letter-spacing: -.01em; }
 
 /* --- Motion: smooth the reveals that hard-cut today --------------------- */
 .mahan-ex-feedback.is-correct, .mahan-ex-feedback.is-incorrect { animation: m-reveal var(--m-dur-2) var(--m-ease-out); }
@@ -1308,27 +1295,6 @@ div.mahan-lesson-row:active { transform: translateY(1px); }
 /* v1.20.0 — UI layer 2: restraint, rhythm, entrance motion             */
 /* ==================================================================== */
 
-/* --- One dominant block per screen ---------------------------------- */
-/* The dashboard used to stack three full-width banners in three tints —
-   amber review, lavender resume, white stats — so nothing led. Review is
-   still first (it's the time-sensitive task) but as a single-line strip,
-   which leaves "Continue learning" as the one dominant block. */
-.mahan-review-cta {
-	padding: 12px 16px; gap: 12px; margin-bottom: 16px;
-	border-radius: var(--m-radius-sm);
-	background: color-mix(in srgb, var(--m-warning) 8%, var(--m-surface));
-	border-color: color-mix(in srgb, var(--m-warning) 28%, var(--m-border));
-	box-shadow: none;
-	flex-wrap: nowrap;
-}
-.mahan-review-cta-body { gap: 10px; min-width: 0; }
-.mahan-review-cta-icon { font-size: 18px; }
-.mahan-review-cta-title { margin: 0; font-size: 14px; font-weight: 700; line-height: 1.45; }
-.mahan-review-cta-sub { font-weight: 500; color: var(--m-muted); font-size: 14px; }
-@media (max-width: 640px) {
-	.mahan-review-cta { flex-wrap: wrap; }
-	.mahan-review-cta .mahan-btn { width: 100%; }
-}
 
 /* --- Stats: numbers, not a row of emoji ----------------------------- */
 /* Only the streak keeps an icon, because the flame carries state (lit vs.
@@ -1436,7 +1402,7 @@ div.mahan-lesson-row:active { transform: translateY(1px); }
 .mahan-themed .mahan-unit-title,
 .mahan-themed .mahan-lesson-pos-unit,
 .mahan-themed .mahan-course-standing-pct,
-.mahan-themed .mahan-jump-kicker { color: var(--m-course-text); }
+.mahan-themed .mahan-plan-kicker { color: var(--m-course-text); }
 .mahan-themed .mahan-topic-chip {
 	color: var(--m-course-text);
 	border-color: color-mix(in srgb, var(--m-course) 34%, var(--m-border));
@@ -1510,16 +1476,6 @@ div.mahan-lesson-row:active { transform: translateY(1px); }
 }
 .mahan-placement-start-title { font-weight: 700; }
 
-/* Dashboard nudge — the same thin strip as the review row, not a banner. */
-.mahan-placement-cta {
-	display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
-	padding: 12px 16px; margin-bottom: 16px; border-radius: var(--m-radius-sm);
-	border: 1px solid color-mix(in srgb, var(--m-primary) 26%, var(--m-border));
-	background: color-mix(in srgb, var(--m-primary) 6%, var(--m-surface));
-}
-.mahan-placement-cta-body { display: flex; align-items: center; gap: 10px; min-width: 0; }
-.mahan-placement-cta-icon { font-size: 18px; }
-.mahan-placement-cta-text { margin: 0; font-size: 14px; font-weight: 700; line-height: 1.45; }
 
 /* --- Certificates ----------------------------------------------------- */
 .mahan-cert-foot { margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(0, 0, 0, .12); }
@@ -1821,3 +1777,83 @@ div.mahan-lesson-row:active { transform: translateY(1px); }
 	.mahan-viva-turn { max-width: 100%; }
 	.mahan-viva-thread { max-height: 40vh; }
 }
+
+/* ====================================================================== */
+/* Today's plan (v1.32.0)                                                 */
+/* ====================================================================== */
+/* One ranked block replaces the three competing banners the dashboard used
+   to stack (amber review / lavender resume / outlined placement). The
+   winner is the page's single dominant action; everything else is a quiet
+   list under it, so nothing is hidden but only one thing is shouted. */
+
+.mahan-plan { margin-bottom: 26px; }
+.mahan-plan-kicker {
+	margin: 0 0 8px; font-size: 12px; font-weight: 800; text-transform: uppercase;
+	letter-spacing: .06em; color: var(--m-primary-text);
+}
+
+.mahan-plan-primary {
+	display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+	padding: 20px 22px; border-radius: var(--m-radius);
+	border: 1px solid color-mix(in srgb, var(--m-primary) 30%, var(--m-border));
+	background: linear-gradient(120deg, color-mix(in srgb, var(--m-primary) 10%, var(--m-surface)), var(--m-surface) 65%);
+	box-shadow: var(--m-shadow-sm);
+}
+/* The tint tracks the task, so the block reads as "review" or "assessment"
+   before the words do — reviews are time-sensitive (amber), an assessment
+   is an achievement (green), everything else is the brand. */
+.mahan-plan-primary.is-review {
+	border-color: color-mix(in srgb, var(--m-warning) 34%, var(--m-border));
+	background: linear-gradient(120deg, color-mix(in srgb, var(--m-warning) 11%, var(--m-surface)), var(--m-surface) 65%);
+}
+.mahan-plan-primary.is-viva {
+	border-color: color-mix(in srgb, var(--m-accent) 34%, var(--m-border));
+	background: linear-gradient(120deg, color-mix(in srgb, var(--m-accent) 11%, var(--m-surface)), var(--m-surface) 65%);
+}
+
+.mahan-plan-icon { font-size: 32px; line-height: 1; flex: 0 0 auto; }
+.mahan-plan-body { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 6px; }
+.mahan-plan-title { margin: 0; font-size: 20px; }
+.mahan-plan-sub { margin: 0; color: var(--m-muted); font-size: 14px; }
+.mahan-plan-body .mahan-progress { max-width: 340px; margin-top: 2px; }
+.mahan-plan-go { flex: 0 0 auto; }
+
+.mahan-plan-also {
+	margin: 14px 0 6px; font-size: 12px; font-weight: 700; text-transform: uppercase;
+	letter-spacing: .05em; color: var(--m-muted);
+}
+.mahan-plan-rest { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.mahan-plan-rest-btn {
+	display: flex; align-items: center; gap: 12px; width: 100%; text-align: start;
+	padding: 8px 14px; border-radius: var(--m-radius-sm);
+	border: 1px solid var(--m-border); background: var(--m-surface);
+	color: inherit; font: inherit; cursor: pointer;
+	transition: border-color var(--m-dur-2) ease, background var(--m-dur-2) ease;
+}
+.mahan-plan-rest-btn:hover { border-color: color-mix(in srgb, var(--m-primary) 40%, var(--m-border)); background: var(--m-surface-2); }
+.mahan-plan-rest-icon { font-size: 17px; line-height: 1; flex: 0 0 auto; }
+.mahan-plan-rest-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.mahan-plan-rest-text strong { font-size: 14px; font-weight: 700; line-height: 1.35; }
+.mahan-plan-rest-sub { font-size: 13px; line-height: 1.35; color: var(--m-muted); }
+.mahan-plan-rest-cta { color: var(--m-primary-text); font-weight: 800; flex: 0 0 auto; }
+
+@media (max-width: 640px) {
+	.mahan-plan-primary { gap: 12px; padding: 16px 18px; }
+	.mahan-plan-icon { font-size: 26px; }
+	.mahan-plan-title { font-size: 17px; }
+	.mahan-plan-go { width: 100%; }
+}
+
+/* --- Momentum: this week against last week -------------------------- */
+/* A total that only ever rises cannot tell a learner they are drifting. */
+.mahan-momentum {
+	display: flex; align-items: center; gap: 8px 18px; flex-wrap: wrap;
+	margin: 4px 0 14px; font-size: 13px; color: var(--m-muted);
+}
+.mahan-momentum-item { display: inline-flex; align-items: baseline; gap: 5px; }
+.mahan-momentum-item strong { font-size: 15px; font-weight: 800; color: var(--m-text); font-variant-numeric: tabular-nums; }
+.mahan-momentum-delta { font-size: 12px; font-weight: 800; padding: 1px 7px; border-radius: 999px; }
+.mahan-momentum-delta.is-up { color: var(--m-accent-text); background: color-mix(in srgb, var(--m-accent) 16%, transparent); }
+.mahan-momentum-delta.is-down { color: var(--m-danger); background: color-mix(in srgb, var(--m-danger) 14%, transparent); }
+.mahan-momentum-delta.is-flat { color: var(--m-muted); background: var(--m-surface-2); }
+.mahan-momentum-item.is-freeze { color: var(--m-info-text); font-weight: 600; }

@@ -550,6 +550,48 @@ Config + i18n are injected via `wp_localize_script` as `window.MahanData`. Theme
 colors are CSS variables (`--mahan-primary`, `--mahan-accent`) set inline from
 settings.
 
+### The dashboard's "Today" plan
+
+`dashboardPlan(j)` is a **pure function of the `/me` payload** returning
+`{ primary, rest }` — keep it pure, it is what the harness drives directly.
+It ranks candidate tasks by *what is lost by not doing it today*:
+
+| # | Task | Why it ranks there |
+| - | ---- | ------------------ |
+| 1 | Reviews due | Spaced-repetition items decay — the only genuinely time-sensitive task |
+| 2 | `viva_ready` unit | Its lessons are all done, so there is no next lesson to resume; the assessment *is* the next step |
+| 3 | Continue | The default: resume the course last worked on |
+| 4 | Placement | Once, if never taken |
+| 5 | Browse | Nothing enrolled |
+
+`primary` becomes the page's single dominant block (tinted per task via
+`.mahan-plan-primary.is-<key>`); `rest` is capped at three one-line rows.
+Adding a task means inserting it at the right rank — not appending a banner.
+
+Server facts behind it, all on `/me`:
+
+- **`courses[].last_activity`** from `Mahan_Learner::last_activity_map()` (one
+  grouped query). `Mahan_Enrollment::get_user_courses()` orders by *enrolment
+  date*, so `focusCourse()` must re-sort by activity — otherwise resume points
+  at whatever the learner signed up for most recently instead of the course
+  they have been working through. The In-progress shelf sorts the same way so
+  the two never disagree.
+- **`viva_ready`** — the first unlocked, not-yet-passed unit, computed for the
+  focus course *only*. Doing it per enrollment would cost a viva query pair per
+  course on every dashboard load.
+- **`week_summary`** — this week vs the previous seven days, one sweep per
+  metric split in PHP by `sum_between()`; the previous window is end-exclusive
+  so the two cannot double-count their shared boundary day.
+- **`next_freeze`** — mirrors the award rule in
+  `Mahan_Gamification::touch_streak()`. Returns `null` (say nothing) when
+  freezes are off, the holder is full, or no streak has started; a streak
+  sitting exactly on a boundary was just paid, so the next one is a full cycle
+  away, not zero days.
+
+Verified by `test-dashboard.php` (21 assertions on the server facts) and
+`dash-render.mjs` / `dash-dark.mjs` (35 headless checks: the ranking across
+five learner states, the ordering fix, momentum copy, dark mode, phone width).
+
 **View teardown.** `mount()` clears the app root, so anything a view wires up
 *outside* its own DOM (window `scroll`/`resize` listeners, timers) must be
 registered with `onUnmount(fn)`; `mount()` runs and drains those hooks before

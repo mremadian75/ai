@@ -264,4 +264,158 @@ class Mahan_Learner {
 		}
 		return $minutes;
 	}
+
+	/**
+	 * When the learner last finished a lesson in each course.
+	 *
+	 * The dashboard's "continue where you left off" has to point at the course
+	 * you were last *working on*, which is not the course you most recently
+	 * *enrolled in* — enrol in something on a whim and it would otherwise hide
+	 * the course you have been grinding through all week.
+	 *
+	 * @param int $user_id Learner.
+	 * @return array course_id => 'Y-m-d H:i:s' of the last completed lesson.
+	 */
+	public static function last_activity_map( $user_id ) {
+		global $wpdb;
+		$user_id = (int) $user_id;
+		if ( ! $user_id ) {
+			return array();
+		}
+		$progress = Mahan_DB::progress();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT course_id, MAX(completed_at) AS last_at
+				 FROM {$progress}
+				 WHERE user_id = %d AND status = 'completed' AND completed_at IS NOT NULL
+				 GROUP BY course_id",
+				$user_id
+			),
+			ARRAY_A
+		);
+		$out = array();
+		foreach ( (array) $rows as $r ) {
+			$out[ (int) $r['course_id'] ] = (string) $r['last_at'];
+		}
+		return $out;
+	}
+
+	/**
+	 * This week against last week — the only comparison that tells a learner
+	 * whether they are speeding up or drifting.
+	 *
+	 * Both weeks come back in one sweep per metric; the split is done in PHP.
+	 * "This week" is the last 7 days including today, not an ISO week, because
+	 * a Monday-reset counter reads as a collapse every Monday morning.
+	 *
+	 * @param int $user_id Learner.
+	 * @return array {lessons, xp, prev_lessons, prev_xp}
+	 */
+	public static function week_summary( $user_id ) {
+		global $wpdb;
+		$user_id = (int) $user_id;
+		$out     = array( 'lessons' => 0, 'xp' => 0, 'prev_lessons' => 0, 'prev_xp' => 0 );
+		if ( ! $user_id ) {
+			return $out;
+		}
+
+		$today     = Mahan_Utils::today();
+		$cur_from  = gmdate( 'Y-m-d', strtotime( $today . ' -6 days' ) );
+		$prev_from = gmdate( 'Y-m-d', strtotime( $today . ' -13 days' ) );
+
+		$progress = Mahan_DB::progress();
+		$xp_log   = Mahan_DB::xp_log();
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery
+		$lesson_rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT DATE(completed_at) AS d, COUNT(*) AS n
+				 FROM {$progress}
+				 WHERE user_id = %d AND status = 'completed' AND completed_at >= %s
+				 GROUP BY DATE(completed_at)",
+				$user_id,
+				$prev_from . ' 00:00:00'
+			),
+			ARRAY_A
+		);
+		$xp_rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT DATE(created_at) AS d, COALESCE(SUM(amount),0) AS n
+				 FROM {$xp_log}
+				 WHERE user_id = %d AND created_at >= %s
+				 GROUP BY DATE(created_at)",
+				$user_id,
+				$prev_from . ' 00:00:00'
+			),
+			ARRAY_A
+		);
+		// phpcs:enable WordPress.DB.DirectDatabaseQuery
+
+		$out['lessons']      = self::sum_between( $lesson_rows, $cur_from, $today );
+		$out['prev_lessons'] = self::sum_between( $lesson_rows, $prev_from, $cur_from, true );
+		$out['xp']           = self::sum_between( $xp_rows, $cur_from, $today );
+		$out['prev_xp']      = self::sum_between( $xp_rows, $prev_from, $cur_from, true );
+		return $out;
+	}
+
+	/**
+	 * Sum grouped-by-day rows inside a date range.
+	 *
+	 * @param array[] $rows      {d, n} rows.
+	 * @param string  $from      First day (inclusive).
+	 * @param string  $to        Last day.
+	 * @param bool    $exclusive Treat $to as exclusive — used for the previous
+	 *                           week so the two windows cannot double-count the
+	 *                           day they share.
+	 * @return int
+	 */
+	public static function sum_between( $rows, $from, $to, $exclusive = false ) {
+		$sum = 0;
+		foreach ( (array) $rows as $r ) {
+			$d = (string) $r['d'];
+			if ( $d < $from ) {
+				continue;
+			}
+			if ( $exclusive ? ( $d >= $to ) : ( $d > $to ) ) {
+				continue;
+			}
+			$sum += (int) $r['n'];
+		}
+		return $sum;
+	}
+
+	/**
+	 * How many more days of studying earn the next streak freeze.
+	 *
+	 * Mirrors the award rule in Mahan_Gamification::touch_streak() — a freeze
+	 * lands when the streak hits a multiple of `freeze_earn_days`, and only
+	 * while the learner is below `freeze_max`. Returns null when there is
+	 * nothing to promise: the feature is off, the holder is full, or the
+	 * streak has not started.
+	 *
+	 * @param array $stats Gamification hud() payload.
+	 * @return int|null Days remaining, or null.
+	 */
+	public static function next_freeze( $stats ) {
+		if ( ! Mahan_Settings::get( 'streak_freeze_enabled', 1 ) ) {
+			return null;
+		}
+		$every = max( 0, (int) Mahan_Settings::get( 'freeze_earn_days', 7 ) );
+		$max   = max( 0, (int) Mahan_Settings::get( 'freeze_max', 2 ) );
+		if ( $every <= 0 || $max <= 0 ) {
+			return null;
+		}
+		if ( (int) ( isset( $stats['freezes'] ) ? $stats['freezes'] : 0 ) >= $max ) {
+			return null;
+		}
+		$streak = (int) ( isset( $stats['streak'] ) ? $stats['streak'] : 0 );
+		if ( $streak <= 0 ) {
+			return null;
+		}
+		$left = $every - ( $streak % $every );
+		// A streak sitting exactly on the boundary has already been paid; the
+		// next one is a whole cycle away, not zero days away.
+		return $left === $every ? $every : $left;
+	}
 }

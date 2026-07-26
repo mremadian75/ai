@@ -844,6 +844,22 @@ return array(
 	'Passed a live assessment'         => 'Aprobó una evaluación en directo',
 	'Completed a course'               => 'Completó un curso',
 
+	/* --- Today's plan + momentum (v1.32.0) ------------------------------- */
+	'Today'                            => 'Hoy',
+	'Also worth doing'                 => 'También vale la pena',
+	'Continue "%s"'                    => 'Continuar «%s»',
+	'You finished "%s"'                => 'Terminaste «%s»',
+	'Its live assessment is waiting — explain it in your own words.' => 'Su evaluación en directo te espera: explícalo con tus propias palabras.',
+	'Take the assessment'              => 'Hacer la evaluación',
+	'Resume assessment'                => 'Reanudar la evaluación',
+	'lesson this week'                 => 'lección esta semana',
+	'lessons this week'                => 'lecciones esta semana',
+	'XP this week'                     => 'XP esta semana',
+	'new'                              => 'nuevo',
+	'steady'                           => 'constante',
+	'1 more day earns a streak freeze ❄️' => 'Un día más y ganas un congelador de racha ❄️',
+	'%s more days earn a streak freeze ❄️' => '%s días más y ganas un congelador de racha ❄️',
+
 	/* --- Analytics dashboard (v1.31.0) ----------------------------------- */
 	'Date range'                       => 'Rango de fechas',
 	'Last 7 days'                      => 'Últimos 7 días',

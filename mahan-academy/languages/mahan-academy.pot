@@ -20,7 +20,7 @@ msgstr ""
 msgid "%s (copy)"
 msgstr ""
 
-#: includes/class-mahan-front.php:465
+#: includes/class-mahan-front.php:488
 msgid "%s fading — a quick review locks them in"
 msgstr ""
 
@@ -38,12 +38,16 @@ msgstr ""
 msgid "%s lessons completed"
 msgstr ""
 
-#: includes/class-mahan-front.php:251
+#: includes/class-mahan-front.php:251 includes/class-mahan-front.php:417
 msgid "%s min left"
 msgstr ""
 
-#: includes/class-mahan-front.php:467
+#: includes/class-mahan-front.php:490
 msgid "%s missed — let's fix them before moving on"
+msgstr ""
+
+#: includes/class-mahan-front.php:432
+msgid "%s more days earn a streak freeze ❄️"
 msgstr ""
 
 #: includes/class-mahan-front.php:269
@@ -62,7 +66,11 @@ msgstr ""
 msgid "(deleted user)"
 msgstr ""
 
-#: includes/class-mahan-front.php:468
+#: includes/class-mahan-front.php:430
+msgid "1 more day earns a streak freeze ❄️"
+msgstr ""
+
+#: includes/class-mahan-front.php:491
 msgid "A quick check on the questions you missed in this lesson."
 msgstr ""
 
@@ -278,7 +286,7 @@ msgstr ""
 msgid "All topics"
 msgstr ""
 
-#: includes/class-mahan-front.php:500
+#: includes/class-mahan-front.php:523
 msgid "Almost there"
 msgstr ""
 
@@ -288,6 +296,10 @@ msgstr ""
 
 #: includes/class-mahan-admin.php:365
 msgid "Also accept (comma separated)"
+msgstr ""
+
+#: includes/class-mahan-front.php:413
+msgid "Also worth doing"
 msgstr ""
 
 #: includes/class-mahan-admin.php:286 includes/class-mahan-admin.php:363
@@ -310,7 +322,7 @@ msgstr ""
 msgid "Answer recorded. (Connect an AI provider in settings for detailed feedback.)"
 msgstr ""
 
-#: includes/class-mahan-front.php:457
+#: includes/class-mahan-front.php:480
 msgid "Answer:"
 msgstr ""
 
@@ -326,7 +338,7 @@ msgstr ""
 msgid "Apply"
 msgstr ""
 
-#: includes/class-mahan-front.php:456
+#: includes/class-mahan-front.php:479
 msgid "Ask a different way"
 msgstr ""
 
@@ -362,15 +374,15 @@ msgstr ""
 msgid "Award badges for milestones (lessons, courses, streaks, levels)"
 msgstr ""
 
-#: includes/class-mahan-front.php:417
+#: includes/class-mahan-front.php:440
 msgid "Back online!"
 msgstr ""
 
-#: includes/class-mahan-front.php:461
+#: includes/class-mahan-front.php:484
 msgid "Back to My Learning"
 msgstr ""
 
-#: includes/class-mahan-front.php:423
+#: includes/class-mahan-front.php:446
 msgid "Back to catalog"
 msgstr ""
 
@@ -514,7 +526,7 @@ msgstr ""
 msgid "Close"
 msgstr ""
 
-#: includes/class-mahan-front.php:499
+#: includes/class-mahan-front.php:522
 msgid "Close — try again"
 msgstr ""
 
@@ -554,7 +566,7 @@ msgstr ""
 msgid "Complete the previous lesson to unlock"
 msgstr ""
 
-#: includes/class-mahan-front.php:434
+#: includes/class-mahan-front.php:457
 msgid "Complete the previous lesson to unlock this one."
 msgstr ""
 
@@ -598,6 +610,10 @@ msgstr ""
 msgid "Continue"
 msgstr ""
 
+#: includes/class-mahan-front.php:415
+msgid "Continue \"%s\""
+msgstr ""
+
 #: includes/class-mahan-front.php:254 includes/class-mahan-front.php:409
 msgid "Continue learning"
 msgstr ""
@@ -618,7 +634,7 @@ msgstr ""
 msgid "Correct rate"
 msgstr ""
 
-#: includes/class-mahan-front.php:173 includes/class-mahan-front.php:492
+#: includes/class-mahan-front.php:173 includes/class-mahan-front.php:515
 msgid "Correct!"
 msgstr ""
 
@@ -638,7 +654,7 @@ msgstr ""
 msgid "Couldn't generate practice right now — please try again."
 msgstr ""
 
-#: includes/class-mahan-front.php:460
+#: includes/class-mahan-front.php:483
 msgid "Couldn't rephrase that one — here's the original."
 msgstr ""
 
@@ -650,7 +666,7 @@ msgstr ""
 msgid "Course Master"
 msgstr ""
 
-#: includes/class-mahan-front.php:414
+#: includes/class-mahan-front.php:437
 msgid "Course complete!"
 msgstr ""
 
@@ -674,7 +690,7 @@ msgstr ""
 msgid "Course health"
 msgstr ""
 
-#: includes/class-mahan-course-builder.php:143 includes/class-mahan-enrollment.php:53 includes/class-mahan-rest.php:817
+#: includes/class-mahan-course-builder.php:143 includes/class-mahan-enrollment.php:53 includes/class-mahan-rest.php:880
 msgid "Course not found."
 msgstr ""
 
@@ -686,7 +702,7 @@ msgstr ""
 msgid "Course settings"
 msgstr ""
 
-#: includes/class-mahan-cpt.php:28 includes/class-mahan-cpt.php:30 includes/class-mahan-cpt.php:40 includes/class-mahan-front.php:477
+#: includes/class-mahan-cpt.php:28 includes/class-mahan-cpt.php:30 includes/class-mahan-cpt.php:40 includes/class-mahan-front.php:500
 msgid "Courses"
 msgstr ""
 
@@ -718,11 +734,11 @@ msgstr ""
 msgid "Daily goal"
 msgstr ""
 
-#: includes/class-mahan-front.php:426 includes/class-mahan-front.php:503
+#: includes/class-mahan-front.php:449 includes/class-mahan-front.php:526
 msgid "Daily goal reached!"
 msgstr ""
 
-#: includes/class-mahan-front.php:429
+#: includes/class-mahan-front.php:452
 msgid "Daily goal updated"
 msgstr ""
 
@@ -842,7 +858,7 @@ msgstr ""
 msgid "Earned freezes automatically cover missed days so the streak survives"
 msgstr ""
 
-#: includes/class-mahan-front.php:482
+#: includes/class-mahan-front.php:505
 msgid "Earned:"
 msgstr ""
 
@@ -894,7 +910,7 @@ msgstr ""
 msgid "Engineering"
 msgstr ""
 
-#: includes/class-mahan-front.php:437
+#: includes/class-mahan-front.php:460
 msgid "Enroll first — it takes one tap and it's free."
 msgstr ""
 
@@ -902,7 +918,7 @@ msgstr ""
 msgid "Enroll in course"
 msgstr ""
 
-#: includes/class-mahan-front.php:431
+#: includes/class-mahan-front.php:454
 msgid "Enroll in this course to access its lessons."
 msgstr ""
 
@@ -930,7 +946,7 @@ msgstr ""
 msgid "Enter the serial printed on a certificate to confirm it was issued by this academy."
 msgstr ""
 
-#: includes/class-mahan-front.php:419
+#: includes/class-mahan-front.php:442
 msgid "Enter to send · Shift+Enter for a new line"
 msgstr ""
 
@@ -946,7 +962,7 @@ msgstr ""
 msgid "Eternal Flame"
 msgstr ""
 
-#: includes/class-mahan-front.php:494
+#: includes/class-mahan-front.php:517
 msgid "Exactly right!"
 msgstr ""
 
@@ -966,7 +982,7 @@ msgstr ""
 msgid "Exercises correct"
 msgstr ""
 
-#: includes/class-mahan-front.php:441
+#: includes/class-mahan-front.php:464
 msgid "Exit review"
 msgstr ""
 
@@ -1138,7 +1154,7 @@ msgstr ""
 msgid "Goal reached — nice work! Everything extra is a bonus."
 msgstr ""
 
-#: includes/class-mahan-front.php:504
+#: includes/class-mahan-front.php:527
 msgid "Goal smashed!"
 msgstr ""
 
@@ -1236,12 +1252,16 @@ msgstr ""
 msgid "Intermediate"
 msgstr ""
 
-#: includes/class-mahan-rest.php:258 includes/class-mahan-rest.php:1349
+#: includes/class-mahan-rest.php:258 includes/class-mahan-rest.php:1412
 msgid "Invalid or missing nonce."
 msgstr ""
 
 #: includes/class-mahan-analytics.php:1027 includes/class-mahan-front.php:286 includes/class-mahan-students.php:712
 msgid "Issued"
+msgstr ""
+
+#: includes/class-mahan-front.php:420
+msgid "Its live assessment is waiting — explain it in your own words."
 msgstr ""
 
 #: includes/class-mahan-viva.php:104
@@ -1272,7 +1292,7 @@ msgstr ""
 msgid "Keep going"
 msgstr ""
 
-#: includes/class-mahan-front.php:420
+#: includes/class-mahan-front.php:443
 msgid "Keep learning"
 msgstr ""
 
@@ -1288,7 +1308,7 @@ msgstr ""
 msgid "Language"
 msgstr ""
 
-#: includes/class-mahan-rest.php:1352
+#: includes/class-mahan-rest.php:1415
 msgid "Language switching is turned off on this site."
 msgstr ""
 
@@ -1376,7 +1396,7 @@ msgstr ""
 msgid "Learning paths"
 msgstr ""
 
-#: includes/class-mahan-analytics.php:907 includes/class-mahan-analytics.php:969 includes/class-mahan-cpt.php:59 includes/class-mahan-front.php:410
+#: includes/class-mahan-analytics.php:907 includes/class-mahan-analytics.php:969 includes/class-mahan-cpt.php:59 includes/class-mahan-front.php:433
 msgid "Lesson"
 msgstr ""
 
@@ -1444,7 +1464,7 @@ msgstr ""
 msgid "Level titles"
 msgstr ""
 
-#: includes/class-mahan-front.php:199 includes/class-mahan-front.php:508
+#: includes/class-mahan-front.php:199 includes/class-mahan-front.php:531
 msgid "Level up!"
 msgstr ""
 
@@ -1476,7 +1496,7 @@ msgstr ""
 msgid "Loading…"
 msgstr ""
 
-#: includes/class-mahan-front.php:484
+#: includes/class-mahan-front.php:507
 msgid "Locked, %1$s of %2$s:"
 msgstr ""
 
@@ -1488,7 +1508,7 @@ msgstr ""
 msgid "Log in to start learning"
 msgstr ""
 
-#: includes/class-mahan-front.php:432
+#: includes/class-mahan-front.php:455
 msgid "Longest"
 msgstr ""
 
@@ -1528,7 +1548,7 @@ msgstr ""
 msgid "Marking…"
 msgstr ""
 
-#: includes/class-mahan-front.php:454
+#: includes/class-mahan-front.php:477
 msgid "Mastered! You won't see this one for a while."
 msgstr ""
 
@@ -1580,7 +1600,7 @@ msgstr ""
 msgid "My Learning"
 msgstr ""
 
-#: includes/class-mahan-front.php:493
+#: includes/class-mahan-front.php:516
 msgid "Nailed it!"
 msgstr ""
 
@@ -1612,7 +1632,7 @@ msgstr ""
 msgid "New achievement unlocked: {{badge}}"
 msgstr ""
 
-#: includes/class-mahan-front.php:509
+#: includes/class-mahan-front.php:532
 msgid "New level unlocked!"
 msgstr ""
 
@@ -1640,7 +1660,7 @@ msgstr ""
 msgid "No activity yet."
 msgstr ""
 
-#: includes/class-mahan-rest.php:1277
+#: includes/class-mahan-rest.php:1340
 msgid "No answers submitted."
 msgstr ""
 
@@ -1752,7 +1772,7 @@ msgstr ""
 msgid "Not now"
 msgstr ""
 
-#: includes/class-mahan-front.php:174 includes/class-mahan-front.php:498
+#: includes/class-mahan-front.php:174 includes/class-mahan-front.php:521
 msgid "Not quite"
 msgstr ""
 
@@ -1804,7 +1824,7 @@ msgstr ""
 msgid "One outcome per line. Shown on the course page as a checklist."
 msgstr ""
 
-#: includes/class-mahan-front.php:474
+#: includes/class-mahan-front.php:497
 msgid "Online"
 msgstr ""
 
@@ -1896,7 +1916,7 @@ msgstr ""
 msgid "Personalizing this lesson for you…"
 msgstr ""
 
-#: includes/class-mahan-front.php:438
+#: includes/class-mahan-front.php:461
 msgid "Pick an answer first."
 msgstr ""
 
@@ -1964,7 +1984,7 @@ msgstr ""
 msgid "Practice Black Belt"
 msgstr ""
 
-#: includes/class-mahan-front.php:444
+#: includes/class-mahan-front.php:467
 msgid "Practice your mistakes"
 msgstr ""
 
@@ -2044,7 +2064,7 @@ msgstr ""
 msgid "Question %1$s of %2$s"
 msgstr ""
 
-#: includes/class-mahan-front.php:445
+#: includes/class-mahan-front.php:468
 msgid "Questions you missed come back here until you master them."
 msgstr ""
 
@@ -2160,6 +2180,10 @@ msgstr ""
 msgid "Resume"
 msgstr ""
 
+#: includes/class-mahan-front.php:422
+msgid "Resume assessment"
+msgstr ""
+
 #: includes/class-mahan-front.php:352
 msgid "Resume live assessment"
 msgstr ""
@@ -2172,23 +2196,23 @@ msgstr ""
 msgid "Retake the test"
 msgstr ""
 
-#: includes/class-mahan-front.php:443
+#: includes/class-mahan-front.php:466
 msgid "Review"
 msgstr ""
 
-#: includes/class-mahan-front.php:471
+#: includes/class-mahan-front.php:494
 msgid "Review %s skipped"
 msgstr ""
 
-#: includes/class-mahan-front.php:452
+#: includes/class-mahan-front.php:475
 msgid "Review complete!"
 msgstr ""
 
-#: includes/class-mahan-front.php:421
+#: includes/class-mahan-front.php:444
 msgid "Review course"
 msgstr ""
 
-#: includes/class-mahan-front.php:447
+#: includes/class-mahan-front.php:470
 msgid "Review now"
 msgstr ""
 
@@ -2196,11 +2220,11 @@ msgstr ""
 msgid "Review the unit and sit it again — the questions will be new."
 msgstr ""
 
-#: includes/class-mahan-front.php:448
+#: includes/class-mahan-front.php:471
 msgid "Review your misses"
 msgstr ""
 
-#: includes/class-mahan-front.php:473
+#: includes/class-mahan-front.php:496
 msgid "Revisit lesson"
 msgstr ""
 
@@ -2336,11 +2360,11 @@ msgstr ""
 msgid "Serial"
 msgstr ""
 
-#: includes/class-mahan-front.php:469
+#: includes/class-mahan-front.php:492
 msgid "Session ended"
 msgstr ""
 
-#: includes/class-mahan-front.php:427
+#: includes/class-mahan-front.php:450
 msgid "Set a daily XP goal to build a habit."
 msgstr ""
 
@@ -2364,7 +2388,7 @@ msgstr ""
 msgid "Show a public XP leaderboard (top 20 learners)"
 msgstr ""
 
-#: includes/class-mahan-front.php:440
+#: includes/class-mahan-front.php:463
 msgid "Show the original"
 msgstr ""
 
@@ -2392,11 +2416,11 @@ msgstr ""
 msgid "Skills you have built"
 msgstr ""
 
-#: includes/class-mahan-front.php:283 includes/class-mahan-front.php:459
+#: includes/class-mahan-front.php:283 includes/class-mahan-front.php:482
 msgid "Skip"
 msgstr ""
 
-#: includes/class-mahan-front.php:462
+#: includes/class-mahan-front.php:485
 msgid "Skip to content"
 msgstr ""
 
@@ -2412,7 +2436,7 @@ msgstr ""
 msgid "Solved an exercise"
 msgstr ""
 
-#: includes/class-mahan-front.php:413
+#: includes/class-mahan-front.php:436
 msgid "Some questions are unanswered — tap Submit again to send anyway."
 msgstr ""
 
@@ -2420,7 +2444,7 @@ msgstr ""
 msgid "Something went wrong. Please try again."
 msgstr ""
 
-#: includes/class-mahan-front.php:495
+#: includes/class-mahan-front.php:518
 msgid "Spot on!"
 msgstr ""
 
@@ -2508,7 +2532,7 @@ msgstr ""
 msgid "Study pattern"
 msgstr ""
 
-#: includes/class-mahan-front.php:433
+#: includes/class-mahan-front.php:456
 msgid "Study today to keep it!"
 msgstr ""
 
@@ -2520,7 +2544,7 @@ msgstr ""
 msgid "Submit"
 msgstr ""
 
-#: includes/class-mahan-front.php:486
+#: includes/class-mahan-front.php:509
 msgid "Submit for feedback"
 msgstr ""
 
@@ -2540,7 +2564,11 @@ msgstr ""
 msgid "Tailored for %s"
 msgstr ""
 
-#: includes/class-mahan-front.php:425
+#: includes/class-mahan-front.php:421
+msgid "Take the assessment"
+msgstr ""
+
+#: includes/class-mahan-front.php:448
 msgid "Take the quiz"
 msgstr ""
 
@@ -2568,7 +2596,7 @@ msgstr ""
 msgid "Testing…"
 msgstr ""
 
-#: includes/class-mahan-rest.php:1357
+#: includes/class-mahan-rest.php:1420
 msgid "That language is not available."
 msgstr ""
 
@@ -2644,7 +2672,7 @@ msgstr ""
 msgid "The tutor connection failed. Please try again."
 msgstr ""
 
-#: includes/class-mahan-front.php:430
+#: includes/class-mahan-front.php:453
 msgid "The tutor took too long to respond. Please try again."
 msgstr ""
 
@@ -2664,7 +2692,7 @@ msgstr ""
 msgid "This certifies that"
 msgstr ""
 
-#: includes/class-mahan-front.php:422
+#: includes/class-mahan-front.php:445
 msgid "This content is no longer available."
 msgstr ""
 
@@ -2672,7 +2700,7 @@ msgstr ""
 msgid "This course is grounded in these references — go deeper any time."
 msgstr ""
 
-#: includes/class-mahan-front.php:398 includes/class-mahan-front.php:418
+#: includes/class-mahan-front.php:398 includes/class-mahan-front.php:441
 msgid "This week"
 msgstr ""
 
@@ -2682,6 +2710,10 @@ msgstr ""
 
 #: includes/class-mahan-admin.php:367
 msgid "Tip: use ___ (three underscores) in the question to mark the blank."
+msgstr ""
+
+#: includes/class-mahan-front.php:412
+msgid "Today"
 msgstr ""
 
 #: includes/class-mahan-analytics.php:948
@@ -2740,7 +2772,7 @@ msgstr ""
 msgid "Tue"
 msgstr ""
 
-#: includes/class-mahan-front.php:476
+#: includes/class-mahan-front.php:499
 msgid "Tutor conversation"
 msgstr ""
 
@@ -2756,7 +2788,7 @@ msgstr ""
 msgid "Type your answer…"
 msgstr ""
 
-#: includes/class-mahan-front.php:475
+#: includes/class-mahan-front.php:498
 msgid "Unavailable"
 msgstr ""
 
@@ -2792,7 +2824,7 @@ msgstr ""
 msgid "Unit quiz"
 msgstr ""
 
-#: includes/class-mahan-front.php:424
+#: includes/class-mahan-front.php:447
 msgid "Unit quiz unlocked!"
 msgstr ""
 
@@ -2876,7 +2908,7 @@ msgstr ""
 msgid "Warming Up"
 msgstr ""
 
-#: includes/class-mahan-front.php:455
+#: includes/class-mahan-front.php:478
 msgid "We'll ask you again soon."
 msgstr ""
 
@@ -2972,11 +3004,15 @@ msgstr ""
 msgid "XP reward (0 = default)"
 msgstr ""
 
+#: includes/class-mahan-front.php:427
+msgid "XP this week"
+msgstr ""
+
 #: includes/class-mahan-front.php:337 includes/class-mahan-front.php:361
 msgid "You"
 msgstr ""
 
-#: includes/class-mahan-front.php:416
+#: includes/class-mahan-front.php:439
 msgid "You appear to be offline. Check your connection and try again."
 msgstr ""
 
@@ -2996,8 +3032,12 @@ msgstr ""
 msgid "You explained it, applied it, and judged it."
 msgstr ""
 
-#: includes/class-mahan-front.php:415
+#: includes/class-mahan-front.php:438
 msgid "You finished"
+msgstr ""
+
+#: includes/class-mahan-front.php:419
+msgid "You finished \"%s\""
 msgstr ""
 
 #: includes/class-mahan-front.php:280
@@ -3008,7 +3048,7 @@ msgstr ""
 msgid "You have the basics down. Start at the intermediate rung and skip the introductions."
 msgstr ""
 
-#: includes/class-mahan-front.php:505
+#: includes/class-mahan-front.php:528
 msgid "You hit today's goal!"
 msgstr ""
 
@@ -3016,7 +3056,7 @@ msgstr ""
 msgid "You know this material well. Start at the top of each ladder and use the courses to fill specific gaps."
 msgstr ""
 
-#: includes/class-mahan-front.php:510
+#: includes/class-mahan-front.php:533
 msgid "You leveled up — keep going!"
 msgstr ""
 
@@ -3024,11 +3064,11 @@ msgstr ""
 msgid "You must be logged in."
 msgstr ""
 
-#: includes/class-mahan-front.php:472
+#: includes/class-mahan-front.php:495
 msgid "You'll see this one again before the end of this session."
 msgstr ""
 
-#: includes/class-mahan-front.php:449
+#: includes/class-mahan-front.php:472
 msgid "You're all caught up — no reviews due. Nice!"
 msgstr ""
 
@@ -3044,7 +3084,7 @@ msgstr ""
 msgid "Your answer"
 msgstr ""
 
-#: includes/class-mahan-front.php:428
+#: includes/class-mahan-front.php:451
 msgid "Your answers will be lost — close again to confirm."
 msgstr ""
 
@@ -3072,11 +3112,11 @@ msgstr ""
 msgid "ago"
 msgstr ""
 
-#: includes/class-mahan-front.php:412
+#: includes/class-mahan-front.php:435
 msgid "answered"
 msgstr ""
 
-#: includes/class-mahan-front.php:453
+#: includes/class-mahan-front.php:476
 msgid "cleared"
 msgstr ""
 
@@ -3088,7 +3128,7 @@ msgstr ""
 msgid "correct"
 msgstr ""
 
-#: includes/class-mahan-front.php:485
+#: includes/class-mahan-front.php:508
 msgid "correct answer"
 msgstr ""
 
@@ -3112,7 +3152,7 @@ msgstr ""
 msgid "days active"
 msgstr ""
 
-#: includes/class-mahan-front.php:446
+#: includes/class-mahan-front.php:469
 msgid "due for review"
 msgstr ""
 
@@ -3152,7 +3192,7 @@ msgstr ""
 msgid "from this lesson's content"
 msgstr ""
 
-#: includes/class-mahan-front.php:478
+#: includes/class-mahan-front.php:501
 msgid "goal met"
 msgstr ""
 
@@ -3164,12 +3204,16 @@ msgstr ""
 msgid "in progress"
 msgstr ""
 
-#: includes/class-mahan-front.php:451
+#: includes/class-mahan-front.php:474
 msgid "learning"
 msgstr ""
 
-#: includes/class-mahan-front.php:487
+#: includes/class-mahan-front.php:510
 msgid "lesson"
+msgstr ""
+
+#: includes/class-mahan-front.php:425
+msgid "lesson this week"
 msgstr ""
 
 #: includes/class-mahan-admin.php:232 includes/class-mahan-course-builder.php:60 includes/class-mahan-front.php:164
@@ -3180,23 +3224,31 @@ msgstr ""
 msgid "lessons completed"
 msgstr ""
 
+#: includes/class-mahan-front.php:426
+msgid "lessons this week"
+msgstr ""
+
 #: includes/class-mahan-front.php:234
 msgid "longest streak"
 msgstr ""
 
-#: includes/class-mahan-front.php:450
+#: includes/class-mahan-front.php:473
 msgid "mastered"
 msgstr ""
 
-#: includes/class-mahan-admin.php:235 includes/class-mahan-course-builder.php:61 includes/class-mahan-front.php:436
+#: includes/class-mahan-admin.php:235 includes/class-mahan-course-builder.php:61 includes/class-mahan-front.php:459
 msgid "min"
 msgstr ""
 
-#: includes/class-mahan-front.php:480
+#: includes/class-mahan-front.php:428
+msgid "new"
+msgstr ""
+
+#: includes/class-mahan-front.php:503
 msgid "no activity"
 msgstr ""
 
-#: includes/class-mahan-front.php:411 includes/class-mahan-front.php:458
+#: includes/class-mahan-front.php:434 includes/class-mahan-front.php:481
 msgid "of"
 msgstr ""
 
@@ -3204,7 +3256,7 @@ msgstr ""
 msgid "pass"
 msgstr ""
 
-#: includes/class-mahan-front.php:488
+#: includes/class-mahan-front.php:511
 msgid "question"
 msgstr ""
 
@@ -3212,11 +3264,11 @@ msgstr ""
 msgid "questions"
 msgstr ""
 
-#: includes/class-mahan-front.php:435
+#: includes/class-mahan-front.php:458
 msgid "reviews due"
 msgstr ""
 
-#: includes/class-mahan-front.php:439
+#: includes/class-mahan-front.php:462
 msgid "skipped"
 msgstr ""
 
@@ -3228,6 +3280,10 @@ msgstr ""
 msgid "stages"
 msgstr ""
 
+#: includes/class-mahan-front.php:429
+msgid "steady"
+msgstr ""
+
 #: includes/class-mahan-admin.php:701
 msgid "streak days, holding at most"
 msgstr ""
@@ -3236,7 +3292,7 @@ msgstr ""
 msgid "streak freezes"
 msgstr ""
 
-#: includes/class-mahan-front.php:479
+#: includes/class-mahan-front.php:502
 msgid "studied"
 msgstr ""
 
@@ -3248,7 +3304,7 @@ msgstr ""
 msgid "the way you like to learn"
 msgstr ""
 
-#: includes/class-mahan-front.php:481
+#: includes/class-mahan-front.php:504
 msgid "today"
 msgstr ""
 

@@ -1,0 +1,799 @@
+<?php
+/**
+ * Starter-content installer.
+ *
+ * Turns the curated data library in `includes/data/` into real content: it
+ * creates the Coursera-style category terms and the concept-level topic terms,
+ * inserts each course with its units, lessons, exercises, and unit quizzes, and
+ * wires the courses into learning-path bundles (specializations).
+ *
+ * The install is idempotent: every seeded post carries a `_mahan_seed_key`
+ * marker, so re-running skips content that already exists (and only relinks
+ * bundle membership). Nothing the site owner authored by hand is ever touched.
+ *
+ * @package Mahan_Academy
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+class Mahan_Seed {
+
+	/** Marker meta on seeded posts (course/lesson/path). */
+	const SEED_META = '_mahan_seed_key';
+
+	/** Minutes budgeted per exercise and per quiz question. See duration(). */
+	const MIN_PER_EXERCISE = 2;
+	const MIN_PER_QUIZ_Q   = 1;
+
+	/** Option recording the plugin version that last seeded. */
+	const OPT_DONE = 'mahan_seed_version';
+
+	/** One-time flag: the auto-seed catch-up has run (so it never re-imposes). */
+	const OPT_AUTOSEED = 'mahan_autoseed_done';
+
+	/* ------------------------------------------------------------------ */
+	/* Data library                                                        */
+	/* ------------------------------------------------------------------ */
+
+	/**
+	 * All seed courses, ordered for a stable catalog.
+	 *
+	 * @return array[]
+	 */
+	public static function courses_data() {
+		$out = array();
+		foreach ( glob( MAHAN_DIR . 'includes/data/course-*.php' ) as $file ) {
+			$course = include $file;
+			if ( is_array( $course ) && ! empty( $course['seed_key'] ) && ! empty( $course['title'] ) ) {
+				$out[] = $course;
+			}
+		}
+		usort(
+			$out,
+			function ( $a, $b ) {
+				$ca = isset( $a['category'] ) ? (string) $a['category'] : '';
+				$cb = isset( $b['category'] ) ? (string) $b['category'] : '';
+				if ( $ca !== $cb ) {
+					return strcmp( $ca, $cb );
+				}
+				$oa = isset( $a['order'] ) ? (int) $a['order'] : 0;
+				$ob = isset( $b['order'] ) ? (int) $b['order'] : 0;
+				return $oa <=> $ob;
+			}
+		);
+		return $out;
+	}
+
+	/**
+	 * Bundle (specialization) definitions.
+	 *
+	 * @return array[]
+	 */
+	public static function bundles_data() {
+		$file = MAHAN_DIR . 'includes/data/bundles.php';
+		if ( ! file_exists( $file ) ) {
+			return array();
+		}
+		$bundles = include $file;
+		return is_array( $bundles ) ? $bundles : array();
+	}
+
+	/**
+	 * Short marketing descriptions for the auto-created category terms.
+	 *
+	 * @return array name => description.
+	 */
+	public static function category_descriptions() {
+		return array(
+			'Prompt Engineering' => __( 'Write clear, reliable prompts and build repeatable prompting workflows.', 'mahan-academy' ),
+			'Machine Learning'   => __( 'How machines learn from data — core concepts through practical, shippable models.', 'mahan-academy' ),
+			'Generative AI'      => __( 'Understand and use generative AI and large language models with confidence.', 'mahan-academy' ),
+			'AI at Work'         => __( 'Practical, safe ways to use AI to get everyday work done faster.', 'mahan-academy' ),
+			'AI Tools'           => __( 'Hands-on guides to popular AI tools — ChatGPT, Claude, Gemini, and image generators.', 'mahan-academy' ),
+			'Responsible AI'     => __( 'Use AI in ways you can defend — risk, fairness, transparency, and the rules that apply.', 'mahan-academy' ),
+		);
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Status                                                              */
+	/* ------------------------------------------------------------------ */
+
+	/**
+	 * Has any starter content been installed?
+	 */
+	public static function is_installed() {
+		return self::count_installed() > 0;
+	}
+
+	/**
+	 * Ship the starter content by default, exactly once, without re-imposing it.
+	 *
+	 * Runs on activation and (for sites that were already active before this
+	 * version) once via an `init` catch-up. It only seeds when the site has no
+	 * seeded courses yet, then records a permanent flag — so an owner who later
+	 * deletes the demo content is never re-flooded with it.
+	 */
+	public static function maybe_autoseed() {
+		// Atomic one-time gate: add_option only succeeds for the FIRST caller
+		// (wp_options.option_name is unique), so two concurrent init requests on
+		// a fresh site can't both pass the guard and double-seed. It also serves
+		// as the "already ran once" flag on every later request.
+		if ( false === add_option( self::OPT_AUTOSEED, '1', '', 'no' ) ) {
+			return;
+		}
+		if ( 0 === self::count_installed() ) {
+			self::install();
+		}
+	}
+
+	/**
+	 * How many seeded courses currently exist.
+	 */
+	public static function count_installed() {
+		$ids = get_posts(
+			array(
+				'post_type'      => Mahan_CPT::COURSE,
+				'post_status'    => 'any',
+				'posts_per_page' => -1,
+				'fields'         => 'ids',
+				// phpcs:ignore WordPress.DB.SlowDBQuery
+				'meta_key'       => self::SEED_META,
+			)
+		);
+		return is_array( $ids ) ? count( $ids ) : 0;
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Install                                                             */
+	/* ------------------------------------------------------------------ */
+
+	/**
+	 * Install (or top up) the starter content. Idempotent.
+	 *
+	 * @return array { courses, lessons, quizzes, bundles, skipped, terms }
+	 */
+	public static function install() {
+		// Make sure the CPTs + taxonomies are registered so term/post inserts work
+		// even if this runs very early.
+		if ( ! taxonomy_exists( Mahan_CPT::TOPIC ) ) {
+			Mahan_CPT::register();
+		}
+
+		$result = array(
+			'courses' => 0,
+			'lessons' => 0,
+			'quizzes' => 0,
+			'bundles' => 0,
+			'skipped' => 0,
+			'terms'   => 0,
+		);
+
+		// seed_key => course post id (includes pre-existing ones, so bundles can
+		// still link courses that were skipped this run).
+		$map = array();
+
+		foreach ( self::courses_data() as $course ) {
+			$seed_key = (string) $course['seed_key'];
+			$existing = self::find_by_seed_key( Mahan_CPT::COURSE, $seed_key );
+			if ( $existing ) {
+				$map[ $seed_key ] = $existing;
+				$result['skipped']++;
+				// Skipped means "don't touch the content" — the site owner may
+				// have edited it. It must not mean "never learn anything new":
+				// structural wiring the plugin owns (ladder position, sources)
+				// is added in later versions, and without this refresh every
+				// site that seeded before a ladder existed would keep a flat
+				// catalog forever.
+				self::refresh_course_meta( $existing, $course );
+				continue;
+			}
+			$made = self::install_course( $course, $result );
+			if ( $made ) {
+				$map[ $seed_key ] = $made['id'];
+				$result['courses']++;
+				$result['lessons'] += $made['lessons'];
+				$result['quizzes'] += $made['quizzes'];
+			}
+		}
+
+		foreach ( self::bundles_data() as $bundle ) {
+			if ( self::install_bundle( $bundle, $map ) ) {
+				$result['bundles']++;
+			}
+		}
+
+		update_option( self::OPT_DONE, MAHAN_VERSION );
+		return $result;
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Course                                                              */
+	/* ------------------------------------------------------------------ */
+
+	/**
+	 * Bring an already-installed course's *structural* metadata up to date.
+	 *
+	 * The boundary is deliberate: once a course is installed, its prose is the
+	 * site owner's — title, description, lessons and exercises are never
+	 * touched here. Ladder position and cited sources are the plugin's, and
+	 * they change between versions.
+	 *
+	 * Only fills what the current data actually declares, so a later version
+	 * dropping a field can't silently blank a site's metadata.
+	 *
+	 * @param int   $post_id Existing course post id.
+	 * @param array $c       Course data from the library.
+	 */
+	private static function refresh_course_meta( $post_id, $c ) {
+		$post_id = (int) $post_id;
+		if ( $post_id < 1 ) {
+			return;
+		}
+
+		if ( ! empty( $c['track'] ) ) {
+			$level = isset( $c['level'] ) ? (string) $c['level'] : 'beginner';
+			update_post_meta( $post_id, Mahan_Variants::M_TRACK, sanitize_title( (string) $c['track'] ) );
+			update_post_meta(
+				$post_id,
+				Mahan_Variants::M_LEVEL_RANK,
+				isset( $c['level_rank'] ) ? max( 1, (int) $c['level_rank'] ) : Mahan_Variants::level_rank( $level )
+			);
+			// The rung and the level have to agree or the ladder mislabels
+			// itself, so a course that joined a track also takes its level.
+			update_post_meta( $post_id, Mahan_Courses::M_LEVEL, $level );
+		}
+
+		if ( ! empty( $c['references'] ) && is_array( $c['references'] ) ) {
+			$existing = get_post_meta( $post_id, Mahan_Courses::M_REFERENCES, true );
+			// Don't overwrite references an owner curated themselves.
+			if ( empty( $existing ) ) {
+				$refs = self::clean_references( $c['references'] );
+				if ( ! empty( $refs ) ) {
+					update_post_meta( $post_id, Mahan_Courses::M_REFERENCES, $refs );
+				}
+			}
+		}
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Duration                                                            */
+	/* ------------------------------------------------------------------ */
+
+	/**
+	 * How long this course actually takes, measured from what is authored.
+	 *
+	 * `est_hours` used to be a number typed by hand next to the content, and
+	 * the two drifted: the catalog advertised 57 hours against 13 hours of
+	 * material. A duration nobody computes is a duration nobody keeps true, so
+	 * the card now reports the sum of the work in front of the learner.
+	 *
+	 * Reading minutes come from each lesson. Exercises and quiz questions are
+	 * costed at a flat rate because they are answered, not read — a
+	 * prompt-writing task takes longer than a true/false, but not so much
+	 * longer that per-type weights would be anything but false precision.
+	 *
+	 * @param array $c Course data.
+	 * @return array { minutes:int, hours:int }
+	 */
+	public static function duration( $c ) {
+		$minutes = 0;
+		foreach ( ( isset( $c['units'] ) && is_array( $c['units'] ) ? $c['units'] : array() ) as $unit ) {
+			foreach ( ( isset( $unit['lessons'] ) && is_array( $unit['lessons'] ) ? $unit['lessons'] : array() ) as $lesson ) {
+				$minutes += isset( $lesson['est_min'] ) ? (int) $lesson['est_min'] : 0;
+				$minutes += count( isset( $lesson['exercises'] ) ? (array) $lesson['exercises'] : array() ) * self::MIN_PER_EXERCISE;
+			}
+			if ( ! empty( $unit['quiz']['questions'] ) ) {
+				$minutes += count( (array) $unit['quiz']['questions'] ) * self::MIN_PER_QUIZ_Q;
+			}
+		}
+
+		// Round to the nearest hour but never to zero: a course that exists
+		// takes some time, and "0 h" on a card reads as broken.
+		return array(
+			'minutes' => $minutes,
+			'hours'   => $minutes > 0 ? max( 1, (int) round( $minutes / 60 ) ) : 0,
+		);
+	}
+
+	/**
+	 * @param array $list Raw references.
+	 * @return array[] { title, source, url }
+	 */
+	private static function clean_references( $list ) {
+		$refs = array();
+		foreach ( (array) $list as $ref ) {
+			if ( ! is_array( $ref ) || empty( $ref['title'] ) ) {
+				continue;
+			}
+			$refs[] = array(
+				'title'  => sanitize_text_field( (string) $ref['title'] ),
+				'source' => isset( $ref['source'] ) ? sanitize_text_field( (string) $ref['source'] ) : '',
+				'url'    => isset( $ref['url'] ) ? esc_url_raw( (string) $ref['url'] ) : '',
+			);
+		}
+		return $refs;
+	}
+
+	/**
+	 * One-time structural refresh for sites that seeded before this version.
+	 *
+	 * Separate from maybe_autoseed(), which only ever seeds an *empty* site —
+	 * the sites that need this are precisely the ones that already have
+	 * content. Keyed on the version so it runs once per release that needs it,
+	 * and gated atomically so two concurrent requests can't both sweep.
+	 */
+	public static function maybe_refresh_structure() {
+		// One option per version, claimed with add_option — atomic, and with
+		// no separate lock that could be stranded by a fatal mid-sweep and
+		// block every future refresh.
+		if ( false === add_option( 'mahan_seed_struct_' . MAHAN_VERSION, '1', '', 'no' ) ) {
+			return;
+		}
+
+		foreach ( self::courses_data() as $course ) {
+			if ( empty( $course['seed_key'] ) ) {
+				continue;
+			}
+			$existing = self::find_by_seed_key( Mahan_CPT::COURSE, (string) $course['seed_key'] );
+			if ( $existing ) {
+				self::refresh_course_meta( $existing, $course );
+				self::add_missing_lessons( $existing, $course );
+			}
+		}
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Additive content backfill                                           */
+	/* ------------------------------------------------------------------ */
+
+	/**
+	 * Install lessons and unit quizzes a course is missing, and nothing else.
+	 *
+	 * When a release deepens a course, `install()` won't deliver it: it skips
+	 * courses that already exist, correctly, because the owner may have edited
+	 * them. Without this, new units would only ever appear on brand-new sites
+	 * and every existing academy would stay at its original length.
+	 *
+	 * The rule that makes this safe is strictly additive. A lesson is created
+	 * only when nothing carries its seed key yet; an existing lesson is never
+	 * rewritten, reordered, or removed, even if the library's version has since
+	 * changed. Same for unit quizzes — a missing one is added, an existing one
+	 * is left exactly as the owner has it.
+	 *
+	 * A lesson the owner deliberately deleted would come back, which is the one
+	 * honest cost here. Trashing it is not enough of a signal to distinguish
+	 * "I don't want this" from "I have not seen it yet", and the alternative —
+	 * never delivering new material — is worse for every other site.
+	 *
+	 * @param int   $course_id Existing course post id.
+	 * @param array $c         Course data from the library.
+	 * @return array { lessons:int, quizzes:int } counts actually added.
+	 */
+	public static function add_missing_lessons( $course_id, $c ) {
+		$course_id = (int) $course_id;
+		$added     = array( 'lessons' => 0, 'quizzes' => 0 );
+		if ( $course_id < 1 || empty( $c['seed_key'] ) || empty( $c['units'] ) || ! is_array( $c['units'] ) ) {
+			return $added;
+		}
+
+		$seed     = (string) $c['seed_key'];
+		$result   = array();
+		$existing = self::existing_quiz_units( $course_id );
+		$quiz_map = array();
+		$unit_i   = 0;
+
+		foreach ( $c['units'] as $unit ) {
+			$unit_i++;
+			$unit_title   = sanitize_text_field( isset( $unit['title'] ) ? (string) $unit['title'] : sprintf( __( 'Unit %d', 'mahan-academy' ), $unit_i ) );
+			$unit_lessons = isset( $unit['lessons'] ) && is_array( $unit['lessons'] ) ? $unit['lessons'] : array();
+			$order_i      = 0;
+
+			foreach ( $unit_lessons as $lesson ) {
+				$order_i++;
+				$key = $seed . ':u' . $unit_i . ':l' . $order_i;
+				if ( self::find_by_seed_key( Mahan_CPT::LESSON, $key ) ) {
+					continue; // Already delivered — leave it alone.
+				}
+				if ( self::install_lesson( $course_id, $seed, $unit_title, $unit_i, $order_i, $lesson, $result ) ) {
+					$added['lessons']++;
+				}
+			}
+
+			// Only quizzes for units that have none. save_all() replaces the
+			// whole map, so anything already stored has to be carried through
+			// untouched or adding one quiz would wipe the rest.
+			if ( ! empty( $unit['quiz']['questions'] ) && ! isset( $existing[ $unit_title ] ) ) {
+				$quiz_map[ $unit_title ] = $unit['quiz'];
+				$added['quizzes']++;
+			}
+		}
+
+		if ( $quiz_map && class_exists( 'Mahan_Quizzes' ) ) {
+			Mahan_Quizzes::save_all( $course_id, array_merge( $existing, $quiz_map ) );
+		}
+
+		if ( $added['lessons'] || $added['quizzes'] ) {
+			// The course got longer, so the advertised length has to follow.
+			$duration = self::duration( $c );
+			update_post_meta( $course_id, Mahan_Courses::M_EST_HOURS, $duration['hours'] );
+			Mahan_Logger::log( sprintf( 'Seed backfill: course %d gained %d lesson(s), %d quiz(zes)', $course_id, $added['lessons'], $added['quizzes'] ) );
+		}
+
+		return $added;
+	}
+
+	/**
+	 * Unit quizzes already stored on a course, keyed by unit title.
+	 */
+	private static function existing_quiz_units( $course_id ) {
+		if ( ! class_exists( 'Mahan_Quizzes' ) ) {
+			return array();
+		}
+		$all = Mahan_Quizzes::all( (int) $course_id );
+		return is_array( $all ) ? $all : array();
+	}
+
+	/**
+	 * @param array $c      Course data.
+	 * @param array $result Running totals (terms counter is bumped by reference).
+	 * @return array|null { id, lessons, quizzes }
+	 */
+	private static function install_course( $c, &$result ) {
+		$post_id = wp_insert_post(
+			array(
+				'post_type'    => Mahan_CPT::COURSE,
+				'post_status'  => 'publish',
+				'post_title'   => (string) $c['title'],
+				'post_name'    => isset( $c['slug'] ) ? sanitize_title( (string) $c['slug'] ) : '',
+				'post_content' => isset( $c['description'] ) ? (string) $c['description'] : '',
+				'post_excerpt' => isset( $c['excerpt'] ) ? (string) $c['excerpt'] : '',
+				'menu_order'   => isset( $c['order'] ) ? (int) $c['order'] : 0,
+			),
+			true
+		);
+		if ( is_wp_error( $post_id ) || ! $post_id ) {
+			return null;
+		}
+
+		update_post_meta( $post_id, self::SEED_META, (string) $c['seed_key'] );
+		update_post_meta( $post_id, Mahan_Courses::M_SUBTITLE, isset( $c['subtitle'] ) ? (string) $c['subtitle'] : '' );
+		update_post_meta( $post_id, Mahan_Courses::M_LEVEL, isset( $c['level'] ) ? (string) $c['level'] : 'beginner' );
+		// Measured from the authored content, not typed alongside it.
+		$duration = self::duration( $c );
+		update_post_meta( $post_id, Mahan_Courses::M_EST_HOURS, $duration['hours'] );
+		update_post_meta( $post_id, Mahan_Courses::M_OUTCOMES, isset( $c['outcomes'] ) && is_array( $c['outcomes'] ) ? implode( "\n", array_map( 'strval', $c['outcomes'] ) ) : '' );
+		update_post_meta( $post_id, Mahan_Courses::M_FEATURED, ! empty( $c['featured'] ) ? 1 : 0 );
+		update_post_meta( $post_id, Mahan_Courses::M_CERTIFICATE, ! empty( $c['certificate'] ) ? 1 : 0 );
+
+		// Level ladder: which subject track this course belongs to, and its rung.
+		if ( ! empty( $c['track'] ) ) {
+			$level = isset( $c['level'] ) ? (string) $c['level'] : 'beginner';
+			update_post_meta( $post_id, Mahan_Variants::M_TRACK, sanitize_title( (string) $c['track'] ) );
+			update_post_meta(
+				$post_id,
+				Mahan_Variants::M_LEVEL_RANK,
+				isset( $c['level_rank'] ) ? max( 1, (int) $c['level_rank'] ) : Mahan_Variants::level_rank( $level )
+			);
+		}
+
+		// Further reading: the authoritative sources the course is grounded in.
+		if ( ! empty( $c['references'] ) && is_array( $c['references'] ) ) {
+			$refs = self::clean_references( $c['references'] );
+			if ( ! empty( $refs ) ) {
+				update_post_meta( $post_id, Mahan_Courses::M_REFERENCES, $refs );
+			}
+		}
+
+		// Category (Coursera-style domain).
+		if ( ! empty( $c['category'] ) ) {
+			$descs   = self::category_descriptions();
+			$desc    = isset( $descs[ $c['category'] ] ) ? $descs[ $c['category'] ] : '';
+			$cat_id  = self::ensure_term( (string) $c['category'], Mahan_CPT::CAT, $desc, $result );
+			if ( $cat_id ) {
+				wp_set_object_terms( $post_id, array( $cat_id ), Mahan_CPT::CAT );
+			}
+		}
+
+		// Course-level topics.
+		if ( ! empty( $c['topics'] ) && is_array( $c['topics'] ) ) {
+			$topic_ids = self::ensure_terms( $c['topics'], Mahan_CPT::TOPIC, $result );
+			if ( $topic_ids ) {
+				wp_set_object_terms( $post_id, $topic_ids, Mahan_CPT::TOPIC );
+			}
+		}
+
+		$lessons  = 0;
+		$quiz_map = array();
+		$units    = isset( $c['units'] ) && is_array( $c['units'] ) ? $c['units'] : array();
+		$unit_i   = 0;
+		foreach ( $units as $unit ) {
+			$unit_i++;
+			// Sanitize the unit title ONCE and use the same value for the lesson
+			// meta (M_UNIT) and the quiz map key. Mahan_Quizzes::save_all()
+			// re-sanitizes the key, so an unsanitized title here would store a
+			// mismatched lesson unit and silently orphan the unit quiz.
+			$unit_title = sanitize_text_field( isset( $unit['title'] ) ? (string) $unit['title'] : sprintf( __( 'Unit %d', 'mahan-academy' ), $unit_i ) );
+			$order_i    = 0;
+			$unit_lessons = isset( $unit['lessons'] ) && is_array( $unit['lessons'] ) ? $unit['lessons'] : array();
+			foreach ( $unit_lessons as $lesson ) {
+				$order_i++;
+				if ( self::install_lesson( $post_id, (string) $c['seed_key'], $unit_title, $unit_i, $order_i, $lesson, $result ) ) {
+					$lessons++;
+				}
+			}
+			if ( ! empty( $unit['quiz'] ) && ! empty( $unit['quiz']['questions'] ) ) {
+				$quiz_map[ $unit_title ] = $unit['quiz'];
+			}
+		}
+
+		$quizzes = 0;
+		if ( ! empty( $quiz_map ) && class_exists( 'Mahan_Quizzes' ) ) {
+			Mahan_Quizzes::save_all( $post_id, $quiz_map );
+			$quizzes = count( $quiz_map );
+		}
+
+		return array( 'id' => (int) $post_id, 'lessons' => $lessons, 'quizzes' => $quizzes );
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Lesson                                                              */
+	/* ------------------------------------------------------------------ */
+
+	private static function install_lesson( $course_id, $course_seed, $unit_title, $unit_order, $order, $lesson, &$result ) {
+		if ( ! is_array( $lesson ) || empty( $lesson['title'] ) ) {
+			return 0;
+		}
+		$lesson_id = wp_insert_post(
+			array(
+				'post_type'    => Mahan_CPT::LESSON,
+				'post_status'  => 'publish',
+				'post_title'   => (string) $lesson['title'],
+				'post_content' => isset( $lesson['content'] ) ? (string) $lesson['content'] : '',
+				'menu_order'   => (int) $order,
+			),
+			true
+		);
+		if ( is_wp_error( $lesson_id ) || ! $lesson_id ) {
+			return 0;
+		}
+
+		$type = isset( $lesson['type'] ) ? sanitize_key( (string) $lesson['type'] ) : 'reading';
+		if ( ! in_array( $type, array( 'reading', 'practice', 'video' ), true ) ) {
+			$type = 'reading';
+		}
+
+		update_post_meta( $lesson_id, self::SEED_META, $course_seed . ':u' . (int) $unit_order . ':l' . (int) $order );
+		update_post_meta( $lesson_id, Mahan_Courses::M_COURSE_ID, (int) $course_id );
+		update_post_meta( $lesson_id, Mahan_Courses::M_UNIT, (string) $unit_title );
+		update_post_meta( $lesson_id, Mahan_Courses::M_UNIT_ORDER, (int) $unit_order );
+		update_post_meta( $lesson_id, Mahan_Courses::M_ORDER, (int) $order );
+		update_post_meta( $lesson_id, Mahan_Courses::M_TYPE, $type );
+		update_post_meta( $lesson_id, Mahan_Courses::M_EST_MIN, isset( $lesson['est_min'] ) ? (int) $lesson['est_min'] : 0 );
+		update_post_meta( $lesson_id, Mahan_Courses::M_XP, isset( $lesson['xp'] ) ? (int) $lesson['xp'] : 0 );
+
+		if ( ! empty( $lesson['topics'] ) && is_array( $lesson['topics'] ) ) {
+			$topic_ids = self::ensure_terms( $lesson['topics'], Mahan_CPT::TOPIC, $result );
+			if ( $topic_ids ) {
+				wp_set_object_terms( $lesson_id, $topic_ids, Mahan_CPT::TOPIC );
+			}
+		}
+
+		$exercises = self::normalize_exercises( isset( $lesson['exercises'] ) ? $lesson['exercises'] : array() );
+		if ( ! empty( $exercises ) ) {
+			update_post_meta( $lesson_id, Mahan_Courses::M_EXERCISES, $exercises );
+		}
+
+		// Per-field ("department") variant blocks, applied at render time.
+		if ( ! empty( $lesson['variants'] ) && is_array( $lesson['variants'] ) ) {
+			$variants = array();
+			foreach ( $lesson['variants'] as $field => $block ) {
+				$field = sanitize_key( (string) $field );
+				if ( ! in_array( $field, Mahan_Variants::FIELDS, true ) || ! is_array( $block ) ) {
+					continue;
+				}
+				$body = isset( $block['body'] ) ? wp_kses_post( (string) $block['body'] ) : '';
+				if ( '' === trim( $body ) ) {
+					continue;
+				}
+				$variants[ $field ] = array(
+					'heading' => isset( $block['heading'] ) ? sanitize_text_field( (string) $block['heading'] ) : '',
+					'body'    => $body,
+					'example' => isset( $block['example'] ) ? wp_kses_post( (string) $block['example'] ) : '',
+				);
+			}
+			if ( ! empty( $variants ) ) {
+				update_post_meta( $lesson_id, Mahan_Courses::M_VARIANTS, $variants );
+			}
+		}
+
+		return (int) $lesson_id;
+	}
+
+	/**
+	 * Coerce authored exercise data into the stored shape, assigning stable keys.
+	 *
+	 * @param array $list Authored exercises.
+	 * @return array[]
+	 */
+	private static function normalize_exercises( $list ) {
+		$valid = array( 'multiple_choice', 'true_false', 'fill_blank', 'short_answer', 'reflection', 'prompt_task' );
+		$out   = array();
+		$i     = 0;
+		foreach ( (array) $list as $ex ) {
+			if ( ! is_array( $ex ) ) {
+				continue;
+			}
+			$type = isset( $ex['type'] ) ? sanitize_key( (string) $ex['type'] ) : 'multiple_choice';
+			if ( ! in_array( $type, $valid, true ) ) {
+				$type = 'multiple_choice';
+			}
+			$i++;
+			$row = array(
+				'key'      => 'ex_' . $i,
+				'type'     => $type,
+				'question' => isset( $ex['question'] ) ? sanitize_textarea_field( (string) $ex['question'] ) : '',
+				'hint'     => isset( $ex['hint'] ) ? sanitize_textarea_field( (string) $ex['hint'] ) : '',
+			);
+
+			if ( 'multiple_choice' === $type ) {
+				$opts = ( isset( $ex['options'] ) && is_array( $ex['options'] ) ) ? array_values( array_map( 'sanitize_text_field', $ex['options'] ) ) : array();
+				if ( count( $opts ) < 2 ) {
+					continue;
+				}
+				$row['options']            = $opts;
+				$row['answer']             = isset( $ex['answer'] ) ? max( 0, min( count( $opts ) - 1, (int) $ex['answer'] ) ) : 0;
+				$row['feedback_correct']   = isset( $ex['feedback_correct'] ) ? sanitize_textarea_field( (string) $ex['feedback_correct'] ) : '';
+				$row['feedback_incorrect'] = isset( $ex['feedback_incorrect'] ) ? sanitize_textarea_field( (string) $ex['feedback_incorrect'] ) : '';
+			} elseif ( 'true_false' === $type ) {
+				$row['options'] = array( __( 'True', 'mahan-academy' ), __( 'False', 'mahan-academy' ) );
+				$row['answer']  = ( isset( $ex['answer'] ) && 1 === (int) $ex['answer'] ) ? 1 : 0;
+			} elseif ( 'fill_blank' === $type ) {
+				$row['answer_text'] = isset( $ex['answer_text'] ) ? sanitize_text_field( (string) $ex['answer_text'] ) : '';
+				if ( '' === trim( $row['answer_text'] ) ) {
+					continue;
+				}
+				$row['accept']         = ( isset( $ex['accept'] ) && is_array( $ex['accept'] ) ) ? array_values( array_map( 'sanitize_text_field', $ex['accept'] ) ) : array();
+				$row['case_sensitive'] = 0;
+			} else { // short_answer, reflection, prompt_task
+				$row['rubric']      = isset( $ex['rubric'] ) ? sanitize_textarea_field( (string) $ex['rubric'] ) : '';
+				$row['placeholder'] = isset( $ex['placeholder'] ) ? sanitize_text_field( (string) $ex['placeholder'] ) : '';
+				if ( 'prompt_task' === $type ) {
+					$row['task']     = isset( $ex['task'] ) ? sanitize_textarea_field( (string) $ex['task'] ) : $row['question'];
+					$row['question'] = '' !== trim( $row['question'] ) ? $row['question'] : $row['task'];
+				}
+			}
+			$out[] = $row;
+		}
+		return $out;
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Bundle (path)                                                       */
+	/* ------------------------------------------------------------------ */
+
+	private static function install_bundle( $b, $map ) {
+		if ( ! is_array( $b ) || empty( $b['seed_key'] ) || empty( $b['courses'] ) ) {
+			return false;
+		}
+		$course_ids = array();
+		foreach ( (array) $b['courses'] as $seed_key ) {
+			if ( isset( $map[ $seed_key ] ) ) {
+				$course_ids[] = (int) $map[ $seed_key ];
+			}
+		}
+		if ( empty( $course_ids ) ) {
+			return false;
+		}
+
+		$existing = self::find_by_seed_key( Mahan_CPT::PATH, (string) $b['seed_key'] );
+		if ( $existing ) {
+			// Keep membership fresh, but don't overwrite an owner's edits to title/body.
+			update_post_meta( $existing, Mahan_Paths::M_COURSES, $course_ids );
+			return false;
+		}
+
+		$path_id = wp_insert_post(
+			array(
+				'post_type'    => Mahan_CPT::PATH,
+				'post_status'  => 'publish',
+				'post_title'   => (string) $b['title'],
+				'post_name'    => isset( $b['slug'] ) ? sanitize_title( (string) $b['slug'] ) : '',
+				'post_content' => isset( $b['description'] ) ? (string) $b['description'] : '',
+				'menu_order'   => isset( $b['order'] ) ? (int) $b['order'] : 0,
+			),
+			true
+		);
+		if ( is_wp_error( $path_id ) || ! $path_id ) {
+			return false;
+		}
+		update_post_meta( $path_id, self::SEED_META, (string) $b['seed_key'] );
+		update_post_meta( $path_id, Mahan_Paths::M_COURSES, $course_ids );
+		update_post_meta( $path_id, Mahan_Paths::M_SUBTITLE, isset( $b['subtitle'] ) ? (string) $b['subtitle'] : '' );
+		return true;
+	}
+
+	/* ------------------------------------------------------------------ */
+	/* Helpers                                                             */
+	/* ------------------------------------------------------------------ */
+
+	/**
+	 * Find a seeded post by its marker, if any.
+	 *
+	 * @param string $post_type Post type.
+	 * @param string $seed_key  Marker value.
+	 * @return int Post id or 0.
+	 */
+	private static function find_by_seed_key( $post_type, $seed_key ) {
+		$ids = get_posts(
+			array(
+				'post_type'      => $post_type,
+				// Include 'trash' so re-running the installer never duplicates (or
+				// resurrects) a seed post the owner deliberately trashed — 'any'
+				// would miss it and create a second copy.
+				'post_status'    => array( 'publish', 'pending', 'draft', 'private', 'future', 'trash' ),
+				'posts_per_page' => 1,
+				'fields'         => 'ids',
+				// phpcs:ignore WordPress.DB.SlowDBQuery
+				'meta_key'       => self::SEED_META,
+				// phpcs:ignore WordPress.DB.SlowDBQuery
+				'meta_value'     => (string) $seed_key,
+			)
+		);
+		return ! empty( $ids ) ? (int) $ids[0] : 0;
+	}
+
+	/**
+	 * Ensure a term exists in a taxonomy, returning its id.
+	 *
+	 * @param string     $name     Term name.
+	 * @param string     $taxonomy Taxonomy.
+	 * @param string     $desc     Optional description (set only on create).
+	 * @param array|null $result   Optional running totals (terms counter bumped by ref).
+	 * @return int Term id, or 0.
+	 */
+	private static function ensure_term( $name, $taxonomy, $desc = '', &$result = null ) {
+		$name = trim( (string) $name );
+		if ( '' === $name ) {
+			return 0;
+		}
+		$term = get_term_by( 'name', $name, $taxonomy );
+		if ( $term && ! is_wp_error( $term ) ) {
+			return (int) $term->term_id;
+		}
+		$args = array();
+		if ( '' !== $desc ) {
+			$args['description'] = $desc;
+		}
+		$res = wp_insert_term( $name, $taxonomy, $args );
+		if ( is_wp_error( $res ) ) {
+			// Race / already-exists — try to resolve again.
+			$term = get_term_by( 'name', $name, $taxonomy );
+			return ( $term && ! is_wp_error( $term ) ) ? (int) $term->term_id : 0;
+		}
+		if ( is_array( $result ) ) {
+			$result['terms']++;
+		}
+		return isset( $res['term_id'] ) ? (int) $res['term_id'] : 0;
+	}
+
+	/**
+	 * Ensure a list of terms exists, returning their ids.
+	 *
+	 * @param array      $names    Term names.
+	 * @param string     $taxonomy Taxonomy.
+	 * @param array|null $result   Optional running totals.
+	 * @return int[]
+	 */
+	private static function ensure_terms( $names, $taxonomy, &$result = null ) {
+		$ids = array();
+		foreach ( (array) $names as $name ) {
+			$id = self::ensure_term( (string) $name, $taxonomy, '', $result );
+			if ( $id ) {
+				$ids[] = $id;
+			}
+		}
+		return array_values( array_unique( $ids ) );
+	}
+}

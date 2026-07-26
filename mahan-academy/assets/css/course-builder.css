@@ -1,0 +1,168 @@
+/* Mahan Academy — Course Studio (curriculum builder meta box).
+   Tutor-LMS-inspired: unit cards with collapsible bodies, lesson rows with
+   status badges, an inline add-row, and full-height modals for the lesson
+   editor and the quiz editor. */
+
+.mahan-cb,
+.mahan-cb-overlay { --cb-accent: #4f46e5; --cb-accent-soft: #eef2ff; --cb-border: #e2e4e9; }
+/* The overlay is appended to <body>, OUTSIDE .mahan-cb — the tokens must be
+   declared on both roots or every var() inside a modal silently resolves to
+   nothing (a white-on-white segmented control taught us this). */
+.mahan-cb { margin: -6px -12px -12px; background: #f8f9fb; border-radius: 0 0 3px 3px; }
+
+/* --- Toolbar ---------------------------------------------------------- */
+.mahan-cb-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--cb-border); background: #fff; flex-wrap: wrap; position: sticky; top: 32px; z-index: 10; }
+.mahan-cb-stats { display: flex; gap: 8px; flex-wrap: wrap; }
+.mahan-cb-pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 999px; background: #f0f1f4; color: #50575e; font-size: 12.5px; }
+.mahan-cb-stat { font-weight: 700; color: #1d2327; font-variant-numeric: tabular-nums; }
+.mahan-cb-toolbar-actions { display: flex; gap: 8px; }
+
+/* --- Unit cards -------------------------------------------------------- */
+.mahan-cb-units { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+
+.mahan-cb-unit { border: 1px solid var(--cb-border); border-radius: 10px; background: #fff; box-shadow: 0 1px 2px rgba(16, 18, 35, .05); overflow: hidden; }
+.mahan-cb-unit-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: linear-gradient(to bottom, #fbfbfd, #f5f6f9); border-bottom: 1px solid var(--cb-border); cursor: pointer; }
+.mahan-cb-unit.is-closed .mahan-cb-unit-head { border-bottom-color: transparent; }
+
+.mahan-cb-toggle { border: 0; background: transparent; cursor: pointer; padding: 2px; color: #787c82; display: inline-flex; border-radius: 4px; }
+.mahan-cb-toggle:hover { color: var(--cb-accent); }
+.mahan-cb-toggle .dashicons { transition: transform .18s ease; }
+.mahan-cb-unit.is-closed .mahan-cb-toggle .dashicons { transform: rotate(-90deg); }
+
+.mahan-cb-unit-n { flex: 0 0 auto; width: 26px; height: 26px; display: grid; place-items: center; border-radius: 8px; background: var(--cb-accent); color: #fff; font-weight: 700; font-size: 13px; }
+
+.mahan-cb-unit-titles { flex: 1; min-width: 160px; display: flex; flex-direction: column; gap: 1px; }
+.mahan-cb-unit-title { font-weight: 700; font-size: 14.5px; border: 1px solid transparent; background: transparent; padding: 3px 6px; margin-left: -6px; border-radius: 6px; width: 100%; }
+.mahan-cb-unit-title:hover { background: #fff; border-color: #dcdde1; }
+.mahan-cb-unit-title:focus { background: #fff; border-color: var(--cb-accent); outline: none; box-shadow: 0 0 0 2px color-mix(in srgb, var(--cb-accent) 18%, transparent); }
+.mahan-cb-unit-sum { color: #787c82; font-size: 12px; padding-left: 1px; }
+
+.mahan-cb-unit-del { color: #b32d2e !important; display: inline-flex; align-items: center; opacity: .55; }
+.mahan-cb-unit-del:hover { opacity: 1; }
+
+.mahan-cb-unit-body { padding: 10px 12px 12px; }
+.mahan-cb-unit.is-closed .mahan-cb-unit-body { display: none; }
+.mahan-cb-unit-empty { margin: 4px 4px 8px; color: #787c82; font-style: italic; font-size: 12.5px; }
+
+.mahan-cb-drag { cursor: grab; color: #a7aaad; flex: 0 0 auto; }
+.mahan-cb-drag:hover { color: var(--cb-accent); }
+.mahan-cb-drag:active { cursor: grabbing; }
+
+/* --- Lesson rows -------------------------------------------------------- */
+.mahan-cb-lessons { display: flex; flex-direction: column; gap: 6px; min-height: 12px; }
+.mahan-cb-lesson { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #e8e9ee; border-radius: 8px; background: #fff; flex-wrap: wrap; transition: border-color .12s ease, box-shadow .12s ease; }
+.mahan-cb-lesson:hover { border-color: color-mix(in srgb, var(--cb-accent) 35%, #e8e9ee); box-shadow: 0 1px 4px rgba(16, 18, 35, .06); }
+
+.mahan-cb-lesson-icon { flex: 0 0 auto; width: 28px; height: 28px; display: grid !important; place-items: center; border-radius: 7px; background: var(--cb-accent-soft); color: var(--cb-accent); font-size: 16px; }
+.mahan-cb-lesson-icon.is-video { background: #fdf2f8; color: #be185d; }
+.mahan-cb-lesson-icon.is-practice { background: #ecfdf5; color: #047857; }
+
+.mahan-cb-lesson-title { flex: 1 1 200px; min-width: 160px; border: 1px solid transparent; background: transparent; padding: 4px 6px; border-radius: 6px; font-size: 13.5px; font-weight: 600; }
+.mahan-cb-lesson-title:hover { background: #f6f7f9; border-color: #dcdde1; }
+.mahan-cb-lesson-title:focus { background: #fff; border-color: var(--cb-accent); outline: none; box-shadow: 0 0 0 2px color-mix(in srgb, var(--cb-accent) 18%, transparent); }
+
+.mahan-cb-lesson-badges { display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.mahan-cb-badge { font-size: 11px; font-weight: 700; color: #50575e; background: #f0f1f4; padding: 2px 8px; border-radius: 999px; white-space: nowrap; display: inline-flex; align-items: center; gap: 3px; font-variant-numeric: tabular-nums; }
+.mahan-cb-badge .dashicons { font-size: 13px; width: 13px; height: 13px; }
+.mahan-cb-badge.is-video { color: #be185d; background: #fdf2f8; }
+.mahan-cb-badge.is-draft { color: #996800; background: #fcf9e8; }
+.mahan-cb-badge.is-warn { color: #b32d2e; background: #fcf0f1; }
+
+.mahan-cb-lesson-actions { display: inline-flex; gap: 4px; margin-left: auto; align-items: center; }
+.mahan-cb-edit-btn { display: inline-flex !important; align-items: center; gap: 4px; border-color: color-mix(in srgb, var(--cb-accent) 45%, #dcdde1) !important; color: var(--cb-accent) !important; }
+.mahan-cb-edit-btn:hover { background: var(--cb-accent-soft) !important; }
+.mahan-cb-edit-btn .dashicons { font-size: 15px; width: 15px; height: 15px; }
+.mahan-cb-iconbtn { display: inline-flex !important; align-items: center; justify-content: center; }
+.mahan-cb-iconbtn .dashicons { font-size: 15px; width: 15px; height: 15px; }
+.mahan-cb-lesson-del { color: #b32d2e !important; }
+
+/* --- Inline add-row ------------------------------------------------------ */
+.mahan-cb-addrow { display: flex; gap: 6px; margin-top: 8px; align-items: center; }
+.mahan-cb-addrow-type { flex: 0 0 auto; max-width: 110px; }
+.mahan-cb-addrow-title { flex: 1; border: 1px dashed #c9cbd0 !important; background: #fbfbfd !important; border-radius: 7px !important; padding: 6px 10px !important; }
+.mahan-cb-addrow-title:focus { border-style: solid !important; border-color: var(--cb-accent) !important; background: #fff !important; box-shadow: 0 0 0 2px color-mix(in srgb, var(--cb-accent) 18%, transparent) !important; }
+
+/* --- Empty state ---------------------------------------------------------- */
+.mahan-cb-empty { padding: 40px 24px; text-align: center; color: #787c82; }
+.mahan-cb-empty .dashicons { font-size: 42px; width: 42px; height: 42px; color: color-mix(in srgb, var(--cb-accent) 55%, #c9cbd0); }
+.mahan-cb-empty p { max-width: 52ch; margin: 10px auto 0; }
+
+.mahan-cb-placeholder { border: 2px dashed var(--cb-accent); border-radius: 8px; background: color-mix(in srgb, var(--cb-accent) 5%, transparent); height: 44px; margin: 2px 0; }
+
+.mahan-cb-saving { position: sticky; bottom: 0; text-align: right; font-size: 12px; color: #2271b1; padding: 6px 16px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+.mahan-cb-saving.is-show { opacity: 1; }
+.mahan-cb-saving.is-error { color: #b32d2e; }
+
+/* --- Quiz button ------------------------------------------------------ */
+.mahan-cb-quiz-btn { display: inline-flex !important; align-items: center; gap: 4px; }
+.mahan-cb-quiz-btn .dashicons { font-size: 15px; width: 15px; height: 15px; }
+.mahan-cb-quiz-btn.has-quiz { border-color: var(--cb-accent) !important; color: var(--cb-accent) !important; background: var(--cb-accent-soft) !important; }
+
+/* --- Modals (lesson editor + quiz editor) ------------------------------ */
+.mahan-cb-overlay { position: fixed; inset: 0; z-index: 100000; background: rgba(15, 18, 30, .55); display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
+.mahan-cb-modal { background: #fff; width: 100%; max-width: 640px; max-height: calc(100vh - 48px); border-radius: 12px; box-shadow: 0 24px 70px rgba(0, 0, 0, .35); display: flex; flex-direction: column; overflow: hidden; }
+.mahan-cb-modal-lesson { max-width: 860px; }
+.mahan-cb-modal-quiz { max-width: 680px; }
+
+.mahan-cb-modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--cb-border); background: #fbfbfd; flex: 0 0 auto; }
+.mahan-cb-modal-head h2 { margin: 0; font-size: 16px; display: flex; align-items: center; gap: 7px; }
+.mahan-cb-modal-head h2 .dashicons { color: var(--cb-accent); }
+.mahan-cb-modal-x { border: 0; background: transparent; font-size: 22px; line-height: 1; cursor: pointer; color: #787c82; padding: 2px 6px; border-radius: 6px; }
+.mahan-cb-modal-x:hover { color: #1d2327; background: #f0f1f4; }
+
+.mahan-cb-modal-body { padding: 18px 20px; overflow-y: auto; flex: 1 1 auto; }
+.mahan-cb-modal-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 20px; border-top: 1px solid var(--cb-border); background: #fbfbfd; flex: 0 0 auto; }
+.mahan-cb-loading { display: flex; align-items: center; gap: 8px; color: #787c82; margin: 8px 0; }
+.mahan-cb-loading .spinner { float: none; margin: 0; }
+
+/* Lesson editor fields */
+.mahan-cb-fieldrow { display: grid; grid-template-columns: 130px 1fr; gap: 12px; align-items: start; margin-bottom: 14px; }
+.mahan-cb-fieldrow-label { font-weight: 600; padding-top: 6px; color: #1d2327; }
+.mahan-cb-fieldrow-input > input[type="text"], .mahan-cb-fieldrow-input > input[type="url"] { width: 100%; }
+.mahan-cb-modal-title { font-size: 15px !important; padding: 7px 10px !important; font-weight: 600; }
+
+.mahan-cb-seg { display: inline-flex; border: 1px solid #dcdde1; border-radius: 8px; overflow: hidden; }
+.mahan-cb-seg-btn { border: 0; background: #fff; padding: 7px 14px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-size: 13px; color: #50575e; border-right: 1px solid #ececf0; }
+.mahan-cb-seg-btn:last-child { border-right: 0; }
+.mahan-cb-seg-btn .dashicons { font-size: 15px; width: 15px; height: 15px; }
+.mahan-cb-seg-btn:hover { background: #f6f7f9; }
+.mahan-cb-seg-btn.is-on { background: var(--cb-accent); color: #fff; }
+
+.mahan-cb-video-url { width: 100%; }
+.mahan-cb-video-verdict { display: block; margin-top: 5px; font-size: 12px; color: #787c82; }
+.mahan-cb-video-verdict.is-ok { color: #008a20; font-weight: 600; }
+.mahan-cb-video-verdict.is-bad { color: #b32d2e; font-weight: 600; }
+.mahan-cb-video-field.is-suggested .mahan-cb-fieldrow-label { color: var(--cb-accent); }
+.mahan-cb-video-preview:not(:empty) { margin-top: 10px; position: relative; padding-top: 56.25%; border-radius: 8px; overflow: hidden; background: #101223; }
+.mahan-cb-video-preview iframe, .mahan-cb-video-preview video { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+.mahan-cb-pair { display: flex; gap: 22px; }
+.mahan-cb-pair label { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: #50575e; }
+.mahan-cb-pair label span { font-weight: 600; }
+
+.mahan-cb-editor-wrap textarea { width: 100%; font-family: Consolas, Monaco, monospace; font-size: 13px; }
+.mahan-cb-editor-wrap .wp-editor-wrap { border: 1px solid #dcdde1; border-radius: 8px; overflow: hidden; }
+
+/* Quiz editor internals (kept, restyled) */
+.mahan-cb-quiz-meta { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 14px; }
+.mahan-cb-q-row { display: grid; grid-template-columns: 140px 1fr; gap: 10px; align-items: start; margin: 8px 0; }
+.mahan-cb-q-row > label { font-weight: 600; padding-top: 5px; }
+.mahan-cb-q-row textarea, .mahan-cb-q-row input[type="text"], .mahan-cb-q-row select { width: 100%; }
+.mahan-cb-q { border: 1px solid #dcdde1; border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; background: #f9fafb; }
+.mahan-cb-q-head { display: flex; justify-content: space-between; margin-bottom: 8px; }
+.mahan-cb-q-head .button-link { color: #b32d2e; }
+.mahan-cb-q-opts { display: flex; flex-direction: column; gap: 6px; }
+.mahan-cb-q-opt { display: flex; align-items: center; gap: 8px; }
+.mahan-cb-q-opt input[type="text"] { flex: 1; }
+.mahan-cb-q-opt .button-link { color: #b32d2e; font-size: 18px; }
+
+/* --- Small screens ------------------------------------------------------ */
+@media (max-width: 782px) {
+	.mahan-cb-toolbar { position: static; }
+	.mahan-cb-lesson { align-items: flex-start; }
+	.mahan-cb-lesson-actions { margin-left: 0; }
+	.mahan-cb-fieldrow { grid-template-columns: 1fr; gap: 4px; }
+	.mahan-cb-fieldrow-label { padding-top: 0; }
+	.mahan-cb-q-row { grid-template-columns: 1fr; }
+	.mahan-cb-addrow { flex-wrap: wrap; }
+}

@@ -1,0 +1,352 @@
+<?php
+/**
+ * Exercise grading. Multiple-choice is graded instantly server-side; open
+ * answers (short_answer, reflection, prompt_task) are graded by the AI against
+ * a rubric. XP is awarded only on the first correct attempt of each exercise.
+ *
+ * @package Mahan_Academy
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+class Mahan_Exercises {
+
+	const AI_TYPES = array( 'short_answer', 'reflection', 'prompt_task' );
+	const PASS_SCORE = 60;
+
+	/**
+	 * Grade a submitted answer.
+	 *
+	 * @param int    $user_id   User id.
+	 * @param int    $lesson_id Lesson id.
+	 * @param string $key       Exercise key.
+	 * @param mixed  $answer    Submitted answer (int index or string).
+	 * @return array
+	 */
+	public static function grade( $user_id, $lesson_id, $key, $answer ) {
+		$user_id   = (int) $user_id;
+		$lesson_id = (int) $lesson_id;
+		$course_id = Mahan_Courses::get_lesson_course_id( $lesson_id );
+
+		$ex = Mahan_Courses::get_exercise( $lesson_id, $key );
+		if ( ! $ex ) {
+			return array( 'ok' => false, 'error' => 'unknown_exercise' );
+		}
+		$type = isset( $ex['type'] ) ? (string) $ex['type'] : 'multiple_choice';
+
+		if ( 'multiple_choice' === $type || 'true_false' === $type ) {
+			$graded = self::grade_multiple_choice( $ex, $answer );
+		} elseif ( 'fill_blank' === $type ) {
+			$graded = self::grade_fill_blank( $ex, $answer );
+		} elseif ( in_array( $type, self::AI_TYPES, true ) ) {
+			$graded = self::grade_ai( $ex, $answer, $user_id );
+		} else {
+			$graded = array(
+				'is_correct' => true,
+				'score'      => 100,
+				'feedback'   => __( 'Answer recorded.', 'mahan-academy' ),
+			);
+		}
+
+		// XP: only the first correct attempt earns points.
+		$xp_award = 0;
+		if ( $graded['is_correct'] && ! self::has_correct_attempt( $user_id, $lesson_id, $key ) ) {
+			$xp_award = isset( $ex['xp'] ) && (int) $ex['xp'] > 0
+				? (int) $ex['xp']
+				: (int) Mahan_Settings::get( 'xp_per_exercise', 10 );
+		}
+
+		self::store_attempt( $user_id, $lesson_id, $course_id, $key, $type, $answer, $graded, $xp_award );
+
+		// Feed deterministic results into the adaptive review queue so wrong
+		// answers come back later (and correct ones graduate).
+		if ( in_array( $type, Mahan_Reviews::TYPES, true ) ) {
+			Mahan_Reviews::record(
+				$user_id,
+				array(
+					'source'    => 'exercise',
+					'course_id' => $course_id,
+					'lesson_id' => $lesson_id,
+					'item_key'  => Mahan_Reviews::key_exercise( $lesson_id, $key ),
+					'concept'   => isset( $ex['question'] ) ? (string) $ex['question'] : '',
+					'type'      => $type,
+					'snapshot'  => $ex,
+				),
+				(bool) $graded['is_correct']
+			);
+		}
+
+		$awarded    = 0;
+		$leveled_up = false;
+		if ( $xp_award > 0 ) {
+			// record_activity() first so add_xp()'s streak bonus reads today's
+			// streak (and a lapsed streak is reset before the bonus applies).
+			Mahan_Gamification::record_activity( $user_id );
+			$award      = Mahan_Gamification::add_xp( $user_id, $xp_award, 'exercise', $lesson_id );
+			$awarded    = (int) $award['awarded'];
+			$leveled_up = ! empty( $award['leveled_up'] );
+			do_action( 'mahan_exercise_correct', $user_id, $lesson_id, $key );
+		}
+		$stats = Mahan_Gamification::hud( $user_id );
+
+		return array(
+			'ok'          => true,
+			'is_correct'  => (bool) $graded['is_correct'],
+			'score'       => (int) $graded['score'],
+			'feedback'    => (string) $graded['feedback'],
+			'xp_awarded'  => $awarded,
+			'leveled_up'  => $leveled_up,
+			'new_badges'  => Mahan_Badges::take_new( $user_id ),
+			'correct_index' => isset( $graded['correct_index'] ) ? $graded['correct_index'] : null,
+			'stats'       => $stats,
+		);
+	}
+
+	private static function grade_multiple_choice( $ex, $answer ) {
+		$correct = isset( $ex['answer'] ) ? (int) $ex['answer'] : -1;
+		$chosen  = is_numeric( $answer ) ? (int) $answer : -1;
+		$is_ok   = ( $chosen >= 0 && $chosen === $correct );
+		$feedback = $is_ok
+			? self::pick( $ex, 'feedback_correct', __( 'Correct! Nicely done.', 'mahan-academy' ) )
+			: self::pick( $ex, 'feedback_incorrect', __( 'Not quite — review the lesson and try again.', 'mahan-academy' ) );
+		return array(
+			'is_correct'    => $is_ok,
+			'score'         => $is_ok ? 100 : 0,
+			'feedback'      => $feedback,
+			'correct_index' => $correct,
+		);
+	}
+
+	private static function grade_fill_blank( $ex, $answer ) {
+		$given = is_array( $answer ) ? implode( ' ', $answer ) : (string) $answer;
+		$given = trim( $given );
+
+		$accepted = array();
+		if ( isset( $ex['answer_text'] ) && '' !== trim( (string) $ex['answer_text'] ) ) {
+			$accepted[] = (string) $ex['answer_text'];
+		}
+		if ( ! empty( $ex['accept'] ) && is_array( $ex['accept'] ) ) {
+			foreach ( $ex['accept'] as $a ) {
+				$accepted[] = (string) $a;
+			}
+		}
+
+		$case = ! empty( $ex['case_sensitive'] );
+		$norm = function ( $s ) use ( $case ) {
+			$s = trim( preg_replace( '/\s+/', ' ', (string) $s ) );
+			return $case ? $s : mb_strtolower( $s );
+		};
+
+		$is_ok = false;
+		$given_n = $norm( $given );
+		foreach ( $accepted as $a ) {
+			if ( '' !== $norm( $a ) && $norm( $a ) === $given_n ) {
+				$is_ok = true;
+				break;
+			}
+		}
+
+		if ( '' === $given ) {
+			return array(
+				'is_correct' => false,
+				'score'      => 0,
+				'feedback'   => __( 'Please fill in the blank before submitting.', 'mahan-academy' ),
+			);
+		}
+
+		$feedback = $is_ok
+			? self::pick( $ex, 'feedback_correct', __( 'Correct! Nicely done.', 'mahan-academy' ) )
+			: self::pick( $ex, 'feedback_incorrect', __( 'Not quite — check your spelling and try again.', 'mahan-academy' ) );
+
+		return array(
+			'is_correct'    => $is_ok,
+			'score'         => $is_ok ? 100 : 0,
+			'feedback'      => $feedback,
+			'correct_index' => null,
+		);
+	}
+
+	private static function grade_ai( $ex, $answer, $user_id ) {
+		$answer_str = is_array( $answer ) ? implode( "\n", $answer ) : (string) $answer;
+		$answer_str = trim( $answer_str );
+
+		if ( '' === $answer_str ) {
+			return array(
+				'is_correct' => false,
+				'score'      => 0,
+				'feedback'   => __( 'Please write an answer before submitting.', 'mahan-academy' ),
+			);
+		}
+
+		// Graceful fallback if the AI provider is not configured.
+		if ( ! Mahan_Settings::ai_ready() ) {
+			$ok = ( strlen( $answer_str ) >= 20 );
+			return array(
+				'is_correct' => $ok,
+				'score'      => $ok ? 70 : 30,
+				'feedback'   => $ok
+					? __( 'Answer recorded. (Connect an AI provider in settings for detailed feedback.)', 'mahan-academy' )
+					: __( 'Try to expand your answer with more detail.', 'mahan-academy' ),
+			);
+		}
+
+		$type     = isset( $ex['type'] ) ? (string) $ex['type'] : 'short_answer';
+		$question = isset( $ex['question'] ) ? (string) $ex['question'] : '';
+		$task     = isset( $ex['task'] ) ? (string) $ex['task'] : '';
+		$rubric   = isset( $ex['rubric'] ) ? (string) $ex['rubric'] : '';
+
+		// Full learner context (profile + live progress + adaptive difficulty)
+		// so feedback is pitched at the learner's level and their world.
+		if ( class_exists( 'Mahan_Personalization' ) ) {
+			$profile_ctx = Mahan_Personalization::learner_context( $user_id, array( 'with_difficulty' => false ) );
+		}
+		if ( empty( $profile_ctx ) ) {
+			$profile_map = Mahan_Profile::placeholder_map( $user_id );
+			$profile_ctx = sprintf(
+				'The learner is a %s (%s level). Their goal: %s.',
+				isset( $profile_map['role'] ) ? $profile_map['role'] : 'professional',
+				isset( $profile_map['ai_level'] ) ? $profile_map['ai_level'] : 'beginner',
+				isset( $profile_map['primary_goal'] ) ? $profile_map['primary_goal'] : 'using AI at work'
+			);
+		}
+
+		if ( 'prompt_task' === $type ) {
+			$system = 'You are an expert evaluator of AI prompts in a course that teaches people to use AI at work. '
+				. 'Evaluate the prompt the student wrote for the given task. Judge clarity, role, context, specificity, '
+				. 'constraints, and desired output format. Be encouraging but honest, and teach as you grade — your '
+				. 'feedback should leave the student knowing exactly how to make the prompt better.';
+			$user_msg = "TASK THE STUDENT WAS GIVEN:\n{$task}\n\n";
+		} else {
+			$system = 'You are a strict but encouraging grader for a course that teaches people to use AI at work. '
+				. 'Grade the student\'s answer against the rubric, and teach as you grade so the student learns from '
+				. 'the feedback, not just the score.';
+			$user_msg = "QUESTION:\n{$question}\n\n";
+		}
+		if ( '' !== trim( $rubric ) ) {
+			$user_msg .= "RUBRIC / WHAT A GOOD ANSWER INCLUDES:\n{$rubric}\n\n";
+		}
+		$user_msg .= "STUDENT'S ANSWER:\n{$answer_str}\n\n";
+		$user_msg .= "CONTEXT: {$profile_ctx}\n\n";
+		$user_msg .= 'Respond ONLY with a JSON object: {"correct": true|false, "score": <0-100>, "feedback": "<under 70 words>"}. '
+			. 'In "feedback": name the one thing they did well, then the single most important thing to improve and one '
+			. 'concrete way to do it. Be friendly, specific, and actionable — no generic praise. '
+			. 'Mark "correct" true when the score is ' . self::PASS_SCORE . ' or above.';
+
+		$res = Mahan_AI::complete(
+			array(
+				array( 'role' => 'system', 'content' => $system ),
+				array( 'role' => 'user', 'content' => $user_msg ),
+			),
+			array(
+				'json'        => true,
+				'max_tokens'  => 400,
+				'temperature' => 0.3,
+			)
+		);
+
+		if ( ! $res['ok'] ) {
+			// Don't punish the learner for an API failure.
+			return array(
+				'is_correct' => true,
+				'score'      => 70,
+				'feedback'   => __( 'Answer recorded. (Automated feedback is temporarily unavailable.)', 'mahan-academy' ),
+			);
+		}
+
+		$data = Mahan_Utils::extract_json( $res['text'] );
+		if ( ! is_array( $data ) ) {
+			return array(
+				'is_correct' => true,
+				'score'      => 70,
+				'feedback'   => trim( wp_strip_all_tags( $res['text'] ) ) ?: __( 'Answer recorded.', 'mahan-academy' ),
+			);
+		}
+
+		$score = isset( $data['score'] ) ? max( 0, min( 100, (int) $data['score'] ) ) : 0;
+		// Use FILTER_VALIDATE_BOOLEAN so a JSON string "false" (some models
+		// emit that) isn't type-juggled to true by a bare (bool) cast.
+		$is_ok = isset( $data['correct'] )
+			? filter_var( $data['correct'], FILTER_VALIDATE_BOOLEAN )
+			: ( $score >= self::PASS_SCORE );
+		return array(
+			'is_correct' => $is_ok,
+			'score'      => $score,
+			'feedback'   => isset( $data['feedback'] ) ? sanitize_textarea_field( (string) $data['feedback'] ) : '',
+		);
+	}
+
+	private static function pick( $ex, $key, $default ) {
+		return isset( $ex[ $key ] ) && '' !== trim( (string) $ex[ $key ] ) ? (string) $ex[ $key ] : $default;
+	}
+
+	private static function has_correct_attempt( $user_id, $lesson_id, $key ) {
+		global $wpdb;
+		$table = Mahan_DB::attempts();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$found = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT id FROM {$table} WHERE user_id = %d AND lesson_id = %d AND exercise_key = %s AND is_correct = 1 LIMIT 1",
+				(int) $user_id,
+				(int) $lesson_id,
+				(string) $key
+			)
+		);
+		return ! empty( $found );
+	}
+
+	private static function store_attempt( $user_id, $lesson_id, $course_id, $key, $type, $answer, $graded, $xp_award ) {
+		global $wpdb;
+		$answer_str = is_array( $answer ) ? wp_json_encode( $answer ) : (string) $answer;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$wpdb->insert(
+			Mahan_DB::attempts(),
+			array(
+				'user_id'      => (int) $user_id,
+				'lesson_id'    => (int) $lesson_id,
+				'course_id'    => (int) $course_id,
+				'exercise_key' => (string) $key,
+				'type'         => (string) $type,
+				'user_answer'  => $answer_str,
+				'is_correct'   => $graded['is_correct'] ? 1 : 0,
+				'score'        => (int) $graded['score'],
+				'xp_awarded'   => (int) $xp_award,
+				'feedback'     => (string) $graded['feedback'],
+				'created_at'   => Mahan_Utils::now_mysql(),
+			),
+			array( '%d', '%d', '%d', '%s', '%s', '%s', '%d', '%d', '%d', '%s', '%s' )
+		);
+	}
+
+	/**
+	 * Best (correct, else latest) attempt per exercise for a lesson — so the UI
+	 * can show already-solved exercises.
+	 *
+	 * @param int $user_id   User id.
+	 * @param int $lesson_id Lesson id.
+	 * @return array key => [ is_correct, score ]
+	 */
+	public static function lesson_attempt_map( $user_id, $lesson_id ) {
+		global $wpdb;
+		$table = Mahan_DB::attempts();
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT exercise_key, MAX(is_correct) AS is_correct, MAX(score) AS score
+				 FROM {$table} WHERE user_id = %d AND lesson_id = %d GROUP BY exercise_key",
+				(int) $user_id,
+				(int) $lesson_id
+			),
+			ARRAY_A
+		);
+		$map = array();
+		foreach ( (array) $rows as $r ) {
+			$map[ (string) $r['exercise_key'] ] = array(
+				'is_correct' => (int) $r['is_correct'] ? true : false,
+				'score'      => (int) $r['score'],
+			);
+		}
+		return $map;
+	}
+}

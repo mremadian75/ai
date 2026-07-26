@@ -1,0 +1,1899 @@
+/* Mahan Academy — front-end styles. Coursera structure + Duolingo energy. */
+.mahan-app {
+	--m-primary: var(--mahan-primary, #4f46e5);
+	--m-accent: var(--mahan-accent, #22c55e);
+	--m-bg: #f6f7fb;
+	--m-surface: #ffffff;
+	--m-text: #1f2433;
+	--m-muted: #5b6270;
+	--m-border: #e7e9f0;
+	--m-surface-2: #eef0f7;
+	/* Semantic colors — themed so reds/ambers stay legible in dark mode too.
+	   *-solid variants stay saturated for white-on-fill (badges); the plain
+	   token is the accessible text/border shade. */
+	--m-danger: #dc2626;
+	--m-danger-solid: #ef4444;
+	--m-warning: #f59e0b;
+	--m-warning-text: #b45309;
+	--m-info: #38bdf8;
+	/* On-surface *text* variants: the brand/accent/info fills are too light
+	   as small text on the low-contrast side of each theme, so text/icon
+	   usages point at these AA-legible shades instead of the raw fill. */
+	--m-primary-text: var(--m-primary);
+	--m-accent-text: #15803d;
+	--m-accent-fill: #16a34a;
+	--m-info-text: #0369a1;
+	--m-radius-sm: 10px;
+	--m-radius: 16px;
+	--m-radius-lg: 22px;
+	--m-shadow: 0 2px 6px rgba(20, 23, 40, .05), 0 12px 32px rgba(20, 23, 40, .10);
+	--m-shadow-sm: 0 1px 2px rgba(20, 23, 40, .04), 0 2px 8px rgba(20, 23, 40, .06);
+	--m-shadow-lg: 0 24px 70px rgba(20, 23, 40, .18);
+	--m-ring: 0 0 0 3px color-mix(in srgb, var(--m-primary) 22%, transparent);
+	/* Motion scale — one characterful curve + a short/medium/long duration. */
+	--m-ease: cubic-bezier(.2, .7, .2, 1);
+	--m-ease-out: cubic-bezier(.16, 1, .3, 1);
+	--m-dur-1: .12s;
+	--m-dur-2: .2s;
+	--m-dur-3: .3s;
+	/* Spacing scale + the single page section-separation token. */
+	--m-space-1: 4px;
+	--m-space-2: 8px;
+	--m-space-3: 12px;
+	--m-space-4: 16px;
+	--m-space-5: 24px;
+	--m-space-6: 32px;
+	--m-section-gap: 28px;
+	color-scheme: light;
+	box-sizing: border-box;
+	color: var(--m-text);
+	background: var(--m-bg);
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+	line-height: 1.55;
+	min-height: 60vh;
+	margin: 0 calc(50% - 50vw);
+	width: 100vw;
+}
+.mahan-app * { box-sizing: border-box; }
+.mahan-app.mahan-theme-dark {
+	--m-bg: #0d1117;
+	--m-surface: #161b25;
+	--m-surface-2: #1e2530;
+	--m-text: #e6e8ee;
+	--m-muted: #9aa3b2;
+	--m-border: #262c39;
+	/* Lighter red/amber so status text reads on the dark surface. */
+	--m-danger: #f87171;
+	--m-warning: #fbbf24;
+	--m-warning-text: #fbbf24;
+	/* Brand/accent/info as text: lighten on the dark surface for AA. */
+	--m-primary-text: #818cf8;
+	--m-accent-text: var(--m-accent);
+	--m-info-text: var(--m-info);
+	--m-shadow: 0 2px 6px rgba(0, 0, 0, .3), 0 12px 32px rgba(0, 0, 0, .45);
+	--m-shadow-lg: 0 24px 70px rgba(0, 0, 0, .5);
+	color-scheme: dark;
+}
+
+/* Boot */
+.mahan-boot, .mahan-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 80px 20px; color: var(--m-muted); }
+.mahan-boot-spinner { width: 40px; height: 40px; border-radius: 50%; border: 4px solid var(--m-border); border-top-color: var(--m-primary); animation: m-spin 1s linear infinite; }
+@keyframes m-spin { to { transform: rotate(360deg); } }
+
+/* Topbar / HUD */
+.mahan-topbar { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; gap: 18px; padding: 12px clamp(16px, 5vw, 48px); background: var(--m-surface); border-bottom: 1px solid var(--m-border); box-shadow: var(--m-shadow-sm); }
+.mahan-brand { font-weight: 800; font-size: 20px; color: var(--m-text); text-decoration: none; letter-spacing: -.02em; }
+.mahan-brand span { color: var(--m-primary); }
+.mahan-nav { display: flex; gap: 6px; margin-left: 8px; }
+.mahan-nav-link { padding: 8px 14px; border-radius: 999px; color: var(--m-muted); text-decoration: none; font-weight: 600; font-size: 14px; }
+.mahan-nav-link:hover { background: var(--m-bg); color: var(--m-text); }
+.mahan-nav-link.is-active { color: var(--m-primary); background: color-mix(in srgb, var(--m-primary) 10%, transparent); }
+.mahan-hud { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+.mahan-hud-item { display: flex; align-items: center; gap: 5px; font-weight: 800; font-size: 15px; }
+.mahan-hud-streak { color: var(--m-warning); }
+.mahan-hud-xp { color: var(--m-primary); }
+.mahan-hud-level { color: var(--m-accent); }
+.mahan-hud-icon { font-size: 16px; }
+.mahan-hud-avatar { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 2px solid var(--m-border); }
+
+/* Main wrap */
+.mahan-main { max-width: 1120px; margin: 0 auto; padding: clamp(20px, 4vw, 40px) clamp(16px, 5vw, 48px) 80px; }
+
+/* Buttons */
+.mahan-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: none; cursor: pointer; font-weight: 700; font-size: 15px; padding: 11px 20px; border-radius: 12px; text-decoration: none; transition: transform .08s ease, box-shadow .15s ease, filter .15s ease; }
+.mahan-btn:active { transform: translateY(1px); }
+.mahan-btn-primary { background: var(--m-primary); color: #fff; box-shadow: 0 4px 0 color-mix(in srgb, var(--m-primary) 60%, #000); }
+.mahan-btn-primary:not([disabled]):hover { filter: brightness(1.05); }
+.mahan-btn-primary.is-done { background: var(--m-accent); box-shadow: 0 4px 0 color-mix(in srgb, var(--m-accent) 60%, #000); }
+.mahan-btn-ghost { background: var(--m-surface); color: var(--m-text); border: 1px solid var(--m-border); }
+.mahan-btn-ghost:not([disabled]):hover { background: var(--m-bg); }
+.mahan-btn-sm { padding: 7px 14px; font-size: 13px; border-radius: 10px; }
+.mahan-btn-lg { padding: 14px 26px; font-size: 16px; }
+.mahan-btn[disabled] { opacity: .55; cursor: not-allowed; box-shadow: none; }
+
+/* Hero */
+.mahan-hero { text-align: center; padding: 18px 0 26px; }
+.mahan-hero h1 { font-size: clamp(28px, 5vw, 44px); margin: 0 0 8px; letter-spacing: -.03em; }
+.mahan-hero-sub { color: var(--m-muted); font-size: 18px; margin: 0; }
+
+/* Chips */
+.mahan-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 24px; }
+.mahan-chips-cat { margin-bottom: 12px; }
+.mahan-chip { border: 1px solid var(--m-border); background: var(--m-surface); color: var(--m-muted); padding: 7px 16px; border-radius: 999px; font-weight: 600; font-size: 14px; cursor: pointer; }
+.mahan-chip.is-active { background: var(--m-primary); color: #fff; border-color: var(--m-primary); }
+
+/* Browse by topic (مباحث) */
+.mahan-topic-panel { text-align: center; margin: -8px 0 22px; }
+.mahan-topic-toggle { border: 1px solid var(--m-border); background: var(--m-surface); color: var(--m-muted); padding: 6px 14px; border-radius: 999px; font-weight: 600; font-size: 13px; cursor: pointer; }
+.mahan-topic-toggle[aria-expanded="true"] .mahan-topic-caret { transform: rotate(180deg); }
+.mahan-topic-caret { display: inline-block; transition: transform .15s ease; }
+.mahan-topic-browse { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; margin-top: 12px; }
+.mahan-topic-browse[hidden] { display: none; }
+.mahan-chip-topic { font-size: 13px; padding: 5px 13px; }
+
+/* Category sections (browse by subject) */
+.mahan-cat-section { margin-bottom: 34px; }
+.mahan-cat-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 0 0 16px; }
+.mahan-cat-section-title { font-size: 20px; margin: 0; letter-spacing: -.01em; }
+.mahan-cat-section-all { border: none; background: none; color: var(--m-primary); font-weight: 600; font-size: 14px; cursor: pointer; padding: 4px; white-space: nowrap; }
+.mahan-cat-section-all:hover { text-decoration: underline; }
+
+/* Level ladder (beginner → expert on one subject) */
+.mahan-ladder { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: -6px 0 22px; }
+.mahan-ladder-label { font-size: 13px; font-weight: 600; color: var(--m-muted); }
+.mahan-ladder-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.mahan-ladder-rung { display: inline-flex; align-items: center; gap: 7px; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--m-border); background: var(--m-surface); color: var(--m-muted); font-size: 13px; font-weight: 600; text-decoration: none; }
+a.mahan-ladder-rung:hover { border-color: var(--m-primary); color: var(--m-primary); }
+.mahan-ladder-rung.is-current { background: var(--m-primary); border-color: var(--m-primary); color: #fff; }
+.mahan-ladder-rank { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: color-mix(in srgb, currentColor 18%, transparent); font-size: 11px; font-weight: 700; }
+
+/* "Tailored for <department>" badge */
+.mahan-tailored { display: inline-flex; align-items: center; gap: 2px; font-size: 12px; font-weight: 700; color: color-mix(in srgb, var(--m-accent) 62%, var(--m-text)); background: color-mix(in srgb, var(--m-accent) 12%, var(--m-surface)); border: 1px solid color-mix(in srgb, var(--m-accent) 26%, var(--m-border)); border-radius: 999px; padding: 4px 12px; margin-bottom: 12px; }
+
+/* Department ("field") variant block inside lesson prose */
+.mahan-field-variant { margin: 22px 0; padding: 16px 18px; border-left: 3px solid var(--m-primary); border-radius: 0 var(--m-radius-sm) var(--m-radius-sm) 0; background: color-mix(in srgb, var(--m-primary) 6%, var(--m-surface)); }
+.mahan-field-variant-title { font-size: 15px; margin: 0 0 6px; color: var(--m-primary); }
+.mahan-field-variant p { margin: 0 0 8px; }
+.mahan-field-variant p:last-child { margin-bottom: 0; }
+.mahan-field-variant-example { font-size: 14px; color: var(--m-muted); }
+
+/* Further reading / references */
+.mahan-refs-note { color: var(--m-muted); font-size: 14px; margin: -6px 0 14px; }
+.mahan-ref-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.mahan-ref { padding-left: 20px; position: relative; font-size: 15px; line-height: 1.5; }
+.mahan-ref::before { content: '📄'; position: absolute; left: 0; top: 0; font-size: 13px; }
+.mahan-ref-link { color: var(--m-primary); font-weight: 600; text-decoration: none; }
+.mahan-ref-link:hover { text-decoration: underline; }
+.mahan-ref-title { font-weight: 600; }
+.mahan-ref-source { color: var(--m-muted); font-size: 14px; }
+
+/* Recommended-for-you strip */
+.mahan-rec:empty { display: none; }
+.mahan-rec { margin: 6px 0 26px; padding: 18px 20px; border: 1px solid color-mix(in srgb, var(--m-primary) 20%, var(--m-border)); border-radius: var(--m-radius); background: color-mix(in srgb, var(--m-primary) 5%, var(--m-surface)); }
+.mahan-rec-head { margin-bottom: 14px; }
+.mahan-rec-reason { color: var(--m-muted); font-size: 14px; margin: 2px 0 0; }
+.mahan-rec-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+
+/* Bundles (specializations) strip */
+.mahan-bundle-strip { margin: 6px 0 26px; }
+.mahan-strip-title { font-size: 15px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--m-muted); margin: 0 0 12px; }
+.mahan-bundle-row { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(240px, 1fr); gap: 16px; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x proximity; }
+@media (max-width: 640px) { .mahan-bundle-row { grid-auto-columns: minmax(220px, 82%); } }
+.mahan-bundle-card { scroll-snap-align: start; display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: inherit; background: linear-gradient(135deg, color-mix(in srgb, var(--m-primary) 12%, var(--m-surface)), var(--m-surface)); border: 1px solid var(--m-border); border-radius: var(--m-radius); padding: 18px 18px 16px; box-shadow: var(--m-shadow-sm); transition: transform .12s ease, box-shadow .15s ease, border-color .12s ease; }
+.mahan-bundle-card:hover { transform: translateY(-2px); border-color: var(--m-primary); box-shadow: var(--m-shadow); }
+.mahan-bundle-badge { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--m-primary); }
+.mahan-bundle-name { font-size: 17px; margin: 2px 0 2px; letter-spacing: -.01em; }
+.mahan-bundle-sub { font-size: 13px; color: var(--m-muted); margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.mahan-bundle-meta { margin-top: auto; padding-top: 8px; font-size: 12px; font-weight: 600; color: var(--m-muted); }
+
+/* Grid + cards */
+.mahan-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 22px; }
+.mahan-card { display: flex; flex-direction: column; background: var(--m-surface); border: 1px solid var(--m-border); border-radius: var(--m-radius); overflow: hidden; text-decoration: none; color: inherit; box-shadow: var(--m-shadow-sm); transition: transform .12s ease, box-shadow .15s ease; }
+.mahan-card:hover { transform: translateY(-4px); box-shadow: var(--m-shadow); }
+.mahan-card-media { height: 140px; background-size: cover; background-position: center; background-color: color-mix(in srgb, var(--m-primary) 14%, var(--m-surface)); }
+.mahan-card-body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.mahan-card-cat { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--m-primary); }
+.mahan-card-title { font-size: 18px; margin: 0; line-height: 1.25; }
+.mahan-card-sub { color: var(--m-muted); font-size: 14px; margin: 0 0 8px; flex: 1; }
+.mahan-card-tags { display: flex; gap: 8px; flex-wrap: wrap; }
+.mahan-tag { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: color-mix(in srgb, var(--m-primary) 12%, transparent); color: var(--m-primary); }
+.mahan-tag-soft { background: var(--m-surface-2); color: var(--m-muted); }
+
+/* Progress bar */
+.mahan-progress { display: flex; align-items: center; gap: 10px; }
+.mahan-progress-bar { flex: 1; height: 10px; border-radius: 999px; background: var(--m-surface-2); overflow: hidden; }
+.mahan-progress-bar span { display: block; height: 100%; background: var(--m-accent); border-radius: 999px; transition: width .5s ease; }
+.mahan-progress-label { font-size: 13px; font-weight: 700; color: var(--m-accent); }
+
+/* Empty */
+.mahan-empty { text-align: center; padding: 60px 20px; color: var(--m-muted); display: flex; flex-direction: column; align-items: center; gap: 16px; }
+
+/* Course view */
+.mahan-course-hero { display: grid; grid-template-columns: 1fr; gap: 24px; background: var(--m-surface); border: 1px solid var(--m-border); border-radius: var(--m-radius); padding: 28px; box-shadow: var(--m-shadow-sm); margin-bottom: 28px; }
+@media (min-width: 760px) { .mahan-course-hero { grid-template-columns: 1.5fr 1fr; } }
+.mahan-back { color: var(--m-muted); text-decoration: none; font-weight: 600; font-size: 14px; }
+.mahan-back:hover { color: var(--m-primary); }
+.mahan-course-hero h1 { font-size: clamp(24px, 4vw, 36px); margin: 12px 0 6px; letter-spacing: -.02em; }
+.mahan-course-sub { color: var(--m-muted); font-size: 17px; margin: 0 0 14px; }
+.mahan-course-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+.mahan-course-hero-media { border-radius: 12px; background-size: cover; background-position: center; min-height: 180px; }
+.mahan-section { margin: 26px 0; background: var(--m-surface); border: 1px solid var(--m-border); border-radius: var(--m-radius); padding: 24px 26px; box-shadow: var(--m-shadow-sm); }
+.mahan-section h2 { margin: 0 0 14px; font-size: 22px; }
+.mahan-outcomes { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr; gap: 10px; }
+@media (min-width: 640px) { .mahan-outcomes { grid-template-columns: 1fr 1fr; } }
+.mahan-outcomes li { display: flex; gap: 10px; align-items: flex-start; }
+.mahan-check { color: var(--m-accent); font-weight: 800; }
+
+/* Units + lessons */
+.mahan-unit-title { font-weight: 800; font-size: 15px; margin: 18px 0 8px; color: var(--m-muted); text-transform: uppercase; letter-spacing: .03em; }
+.mahan-lesson-list { list-style: none; margin: 0 0 6px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.mahan-lesson-row { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid var(--m-border); border-radius: 12px; text-decoration: none; color: inherit; background: var(--m-surface); transition: border-color .12s, background .12s; }
+a.mahan-lesson-row:hover { border-color: var(--m-primary); background: color-mix(in srgb, var(--m-primary) 5%, var(--m-surface)); }
+.mahan-lesson-row.is-done { background: color-mix(in srgb, var(--m-accent) 8%, var(--m-surface)); }
+.mahan-lesson-row.is-locked { opacity: .6; cursor: not-allowed; }
+.mahan-lesson-icon { width: 30px; height: 30px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--m-surface-2); font-size: 14px; }
+.mahan-lesson-row.is-done .mahan-lesson-icon { background: var(--m-accent-fill); color: #fff; }
+.mahan-lesson-name { flex: 1; font-weight: 600; }
+.mahan-lesson-meta { display: flex; gap: 10px; align-items: center; color: var(--m-muted); font-size: 13px; font-weight: 600; }
+.mahan-lesson-xp { color: var(--m-primary); }
+
+/* Lesson player */
+.mahan-lesson-top { margin-bottom: 14px; }
+.mahan-lesson-layout { display: grid; grid-template-columns: 1fr; gap: 24px; }
+@media (min-width: 980px) { .mahan-lesson-layout { grid-template-columns: 1fr 360px; align-items: start; } }
+.mahan-lesson-col { background: var(--m-surface); border: 1px solid var(--m-border); border-radius: var(--m-radius); padding: clamp(20px, 4vw, 38px); box-shadow: var(--m-shadow-sm); min-width: 0; }
+.mahan-lesson-title { font-size: clamp(24px, 4vw, 34px); margin: 0 0 18px; letter-spacing: -.02em; }
+
+/* Prose */
+.mahan-prose { font-size: 16.5px; color: var(--m-text); }
+.mahan-prose h1, .mahan-prose h2, .mahan-prose h3 { line-height: 1.25; margin: 1.4em 0 .5em; }
+.mahan-prose h2 { font-size: 24px; }
+.mahan-prose h3 { font-size: 19px; }
+.mahan-prose p { margin: 0 0 1em; }
+.mahan-prose ul, .mahan-prose ol { margin: 0 0 1em 1.3em; }
+.mahan-prose li { margin: .4em 0; }
+.mahan-prose img { max-width: 100%; height: auto; border-radius: 12px; }
+.mahan-prose pre { background: var(--m-surface-2); padding: 16px; border-radius: 12px; overflow: auto; }
+.mahan-prose code { background: var(--m-surface-2); padding: 2px 6px; border-radius: 6px; font-size: .9em; }
+.mahan-prose pre code { background: none; padding: 0; }
+.mahan-prose blockquote { margin: 1em 0; padding: 12px 18px; border-left: 4px solid var(--m-primary); background: color-mix(in srgb, var(--m-primary) 6%, transparent); border-radius: 8px; }
+.mahan-prose a { color: var(--m-primary); }
+.mahan-prose table { width: 100%; border-collapse: collapse; margin: 1em 0; }
+.mahan-prose th, .mahan-prose td { border: 1px solid var(--m-border); padding: 10px; }
+
+/* Exercises */
+.mahan-exercises { margin-top: 34px; padding-top: 22px; border-top: 2px dashed var(--m-border); }
+.mahan-exercises > h2 { font-size: 22px; margin: 0 0 16px; }
+
+/* Lesson topic chips (the concepts / مباحث a lesson covers) */
+.mahan-topic-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 18px; }
+.mahan-topic-chip { font-size: 12px; font-weight: 600; color: var(--m-primary); background: color-mix(in srgb, var(--m-primary) 10%, var(--m-surface)); border: 1px solid color-mix(in srgb, var(--m-primary) 22%, var(--m-border)); border-radius: 999px; padding: 3px 11px; }
+.mahan-course-topics { margin-top: -10px; margin-bottom: 22px; }
+.mahan-topic-chip-link { cursor: pointer; font: inherit; font-size: 12px; font-weight: 600; }
+.mahan-topic-chip-link:hover { background: color-mix(in srgb, var(--m-primary) 18%, var(--m-surface)); border-color: var(--m-primary); }
+
+/* Per-lesson "For you" personalization card */
+.mahan-foryou { margin: 0 0 22px; padding: 14px 18px; border: 1px solid color-mix(in srgb, var(--m-accent) 26%, var(--m-border)); border-radius: var(--m-radius-sm); background: color-mix(in srgb, var(--m-accent) 7%, var(--m-surface)); }
+.mahan-foryou-head { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: color-mix(in srgb, var(--m-accent) 60%, var(--m-text)); margin-bottom: 4px; }
+.mahan-foryou-body p { margin: 0; color: var(--m-text); font-size: 15px; line-height: 1.55; }
+.mahan-foryou-loading { color: var(--m-muted); font-size: 14px; font-style: italic; }
+
+/* Smart practice (on-demand AI questions) */
+.mahan-practice { margin-top: 30px; padding: 22px; border: 2px solid color-mix(in srgb, var(--m-primary) 22%, var(--m-border)); border-radius: var(--m-radius); background: color-mix(in srgb, var(--m-primary) 4%, var(--m-surface)); }
+.mahan-practice-head h2 { font-size: 20px; margin: 0 0 4px; }
+.mahan-practice-sub { color: var(--m-muted); font-size: 14px; margin: 0 0 16px; max-width: 60ch; }
+.mahan-practice-list:not(:empty) { margin-bottom: 16px; }
+.mahan-practice-card { background: var(--m-surface); }
+.mahan-practice-bar { display: flex; justify-content: center; }
+.mahan-ex { border: 2px solid var(--m-border); border-radius: var(--m-radius); padding: 20px; margin-bottom: 18px; transition: border-color .2s; }
+.mahan-ex.is-solved { border-color: var(--m-accent); background: color-mix(in srgb, var(--m-accent) 5%, transparent); }
+.mahan-ex-q { font-weight: 600; font-size: 16.5px; margin-bottom: 14px; }
+.mahan-ex-q p { margin: 0 0 .5em; }
+.mahan-ex-options { display: flex; flex-direction: column; gap: 10px; }
+.mahan-ex-option { text-align: left; padding: 14px 16px; border: 2px solid var(--m-border); border-radius: 12px; background: var(--m-surface); color: var(--m-text); font-weight: 600; font-size: 15px; cursor: pointer; transition: border-color .12s, background .12s; }
+.mahan-ex-option:not([disabled]):hover { border-color: var(--m-primary); }
+.mahan-ex-option.is-chosen { border-color: var(--m-primary); background: color-mix(in srgb, var(--m-primary) 8%, transparent); }
+.mahan-ex-option.is-correct { border-color: var(--m-accent); background: color-mix(in srgb, var(--m-accent) 12%, transparent); }
+.mahan-ex-option[disabled] { cursor: default; }
+.mahan-ex-input { width: 100%; border: 2px solid var(--m-border); border-radius: 12px; padding: 12px 14px; font-size: 15px; font-family: inherit; background: var(--m-surface); color: var(--m-text); resize: vertical; }
+.mahan-ex-input:focus { outline: none; border-color: var(--m-primary); }
+.mahan-ex-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; }
+.mahan-ex-hint-btn { background: none; border: none; color: var(--m-muted); font-weight: 600; cursor: pointer; font-size: 14px; }
+.mahan-ex-feedback { margin-top: 14px; padding: 14px 16px; border-radius: 12px; font-size: 15px; }
+.mahan-ex-feedback.is-correct { background: color-mix(in srgb, var(--m-accent) 14%, transparent); color: color-mix(in srgb, var(--m-accent) 70%, #000); }
+.mahan-ex-feedback.is-incorrect { background: color-mix(in srgb, var(--m-danger) 12%, transparent); color: var(--m-danger); }
+.mahan-ex-feedback p { margin: .35em 0 0; }
+
+/* Lesson footer */
+.mahan-lesson-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--m-border); }
+
+/* Tutor panel */
+.mahan-tutor { position: sticky; top: 76px; display: flex; flex-direction: column; background: var(--m-surface); border: 1px solid var(--m-border); border-radius: var(--m-radius); box-shadow: var(--m-shadow-sm); overflow: hidden; max-height: calc(100vh - 100px); }
+.mahan-tutor-head { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--m-border); background: color-mix(in srgb, var(--m-primary) 6%, var(--m-surface)); }
+.mahan-tutor-avatar { font-size: 22px; }
+.mahan-tutor-head strong { display: block; font-size: 15px; }
+.mahan-tutor-status { font-size: 12px; color: var(--m-accent); font-weight: 600; }
+.mahan-tutor-log { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-height: 220px; }
+.mahan-bubble { max-width: 88%; padding: 10px 14px; border-radius: 14px; font-size: 14.5px; line-height: 1.5; }
+.mahan-bubble p { margin: 0 0 .5em; } .mahan-bubble p:last-child { margin-bottom: 0; }
+.mahan-bubble ul, .mahan-bubble ol { margin: .3em 0 .3em 1.1em; }
+.mahan-bubble code { background: rgba(127,127,127,.16); padding: 1px 5px; border-radius: 5px; }
+.mahan-bubble-assistant { align-self: flex-start; background: var(--m-surface-2); border-bottom-left-radius: 4px; }
+.mahan-bubble-user { align-self: flex-end; background: var(--m-primary); color: #fff; border-bottom-right-radius: 4px; }
+.mahan-tutor-bar { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--m-border); }
+.mahan-tutor-input { flex: 1; resize: none; border: 1px solid var(--m-border); border-radius: 12px; padding: 10px 12px; font-family: inherit; font-size: 14px; max-height: 120px; background: var(--m-surface); color: var(--m-text); }
+.mahan-tutor-input:focus { outline: none; border-color: var(--m-primary); }
+.mahan-tutor-send { flex: none; width: 42px; border: none; border-radius: 12px; background: var(--m-primary); color: #fff; font-size: 16px; cursor: pointer; }
+.mahan-typing { display: inline-flex; gap: 4px; }
+.mahan-typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--m-muted); animation: m-bounce 1.2s infinite; }
+.mahan-typing i:nth-child(2) { animation-delay: .2s; } .mahan-typing i:nth-child(3) { animation-delay: .4s; }
+@keyframes m-bounce { 0%, 60%, 100% { transform: translateY(0); opacity: .5; } 30% { transform: translateY(-5px); opacity: 1; } }
+
+/* Dashboard */
+.mahan-dash-hero { background: var(--m-surface); border: 1px solid var(--m-border); border-radius: var(--m-radius); padding: 28px; box-shadow: var(--m-shadow-sm); margin-bottom: 26px; }
+.mahan-dash-hero h1 { margin: 0 0 18px; font-size: 28px; }
+.mahan-dash-stats { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; }
+.mahan-stat-big { flex: 1; min-width: 120px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 18px; border-radius: 14px; background: var(--m-surface-2); border: 1px solid var(--m-border); }
+.mahan-stat-icon { font-size: 26px; }
+.mahan-stat-value { font-size: 28px; font-weight: 800; }
+.mahan-stat-label { font-size: 13px; color: var(--m-muted); font-weight: 600; }
+.mahan-level-bar-track { height: 12px; border-radius: 999px; background: var(--m-surface-2); overflow: hidden; margin-bottom: 6px; }
+.mahan-level-bar-track span { display: block; height: 100%; background: linear-gradient(90deg, var(--m-primary), var(--m-accent)); border-radius: 999px; transition: width .5s ease; }
+.mahan-level-bar-label { font-size: 13px; color: var(--m-muted); font-weight: 600; }
+.mahan-dash-h2 { margin: 8px 0 16px; }
+
+/* Modal / profile */
+.mahan-modal-overlay { position: fixed; inset: 0; z-index: 100000; background: rgba(15, 18, 30, .6); display: flex; align-items: center; justify-content: center; padding: 18px; backdrop-filter: blur(3px); }
+.mahan-modal { background: var(--m-surface); color: var(--m-text); width: 100%; max-width: 560px; max-height: 90vh; overflow: auto; border-radius: var(--m-radius-lg); padding: 28px; box-shadow: var(--m-shadow-lg); }
+.mahan-modal h2 { margin: 0 0 6px; font-size: 24px; }
+.mahan-modal-sub { color: var(--m-muted); margin: 0 0 18px; }
+.mahan-profile-form { display: grid; grid-template-columns: 1fr; gap: 14px; }
+@media (min-width: 520px) { .mahan-profile-form { grid-template-columns: 1fr 1fr; } }
+.mahan-field { display: flex; flex-direction: column; gap: 6px; }
+.mahan-field label { font-weight: 600; font-size: 14px; }
+.mahan-field input[type="text"], .mahan-field textarea, .mahan-field select { width: 100%; padding: 10px 12px; border: 1px solid var(--m-border); border-radius: 10px; font-family: inherit; font-size: 14px; background: var(--m-surface); color: var(--m-text); }
+.mahan-checks { display: flex; flex-direction: column; gap: 6px; border: 1px solid var(--m-border); border-radius: 10px; padding: 10px; }
+.mahan-check-item { font-weight: 500; display: flex; align-items: center; gap: 6px; }
+.mahan-modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.mahan-modal-actions.mahan-center { justify-content: center; }
+.mahan-profile-msg { margin-top: 12px; color: var(--m-danger); font-size: 14px; }
+.mahan-login-gate { gap: 18px; }
+
+/* Toasts */
+.mahan-toasts { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 100001; display: flex; flex-direction: column; gap: 10px; align-items: center; pointer-events: none; }
+.mahan-toast { background: #111827; color: #fff; padding: 12px 20px; border-radius: 999px; font-weight: 700; font-size: 15px; box-shadow: 0 10px 30px rgba(0, 0, 0, .25); animation: m-pop .3s ease; }
+.mahan-toast.is-out { opacity: 0; transform: translateY(10px); transition: all .4s ease; }
+/* Toasts live on <body>, outside .mahan-app — use the :root-level vars. */
+.mahan-toast-xp { background: var(--mahan-primary, #4f46e5); }
+.mahan-toast-level { background: linear-gradient(90deg, var(--mahan-primary, #4f46e5), var(--mahan-accent, #22c55e)); }
+.mahan-toast-error { background: #b91c1c; }
+@keyframes m-pop { from { opacity: 0; transform: translateY(14px) scale(.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+@media (max-width: 640px) {
+	.mahan-topbar { gap: 10px; padding: 10px 16px; }
+	.mahan-nav { display: none; } /* replaced by the fixed bottom nav */
+	.mahan-hud { gap: 10px; }
+	.mahan-hud-item { font-size: 14px; }
+	.mahan-hud-avatar { width: 30px; height: 30px; }
+	.mahan-hero { padding: 10px 0 20px; }
+	.mahan-hero-sub { font-size: 16px; }
+	.mahan-course-hero, .mahan-dash-hero { padding: 20px; }
+	.mahan-section { padding: 18px 16px; }
+	.mahan-stat-big { min-width: 90px; padding: 14px 10px; }
+	.mahan-stat-value { font-size: 24px; }
+	.mahan-lesson-foot { flex-wrap: wrap; }
+	.mahan-lesson-foot .mahan-btn-primary { order: -1; width: 100%; }
+	.mahan-lesson-foot .mahan-btn-ghost { flex: 1; }
+	/* Clear the fixed bottom nav (+ device safe area). */
+	.mahan-main { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (max-width: 400px) {
+	.mahan-hud-goal { display: none; }
+}
+
+/* True/False + fill-in-the-blank exercises */
+.mahan-ex-options.mahan-ex-tf { flex-direction: row; }
+.mahan-ex-options.mahan-ex-tf .mahan-ex-option { flex: 1; text-align: center; }
+.mahan-ex-blank { max-width: 320px; }
+
+/* Featured ribbon */
+.mahan-card { position: relative; }
+.mahan-card.is-featured { border-color: color-mix(in srgb, var(--m-primary) 40%, var(--m-border)); }
+.mahan-ribbon { position: absolute; top: 12px; left: 12px; z-index: 2; background: var(--m-primary); color: #fff; font-size: 11px; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; padding: 4px 10px; border-radius: 999px; box-shadow: 0 4px 12px rgba(20,23,40,.2); }
+
+/* Notes (prerequisite / certificate) */
+.mahan-note { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; background: var(--m-surface); border: 1px solid var(--m-border); border-left: 4px solid var(--m-primary); border-radius: 12px; padding: 12px 18px; margin-bottom: 18px; font-size: 15px; }
+.mahan-note a { color: var(--m-primary); font-weight: 700; text-decoration: none; }
+.mahan-note-cert { border-left-color: var(--m-accent); }
+.mahan-note-cert span { flex: 1; font-weight: 600; }
+
+/* Promo video */
+.mahan-promo-wrap { padding: 0; overflow: hidden; }
+.mahan-promo { display: block; width: 100%; border-radius: var(--m-radius); }
+.mahan-promo-embed { position: relative; padding-top: 56.25%; }
+.mahan-promo-embed iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+/* Badges */
+.mahan-badges-sub { color: var(--m-muted); font-weight: 700; margin: -6px 0 14px; }
+.mahan-badges { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+.mahan-badge { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; padding: 18px 14px; background: var(--m-surface); border: 1px solid var(--m-border); border-radius: var(--m-radius); box-shadow: var(--m-shadow-sm); }
+.mahan-badge.is-locked { opacity: .45; filter: grayscale(1); }
+.mahan-badge.is-earned { border-color: color-mix(in srgb, var(--m-accent) 45%, var(--m-border)); }
+.mahan-badge-icon { font-size: 38px; line-height: 1; }
+.mahan-badge-title { font-weight: 800; font-size: 14px; }
+.mahan-badge-desc { font-size: 12px; color: var(--m-muted); }
+
+/* Leaderboard */
+.mahan-lb-list { display: flex; flex-direction: column; gap: 8px; }
+.mahan-lb-row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--m-surface); border: 1px solid var(--m-border); border-radius: 12px; }
+.mahan-lb-row.is-top { border-color: color-mix(in srgb, var(--m-primary) 35%, var(--m-border)); }
+.mahan-lb-row.is-me { background: color-mix(in srgb, var(--m-primary) 8%, var(--m-surface)); border-color: var(--m-primary); }
+.mahan-lb-rank { width: 34px; text-align: center; font-weight: 800; font-size: 17px; }
+.mahan-lb-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+.mahan-lb-name { flex: 1; font-weight: 700; }
+.mahan-lb-streak, .mahan-lb-level { color: var(--m-muted); font-weight: 700; font-size: 14px; }
+.mahan-lb-xp { color: var(--m-primary); font-weight: 800; min-width: 72px; text-align: right; }
+@media (max-width: 560px) { .mahan-lb-streak, .mahan-lb-level { display: none; } }
+
+/* Certificate */
+.mahan-cert-modal { max-width: 720px; }
+.mahan-cert { background: linear-gradient(135deg, #fdfbf6, #f4f1ea); border: 2px solid color-mix(in srgb, var(--m-primary) 30%, #d9c9a3); border-radius: 14px; padding: 8px; }
+.mahan-cert-inner { border: 2px solid color-mix(in srgb, var(--m-primary) 25%, #d9c9a3); border-radius: 10px; padding: 40px 28px; text-align: center; color: #2b2b2b; }
+.mahan-cert-badge { font-size: 54px; }
+.mahan-cert-brand { font-size: 14px; letter-spacing: .18em; text-transform: uppercase; color: var(--m-primary); font-weight: 800; margin: 6px 0 22px; }
+.mahan-cert-line { color: #6b6b60; font-size: 14px; margin: 8px 0; }
+.mahan-cert-name { font-size: 30px; font-weight: 800; font-family: Georgia, "Times New Roman", serif; border-bottom: 1px solid #d9c9a3; display: inline-block; padding: 0 24px 6px; margin: 4px 0 10px; }
+.mahan-cert-course { font-size: 22px; font-weight: 700; color: var(--m-primary); margin: 6px 0 18px; }
+.mahan-cert-date { font-size: 13px; color: #888; }
+
+@media print {
+	body * { visibility: hidden !important; }
+	.mahan-cert, .mahan-cert * { visibility: visible !important; }
+	.mahan-modal-overlay { position: static !important; background: none !important; padding: 0 !important; }
+	.mahan-modal-actions { display: none !important; }
+	.mahan-cert { position: absolute; left: 0; top: 0; width: 100%; }
+}
+
+/* Unit quiz */
+.mahan-quiz-row { width: 100%; font: inherit; text-align: left; cursor: pointer; }
+button.mahan-quiz-row:hover { border-color: var(--m-primary); background: color-mix(in srgb, var(--m-primary) 5%, var(--m-surface)); }
+.mahan-quiz-row .mahan-lesson-icon { background: color-mix(in srgb, var(--m-primary) 14%, var(--m-surface)); }
+.mahan-quiz-tag { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--m-primary); background: color-mix(in srgb, var(--m-primary) 12%, transparent); padding: 2px 8px; border-radius: 999px; }
+.mahan-quiz-score { color: var(--m-accent); font-weight: 800; }
+.mahan-quiz-score-fail { color: var(--m-warning-text); font-weight: 700; }
+
+.mahan-quiz-modal { max-width: 640px; }
+.mahan-quiz-q { padding: 16px 0; border-bottom: 1px solid var(--m-border); }
+.mahan-quiz-q:last-of-type { border-bottom: 0; }
+.mahan-quiz-q-title { font-weight: 700; margin-bottom: 12px; }
+.mahan-quiz-opts { display: flex; flex-direction: column; gap: 8px; }
+.mahan-quiz-q.is-correct .mahan-quiz-q-title { color: color-mix(in srgb, var(--m-accent) 75%, #000); }
+.mahan-quiz-q.is-incorrect .mahan-quiz-q-title { color: var(--m-danger); }
+.mahan-quiz-result { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border-radius: 14px; margin: 4px 0 16px; }
+.mahan-quiz-result.is-pass { background: color-mix(in srgb, var(--m-accent) 14%, transparent); }
+.mahan-quiz-result.is-fail { background: color-mix(in srgb, var(--m-warning) 16%, transparent); }
+.mahan-quiz-result-icon { font-size: 30px; }
+.mahan-quiz-result-sub { color: var(--m-muted); font-size: 14px; }
+.mahan-quiz-msg { color: var(--m-danger); font-size: 14px; margin-top: 8px; }
+
+/* Learning paths */
+.mahan-path-courses { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; counter-reset: pc; }
+.mahan-path-course { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid var(--m-border); border-radius: 12px; background: var(--m-surface); }
+.mahan-path-course.is-done { background: color-mix(in srgb, var(--m-accent) 8%, var(--m-surface)); }
+.mahan-path-step { width: 32px; height: 32px; flex: none; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--m-surface-2); font-weight: 800; }
+.mahan-path-course.is-done .mahan-path-step { background: var(--m-accent-fill); color: #fff; }
+.mahan-path-course-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.mahan-path-course-title { font-weight: 700; color: var(--m-text); text-decoration: none; }
+.mahan-path-course-title:hover { color: var(--m-primary); }
+.mahan-path-course-sub { color: var(--m-muted); font-size: 13px; }
+.mahan-path-course .mahan-progress { max-width: 260px; }
+
+/* Gamification v2: daily goal, freezes, weekly leaderboard */
+.mahan-hud-freeze { font-size: 12px; margin-left: 2px; color: var(--m-info); font-weight: 700; }
+.mahan-hud-goal { color: var(--m-muted); }
+.mahan-hud-goal.is-done { color: var(--m-accent); }
+
+.mahan-goal-card { margin-top: 18px; padding: 16px 18px; border: 1px solid var(--m-border); border-radius: 14px; background: var(--m-surface-2); }
+.mahan-goal-card.is-done { border-color: color-mix(in srgb, var(--m-accent) 45%, var(--m-border)); background: color-mix(in srgb, var(--m-accent) 7%, var(--m-bg)); }
+.mahan-goal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+.mahan-goal-title { font-weight: 800; }
+.mahan-goal-pick { display: inline-flex; align-items: center; gap: 6px; color: var(--m-muted); font-size: 13px; font-weight: 600; }
+.mahan-goal-select { border: 1px solid var(--m-border); border-radius: 8px; padding: 4px 8px; background: var(--m-surface); color: var(--m-text); font-weight: 700; }
+.mahan-goal-done-msg { margin: 10px 0 0; color: color-mix(in srgb, var(--m-accent) 75%, #000); font-size: 13.5px; font-weight: 600; }
+
+.mahan-lb-gap { text-align: center; color: var(--m-muted); font-weight: 800; letter-spacing: 4px; padding: 2px 0; }
+
+/* ==================================================================== */
+/* v1.4.0 — responsive & accessibility layer                            */
+/* ==================================================================== */
+
+/* Keyboard focus (only for :focus-visible, so mouse clicks stay clean) */
+.mahan-app :focus-visible,
+.mahan-modal-overlay :focus-visible,
+.mahan-toasts :focus-visible {
+	outline: 3px solid color-mix(in srgb, var(--mahan-primary, #4f46e5) 70%, transparent);
+	outline-offset: 2px;
+}
+.mahan-modal:focus-visible, .mahan-tutor:focus-visible { outline: none; }
+
+/* Skeleton loading */
+.mahan-sk {
+	background: linear-gradient(90deg,
+		var(--m-border) 25%,
+		color-mix(in srgb, var(--m-border) 40%, var(--m-surface)) 50%,
+		var(--m-border) 75%);
+	background-size: 200% 100%;
+	animation: m-shimmer 1.4s ease-in-out infinite;
+	border-radius: 8px;
+}
+@keyframes m-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.mahan-sk-line { height: 13px; margin: 8px 0; }
+.mahan-sk-h1 { height: 26px; width: 55%; margin: 10px 0 14px; }
+.mahan-sk-media { height: 140px; border-radius: 0; }
+.mahan-sk-circle { width: 32px; height: 32px; flex: none; border-radius: 50%; }
+.mahan-sk-w30 { width: 30%; } .mahan-sk-w40 { width: 40%; } .mahan-sk-w60 { width: 60%; }
+.mahan-sk-w70 { width: 70%; } .mahan-sk-w80 { width: 80%; } .mahan-sk-w90 { width: 90%; }
+.mahan-sk-grow { flex: 1; }
+.mahan-sk-row { gap: 14px; }
+.mahan-sk-hero .mahan-sk { margin-left: auto; margin-right: auto; }
+.mahan-sk-panel { padding: 18px; min-height: 260px; }
+.mahan-skeleton .mahan-stat-big { gap: 10px; }
+
+/* Bottom navigation (mobile) */
+.mahan-bottomnav { display: none; }
+@media (max-width: 640px) {
+	.mahan-bottomnav {
+		position: fixed; bottom: 0; left: 0; right: 0; z-index: 95;
+		display: flex; gap: 2px;
+		background: var(--m-surface);
+		border-top: 1px solid var(--m-border);
+		padding: 6px max(8px, env(safe-area-inset-right, 0px)) max(6px, env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px));
+		box-shadow: 0 -4px 18px rgba(20, 23, 40, .08);
+	}
+	.mahan-bottomnav-item {
+		flex: 1; min-width: 0; min-height: 48px;
+		display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+		padding: 4px 2px; border-radius: 10px;
+		color: var(--m-muted); text-decoration: none;
+		font-size: 11px; font-weight: 700;
+	}
+	.mahan-bottomnav-item.is-active { color: var(--m-primary); background: color-mix(in srgb, var(--m-primary) 8%, transparent); }
+	.mahan-bottomnav-icon { font-size: 20px; line-height: 1; }
+	.mahan-bottomnav-label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+/* Tutor: side panel on desktop → FAB + bottom sheet on smaller screens */
+.mahan-tutor-close { display: none; margin-left: auto; width: 36px; height: 36px; border: none; border-radius: 50%; background: transparent; color: var(--m-muted); font-size: 16px; cursor: pointer; align-items: center; justify-content: center; }
+.mahan-tutor-close:hover { background: var(--m-bg); color: var(--m-text); }
+.mahan-tutor-fab { display: none; }
+.mahan-tutor-scrim { display: none; }
+
+@media (max-width: 979px) {
+	.mahan-tutor {
+		position: fixed; left: 0; right: 0; bottom: 0; top: auto; z-index: 99996;
+		height: min(76vh, 640px); max-height: none;
+		border-radius: 20px 20px 0 0; border-bottom: none;
+		box-shadow: 0 -14px 44px rgba(0, 0, 0, .28);
+		transform: translateY(105%); visibility: hidden;
+		transition: transform .28s ease, visibility .28s;
+	}
+	.mahan-tutor.is-open { transform: translateY(0); visibility: visible; }
+	.mahan-tutor-close { display: inline-flex; }
+	.mahan-tutor-scrim { position: fixed; inset: 0; z-index: 99995; background: rgba(15, 18, 30, .5); opacity: 0; pointer-events: none; transition: opacity .25s ease; }
+	.mahan-tutor-scrim.is-open { display: block; opacity: 1; pointer-events: auto; }
+	.mahan-tutor-fab {
+		position: fixed; right: 16px; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); z-index: 94;
+		display: flex; align-items: center; justify-content: center;
+		width: 58px; height: 58px; border: none; border-radius: 50%;
+		background: var(--m-primary); color: #fff; font-size: 26px; cursor: pointer;
+		box-shadow: 0 10px 26px rgba(20, 23, 40, .35);
+		transition: transform .12s ease;
+	}
+	.mahan-tutor-fab:active { transform: scale(.94); }
+	.mahan-tutor-fab.is-hidden { display: none; }
+	/* Skeleton keeps the two-column ghost only on desktop. */
+	.mahan-skeleton .mahan-tutor { display: none; }
+}
+@media (max-width: 640px) {
+	.mahan-tutor-fab { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
+	.mahan-tutor { height: min(82vh, 640px); }
+}
+
+/* Modals become bottom sheets on small screens */
+@media (max-width: 640px) {
+	.mahan-modal-overlay { align-items: flex-end; padding: 0; }
+	.mahan-modal {
+		max-width: none; max-height: 92vh;
+		border-radius: 20px 20px 0 0;
+		padding: 22px 18px calc(22px + env(safe-area-inset-bottom, 0px));
+		animation: m-sheet .25s ease;
+	}
+	.mahan-modal-actions { flex-wrap: wrap; }
+	.mahan-modal-actions .mahan-btn { flex: 1; min-width: 40%; }
+}
+@keyframes m-sheet { from { transform: translateY(48px); opacity: .6; } to { transform: none; opacity: 1; } }
+
+/* Comfortable touch targets on coarse pointers */
+@media (pointer: coarse) {
+	.mahan-btn { min-height: 44px; }
+	.mahan-btn-sm { min-height: 40px; }
+	.mahan-chip { min-height: 40px; padding: 8px 18px; }
+	.mahan-nav-link { padding: 10px 16px; }
+	.mahan-ex-option { min-height: 48px; }
+	.mahan-tutor-send { width: 48px; min-height: 44px; }
+	.mahan-tutor-input { min-height: 44px; }
+	.mahan-goal-select { min-height: 40px; }
+	.mahan-lesson-row { padding: 15px 16px; }
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+	.mahan-app *, .mahan-app *::before, .mahan-app *::after,
+	.mahan-modal-overlay, .mahan-modal, .mahan-toast, .mahan-toasts * {
+		animation-duration: .01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: .01ms !important;
+		scroll-behavior: auto !important;
+	}
+	.mahan-sk { animation: none; }
+	.mahan-card:hover { transform: none; }
+}
+
+/* ==================================================================== */
+/* v1.5.0 — UX layer: search, wayfinding, motivation, guarded actions   */
+/* ==================================================================== */
+
+/* Catalog search */
+.mahan-search { position: relative; max-width: 460px; margin: 0 auto 14px; }
+.mahan-search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 15px; opacity: .65; pointer-events: none; }
+.mahan-search-input { width: 100%; padding: 12px 16px 12px 42px; border: 1px solid var(--m-border); border-radius: 999px; font: inherit; font-size: 15px; background: var(--m-surface); color: var(--m-text); }
+.mahan-search-input:focus { outline: none; border-color: var(--m-primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--m-primary) 15%, transparent); }
+
+/* Lesson wayfinding: back link + "Unit · Lesson X of Y" + course bar */
+.mahan-lesson-topline { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.mahan-lesson-pos { color: var(--m-muted); font-size: 13px; font-weight: 700; }
+.mahan-lesson-pos-unit { color: var(--m-primary); }
+.mahan-lesson-course-bar { height: 6px; border-radius: 999px; background: var(--m-border); overflow: hidden; margin-top: 8px; }
+.mahan-lesson-course-bar span { display: block; height: 100%; background: var(--m-accent); border-radius: 999px; transition: width .5s ease; }
+
+/* Inline exercise hint */
+.mahan-ex-hint { margin-top: 12px; padding: 10px 14px; border-radius: 10px; background: color-mix(in srgb, var(--m-warning) 12%, transparent); color: color-mix(in srgb, var(--m-warning-text) 85%, var(--m-text)); font-size: 14px; }
+
+/* Quiz: answered counter + guarded submit */
+.mahan-quiz-actions { align-items: center; }
+.mahan-quiz-count { margin-right: auto; color: var(--m-muted); font-size: 13px; font-weight: 700; }
+
+/* Jump back in (dashboard) */
+
+/* Weekly activity dots (Duolingo-style) */
+.mahan-week { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
+.mahan-week-label { font-size: 13px; font-weight: 700; color: var(--m-muted); }
+.mahan-week-days { display: flex; gap: 8px; }
+.mahan-week-day { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.mahan-week-dot { width: 28px; height: 28px; border-radius: 50%; background: var(--m-bg); border: 2px solid var(--m-border); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: var(--m-accent-text); }
+.mahan-week-day.is-active .mahan-week-dot { border-color: var(--m-accent); background: color-mix(in srgb, var(--m-accent) 25%, var(--m-bg)); }
+.mahan-week-day.is-goal .mahan-week-dot { background: var(--m-accent-fill); border-color: var(--m-accent-fill); color: #fff; }
+.mahan-week-day.is-today .mahan-week-dot { box-shadow: 0 0 0 3px color-mix(in srgb, var(--m-primary) 30%, transparent); }
+.mahan-week-name { font-size: 10px; font-weight: 700; color: var(--m-muted); text-transform: uppercase; }
+.mahan-week-day.is-today .mahan-week-name { color: var(--m-primary); }
+
+/* Badge progress on locked badges */
+.mahan-badge-progress { width: 100%; margin-top: 8px; display: flex; align-items: center; gap: 8px; }
+.mahan-badge-progress-bar { flex: 1; height: 6px; border-radius: 999px; background: var(--m-bg); overflow: hidden; }
+.mahan-badge-progress-bar span { display: block; height: 100%; background: var(--m-accent); border-radius: 999px; }
+.mahan-badge-progress-label { font-size: 11px; font-weight: 700; color: var(--m-muted); }
+.mahan-badge.is-locked .mahan-badge-progress { filter: none; }
+
+/* Course-complete celebration */
+.mahan-complete-modal { position: relative; overflow: hidden; text-align: center; max-width: 480px; }
+.mahan-complete-icon { font-size: 64px; line-height: 1; margin: 8px 0 10px; }
+.mahan-complete-modal h2 { font-size: 26px; }
+.mahan-confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.mahan-confetti i { position: absolute; top: -12px; width: 8px; height: 14px; border-radius: 2px; opacity: .9; animation: m-confetti 3s linear forwards; }
+@keyframes m-confetti {
+	0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+	100% { transform: translateY(560px) rotate(540deg); opacity: 0; }
+}
+
+/* Tutor: honest status, keyboard hint */
+.mahan-tutor-status.is-off { color: var(--m-muted); }
+.mahan-tutor-hint { padding: 0 14px 10px; color: var(--m-muted); font-size: 11.5px; }
+@media (pointer: coarse) { .mahan-tutor-hint { display: none; } }
+
+/* Toasts are now dismissible on tap */
+.mahan-toast { pointer-events: auto; cursor: pointer; }
+
+/* Goal card helper text + profile validation */
+.mahan-goal-pick-msg { margin: 6px 0 0; color: var(--m-muted); font-size: 13.5px; }
+.mahan-field.is-invalid label { color: var(--m-danger); }
+.mahan-field.is-invalid input, .mahan-field.is-invalid textarea, .mahan-field.is-invalid select, .mahan-field.is-invalid .mahan-checks { border-color: #dc2626; }
+
+/* Error box hint */
+.mahan-error-hint { font-size: 28px; margin: -6px 0 0; }
+
+@media (prefers-reduced-motion: reduce) {
+	.mahan-confetti { display: none; }
+}
+
+/* ==================================================================== */
+/* v1.6.0 — UX polish: busy states, wayfinding, leaderboard targets     */
+/* ==================================================================== */
+
+/* Button in-flight spinner (setBusy) */
+.mahan-btn-spinner { display: inline-block; width: 15px; height: 15px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; opacity: .85; animation: m-spin .6s linear infinite; vertical-align: -2px; }
+.mahan-btn[aria-busy="true"] { cursor: progress; opacity: 1; }
+
+/* Prev/Next lesson buttons with sibling titles */
+.mahan-lesson-nav { flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; max-width: 46%; padding-top: 8px; padding-bottom: 8px; }
+.mahan-lesson-nav-next { align-items: flex-end; text-align: right; }
+.mahan-lesson-nav-kicker { font-size: 12px; font-weight: 700; color: var(--m-muted); }
+.mahan-lesson-nav-title { font-size: 14px; font-weight: 700; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mahan-lesson-nav-spacer { display: inline-block; }
+@media (max-width: 640px) {
+	.mahan-lesson-nav { max-width: none; flex: 1; }
+	.mahan-lesson-nav-title { display: none; }
+}
+
+/* Leaderboard "XP to next rank" target */
+.mahan-lb-gap-note { display: block; font-size: 12px; font-weight: 700; color: var(--m-primary); margin-top: 2px; }
+
+/* Tutor send button busy state */
+.mahan-tutor-send.is-busy { position: relative; color: transparent; }
+.mahan-tutor-send.is-busy::after { content: ""; position: absolute; inset: 0; margin: auto; width: 16px; height: 16px; border-radius: 50%; border: 2px solid #fff; border-right-color: transparent; animation: m-spin .6s linear infinite; }
+.mahan-tutor-send[disabled] { opacity: .8; cursor: progress; }
+
+/* Cold-flame streak stat (today not yet counted) */
+.mahan-stat-big.is-cold { background: color-mix(in srgb, var(--m-warning) 8%, var(--m-surface-2)); border-color: color-mix(in srgb, var(--m-warning) 22%, var(--m-border)); }
+.mahan-stat-big.is-cold .mahan-stat-icon { filter: grayscale(.3); opacity: .85; }
+.mahan-stat-big.is-cold .mahan-stat-label { color: var(--m-warning-text); }
+
+@media (prefers-reduced-motion: reduce) {
+	.mahan-btn-spinner, .mahan-tutor-send.is-busy::after { animation-duration: .01ms; }
+}
+
+/* ==================================================================== */
+/* v1.7.0 — Adaptive review (spaced repetition of missed questions)     */
+/* ==================================================================== */
+
+/* Dashboard call-to-action */
+
+/* Review session */
+.mahan-review-hero { text-align: center; }
+.mahan-review-progress { display: flex; align-items: center; gap: 12px; max-width: 720px; margin: 0 auto 20px; }
+.mahan-review-progress-track { flex: 1; height: 10px; border-radius: 999px; background: var(--m-border); overflow: hidden; }
+.mahan-review-progress-fill { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--m-primary), var(--m-accent)); border-radius: 999px; transition: width .35s ease; }
+.mahan-review-progress-label { font-size: 13px; font-weight: 700; color: var(--m-muted); min-width: 64px; text-align: right; }
+.mahan-review-stage { max-width: 720px; margin: 0 auto; }
+.mahan-review-card { position: relative; background: var(--m-surface); }
+.mahan-review-card.is-correct { border-color: var(--m-accent); }
+.mahan-review-card.is-incorrect { border-color: var(--m-danger); }
+.mahan-review-card.is-variant { border-style: dashed; }
+.mahan-review-variant-tag { display: inline-block; margin-bottom: 10px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--m-primary); background: color-mix(in srgb, var(--m-primary) 12%, transparent); padding: 3px 10px; border-radius: 999px; }
+.mahan-review-bar { flex-wrap: wrap; gap: 10px; }
+.mahan-review-variant-btn { margin-right: auto; }
+.mahan-review-msg { color: var(--m-danger); font-size: 14px; }
+.mahan-review-empty-icon { font-size: 56px; line-height: 1; }
+.mahan-review-complete h2 { margin: 6px 0; }
+@media (max-width: 640px) {
+	.mahan-review-bar .mahan-btn { flex: 1; }
+	.mahan-review-variant-btn { margin-right: 0; flex-basis: 100%; }
+}
+
+/* ==================================================================== */
+/* v1.7.1 — dark-theme contrast for success/goal text (audit D7)        */
+/* ==================================================================== */
+.mahan-app.mahan-theme-dark .mahan-ex-feedback.is-correct { color: color-mix(in srgb, var(--m-accent) 80%, #fff); }
+.mahan-app.mahan-theme-dark .mahan-goal-done-msg { color: color-mix(in srgb, var(--m-accent) 80%, #fff); }
+.mahan-app.mahan-theme-dark .mahan-quiz-q.is-correct .mahan-quiz-q-title { color: color-mix(in srgb, var(--m-accent) 80%, #fff); }
+
+/* ==================================================================== */
+/* v1.8.0 — UX round 3: nav badges, review context, focus management    */
+/* ==================================================================== */
+
+/* Due-review count badge on nav items */
+.mahan-nav-link { position: relative; }
+.mahan-nav-count { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 6px; border-radius: 999px; background: var(--m-danger-solid); color: #fff; font-size: 11px; font-weight: 800; line-height: 1; vertical-align: 1px; }
+.mahan-bottomnav-icon { position: relative; display: inline-flex; }
+.mahan-bottomnav-icon .mahan-nav-count { position: absolute; top: -6px; right: -14px; margin-left: 0; }
+
+/* Review card context ("Course · Lesson") */
+.mahan-review-context { font-size: 12px; font-weight: 700; color: var(--m-muted); text-transform: uppercase; letter-spacing: .03em; margin-bottom: 10px; }
+
+/* Programmatic focus target for route changes — no visible ring */
+.mahan-main:focus { outline: none; }
+
+/* Logged-out CTA row (login + create account) */
+.mahan-cta-row { display: flex; gap: 10px; flex-wrap: wrap; }
+@media (max-width: 640px) { .mahan-cta-row .mahan-btn { flex: 1; } }
+
+/* Review session exit button */
+.mahan-review-exit { flex: none; width: 34px; height: 34px; border: 1px solid var(--m-border); border-radius: 50%; background: var(--m-surface); color: var(--m-muted); font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.mahan-review-exit:hover { color: var(--m-text); background: var(--m-bg); }
+
+/* Inert (locked / not-enrolled) lesson rows are tappable for an explanation */
+.mahan-lesson-row.is-locked { cursor: pointer; }
+div.mahan-lesson-row { cursor: pointer; }
+
+/* Dashboard: standalone page title (actions render before the stats hero) */
+.mahan-dash-title { margin: 0 0 18px; font-size: 28px; }
+
+/* ==================================================================== */
+/* v1.8.0 — round 3 batch 2: a11y utilities, lazy images, key hints     */
+/* ==================================================================== */
+
+/* Screen-reader-only utility (visible to AT, removed from visual flow) */
+.mahan-sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+/* Empty nav badge (rendered at 0 so refreshHud can patch it) stays hidden */
+.mahan-nav-count:empty { display: none; }
+
+/* Lazy-loaded card image: fades in over the tinted placeholder */
+.mahan-card-media { position: relative; overflow: hidden; }
+.mahan-card-img { width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0; transition: opacity .3s ease; }
+.mahan-card-img.is-loaded { opacity: 1; }
+
+/* Number-key hint chip on review answer options */
+.mahan-ex-option-key { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; margin-right: 9px; padding: 0 4px; border-radius: 5px; background: color-mix(in srgb, var(--m-primary) 12%, var(--m-surface)); color: var(--m-muted); font-size: 11px; font-weight: 800; vertical-align: 1px; }
+.mahan-ex-option.is-chosen .mahan-ex-option-key { background: color-mix(in srgb, var(--m-primary) 26%, var(--m-surface)); color: var(--m-primary); }
+.mahan-ex-option.is-correct .mahan-ex-option-key { background: color-mix(in srgb, var(--m-accent) 22%, var(--m-surface)); }
+@media (max-width: 640px) { .mahan-ex-options.mahan-ex-tf .mahan-ex-option-key { display: none; } }
+
+/* Cold-streak flame in the top bar (today hasn't counted yet) */
+.mahan-hud-streak.is-cold .mahan-hud-icon { filter: grayscale(.4); opacity: .8; }
+
+/* Inline right/wrong text cue prepended to graded quiz questions */
+.mahan-grade-cue { font-weight: 800; }
+.mahan-quiz-q.is-correct .mahan-grade-cue { color: var(--m-accent); }
+.mahan-quiz-q.is-incorrect .mahan-grade-cue { color: var(--m-danger); }
+
+/* Re-drill expectation line under an incorrect review answer */
+.mahan-review-again { margin-top: 4px; font-size: 13px; opacity: .85; }
+
+/* ==================================================================== */
+/* v1.9.0 — UI polish: type system, tactile controls, focus, surfaces   */
+/* ==================================================================== */
+
+/* Normalize custom buttons: strip native control chrome so themed styling is
+   consistent across platforms/browsers. (Selects keep their native, now
+   colour-scheme-aware, caret.) */
+.mahan-btn, .mahan-ex-option, .mahan-chip, button.mahan-quiz-row,
+.mahan-tutor-send, .mahan-review-exit, .mahan-tutor-close, .mahan-tutor-fab,
+.mahan-ex-hint-btn {
+	appearance: none; -webkit-appearance: none;
+}
+
+/* Crisper text rendering + a system selection colour */
+.mahan-app { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; accent-color: var(--m-primary); text-rendering: optimizeLegibility; }
+.mahan-app ::selection { background: color-mix(in srgb, var(--m-primary) 22%, transparent); }
+
+/* Tabular numerals: live-updating counters (XP, streak, level, %, ranks)
+   keep a fixed digit width so they don't shift/jitter as values change. */
+.mahan-hud-item, .mahan-stat-value, .mahan-progress-label, .mahan-level-bar-label,
+.mahan-lb-xp, .mahan-lb-rank, .mahan-nav-count, .mahan-goal-select,
+.mahan-review-progress-label, .mahan-quiz-count, .mahan-quiz-score, .mahan-quiz-score-fail {
+	font-variant-numeric: tabular-nums;
+	font-feature-settings: "tnum" 1;
+}
+
+/* Balanced headings — no orphan last word on multi-line titles */
+.mahan-hero h1, .mahan-course-hero h1, .mahan-lesson-title, .mahan-card-title,
+.mahan-plan-title, .mahan-dash-title, .mahan-modal h2, .mahan-section h2 {
+	text-wrap: balance;
+}
+/* Longer body sub-copy reads better with pretty wrapping */
+.mahan-hero-sub, .mahan-course-sub, .mahan-card-sub { text-wrap: pretty; }
+
+/* Tactile 3D primary button: the press physically sinks into its shadow
+   (Duolingo-style) instead of the flat 1px nudge the other buttons use. */
+.mahan-btn-primary { transition: transform .08s ease, box-shadow .12s ease, filter .15s ease; }
+.mahan-btn-primary:active { transform: translateY(3px); box-shadow: 0 1px 0 color-mix(in srgb, var(--m-primary) 60%, #000); }
+.mahan-btn-primary.is-done:active { box-shadow: 0 1px 0 color-mix(in srgb, var(--m-accent) 60%, #000); }
+.mahan-btn-primary[disabled]:active { transform: none; }
+
+/* Consistent, affordant focus ring on every text control (was border-only) */
+.mahan-ex-input:focus, .mahan-tutor-input:focus, .mahan-goal-select:focus,
+.mahan-field input[type="text"]:focus, .mahan-field textarea:focus, .mahan-field select:focus {
+	outline: none; border-color: var(--m-primary); box-shadow: var(--m-ring);
+}
+
+/* Smooth hover on pill controls */
+.mahan-chip { transition: background .12s ease, border-color .12s ease, color .12s ease; }
+.mahan-nav-link, .mahan-bottomnav-item { transition: background .12s ease, color .12s ease; }
+.mahan-chip:hover:not(.is-active) { border-color: color-mix(in srgb, var(--m-primary) 40%, var(--m-border)); color: var(--m-text); }
+
+/* Cards: keyboard focus mirrors the hover lift, and hover gains a defined edge */
+.mahan-card:hover { border-color: color-mix(in srgb, var(--m-primary) 22%, var(--m-border)); }
+.mahan-card:focus-visible { transform: translateY(-4px); box-shadow: var(--m-shadow); border-color: color-mix(in srgb, var(--m-primary) 30%, var(--m-border)); }
+
+/* Thin, themed scrollbars for the app's scroll regions */
+.mahan-tutor-log, .mahan-modal, .mahan-prose pre { scrollbar-width: thin; scrollbar-color: var(--m-border) transparent; }
+.mahan-tutor-log::-webkit-scrollbar, .mahan-modal::-webkit-scrollbar, .mahan-prose pre::-webkit-scrollbar { width: 8px; height: 8px; }
+.mahan-tutor-log::-webkit-scrollbar-thumb, .mahan-modal::-webkit-scrollbar-thumb, .mahan-prose pre::-webkit-scrollbar-thumb { background: var(--m-border); border-radius: 999px; }
+.mahan-tutor-log::-webkit-scrollbar-thumb:hover, .mahan-modal::-webkit-scrollbar-thumb:hover { background: var(--m-muted); }
+
+/* Empty-state icons get a focal circular badge instead of a bare glyph */
+.mahan-review-empty-icon {
+	display: inline-flex; align-items: center; justify-content: center;
+	width: 88px; height: 88px; border-radius: 50%; font-size: 40px;
+	background: color-mix(in srgb, var(--m-primary) 10%, var(--m-surface));
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--m-primary) 16%, transparent);
+}
+
+/* Send button gets the same tactile/disabled feedback as other controls */
+.mahan-tutor-send { transition: filter .15s ease, transform .08s ease; }
+.mahan-tutor-send:not(:disabled):hover { filter: brightness(1.05); }
+.mahan-tutor-send:active { transform: translateY(1px); }
+.mahan-tutor-send:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Keep the polish honest under reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+	.mahan-card:focus-visible { transform: none; }
+	.mahan-btn-primary:active { transform: none; }
+}
+
+/* ==================================================================== */
+/* v1.9.2 — typography & reading experience                             */
+/* ==================================================================== */
+
+/* Modern font stack: system-ui first, dedicated emoji fallbacks, optical
+   sizing on variable system fonts. */
+.mahan-app {
+	font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+	font-optical-sizing: auto;
+}
+
+/* Optimal reading measure (~66 characters) for long-form lesson content —
+   only the lesson's reading column, not full-width headings/exercises or the
+   course description. Comfortable line-height for sustained reading. */
+.mahan-lesson-col > .mahan-prose { max-width: 66ch; }
+.mahan-prose { line-height: 1.7; }
+.mahan-prose > :first-child { margin-top: 0; }
+.mahan-prose h1, .mahan-prose h2, .mahan-prose h3, .mahan-prose h4 {
+	line-height: 1.2; letter-spacing: -.015em; scroll-margin-top: 84px;
+}
+
+/* Refined prose links: an offset, slightly thicker underline that grows on
+   hover — clearer than the browser default baseline underline. */
+.mahan-prose a {
+	text-decoration-thickness: 1px; text-underline-offset: 2px;
+	transition: text-decoration-thickness .1s ease;
+}
+.mahan-prose a:hover { text-decoration-thickness: 2px; }
+
+/* In-page anchor targets clear the sticky top bar instead of hiding under it */
+.mahan-app :target { scroll-margin-top: 84px; }
+.mahan-lesson-title, .mahan-section h2 { scroll-margin-top: 84px; }
+
+/* ==================================================================== */
+/* v1.9.3 — audit fixes: contrast, states, overflow, rhythm, motion     */
+/* ==================================================================== */
+
+/* --- Contrast: repoint text/icon usages at the AA-legible *-text tokens
+   (fills like buttons/chips.is-active keep the raw --m-primary). --------- */
+.mahan-brand span, .mahan-hud-xp, .mahan-card-cat, .mahan-tag, .mahan-lesson-xp,
+.mahan-quiz-tag, .mahan-lb-xp, .mahan-plan-kicker, .mahan-lesson-pos-unit,
+.mahan-review-variant-tag { color: var(--m-primary-text); }
+.mahan-nav-link.is-active { color: var(--m-primary-text); }
+.mahan-hud-level, .mahan-progress-label, .mahan-check, .mahan-quiz-score { color: var(--m-accent-text); }
+.mahan-tutor-status { color: var(--m-accent-text); }
+.mahan-hud-streak { color: var(--m-warning-text); }
+.mahan-hud-freeze { color: var(--m-info-text); }
+
+/* --- Disabled states ---------------------------------------------------- */
+/* Text controls: no native greying (they set explicit bg/color), so give
+   locked fields an unmistakable disabled look. -webkit-text-fill-color is
+   required or Safari ignores `color` on disabled fields. */
+.mahan-tutor-input:disabled, .mahan-ex-input:disabled, .mahan-goal-select:disabled,
+.mahan-field input:disabled, .mahan-field textarea:disabled, .mahan-field select:disabled {
+	background: var(--m-surface-2); color: var(--m-muted);
+	-webkit-text-fill-color: var(--m-muted); cursor: not-allowed; opacity: .7;
+}
+/* Graded non-answer options recede so the correct/chosen ones stand out. */
+.mahan-ex-option[disabled]:not(.is-correct):not(.is-chosen) { opacity: .7; }
+
+/* --- Graded wrong pick: mark the learner's own incorrect choice red.
+   Scoped to graded (.is-incorrect) wrappers so re-submittable lesson
+   exercises are never affected. ----------------------------------------- */
+.mahan-review-card.is-incorrect .mahan-ex-option.is-chosen:not(.is-correct),
+.mahan-quiz-q.is-incorrect .mahan-ex-option.is-chosen:not(.is-correct) {
+	border-color: var(--m-danger);
+	background: color-mix(in srgb, var(--m-danger) 10%, transparent);
+}
+
+/* --- Button colour transitions + press/hover on clickable non-buttons --- */
+.mahan-btn { transition: transform var(--m-dur-1) ease, background-color var(--m-dur-2) ease, box-shadow .15s ease, filter .15s ease; }
+.mahan-btn-primary { transition: transform .08s ease, background-color var(--m-dur-2) ease, box-shadow .12s ease, filter .15s ease; }
+div.mahan-lesson-row:hover { border-color: color-mix(in srgb, var(--m-primary) 20%, var(--m-border)); }
+div.mahan-lesson-row:active { transform: translateY(1px); }
+.mahan-chip:active { transform: translateY(1px); }
+.mahan-ex-option:not([disabled]):active { transform: translateY(1px); }
+
+/* --- Overflow / responsive safety -------------------------------------- */
+.mahan-topbar { min-width: 0; }
+.mahan-brand { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mahan-hud { flex: none; }
+.mahan-prose { overflow-wrap: break-word; }
+.mahan-prose table { display: block; width: 100%; overflow-x: auto; }
+.mahan-bubble { overflow-wrap: anywhere; }
+.mahan-toast { max-width: calc(100vw - 32px); }
+@media (max-width: 640px) {
+	.mahan-toasts { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
+}
+/* Left/right safe-area insets so a landscape notch never clips chrome. */
+.mahan-topbar { padding-left: max(clamp(16px, 5vw, 48px), env(safe-area-inset-left, 0px)); padding-right: max(clamp(16px, 5vw, 48px), env(safe-area-inset-right, 0px)); }
+.mahan-main { padding-left: max(clamp(16px, 5vw, 48px), env(safe-area-inset-left, 0px)); padding-right: max(clamp(16px, 5vw, 48px), env(safe-area-inset-right, 0px)); }
+
+/* --- Touch targets: the four the coarse block missed --------------------- */
+@media (pointer: coarse) {
+	.mahan-tutor-close, .mahan-review-exit { width: 44px; height: 44px; }
+	.mahan-ex-hint-btn { min-height: 44px; }
+	.mahan-back { display: inline-flex; align-items: center; min-height: 44px; }
+}
+
+/* --- Affordances -------------------------------------------------------- */
+.mahan-note a { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+.mahan-note a:hover { text-decoration-thickness: 2px; }
+.mahan-search-input::placeholder, .mahan-tutor-input::placeholder, .mahan-ex-input::placeholder,
+.mahan-field input::placeholder, .mahan-field textarea::placeholder { color: var(--m-muted); opacity: 1; }
+
+/* --- Consistency: one-off radius, section-header size + rhythm ---------- */
+.mahan-goal-select { border-radius: var(--m-radius-sm); }
+.mahan-dash-h2 { margin: var(--m-section-gap) 0 16px; font-size: 22px; letter-spacing: -.01em; }
+.mahan-dash-hero h1:last-child { margin-bottom: 0; }
+.mahan-dash-title, .mahan-dash-hero h1, .mahan-modal h2, .mahan-section h2,
+.mahan-plan-title { letter-spacing: -.01em; }
+
+/* --- Motion: smooth the reveals that hard-cut today --------------------- */
+.mahan-ex-feedback.is-correct, .mahan-ex-feedback.is-incorrect { animation: m-reveal var(--m-dur-2) var(--m-ease-out); }
+.mahan-ex-hint { animation: m-reveal .18s var(--m-ease-out); }
+@keyframes m-reveal { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+@media (min-width: 641px) {
+	.mahan-modal-overlay { animation: m-overlay-in .18s ease; }
+	.mahan-modal { animation: m-modal-in .22s var(--m-ease); }
+}
+@keyframes m-overlay-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes m-modal-in { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+
+/* --- Motion tokens threaded into a few high-traffic transitions --------- */
+.mahan-card { transition: transform var(--m-dur-1) var(--m-ease), box-shadow var(--m-dur-2) var(--m-ease); }
+.mahan-progress-bar span, .mahan-level-bar-track span, .mahan-lesson-course-bar span,
+.mahan-review-progress-fill { transition: width var(--m-dur-3) var(--m-ease-out); }
+
+/* --- Empty/error states: shared focal icon badge (markup added in JS) --- */
+.mahan-empty-icon {
+	display: inline-flex; align-items: center; justify-content: center;
+	width: 88px; height: 88px; border-radius: 50%; font-size: 40px;
+	background: color-mix(in srgb, var(--m-primary) 10%, var(--m-surface));
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--m-primary) 16%, transparent);
+}
+
+/* Keep the new reveals honest under reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+	.mahan-ex-feedback.is-correct, .mahan-ex-feedback.is-incorrect, .mahan-ex-hint,
+	.mahan-modal-overlay, .mahan-modal { animation: none !important; }
+	div.mahan-lesson-row:active, .mahan-chip:active, .mahan-ex-option:active { transform: none; }
+}
+
+/* ==================================================================== */
+/* v1.9.4 — keyboard & screen-reader navigation                         */
+/* ==================================================================== */
+
+/* Skip-to-content link: off-screen until focused, then slides in as the
+   first tabbable element so keyboard users can bypass the nav. */
+.mahan-skip {
+	position: absolute; left: 12px; top: -60px; z-index: 100002;
+	background: var(--m-primary); color: #fff; font-weight: 700;
+	padding: 10px 18px; border-radius: 0 0 var(--m-radius-sm) var(--m-radius-sm);
+	text-decoration: none; box-shadow: var(--m-shadow);
+	transition: top var(--m-dur-1) var(--m-ease-out);
+}
+.mahan-skip:focus { top: 0; outline: 3px solid #fff; outline-offset: -3px; }
+@media (prefers-reduced-motion: reduce) { .mahan-skip { transition: none; } }
+
+/* ==================================================================== */
+/* v1.18.0 — UX layer: filter clarity, wayfinding, keyboard             */
+/* ==================================================================== */
+
+/* Filter summary — result count + a removable pill per active filter, so a
+   short list is never unexplained and every filter can be dropped from one
+   place (including the ones whose own control is collapsed or scrolled away). */
+.mahan-filter-summary { display: flex; flex-direction: column; gap: 10px; margin: 0 0 18px; }
+.mahan-filter-count { margin: 0; font-size: 14px; font-weight: 600; color: var(--m-muted); }
+.mahan-filter-pills { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.mahan-filter-pill {
+	display: inline-flex; align-items: center; gap: 8px; max-width: 100%;
+	border: 1px solid color-mix(in srgb, var(--m-primary) 32%, var(--m-border));
+	background: color-mix(in srgb, var(--m-primary) 10%, transparent);
+	color: var(--m-primary-text);
+	padding: 5px 12px; border-radius: 999px; font-size: 13px; font-weight: 700; cursor: pointer;
+}
+.mahan-filter-pill > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mahan-filter-pill:hover { background: color-mix(in srgb, var(--m-primary) 18%, transparent); }
+.mahan-filter-pill-x { font-size: 11px; opacity: .75; }
+.mahan-filter-clear { border: 0; background: none; color: var(--m-muted); font-size: 13px; font-weight: 700; text-decoration: underline; cursor: pointer; padding: 5px 4px; }
+.mahan-filter-clear:hover { color: var(--m-text); }
+
+/* Ladder rung on a card: four sibling courses read as a progression. */
+.mahan-card-kicker { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.mahan-card-rung {
+	flex: none; font-size: 11px; font-weight: 800; letter-spacing: .03em;
+	color: var(--m-muted); background: var(--m-surface-2);
+	padding: 3px 8px; border-radius: 999px;
+}
+
+/* Lesson: "Contents" opens the course outline over the reader. */
+.mahan-contents-btn {
+	margin-left: auto; border: 1px solid var(--m-border); background: var(--m-surface);
+	color: var(--m-muted); font-size: 13px; font-weight: 700;
+	padding: 6px 12px; border-radius: 999px; cursor: pointer;
+}
+.mahan-contents-btn:hover { color: var(--m-text); border-color: color-mix(in srgb, var(--m-primary) 40%, var(--m-border)); }
+.mahan-contents .mahan-contents-body { max-height: 56vh; overflow: auto; margin: 8px 0 4px; }
+.mahan-contents-title { margin: 0 0 4px; }
+.mahan-contents-status { color: var(--m-muted); margin: 12px 0; }
+.mahan-contents-row.is-current {
+	background: color-mix(in srgb, var(--m-primary) 12%, transparent);
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--m-primary) 34%, transparent);
+	font-weight: 700;
+}
+.mahan-contents-row.is-current .mahan-lesson-meta { color: var(--m-primary-text); font-weight: 700; }
+
+/* Reading progress: how far through *this* lesson (the header bar tracks the
+   whole course). Hidden when the lesson fits on one screen. */
+.mahan-read-progress {
+	position: fixed; inset: 0 0 auto 0; height: 3px; z-index: 60;
+	background: color-mix(in srgb, var(--m-primary) 12%, transparent); pointer-events: none;
+}
+.mahan-read-progress[hidden] { display: none; }
+.mahan-read-progress span { display: block; height: 100%; width: 0; background: var(--m-primary); }
+
+/* Language switcher. Stays visible on small screens — unlike the keyboard
+   hint, a reader on a phone needs this one more, not less. */
+.mahan-lang { display: inline-flex; align-items: center; gap: 4px; }
+.mahan-lang-icon { font-size: 13px; line-height: 1; opacity: .7; }
+.mahan-lang-select {
+	appearance: none; -webkit-appearance: none;
+	border: 1px solid var(--m-border); background: var(--m-surface); color: var(--m-muted);
+	border-radius: 999px; padding: 5px 10px; font: inherit; font-size: 13px; line-height: 1;
+	cursor: pointer; max-width: 120px;
+}
+.mahan-lang-select:hover:not(:disabled) { color: var(--m-text); border-color: color-mix(in srgb, var(--m-primary) 40%, var(--m-border)); }
+.mahan-lang-select:disabled { opacity: .6; cursor: progress; }
+@media (max-width: 720px) { .mahan-lang-icon { display: none; } .mahan-lang-select { max-width: 84px; padding: 5px 8px; } }
+
+/* Keyboard shortcuts: the topbar hint + the help sheet. */
+.mahan-kbd-btn {
+	border: 1px solid var(--m-border); background: var(--m-surface); color: var(--m-muted);
+	width: 30px; height: 30px; border-radius: 999px; cursor: pointer; font-size: 14px; line-height: 1;
+}
+.mahan-kbd-btn:hover { color: var(--m-text); border-color: color-mix(in srgb, var(--m-primary) 40%, var(--m-border)); }
+/* No keyboard to shortcut on a touch screen. */
+@media (hover: none), (max-width: 720px) { .mahan-kbd-btn { display: none; } }
+.mahan-sc-list { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 10px 16px; margin: 14px 0 4px; }
+.mahan-sc-list dt { margin: 0; }
+.mahan-sc-list dd { margin: 0; color: var(--m-muted); font-size: 14px; }
+.mahan-sc-list kbd {
+	display: inline-block; min-width: 34px; text-align: center;
+	border: 1px solid var(--m-border); border-bottom-width: 2px; border-radius: 6px;
+	background: var(--m-surface-2); color: var(--m-text);
+	padding: 4px 8px; font: 700 12px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+@media (prefers-reduced-motion: reduce) { .mahan-read-progress span { transition: none; } }
+
+/* ==================================================================== */
+/* v1.19.0 — UI layer: covers, hierarchy, depth                         */
+/* ==================================================================== */
+
+/* --- Course covers -------------------------------------------------- */
+/* Every course gets real cover art. The old placeholder was a flat block
+   with one oversized letter — it read as a missing image in light mode and
+   was nearly invisible in dark. These are six saturated gradients picked
+   deterministically from the course itself, so a course always looks like
+   itself, white type keeps its contrast in both themes, and no image is
+   ever fetched. */
+.mahan-cover { position: relative; height: 148px; overflow: hidden; background: var(--m-surface-2); }
+.mahan-cover.is-wide { height: 100%; min-height: 190px; border-radius: var(--m-radius-sm); }
+.mahan-cover-img { background-size: cover; background-position: center; }
+
+.mahan-cover-gen { display: flex; flex-direction: column; justify-content: flex-end; padding: 14px 16px; }
+/* Soft light source + a faint grid, so the gradient reads as a surface
+   rather than a colour swatch. */
+.mahan-cover-gen::before {
+	content: ''; position: absolute; inset: 0;
+	background:
+		radial-gradient(120% 90% at 12% 0%, rgba(255, 255, 255, .34), transparent 62%),
+		repeating-linear-gradient(115deg, rgba(255, 255, 255, .07) 0 2px, transparent 2px 22px);
+}
+.mahan-cover-glyph {
+	position: absolute; right: -6px; top: -34px; z-index: 0;
+	font-size: 132px; font-weight: 800; line-height: 1;
+	color: rgba(255, 255, 255, .19); letter-spacing: -.05em; user-select: none;
+}
+.mahan-cover-cat {
+	position: relative; z-index: 1;
+	font-size: 11px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+	color: rgba(255, 255, 255, .96); text-shadow: 0 1px 2px rgba(0, 0, 0, .22);
+}
+/* Hue = category (a category reads as a colour family); angle and tone come
+   from the course title, so siblings in one category still differ. */
+.mahan-cover-gen { filter: hue-rotate(var(--cover-tone, 0deg)); }
+.mahan-cover-0 { background: linear-gradient(var(--cover-angle, 135deg), #4f46e5, #7c3aed 55%, #a855f7); }
+.mahan-cover-1 { background: linear-gradient(var(--cover-angle, 135deg), #0e7490, #0891b2 50%, #22d3ee); }
+.mahan-cover-2 { background: linear-gradient(var(--cover-angle, 135deg), #15803d, #16a34a 55%, #4ade80); }
+.mahan-cover-3 { background: linear-gradient(var(--cover-angle, 135deg), #b45309, #ea580c 55%, #fbbf24); }
+.mahan-cover-4 { background: linear-gradient(var(--cover-angle, 135deg), #be123c, #e11d48 55%, #fb7185); }
+.mahan-cover-5 { background: linear-gradient(var(--cover-angle, 135deg), #1e3a8a, #3730a3 55%, #6366f1); }
+/* Dark mode: same hues, lower luminance so a wall of cards doesn't glare. */
+.mahan-theme-dark .mahan-cover-gen { filter: hue-rotate(var(--cover-tone, 0deg)) saturate(.92) brightness(.86); }
+
+.mahan-card:hover .mahan-cover-glyph { transform: scale(1.04); }
+.mahan-cover-glyph { transition: transform var(--m-dur-3) var(--m-ease-out); }
+
+/* --- Hero: search belongs here -------------------------------------- */
+.mahan-hero { padding: 22px 0 30px; }
+.mahan-hero h1 { font-size: clamp(26px, 4vw, 38px); }
+.mahan-hero-sub { font-size: 17px; margin: 0 auto 22px; max-width: 54ch; }
+.mahan-hero .mahan-search { margin: 0 auto; }
+
+/* --- Course hero ---------------------------------------------------- */
+.mahan-course-hero-media { min-height: 190px; padding: 0; background: none; }
+/* Where you actually stand in the course, next to the CTA that resumes it. */
+.mahan-course-standing { margin: 4px 0 18px; max-width: 340px; }
+.mahan-course-standing-top { display: flex; align-items: baseline; gap: 8px; margin-bottom: 7px; }
+.mahan-course-standing-pct { font-size: 20px; font-weight: 800; color: var(--m-accent-text); }
+.mahan-course-standing-label { font-size: 13px; font-weight: 600; color: var(--m-muted); }
+
+/* --- Depth: cards need to lift off the page, in dark mode too -------- */
+/* Dark surfaces sit close to the background, so a 1px border does almost
+   nothing. A hairline top highlight is what actually separates them. */
+.mahan-theme-dark .mahan-card,
+.mahan-theme-dark .mahan-course-hero,
+.mahan-theme-dark .mahan-section,
+.mahan-theme-dark .mahan-tutor,
+.mahan-theme-dark .mahan-bundle-card,
+.mahan-theme-dark .mahan-modal {
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 1px 2px rgba(0, 0, 0, .4), 0 10px 28px rgba(0, 0, 0, .34);
+}
+.mahan-theme-dark .mahan-card:hover { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1), 0 3px 8px rgba(0, 0, 0, .45), 0 18px 44px rgba(0, 0, 0, .46); }
+.mahan-theme-dark .mahan-topbar { box-shadow: 0 1px 0 rgba(255, 255, 255, .05), 0 4px 20px rgba(0, 0, 0, .4); }
+
+/* --- HUD: a stat cluster, not one run-on string ---------------------- */
+.mahan-hud { gap: 4px; }
+.mahan-hud-item { padding: 5px 9px; border-radius: 999px; }
+.mahan-hud-item:hover { background: var(--m-surface-2); }
+.mahan-hud-avatar { margin-left: 8px; }
+/* No image? Initials, rather than a broken img leaking its alt text. */
+.mahan-hud-initials {
+	display: inline-flex; align-items: center; justify-content: center;
+	background: color-mix(in srgb, var(--m-primary) 16%, var(--m-surface));
+	color: var(--m-primary-text); font-weight: 800; font-size: 13px; letter-spacing: .02em;
+}
+
+/* --- Tutor: openers instead of a blank box -------------------------- */
+.mahan-tutor-starters { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; padding: 2px 0 4px; }
+.mahan-tutor-starters-label { font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--m-muted); }
+.mahan-tutor-starter {
+	max-width: 100%; text-align: left;
+	border: 1px solid color-mix(in srgb, var(--m-primary) 26%, var(--m-border));
+	background: color-mix(in srgb, var(--m-primary) 7%, var(--m-surface));
+	color: var(--m-primary-text);
+	padding: 8px 13px; border-radius: 999px; font-size: 13px; font-weight: 600; cursor: pointer;
+	transition: background var(--m-dur-1) var(--m-ease), transform var(--m-dur-1) var(--m-ease);
+}
+.mahan-tutor-starter:hover { background: color-mix(in srgb, var(--m-primary) 14%, var(--m-surface)); }
+.mahan-tutor-starter:active { transform: translateY(1px); }
+
+@media (prefers-reduced-motion: reduce) {
+	.mahan-cover-glyph, .mahan-tutor-starter { transition: none; }
+	.mahan-card:hover .mahan-cover-glyph { transform: none; }
+}
+
+/* ==================================================================== */
+/* v1.20.0 — UI layer 2: restraint, rhythm, entrance motion             */
+/* ==================================================================== */
+
+
+/* --- Stats: numbers, not a row of emoji ----------------------------- */
+/* Only the streak keeps an icon, because the flame carries state (lit vs.
+   at risk). An emoji above "XP" or "Level" just restated the label below
+   it in a fourth and fifth colour. */
+.mahan-stat-big { justify-content: center; gap: 3px; }
+.mahan-stat-big.is-plain { padding-top: 22px; padding-bottom: 22px; }
+.mahan-stat-big.is-plain .mahan-stat-value { font-size: 30px; }
+.mahan-stat-label { text-align: center; }
+
+/* --- One accent per meter ------------------------------------------- */
+/* The level bar was an indigo-to-green gradient: the loudest element on
+   the page, and the hue shift meant nothing. */
+.mahan-level-bar-track span { background: var(--m-primary); }
+
+/* --- Week strip: filled or not, no shape inside ---------------------- */
+.mahan-week-dot { width: 24px; height: 24px; font-size: 12px; }
+.mahan-week-day.is-active .mahan-week-dot { background: color-mix(in srgb, var(--m-accent) 34%, var(--m-bg)); border-color: color-mix(in srgb, var(--m-accent) 55%, var(--m-border)); }
+.mahan-week-day.is-today .mahan-week-dot { box-shadow: 0 0 0 3px color-mix(in srgb, var(--m-primary) 26%, transparent); }
+
+/* At-risk streak: the same flame, dimmed. Swapping in a candle made the
+   learner decode a new object instead of reading a state change. */
+.mahan-stat-big.is-cold .mahan-stat-icon,
+.mahan-hud-streak.is-cold .mahan-hud-icon { filter: grayscale(.85); opacity: .6; }
+
+/* --- Entrance motion ------------------------------------------------- */
+/* Opt-in only: the class below is added by JS, so content is visible with
+   no JS, no IntersectionObserver, or reduced motion. Transform + opacity
+   only, and the stagger is capped in JS so a long grid's last card is not
+   left waiting. */
+.mahan-reveal {
+	animation: m-reveal 460ms var(--m-ease-out) both;
+	animation-delay: calc(var(--reveal-i, 0) * 55ms);
+}
+@keyframes m-reveal {
+	from { opacity: 0; transform: translate3d(0, 10px, 0); }
+	to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+	.mahan-reveal { animation: none; }
+}
+
+/* --- Section rhythm -------------------------------------------------- */
+/* Headings that introduce a block sat the same distance from what came
+   before as from what they label. */
+.mahan-dash-h2 { margin-top: 34px; margin-bottom: 14px; }
+.mahan-dash-h2 + .mahan-badges-sub { margin-top: -8px; }
+.mahan-strip-title { margin-bottom: 14px; }
+
+/* ==================================================================== */
+/* v1.21.0 — per-course identity: pattern families + course accent      */
+/* ==================================================================== */
+
+/* --- Cover pattern families ------------------------------------------ */
+/* Hue already comes from the category. These add *structure*, picked from
+   the course title, so two courses in one category share a colour family
+   without looking like the same card printed twice. All six are pure
+   gradients — no images, no extra requests. */
+.mahan-cover-p0::before { background:
+	radial-gradient(120% 90% at 12% 0%, rgba(255,255,255,.34), transparent 62%),
+	repeating-linear-gradient(115deg, rgba(255,255,255,.07) 0 2px, transparent 2px 22px); }
+.mahan-cover-p1::before { background:
+	radial-gradient(120% 90% at 12% 0%, rgba(255,255,255,.32), transparent 62%),
+	radial-gradient(rgba(255,255,255,.14) 1.4px, transparent 1.5px) 0 0 / 16px 16px; }
+.mahan-cover-p2::before { background:
+	radial-gradient(120% 90% at 12% 0%, rgba(255,255,255,.3), transparent 62%),
+	repeating-linear-gradient(0deg, rgba(255,255,255,.08) 0 1px, transparent 1px 20px),
+	repeating-linear-gradient(90deg, rgba(255,255,255,.08) 0 1px, transparent 1px 20px); }
+.mahan-cover-p3::before { background:
+	radial-gradient(120% 90% at 12% 0%, rgba(255,255,255,.3), transparent 62%),
+	repeating-conic-gradient(from 200deg at 88% 112%, rgba(255,255,255,.1) 0 6deg, transparent 6deg 16deg); }
+.mahan-cover-p4::before { background:
+	radial-gradient(120% 90% at 12% 0%, rgba(255,255,255,.3), transparent 62%),
+	repeating-radial-gradient(circle at 92% 108%, transparent 0 20px, rgba(255,255,255,.1) 20px 21px); }
+.mahan-cover-p5::before { background:
+	radial-gradient(120% 90% at 12% 0%, rgba(255,255,255,.32), transparent 62%),
+	repeating-linear-gradient(45deg, rgba(255,255,255,.06) 0 10px, transparent 10px 20px),
+	repeating-linear-gradient(-45deg, rgba(255,255,255,.06) 0 10px, transparent 10px 20px); }
+
+/* --- Course accent --------------------------------------------------- */
+/* One class on the course/lesson wrapper redefines the accent for
+   everything inside it. `--m-course-text` is the AA-legible on-surface
+   shade (the fill is too light as small text on one side of each theme) —
+   same split as --m-primary / --m-primary-text.
+
+   Scope rule: identifying chrome only — category kicker, unit headings,
+   topic chips, meters, the current ladder rung. Primary buttons keep the
+   brand colour, because "the button you press" must not move around the
+   palette from one course to the next. */
+.mahan-themed { --m-course: var(--m-primary); --m-course-text: var(--m-primary-text); }
+.mahan-c0 { --m-course: #4f46e5; --m-course-text: #4338ca; }
+.mahan-c1 { --m-course: #0891b2; --m-course-text: #0e7490; }
+.mahan-c2 { --m-course: #16a34a; --m-course-text: #12692f; }
+.mahan-c3 { --m-course: #ea580c; --m-course-text: #9a4508; }
+.mahan-c4 { --m-course: #e11d48; --m-course-text: #be123c; }
+.mahan-c5 { --m-course: #2563eb; --m-course-text: #1d4ed8; }
+.mahan-theme-dark .mahan-c0 { --m-course: #6366f1; --m-course-text: #a5b4fc; }
+.mahan-theme-dark .mahan-c1 { --m-course: #22d3ee; --m-course-text: #67e8f9; }
+.mahan-theme-dark .mahan-c2 { --m-course: #22c55e; --m-course-text: #86efac; }
+.mahan-theme-dark .mahan-c3 { --m-course: #f59e0b; --m-course-text: #fcd34d; }
+.mahan-theme-dark .mahan-c4 { --m-course: #f43f5e; --m-course-text: #fda4af; }
+.mahan-theme-dark .mahan-c5 { --m-course: #3b82f6; --m-course-text: #93c5fd; }
+
+/* Identifying chrome picks up the course accent. */
+.mahan-themed .mahan-unit-title,
+.mahan-themed .mahan-lesson-pos-unit,
+.mahan-themed .mahan-course-standing-pct,
+.mahan-themed .mahan-plan-kicker { color: var(--m-course-text); }
+.mahan-themed .mahan-topic-chip {
+	color: var(--m-course-text);
+	border-color: color-mix(in srgb, var(--m-course) 34%, var(--m-border));
+	background: color-mix(in srgb, var(--m-course) 9%, transparent);
+}
+.mahan-themed .mahan-progress-bar span,
+.mahan-themed .mahan-lesson-course-bar span,
+.mahan-themed .mahan-read-progress span { background: var(--m-course); }
+.mahan-themed .mahan-read-progress { background: color-mix(in srgb, var(--m-course) 12%, transparent); }
+.mahan-themed .mahan-progress-label { color: var(--m-course-text); }
+/* Tinted, not filled. Painting the solid rung with the course fill put
+   white text on cyan/green/amber at 1.8-3.7:1; the tint keeps the accent
+   and keeps the label legible (measured >=4.5:1 in both themes). */
+.mahan-themed .mahan-ladder-rung.is-current {
+	background: color-mix(in srgb, var(--m-course) 14%, var(--m-surface));
+	border-color: color-mix(in srgb, var(--m-course) 46%, var(--m-border));
+	color: var(--m-course-text);
+}
+.mahan-themed a.mahan-ladder-rung:hover { border-color: var(--m-course); color: var(--m-course-text); }
+/* The course's own cover tints its hero card, so the page opens in its
+   colour instead of a neutral box. */
+.mahan-course.mahan-themed .mahan-course-hero {
+	border-color: color-mix(in srgb, var(--m-course) 26%, var(--m-border));
+	background: linear-gradient(150deg, color-mix(in srgb, var(--m-course) 7%, var(--m-surface)), var(--m-surface) 62%);
+}
+
+/* ==================================================================== */
+/* v1.22.0 — placement test + issued certificates                       */
+/* ==================================================================== */
+
+/* --- Placement -------------------------------------------------------- */
+.mahan-placement { max-width: 640px; margin: 0 auto; }
+.mahan-placement-intro, .mahan-placement-result {
+	background: var(--m-surface); border: 1px solid var(--m-border);
+	border-radius: var(--m-radius); padding: 32px 28px; box-shadow: var(--m-shadow-sm); text-align: center;
+}
+.mahan-placement-kicker { font-size: 12px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--m-primary-text); }
+.mahan-placement-intro h1, .mahan-placement-result h1 { margin: 8px 0 12px; font-size: clamp(24px, 4vw, 32px); }
+.mahan-placement-lead { color: var(--m-muted); font-size: 16px; margin: 0 auto 10px; max-width: 46ch; }
+.mahan-placement-note { color: var(--m-muted); font-size: 14px; margin: 0 0 20px; }
+.mahan-placement-prev { font-size: 14px; font-weight: 700; color: var(--m-accent-text); margin: 0 0 18px; }
+
+.mahan-placement-head { margin-bottom: 20px; }
+.mahan-placement-progress { display: flex; align-items: center; gap: 12px; }
+.mahan-placement-progress .mahan-progress-bar { flex: 1; }
+.mahan-placement-count { font-size: 13px; font-weight: 700; color: var(--m-muted); white-space: nowrap; }
+.mahan-placement-q {
+	background: var(--m-surface); border: 1px solid var(--m-border);
+	border-radius: var(--m-radius); padding: 26px 24px; box-shadow: var(--m-shadow-sm);
+}
+.mahan-placement-topic { font-size: 12px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: var(--m-muted); }
+.mahan-placement-question { margin: 8px 0 20px; font-size: 20px; line-height: 1.35; }
+.mahan-placement-skip { display: block; margin: 16px auto 0; border: 0; background: none; color: var(--m-muted); font-size: 13px; font-weight: 700; text-decoration: underline; cursor: pointer; }
+.mahan-placement-skip:hover { color: var(--m-text); }
+
+.mahan-placement-level { color: var(--m-primary-text); }
+.mahan-placement-score { font-size: 15px; font-weight: 700; color: var(--m-muted); margin: 0 0 14px; }
+.mahan-placement-starts { margin: 22px 0 6px; text-align: left; }
+.mahan-placement-starts-title { font-size: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--m-muted); margin: 0 0 10px; }
+.mahan-placement-start-list { display: flex; flex-direction: column; gap: 8px; }
+.mahan-placement-start {
+	display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+	border: 1px solid var(--m-border); border-radius: 12px; background: var(--m-surface);
+	text-decoration: none; color: inherit;
+}
+.mahan-placement-start:hover { border-color: color-mix(in srgb, var(--m-primary) 40%, var(--m-border)); }
+.mahan-placement-start-level {
+	flex: none; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em;
+	color: var(--m-primary-text); background: color-mix(in srgb, var(--m-primary) 10%, transparent);
+	padding: 4px 10px; border-radius: 999px;
+}
+.mahan-placement-start-title { font-weight: 700; }
+
+
+/* --- Certificates ----------------------------------------------------- */
+.mahan-cert-foot { margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(0, 0, 0, .12); }
+.mahan-cert-serial { font: 800 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .06em; }
+.mahan-cert-verify { font-size: 11px; color: #555; word-break: break-all; margin-top: 3px; }
+
+.mahan-cert-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.mahan-cert-item {
+	display: flex; align-items: center; gap: 12px; text-align: left; cursor: pointer;
+	padding: 14px 16px; border: 1px solid var(--m-border); border-radius: 12px;
+	background: var(--m-surface); color: inherit;
+}
+.mahan-cert-item:hover { border-color: color-mix(in srgb, var(--m-accent) 45%, var(--m-border)); }
+.mahan-cert-item-icon { font-size: 22px; flex: none; }
+.mahan-cert-item-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.mahan-cert-item-title { font-weight: 700; }
+.mahan-cert-item-meta { font-size: 12px; color: var(--m-muted); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+/* --- Verification ----------------------------------------------------- */
+.mahan-verify { max-width: 560px; margin: 0 auto; }
+.mahan-verify h1 { margin: 0 0 10px; }
+.mahan-verify-form { display: flex; gap: 10px; margin: 18px 0 20px; flex-wrap: wrap; }
+.mahan-verify-input {
+	flex: 1; min-width: 220px; padding: 12px 16px; border-radius: 999px;
+	border: 1px solid var(--m-border); background: var(--m-surface); color: var(--m-text);
+	font: 700 15px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .05em;
+}
+.mahan-verify-card {
+	display: flex; gap: 14px; align-items: flex-start;
+	padding: 20px 22px; border-radius: var(--m-radius); border: 1px solid var(--m-border); background: var(--m-surface);
+}
+.mahan-verify-card h2 { margin: 0 0 6px; font-size: 20px; }
+.mahan-verify-card p { margin: 0 0 4px; }
+.mahan-verify-card.is-valid { border-color: color-mix(in srgb, var(--m-accent) 45%, var(--m-border)); background: color-mix(in srgb, var(--m-accent) 7%, var(--m-surface)); }
+.mahan-verify-card.is-invalid { border-color: color-mix(in srgb, var(--m-danger) 40%, var(--m-border)); background: color-mix(in srgb, var(--m-danger) 6%, var(--m-surface)); }
+.mahan-verify-mark { font-size: 22px; font-weight: 800; line-height: 1.2; flex: none; }
+.mahan-verify-card.is-valid .mahan-verify-mark { color: var(--m-accent-text); }
+.mahan-verify-card.is-invalid .mahan-verify-mark { color: var(--m-danger); }
+.mahan-verify-meta { font-size: 13px; color: var(--m-muted); }
+.mahan-verify-serial { font: 800 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .06em; color: var(--m-muted); }
+
+/* ==================================================================== */
+/* v1.26.0 — Profile, My Learning shelves, saved courses                */
+/* ==================================================================== */
+
+/* --- Save for later ------------------------------------------------- */
+/* Sits over the cover, so it needs its own contrast rather than
+   inheriting the card's — a star on a mid-tone gradient disappears. */
+.mahan-save {
+	position: absolute; top: 10px; right: 10px; z-index: 2;
+	width: 34px; height: 34px; border-radius: 999px; cursor: pointer;
+	border: 1px solid color-mix(in srgb, #000 12%, transparent);
+	background: color-mix(in srgb, var(--m-surface) 88%, transparent);
+	backdrop-filter: blur(6px);
+	color: var(--m-muted); font-size: 16px; line-height: 1;
+	display: inline-flex; align-items: center; justify-content: center;
+	transition: color .12s ease, background .12s ease, transform .12s ease;
+}
+.mahan-save:hover:not(:disabled) { color: var(--m-text); background: var(--m-surface); transform: scale(1.06); }
+.mahan-save.is-saved { color: #f59e0b; }
+.mahan-save:disabled { cursor: progress; opacity: .7; }
+/* The ribbon owns the left; keep the star clear of it either way. */
+.mahan-card.is-featured .mahan-save { top: 10px; }
+
+.mahan-card-left { margin: 0 0 8px; font-size: 12.5px; color: var(--m-muted); font-variant-numeric: tabular-nums; }
+
+/* --- My Learning shelves -------------------------------------------- */
+.mahan-shelves { margin: 8px 0 4px; }
+.mahan-tabs {
+	display: flex; gap: 4px; margin-bottom: 16px;
+	border-bottom: 1px solid var(--m-border); overflow-x: auto; scrollbar-width: none;
+}
+.mahan-tabs::-webkit-scrollbar { display: none; }
+.mahan-tab {
+	display: inline-flex; align-items: center; gap: 7px; white-space: nowrap;
+	padding: 10px 14px; border: 0; background: none; cursor: pointer;
+	font: inherit; font-size: 14.5px; font-weight: 600; color: var(--m-muted);
+	border-bottom: 2px solid transparent; margin-bottom: -1px;
+	transition: color .12s ease, border-color .12s ease;
+}
+.mahan-tab:hover { color: var(--m-text); }
+.mahan-tab.is-active { color: var(--m-primary-text); border-bottom-color: var(--m-primary); }
+.mahan-tab-count {
+	min-width: 20px; padding: 1px 6px; border-radius: 999px;
+	background: var(--m-surface-2); color: var(--m-muted);
+	font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.mahan-tab.is-active .mahan-tab-count { background: color-mix(in srgb, var(--m-primary) 16%, var(--m-surface)); color: var(--m-primary-text); }
+.mahan-shelf-empty { margin: 26px 0; color: var(--m-muted); text-align: center; }
+
+.mahan-dash-h2row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.mahan-linkbtn {
+	border: 0; background: none; padding: 0; cursor: pointer; font: inherit;
+	font-size: 14px; font-weight: 600; color: var(--m-primary-text);
+}
+.mahan-linkbtn:hover { text-decoration: underline; }
+
+/* --- Profile -------------------------------------------------------- */
+.mahan-prof-head { display: flex; align-items: center; gap: 18px; margin: 4px 0 22px; flex-wrap: wrap; }
+.mahan-prof-avatar .mahan-hud-avatar { width: 72px; height: 72px; font-size: 26px; }
+.mahan-prof-id { min-width: 0; }
+.mahan-prof-name { margin: 0 0 4px; font-size: 26px; line-height: 1.2; letter-spacing: -.01em; }
+.mahan-prof-meta { margin: 0 0 8px; color: var(--m-muted); font-size: 14px; }
+.mahan-prof-level { display: flex; flex-wrap: wrap; gap: 8px; }
+.mahan-prof-level-badge, .mahan-prof-placed {
+	display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px;
+	font-size: 12.5px; font-weight: 700;
+}
+.mahan-prof-level-badge { background: color-mix(in srgb, var(--m-primary) 14%, var(--m-surface)); color: var(--m-primary-text); }
+.mahan-prof-placed { background: var(--m-surface-2); color: var(--m-muted); }
+
+.mahan-prof-totals {
+	display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 10px;
+	margin: 0 0 26px;
+}
+.mahan-prof-stat {
+	display: flex; flex-direction: column; align-items: center; gap: 2px;
+	padding: 14px 10px; border-radius: var(--m-radius-sm, 10px);
+	background: var(--m-surface-2); border: 1px solid var(--m-border);
+}
+.mahan-prof-stat-icon { font-size: 17px; line-height: 1; }
+.mahan-prof-stat-value { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.mahan-prof-stat-label { font-size: 11.5px; color: var(--m-muted); text-align: center; line-height: 1.3; }
+.mahan-prof-empty { color: var(--m-muted); margin: 0 0 22px; }
+
+/* --- Activity map ---------------------------------------------------- */
+/* Columns are weeks, so the eye reads a habit down each column rather
+   than a long ribbon of days. Scrolls rather than squashing on narrow
+   screens: a heat map with sub-pixel cells communicates nothing. */
+.mahan-heat-wrap { margin: 0 0 26px; }
+.mahan-heat {
+	display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, 13px);
+	/* Columns must be cell-width, not stretched to fill: auto-flow column
+	   otherwise spreads 13 weeks across the container and the map reads as
+	   scattered dots rather than a calendar. */
+	grid-auto-columns: 13px; justify-content: start;
+	gap: 3px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: thin;
+}
+.mahan-heat-cell {
+	width: 13px; height: 13px; border-radius: 3px;
+	background: var(--m-surface-2); border: 1px solid var(--m-border);
+}
+.mahan-heat-1 { background: color-mix(in srgb, var(--m-accent) 28%, var(--m-surface)); border-color: transparent; }
+.mahan-heat-2 { background: color-mix(in srgb, var(--m-accent) 50%, var(--m-surface)); border-color: transparent; }
+.mahan-heat-3 { background: color-mix(in srgb, var(--m-accent) 74%, var(--m-surface)); border-color: transparent; }
+.mahan-heat-4 { background: var(--m-accent); border-color: transparent; }
+.mahan-heat-cell.is-today { outline: 2px solid var(--m-primary); outline-offset: 1px; }
+.mahan-heat-legend { margin: 8px 0 0; font-size: 12.5px; color: var(--m-muted); }
+
+/* --- Skills ---------------------------------------------------------- */
+.mahan-skills { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 26px; }
+.mahan-skill {
+	display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+	padding: 7px 12px; border-radius: 999px; font: inherit; font-size: 13.5px; font-weight: 600;
+	border: 1px solid var(--m-border); background: var(--m-surface); color: var(--m-text);
+	transition: border-color .12s ease, background .12s ease;
+}
+.mahan-skill:hover { border-color: color-mix(in srgb, var(--m-primary) 45%, var(--m-border)); background: var(--m-surface-2); }
+.mahan-skill-count {
+	min-width: 19px; padding: 0 5px; border-radius: 999px; font-size: 11.5px; font-weight: 700;
+	background: color-mix(in srgb, var(--m-accent) 20%, var(--m-surface));
+	color: var(--m-accent-text); font-variant-numeric: tabular-nums;
+}
+
+.mahan-hud-me { display: inline-flex; border-radius: 999px; text-decoration: none; }
+.mahan-hud-me:hover .mahan-hud-avatar { box-shadow: 0 0 0 2px color-mix(in srgb, var(--m-primary) 45%, transparent); }
+.mahan-hud-me.is-active .mahan-hud-avatar { box-shadow: 0 0 0 2px var(--m-primary); }
+
+@media (max-width: 720px) {
+	.mahan-prof-name { font-size: 22px; }
+	.mahan-prof-avatar .mahan-hud-avatar { width: 58px; height: 58px; font-size: 21px; }
+	.mahan-prof-totals { grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); }
+}
+
+/* ====================================================================== */
+/* v1.28.0 — Live AI oral exam (viva)                                     */
+/* ====================================================================== */
+
+/* --- Course-outline row ---------------------------------------------- */
+.mahan-viva-row { border-style: dashed; }
+.mahan-viva-row.is-done { border-style: solid; }
+.mahan-viva-tag {
+	display: inline-block; padding: 2px 8px; border-radius: 999px;
+	font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
+	background: color-mix(in srgb, var(--m-primary) 16%, var(--m-surface));
+	color: var(--m-primary-text);
+	vertical-align: middle;
+}
+.mahan-viva-live {
+	font-size: 12px; font-weight: 700; color: var(--m-accent-text);
+}
+.mahan-viva-live::before { content: '● '; }
+
+/* --- The exam room ---------------------------------------------------- */
+.mahan-viva-modal { max-width: 680px; display: flex; flex-direction: column; }
+
+.mahan-viva-pips { display: flex; gap: 8px; list-style: none; margin: 0 0 16px; padding: 0; }
+.mahan-viva-pip {
+	flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0;
+	padding: 8px 10px; border-radius: var(--m-radius-sm);
+	border: 1px solid var(--m-border); background: var(--m-surface-2);
+	font-size: 13px; color: var(--m-muted);
+}
+.mahan-viva-pip-n {
+	flex: 0 0 auto; width: 22px; height: 22px; display: grid; place-items: center;
+	border-radius: 999px; font-size: 12px; font-weight: 700;
+	background: var(--m-surface); border: 1px solid var(--m-border); color: inherit;
+}
+.mahan-viva-pip-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mahan-viva-pip.is-current {
+	border-color: var(--m-primary); color: var(--m-text); font-weight: 600;
+	background: color-mix(in srgb, var(--m-primary) 8%, var(--m-surface));
+}
+.mahan-viva-pip.is-current .mahan-viva-pip-n { background: var(--m-primary); color: #fff; border-color: transparent; }
+.mahan-viva-pip.is-done { border-color: color-mix(in srgb, var(--m-accent-fill) 45%, var(--m-border)); color: var(--m-text); }
+.mahan-viva-pip.is-done .mahan-viva-pip-n {
+	background: color-mix(in srgb, var(--m-accent-fill) 82%, var(--m-surface)); color: #fff; border-color: transparent;
+}
+
+.mahan-viva-thread {
+	display: flex; flex-direction: column; gap: 14px;
+	/* No smooth scrolling: the thread is pinned to its newest turn
+	   programmatically, and an animated scroll fights every repaint. */
+	max-height: 46vh; overflow-y: auto; padding: 4px 2px 2px;
+}
+
+.mahan-viva-turn { display: flex; flex-direction: column; gap: 4px; max-width: 92%; }
+.mahan-viva-turn.is-learner { align-self: flex-end; align-items: flex-end; }
+.mahan-viva-who { font-size: 11.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--m-muted); }
+.mahan-viva-bubble {
+	padding: 12px 14px; border-radius: var(--m-radius); line-height: 1.6;
+	border: 1px solid var(--m-border); background: var(--m-surface-2);
+}
+.mahan-viva-bubble > :first-child { margin-top: 0; }
+.mahan-viva-bubble > :last-child { margin-bottom: 0; }
+.mahan-viva-turn.is-examiner .mahan-viva-bubble {
+	border-color: color-mix(in srgb, var(--m-primary) 30%, var(--m-border));
+	background: color-mix(in srgb, var(--m-primary) 6%, var(--m-surface));
+	font-size: 16px;
+}
+.mahan-viva-turn.is-learner .mahan-viva-bubble { background: var(--m-surface); }
+
+/* --- The mark --------------------------------------------------------- */
+.mahan-viva-grade {
+	border: 1px solid var(--m-border); border-left-width: 4px;
+	border-radius: var(--m-radius); padding: 12px 14px; background: var(--m-surface-2);
+}
+.mahan-viva-grade.is-pass { border-left-color: var(--m-accent-fill); }
+.mahan-viva-grade.is-probe { border-left-color: var(--m-accent); }
+.mahan-viva-grade.is-fail { border-left-color: var(--m-danger); }
+.mahan-viva-grade-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.mahan-viva-score {
+	padding: 3px 10px; border-radius: 999px; font-size: 13px; font-weight: 800;
+	font-variant-numeric: tabular-nums;
+	background: var(--m-surface); border: 1px solid var(--m-border);
+}
+.mahan-viva-grade.is-pass .mahan-viva-score {
+	background: color-mix(in srgb, var(--m-accent-fill) 16%, var(--m-surface));
+	border-color: color-mix(in srgb, var(--m-accent-fill) 40%, var(--m-border));
+}
+.mahan-viva-grade.is-fail .mahan-viva-score {
+	background: color-mix(in srgb, var(--m-danger) 14%, var(--m-surface));
+	border-color: color-mix(in srgb, var(--m-danger) 40%, var(--m-border));
+}
+.mahan-viva-feedback { margin: 0; line-height: 1.6; }
+.mahan-viva-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.mahan-viva-chip {
+	padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 600;
+	border: 1px solid var(--m-border); background: var(--m-surface);
+}
+.mahan-viva-chip.is-good { color: var(--m-accent-text); border-color: color-mix(in srgb, var(--m-accent-fill) 38%, var(--m-border)); }
+.mahan-viva-chip.is-gap { color: var(--m-muted); }
+
+.mahan-viva-thinking {
+	align-self: flex-start; font-size: 13.5px; color: var(--m-muted); font-style: italic;
+	padding: 6px 2px;
+}
+.mahan-viva-thinking::after { content: '…'; animation: mahan-viva-dots 1.2s steps(4, end) infinite; }
+@keyframes mahan-viva-dots { 0% { opacity: .3; } 50% { opacity: 1; } 100% { opacity: .3; } }
+
+/* --- Compose ---------------------------------------------------------- */
+.mahan-viva-compose { margin-top: 16px; }
+.mahan-viva-input {
+	width: 100%; resize: vertical; min-height: 96px;
+	padding: 12px 14px; border-radius: var(--m-radius); line-height: 1.6;
+	border: 1px solid var(--m-border); background: var(--m-surface); color: var(--m-text);
+	font: inherit; font-size: 15px;
+}
+.mahan-viva-input:focus { border-color: var(--m-primary); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--m-primary) 22%, transparent); }
+.mahan-viva-input:disabled { opacity: .6; }
+.mahan-viva-compose-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px; }
+.mahan-viva-counter { font-size: 12.5px; color: var(--m-muted); font-variant-numeric: tabular-nums; }
+.mahan-viva-msg { margin-top: 10px; font-size: 13.5px; color: var(--m-muted); min-height: 1.2em; }
+
+@media (max-width: 720px) {
+	.mahan-viva-pips { flex-wrap: wrap; }
+	.mahan-viva-pip { flex: 1 1 100%; }
+	.mahan-viva-pip-label { white-space: normal; }
+	.mahan-viva-turn { max-width: 100%; }
+	.mahan-viva-thread { max-height: 40vh; }
+}
+
+/* ====================================================================== */
+/* Today's plan (v1.32.0)                                                 */
+/* ====================================================================== */
+/* One ranked block replaces the three competing banners the dashboard used
+   to stack (amber review / lavender resume / outlined placement). The
+   winner is the page's single dominant action; everything else is a quiet
+   list under it, so nothing is hidden but only one thing is shouted. */
+
+.mahan-plan { margin-bottom: 26px; }
+.mahan-plan-kicker {
+	margin: 0 0 8px; font-size: 12px; font-weight: 800; text-transform: uppercase;
+	letter-spacing: .06em; color: var(--m-primary-text);
+}
+
+.mahan-plan-primary {
+	display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+	padding: 20px 22px; border-radius: var(--m-radius);
+	border: 1px solid color-mix(in srgb, var(--m-primary) 30%, var(--m-border));
+	background: linear-gradient(120deg, color-mix(in srgb, var(--m-primary) 10%, var(--m-surface)), var(--m-surface) 65%);
+	box-shadow: var(--m-shadow-sm);
+}
+/* The tint tracks the task, so the block reads as "review" or "assessment"
+   before the words do — reviews are time-sensitive (amber), an assessment
+   is an achievement (green), everything else is the brand. */
+.mahan-plan-primary.is-review {
+	border-color: color-mix(in srgb, var(--m-warning) 34%, var(--m-border));
+	background: linear-gradient(120deg, color-mix(in srgb, var(--m-warning) 11%, var(--m-surface)), var(--m-surface) 65%);
+}
+.mahan-plan-primary.is-viva {
+	border-color: color-mix(in srgb, var(--m-accent) 34%, var(--m-border));
+	background: linear-gradient(120deg, color-mix(in srgb, var(--m-accent) 11%, var(--m-surface)), var(--m-surface) 65%);
+}
+
+.mahan-plan-icon { font-size: 32px; line-height: 1; flex: 0 0 auto; }
+.mahan-plan-body { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 6px; }
+.mahan-plan-title { margin: 0; font-size: 20px; }
+.mahan-plan-sub { margin: 0; color: var(--m-muted); font-size: 14px; }
+.mahan-plan-body .mahan-progress { max-width: 340px; margin-top: 2px; }
+.mahan-plan-go { flex: 0 0 auto; }
+
+.mahan-plan-also {
+	margin: 14px 0 6px; font-size: 12px; font-weight: 700; text-transform: uppercase;
+	letter-spacing: .05em; color: var(--m-muted);
+}
+.mahan-plan-rest { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.mahan-plan-rest-btn {
+	display: flex; align-items: center; gap: 12px; width: 100%; text-align: start;
+	padding: 8px 14px; border-radius: var(--m-radius-sm);
+	border: 1px solid var(--m-border); background: var(--m-surface);
+	color: inherit; font: inherit; cursor: pointer;
+	transition: border-color var(--m-dur-2) ease, background var(--m-dur-2) ease;
+}
+.mahan-plan-rest-btn:hover { border-color: color-mix(in srgb, var(--m-primary) 40%, var(--m-border)); background: var(--m-surface-2); }
+.mahan-plan-rest-icon { font-size: 17px; line-height: 1; flex: 0 0 auto; }
+.mahan-plan-rest-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.mahan-plan-rest-text strong { font-size: 14px; font-weight: 700; line-height: 1.35; }
+.mahan-plan-rest-sub { font-size: 13px; line-height: 1.35; color: var(--m-muted); }
+.mahan-plan-rest-cta { color: var(--m-primary-text); font-weight: 800; flex: 0 0 auto; }
+
+@media (max-width: 640px) {
+	.mahan-plan-primary { gap: 12px; padding: 16px 18px; }
+	.mahan-plan-icon { font-size: 26px; }
+	.mahan-plan-title { font-size: 17px; }
+	.mahan-plan-go { width: 100%; }
+}
+
+/* --- Momentum: this week against last week -------------------------- */
+/* A total that only ever rises cannot tell a learner they are drifting. */
+.mahan-momentum {
+	display: flex; align-items: center; gap: 8px 18px; flex-wrap: wrap;
+	margin: 4px 0 14px; font-size: 13px; color: var(--m-muted);
+}
+.mahan-momentum-item { display: inline-flex; align-items: baseline; gap: 5px; }
+.mahan-momentum-item strong { font-size: 15px; font-weight: 800; color: var(--m-text); font-variant-numeric: tabular-nums; }
+.mahan-momentum-delta { font-size: 12px; font-weight: 800; padding: 1px 7px; border-radius: 999px; }
+.mahan-momentum-delta.is-up { color: var(--m-accent-text); background: color-mix(in srgb, var(--m-accent) 16%, transparent); }
+.mahan-momentum-delta.is-down { color: var(--m-danger); background: color-mix(in srgb, var(--m-danger) 14%, transparent); }
+.mahan-momentum-delta.is-flat { color: var(--m-muted); background: var(--m-surface-2); }
+.mahan-momentum-item.is-freeze { color: var(--m-info-text); font-weight: 600; }
+
+/* ====================================================================== */
+/* Quizzes: multi-select, explanations, typo notices (v1.33.0)            */
+/* ====================================================================== */
+
+.mahan-quiz-hint { margin: 0 0 8px; font-size: 13px; color: var(--m-muted); font-weight: 600; }
+
+/* A "select all that apply" must not look like a radio group, or learners
+   pick one and submit. Square corners plus a tick well say "several". */
+/* .mahan-ex-option is a plain block, so the tick well needs an explicit flex
+   context or it lays out on its own line as a bare vertical bar. */
+.mahan-quiz-opts.is-multi .mahan-ex-option {
+	display: flex; align-items: center; border-radius: var(--m-radius-sm);
+}
+.mahan-quiz-opts.is-multi .mahan-ex-option::before {
+	content: ""; flex: 0 0 auto; width: 16px; height: 16px; margin-inline-end: 10px;
+	border: 2px solid var(--m-border); border-radius: 4px; background: var(--m-surface);
+}
+.mahan-quiz-opts.is-multi .mahan-ex-option.is-chosen::before {
+	border-color: var(--m-primary); background: var(--m-primary);
+	box-shadow: inset 0 0 0 2px var(--m-surface);
+}
+
+.mahan-quiz-typo { margin: 8px 0 0; font-size: 13px; color: var(--m-warning-text); font-weight: 600; }
+
+/* The explanation appears only after grading — it is the payoff for having
+   answered, so it gets real presence rather than a footnote. */
+.mahan-quiz-explain {
+	display: flex; gap: 10px; margin: 10px 0 0; padding: 10px 12px;
+	border-radius: var(--m-radius-sm);
+	background: var(--m-surface-2); border: 1px solid var(--m-border);
+}
+.mahan-quiz-explain-label {
+	flex: 0 0 auto; font-size: 11px; font-weight: 800; text-transform: uppercase;
+	letter-spacing: .06em; color: var(--m-primary-text); padding-top: 2px;
+}
+.mahan-quiz-explain-body { font-size: 14px; line-height: 1.55; min-width: 0; }
+.mahan-quiz-explain-body :first-child { margin-top: 0; }
+.mahan-quiz-explain-body :last-child { margin-bottom: 0; }
+
+/* Daily-goal run (v1.34.0): the habit the target exists to build. */
+.mahan-goal-run { margin: 6px 0 0; font-size: 13px; font-weight: 700; color: var(--m-primary-text); }

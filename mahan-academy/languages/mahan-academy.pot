@@ -1460,7 +1460,7 @@ msgstr ""
 msgid "Lesson title"
 msgstr ""
 
-#: includes/class-mahan-courses.php:309 includes/class-mahan-cpt.php:56 includes/class-mahan-cpt.php:58 includes/class-mahan-cpt.php:68
+#: includes/class-mahan-courses.php:310 includes/class-mahan-cpt.php:56 includes/class-mahan-cpt.php:58 includes/class-mahan-cpt.php:68
 msgid "Lessons"
 msgstr ""
 

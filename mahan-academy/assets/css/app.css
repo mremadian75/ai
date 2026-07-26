@@ -191,8 +191,6 @@ a.mahan-ladder-rung:hover { border-color: var(--m-primary); color: var(--m-prima
 .mahan-card { display: flex; flex-direction: column; background: var(--m-surface); border: 1px solid var(--m-border); border-radius: var(--m-radius); overflow: hidden; text-decoration: none; color: inherit; box-shadow: var(--m-shadow-sm); transition: transform .12s ease, box-shadow .15s ease; }
 .mahan-card:hover { transform: translateY(-4px); box-shadow: var(--m-shadow); }
 .mahan-card-media { height: 140px; background-size: cover; background-position: center; background-color: color-mix(in srgb, var(--m-primary) 14%, var(--m-surface)); }
-.mahan-card-media-ph { display: flex; align-items: center; justify-content: center; }
-.mahan-card-media-ph span { font-size: 54px; font-weight: 800; color: var(--m-primary); opacity: .65; }
 .mahan-card-body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
 .mahan-card-cat { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--m-primary); }
 .mahan-card-title { font-size: 18px; margin: 0; line-height: 1.25; }

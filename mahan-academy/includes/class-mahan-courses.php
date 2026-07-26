@@ -84,6 +84,7 @@ class Mahan_Courses {
 		}
 		$id = (int) $course->ID;
 		$terms = wp_get_post_terms( $id, Mahan_CPT::CAT, array( 'fields' => 'names' ) );
+		$terms = is_wp_error( $terms ) ? array() : Mahan_Utils::decode_term_names( $terms );
 		return array(
 			'id'           => $id,
 			'title'        => get_the_title( $id ),
@@ -95,7 +96,7 @@ class Mahan_Courses {
 			'track'        => Mahan_Utils::meta_str( $id, Mahan_Variants::M_TRACK, '' ),
 			'level_rank'   => Mahan_Utils::meta_int( $id, Mahan_Variants::M_LEVEL_RANK, 0 ),
 			'est_hours'    => Mahan_Utils::meta_int( $id, self::M_EST_HOURS, 0 ),
-			'categories'   => is_wp_error( $terms ) ? array() : array_values( $terms ),
+			'categories'   => $terms,
 			'topics'       => self::course_topics( $id ),
 			'image'        => get_the_post_thumbnail_url( $id, 'large' ) ?: '',
 			'lesson_count' => count( self::get_course_lessons( $id ) ),
@@ -140,7 +141,7 @@ class Mahan_Courses {
 	 */
 	public static function course_topics( $course_id ) {
 		$terms = wp_get_post_terms( (int) $course_id, Mahan_CPT::TOPIC, array( 'fields' => 'names' ) );
-		return is_wp_error( $terms ) ? array() : array_values( $terms );
+		return is_wp_error( $terms ) ? array() : Mahan_Utils::decode_term_names( $terms );
 	}
 
 	/**
@@ -152,7 +153,7 @@ class Mahan_Courses {
 	 */
 	public static function course_categories( $course_id ) {
 		$terms = wp_get_post_terms( (int) $course_id, Mahan_CPT::CAT, array( 'fields' => 'names' ) );
-		return is_wp_error( $terms ) ? array() : array_values( $terms );
+		return is_wp_error( $terms ) ? array() : Mahan_Utils::decode_term_names( $terms );
 	}
 
 	/**
@@ -164,7 +165,7 @@ class Mahan_Courses {
 	 */
 	public static function lesson_topics( $lesson_id ) {
 		$terms = wp_get_post_terms( (int) $lesson_id, Mahan_CPT::TOPIC, array( 'fields' => 'names' ) );
-		return is_wp_error( $terms ) ? array() : array_values( $terms );
+		return is_wp_error( $terms ) ? array() : Mahan_Utils::decode_term_names( $terms );
 	}
 
 	/**

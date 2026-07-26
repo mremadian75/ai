@@ -3633,9 +3633,11 @@
 	}
 
 	function pathCard(p) {
-		var media = p.image
-			? h('div', { class: 'mahan-card-media', style: 'background-image:url(' + esc(p.image) + ')' })
-			: h('div', { class: 'mahan-card-media mahan-card-media-ph' }, [h('span', { text: '🧭' })]);
+		// Paths used to be a flat lavender panel with the same compass on every
+		// one, so a shelf of them read as one repeated card. They now use the
+		// course cover generator — seeded from the title, since a path has no
+		// category — which gives each its own colour, pattern and initial.
+		var media = courseCover({ title: p.title, image: p.image, categories: [] });
 		var foot = (D.loggedIn && p.completed > 0)
 			? h('div', { class: 'mahan-progress' }, [
 				h('div', { class: 'mahan-progress-bar' }, [h('span', { style: 'width:' + (p.progress_pct || 0) + '%' })]),

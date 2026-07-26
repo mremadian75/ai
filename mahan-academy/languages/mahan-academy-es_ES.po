@@ -1462,7 +1462,7 @@ msgstr "Ajustes de la lección"
 msgid "Lesson title"
 msgstr "Título de la lección"
 
-#: includes/class-mahan-courses.php:309 includes/class-mahan-cpt.php:56 includes/class-mahan-cpt.php:58 includes/class-mahan-cpt.php:68
+#: includes/class-mahan-courses.php:310 includes/class-mahan-cpt.php:56 includes/class-mahan-cpt.php:58 includes/class-mahan-cpt.php:68
 msgid "Lessons"
 msgstr "Lecciones"
 

@@ -4,7 +4,7 @@ Tags: lms, ai, learning, chatgpt, claude, gemini, course, tutor, gamification
 Requires at least: 6.0
 Tested up to: 6.6
 Requires PHP: 7.4
-Stable tag: 1.34.0
+Stable tag: 1.34.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -86,6 +86,9 @@ You don't have to do anything — the starter catalog installs automatically on 
 Each course lists the authoritative references it is grounded in under "Further reading & sources" on the course page — peer-reviewed papers, standards and institutional guidance (NIST AI Risk Management Framework, EU AI Act, UNESCO, OECD, OWASP, C2PA), textbooks, and official provider documentation.
 
 == Changelog ==
+
+= 1.34.1 =
+Two fixes from a live install. Topic names containing an ampersand showed their HTML entity on screen — a topic called "Email & writing" rendered as "Email &amp; writing" on the lesson chip and in the AI tutor's suggested questions. WordPress stores taxonomy names HTML-escaped because core prints them straight into markup, while the app renders them as text; term names are now decoded at the JSON boundary, so any name with an ampersand, quote or angle bracket reads correctly everywhere. And learning paths, which had been left on a flat placeholder with the same compass icon on every card, now use the same generated cover art courses have had since v1.19 — seeded from the path title, so each one has its own colour, pattern and initial instead of five identical cards. No schema change.
 
 = 1.34.0 =
 Gamification: the daily goal becomes real. Until now it was a progress bar with nothing behind it — you set a target, the ring filled, and nothing happened: no reward, no acknowledgement, nothing recorded. Worse, whether a past day counted was recomputed against your current goal every time the week strip rendered, so lowering your goal made days you had missed sprout ticks, and raising it erased days you had genuinely earned. Meeting your goal is now an event: it pays a bonus (configurable, 15 XP by default) and writes a permanent record the day it happens, so history stops moving when the setting does. The claim is guarded so two requests finishing together can never both pay it. Runs of met goals are tracked as a goal streak — a stronger signal than the activity streak, because it means you hit a target you set yourself — shown on the goal card with your personal best, and backed by three new achievements: On Target, Week of Wins (7 days) and Ironclad (30 days). Also fixes a case where the goal bonus could carry a learner across a level threshold without levelling them up, and replaces a fragile before/after inference in the celebration with the server's own goal event, which used to re-fire on every award once you were past the goal and stay silent when two requests landed together. Schema change: DB goes to v7.

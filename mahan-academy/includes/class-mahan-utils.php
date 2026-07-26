@@ -141,6 +141,30 @@ class Mahan_Utils {
 	}
 
 	/**
+	 * Term names, ready for a client that renders them as text.
+	 *
+	 * WordPress stores taxonomy names HTML-escaped — `sanitize_term()` runs the
+	 * name through `esc_html()` on the way into the database — because core
+	 * prints them straight into markup. Our SPA sets them with `textContent`,
+	 * so the stored form arrives as the literal characters `&amp;` and a topic
+	 * called "Email & writing" renders as "Email &amp; writing" on the lesson
+	 * chip and in the tutor's suggested questions.
+	 *
+	 * Decoding at the JSON boundary is the fix: the value is text by the time
+	 * it leaves, and nothing downstream re-encodes it.
+	 *
+	 * @param string[] $names Raw term names.
+	 * @return string[]
+	 */
+	public static function decode_term_names( $names ) {
+		$out = array();
+		foreach ( (array) $names as $name ) {
+			$out[] = html_entity_decode( (string) $name, ENT_QUOTES, 'UTF-8' );
+		}
+		return $out;
+	}
+
+	/**
 	 * The order a question's options are shown in for a given sitting.
 	 *
 	 * Authored question banks drift toward putting the right answer in the same

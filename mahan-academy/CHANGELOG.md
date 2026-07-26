@@ -4,6 +4,37 @@ All notable changes to **Mahan Academy** are documented here. The format is
 loosely based on [Keep a Changelog](https://keepachangelog.com/), and the
 project follows semantic-ish versioning.
 
+## [1.34.1]
+
+Two defects a live install surfaced. **No schema change — DB stays v7.**
+
+### HTML entities were showing through in topic names
+
+A topic called "Email & writing" rendered on screen as **"Email &amp; writing"**
+— on the lesson's concept chip and inside the AI tutor's suggested questions
+("Explain Email &amp; writing in simple terms").
+
+WordPress stores taxonomy names HTML-escaped (`sanitize_term()` runs the name
+through `esc_html()` on the way into the database) because core prints them
+straight into markup. The SPA sets them with `textContent`, so the stored form
+arrived as the literal characters. Term names are now decoded at the JSON
+boundary — `Mahan_Utils::decode_term_names()`, applied to all four sources
+(course topics, lesson topics, course categories, and the categories on
+`course_summary()`), so anything with an ampersand, quote or angle bracket in
+its name reads correctly everywhere it appears.
+
+### Every learning path wore the same placeholder
+
+Courses have had generated cover art since v1.19 — hue by category, one of six
+pattern families, angle and tone by title — but paths were left on a flat
+lavender panel with the same 🧭 on every one, so a shelf of them read as one
+card repeated five times. Paths now use the same generator, seeded from the
+title (a path has no category), so each gets its own colour, pattern, angle
+and initial. The dead placeholder rules are gone from the stylesheet.
+
+Verified by `live-fix.mjs`, which reproduces both symptoms exactly as the live
+site showed them.
+
 ## [1.34.0]
 
 Gamification: the daily goal becomes real. **Schema change: DB goes to v7.**

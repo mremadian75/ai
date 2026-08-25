@@ -28,8 +28,8 @@ function fisaap_landing_shortcode() {
 	$img_dash  = ''; // ← آدرس عکس داشبورد؛ تا وقتی خالی است سکشن «Producto» مخفی می‌ماند
 	$book_url  = '#fisaap-demo'; // دکمهٔ «RESERVAR MINI CITA» به سکشن دمو اسکرول می‌کند
 	$site_url  = 'https://www.future-island.club';
-	// ویجت Calendly (رنگ‌ها هماهنگ با تم صفحه تنظیم شده‌اند)
-	$calendly_url = 'https://calendly.com/mahan-future-island/25min?hide_event_type_details=1&hide_gdpr_banner=1&background_color=f2eee9&text_color=0a0908&primary_color=0a0908';
+	// ویجت Calendly
+	$calendly_url = 'https://calendly.com/mahan-future-island/25min?hide_event_type_details=1&hide_gdpr_banner=1';
 	// ───────────────────────────────────────────────────────────────────────
 
 	$video_src = 'https://www.youtube.com/embed/' . rawurlencode( $video_id ) . '?rel=0&autoplay=1&mute=1&playsinline=1';
@@ -46,8 +46,11 @@ body:has(.fisaap){ overflow-x:hidden }
   -webkit-font-smoothing:antialiased; direction:ltr; text-align:left; line-height:1.5;
   margin-left:calc(50% - 50vw); margin-right:calc(50% - 50vw) } /* full-bleed از داخل کانتینر قالب */
 .fisaap, .fisaap *, .fisaap *::before, .fisaap *::after{ box-sizing:border-box }
+/* گارد در برابر استایل‌های قالب: لینک‌ها و تیترها داخل لندینگ دست قالب نیفتند */
 .fisaap p{ margin:0 }
-.fisaap a{ color:inherit; text-decoration:none }
+.fisaap h1, .fisaap h2, .fisaap h3{ margin:0; padding:0 }
+.fisaap a{ color:inherit !important; text-decoration:none !important; border-bottom:none !important; box-shadow:none !important }
+.fisaap img{ border:0; box-shadow:none }
 .fisaap-serif{ font-family:Newsreader,Georgia,serif; font-weight:400 }
 .fisaap-kicker{ font-size:clamp(10px,.85vw,12.5px); font-weight:600; letter-spacing:.1em; color:#3b3731 }
 
@@ -162,10 +165,11 @@ body:has(.fisaap){ overflow-x:hidden }
   gap:clamp(12px,1.4vw,20px); padding:clamp(26px,3.4vw,48px) }
 .fisaap-cita h2{ margin:0; font-size:clamp(23px,2.5vw,35px); line-height:1.2; letter-spacing:-.01em; color:#0a0908 }
 .fisaap-cita-body p{ font-size:clamp(12.5px,1.02vw,15px); line-height:1.7; color:#3b3731; max-width:48ch }
-.fisaap-btn{ align-self:flex-start; margin-top:clamp(4px,.8vw,10px); display:flex; align-items:center;
-  gap:clamp(24px,3vw,52px); background:#151310; color:#f4f1ec; padding:16px 22px; border-radius:4px;
-  font-size:clamp(11px,.95vw,14px); font-weight:700; letter-spacing:.08em; transition:background .2s,color .2s }
-.fisaap-btn:hover{ background:#0a0908; color:#fff }
+.fisaap a.fisaap-btn{ align-self:flex-start; margin-top:clamp(4px,.8vw,10px); display:flex; align-items:center;
+  gap:clamp(24px,3vw,52px); background:#151310 !important; color:#f4f1ec !important; padding:16px 22px;
+  border:0 !important; border-radius:4px; font-size:clamp(11px,.95vw,14px); font-weight:700;
+  letter-spacing:.08em; transition:background .2s,color .2s }
+.fisaap a.fisaap-btn:hover{ background:#0a0908 !important; color:#fff !important }
 .fisaap-btn span{ font-size:1.15em }
 
 /* ── Diferenciadores ── */
@@ -190,8 +194,8 @@ body:has(.fisaap){ overflow-x:hidden }
   gap:clamp(12px,1.4vw,18px); border-left:1px solid rgba(10,9,8,.16); padding-left:clamp(20px,3vw,44px) }
 .fisaap-close-brand{ font-size:clamp(16px,1.6vw,24px); font-weight:700; letter-spacing:-.01em }
 .fisaap-close-quote{ font-size:clamp(14px,1.25vw,19px); line-height:1.5; color:#2a2622 }
-.fisaap-close-link{ font-size:clamp(10.5px,.9vw,13px); font-weight:600; letter-spacing:.09em; color:#3b3731; transition:color .2s }
-.fisaap-close-link:hover{ color:#0a0908 }
+.fisaap a.fisaap-close-link{ font-size:clamp(10.5px,.9vw,13px); font-weight:600; letter-spacing:.09em; color:#3b3731 !important; transition:color .2s }
+.fisaap a.fisaap-close-link:hover{ color:#0a0908 !important }
 .fisaap-spacer{ height:clamp(34px,4vw,64px) }
 
 /* ── Demo (Calendly) ── */
@@ -201,7 +205,7 @@ body:has(.fisaap){ overflow-x:hidden }
 .fisaap-demo-head{ display:flex; flex-direction:column; gap:clamp(10px,1.2vw,16px) }
 .fisaap-demo h2{ margin:0; font-size:clamp(26px,3.1vw,44px); line-height:1.12; letter-spacing:-.012em; color:#0a0908 }
 .fisaap-demo-note{ font-size:clamp(12.5px,1.02vw,15px); line-height:1.7; color:#3b3731; max-width:60ch }
-.fisaap-calendly{ background:#f2eee9; border:1px solid rgba(10,9,8,.12); border-radius:6px; overflow:hidden }
+.fisaap-calendly{ background:#fff; border:1px solid rgba(10,9,8,.12); border-radius:6px; overflow:hidden }
 .fisaap-calendly .calendly-inline-widget{ min-width:320px }
 
 /* ── Scroll reveal (فقط وقتی JS فعال است؛ بدون JS همه‌چیز دیده می‌شود) ── */
@@ -212,7 +216,7 @@ body:has(.fisaap){ overflow-x:hidden }
 /* ═══ موبایل — بازطراحی اختصاصی ═══ */
 @media (max-width:640px){
   /* Hero: کوتاه‌تر و متن درشت‌تر */
-  .fisaap-hero{ min-height:min(76vh,600px); min-height:min(76svh,600px); padding:18px 18px 28px }
+  .fisaap-hero{ min-height:min(70vh,560px); min-height:min(70svh,560px); padding:18px 18px 30px }
   .fisaap-hero h1{ font-size:12vw; line-height:.92 }
   .fisaap-hero-kicker{ font-size:11.5px }
   .fisaap-hero-sub{ font-size:12.5px }
@@ -250,11 +254,11 @@ body:has(.fisaap){ overflow-x:hidden }
   .fisaap-diff-cell:nth-child(-n+2){ border-bottom:1px solid rgba(10,9,8,.1) }
   .fisaap-diff-title{ font-size:11px }
   .fisaap-diff-cell p{ font-size:12px }
-  /* Demo */
+  /* Demo: ارتفاع ویجت هم‌اندازهٔ محتوای موبایل Calendly تا فضای سفید مرده نماند */
   .fisaap-demo{ padding:14px 20px 30px }
   .fisaap-demo h2{ font-size:27px }
   .fisaap-demo-note{ font-size:13.5px }
-  .fisaap-calendly .calendly-inline-widget{ height:980px !important }
+  .fisaap-calendly .calendly-inline-widget{ height:640px !important }
   /* Cierre */
   .fisaap-close{ padding:0 20px }
   .fisaap-close-inner{ gap:26px; padding:42px 0 34px }
@@ -426,7 +430,19 @@ body:has(.fisaap){ overflow-x:hidden }
     </div>
   </section>
 
-  <!-- Demo (Calendly) -->
+  <!-- Cierre -->
+  <section class="fisaap-close" aria-labelledby="fisaap-h-close">
+    <div class="fisaap-close-inner">
+      <h2 id="fisaap-h-close" class="fisaap-serif">MENOS SUPOSICIONES.<br>MÁS INTELIGENCIA.<br>MEJORES DECISIONES.</h2>
+      <div class="fisaap-close-side">
+        <div class="fisaap-close-brand">FUTURE ISLAND SAAP</div>
+        <p class="fisaap-serif fisaap-close-quote">El futuro no se espera.<br>Se entiende.</p>
+        <a class="fisaap-close-link" href="<?php echo esc_url( $site_url ); ?>">WWW.FUTURE-ISLAND.CLUB</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Demo (Calendly) — سکشن پایانی -->
   <section class="fisaap-demo" id="fisaap-demo" aria-labelledby="fisaap-h-demo">
     <div class="fisaap-demo-inner">
       <div class="fisaap-demo-head">
@@ -438,18 +454,6 @@ body:has(.fisaap){ overflow-x:hidden }
         <!-- Calendly inline widget begin -->
         <div class="calendly-inline-widget" data-url="<?php echo esc_url( $calendly_url ); ?>" style="min-width:320px;height:700px;"></div>
         <!-- Calendly inline widget end -->
-      </div>
-    </div>
-  </section>
-
-  <!-- Cierre -->
-  <section class="fisaap-close" aria-labelledby="fisaap-h-close">
-    <div class="fisaap-close-inner">
-      <h2 id="fisaap-h-close" class="fisaap-serif">MENOS SUPOSICIONES.<br>MÁS INTELIGENCIA.<br>MEJORES DECISIONES.</h2>
-      <div class="fisaap-close-side">
-        <div class="fisaap-close-brand">FUTURE ISLAND SAAP</div>
-        <p class="fisaap-serif fisaap-close-quote">El futuro no se espera.<br>Se entiende.</p>
-        <a class="fisaap-close-link" href="<?php echo esc_url( $site_url ); ?>">WWW.FUTURE-ISLAND.CLUB</a>
       </div>
     </div>
   </section>

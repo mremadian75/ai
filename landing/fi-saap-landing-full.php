@@ -6,7 +6,7 @@
  * ۱) این اسنیپت را در WPCode Pro به صورت «PHP Snippet» (Run Everywhere) ذخیره و فعال کنید.
  * ۲) در صفحهٔ اصلی فقط این شورت‌کد را بگذارید:  [future_island_saap]
  *
- * همهٔ تنظیمات (لینک عکس‌ها، آیدی ویدیو، لینک دکمهٔ رزرو) در بلاک «تنظیمات»
+ * همهٔ تنظیمات (لینک عکس‌ها، لینک ویدیو، لینک دکمهٔ رزرو) در بلاک «تنظیمات»
  * ابتدای تابع پایین است. عکس داشبورد هنوز آماده نیست؛ هر وقت آماده شد آدرسش
  * را در $img_dash بگذارید تا سکشن «Producto» به‌صورت خودکار نمایش داده شود.
  *
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 function fisaap_landing_shortcode() {
 
 	// ─── تنظیمات ───────────────────────────────────────────────────────────
-	$video_id  = '1OZWMO8UD6M'; // آیدی ویدیوی یوتیوب (اتوپلی بی‌صدا — سیاست مرورگرهاست)
+	$vimeo_url = 'https://vimeo.com/1221405204/87e612c9bf'; // لینک ویدیوی ویمئو (اتوپلی بی‌صدا — سیاست مرورگرهاست)
 	$img_hero  = 'https://future-island.club/wp-content/uploads/2026/08/ChatGPT-Image-Aug-25-2026-04_13_24-PM.png';
 	$img_cita  = 'https://future-island.club/wp-content/uploads/2026/08/ChatGPT-Image-Aug-25-2026-04_13_57-PM.png';
 	$img_icons = 'https://future-island.club/wp-content/uploads/2026/08/ChatGPT-Image-Aug-25-2026-04_16_31-PM.png';
@@ -32,20 +32,49 @@ function fisaap_landing_shortcode() {
 	$calendly_url = 'https://calendly.com/mahan-future-island/25min?hide_event_type_details=1&hide_gdpr_banner=1';
 	// ───────────────────────────────────────────────────────────────────────
 
-	// ویدیو با الگوی façade لود می‌شود: اول فقط تصویر بندانگشتی (سبک و فوری)،
-	// پلیر واقعی در دسکتاپ وقتی سکشن نزدیک ویوپورت شد (اتوپلی بی‌صدا) و در
-	// موبایل با لمس کاربر (پخش با صدا — چون با ژست کاربر مجاز است) سوار می‌شود.
-	$yt_embed     = 'https://www.youtube.com/embed/' . rawurlencode( $video_id ) . '?rel=0&playsinline=1&autoplay=1';
-	$yt_thumb_max = 'https://i.ytimg.com/vi/' . rawurlencode( $video_id ) . '/maxresdefault.jpg';
-	$yt_thumb_hq  = 'https://i.ytimg.com/vi/' . rawurlencode( $video_id ) . '/hqdefault.jpg';
-	$yt_watch     = 'https://www.youtube.com/watch?v=' . rawurlencode( $video_id );
+	// ویدیو با الگوی façade لود می‌شود: اول فقط تصویر بندانگشتی (سبک و فوری) و
+	// پلیر واقعی وقتی سکشن به ویوپورت نزدیک شد با اتوپلی بی‌صدا سوار می‌شود.
+	// ویمئو آدرس ثابتی برای بندانگشتی ندارد، پس یک‌بار از oEmbed گرفته و کش می‌شود.
+	$vimeo_id   = '';
+	$vimeo_hash = '';
+	if ( preg_match( '~vimeo\.com/(?:video/)?(\d+)(?:/([A-Za-z0-9]+))?~', $vimeo_url, $m ) ) {
+		$vimeo_id   = $m[1];
+		$vimeo_hash = isset( $m[2] ) ? $m[2] : '';
+	}
+	$video_embed = '';
+	$video_watch = '';
+	$video_thumb = '';
+	if ( '' !== $vimeo_id ) {
+		$hash_param  = '' !== $vimeo_hash ? 'h=' . rawurlencode( $vimeo_hash ) . '&' : '';
+		$video_embed = 'https://player.vimeo.com/video/' . $vimeo_id . '?' . $hash_param
+			. 'autoplay=1&playsinline=1&title=0&byline=0&portrait=0&dnt=1';
+		$video_watch = 'https://vimeo.com/' . $vimeo_id . ( '' !== $vimeo_hash ? '/' . $vimeo_hash : '' );
+
+		$thumb_key   = 'fisaap_vimeo_thumb_' . $vimeo_id;
+		$video_thumb = get_transient( $thumb_key );
+		if ( false === $video_thumb ) {
+			$video_thumb = '';
+			$res = wp_remote_get(
+				'https://vimeo.com/api/oembed.json?width=1280&url=' . rawurlencode( $video_watch ),
+				array( 'timeout' => 5 )
+			);
+			if ( ! is_wp_error( $res ) && 200 === (int) wp_remote_retrieve_response_code( $res ) ) {
+				$data = json_decode( wp_remote_retrieve_body( $res ), true );
+				if ( is_array( $data ) && ! empty( $data['thumbnail_url'] ) ) {
+					$video_thumb = $data['thumbnail_url'];
+				}
+			}
+			// موفق: ۱۲ ساعت کش. ناموفق: ۱۵ دقیقه، تا هر بازدید دوباره تلاش نکند.
+			set_transient( $thumb_key, $video_thumb, '' !== $video_thumb ? 12 * HOUR_IN_SECONDS : 15 * MINUTE_IN_SECONDS );
+		}
+	}
 
 	ob_start();
 	?>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preconnect" href="https://i.ytimg.com">
-<link rel="preconnect" href="https://www.youtube.com">
+<link rel="preconnect" href="https://i.vimeocdn.com">
+<link rel="preconnect" href="https://player.vimeo.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Newsreader:ital,wght@0,300;0,400;1,400&display=swap">
 <style>
 /* ═══ Future Island Saap — scoped styles (fisaap-) ═══ */
@@ -127,7 +156,7 @@ body:has(.fisaap){ overflow-x:hidden }
 .fisaap-intro h2 em{ font-style:italic }
 .fisaap-intro-text{ max-width:76ch; font-size:clamp(13px,1.05vw,15.5px); line-height:1.85; color:#2a2622 }
 .fisaap-video-block{ display:flex; flex-direction:column; gap:clamp(14px,1.6vw,22px); margin-top:clamp(6px,1vw,14px) }
-.fisaap-video{ position:relative; width:100%; aspect-ratio:16/8.6; background:#000; border-radius:10px;
+.fisaap-video{ position:relative; width:100%; aspect-ratio:16/9; background:#000; border-radius:10px;
   overflow:hidden; box-shadow:0 1px 2px rgba(10,9,8,.14) }
 .fisaap-video iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; display:block }
 .fisaap-video-facade{ position:absolute; inset:0; display:block; cursor:pointer }
@@ -327,16 +356,17 @@ body:has(.fisaap){ overflow-x:hidden }
       <div class="fisaap-kicker">NUESTRA PLATAFORMA SAAP (SOFTWARE AS A PRODUCT)</div>
       <h2 id="fisaap-h-intro" class="fisaap-serif">Descifra lo que mueve <br>a tu audiencia. <br><em>Antes que nadie.</em></h2>
       <p class="fisaap-intro-text">Future Island Saap convierte el ruido digital en claridad estratégica. <br>Analizamos la conversación social y cultural en tiempo real para que <br>anticipes tendencias, entiendas comportamientos y tomes mejores decisiones.</p>
+      <?php if ( '' !== $video_embed ) : ?>
       <div class="fisaap-video-block">
         <div class="fisaap-video">
-          <a class="fisaap-video-facade" href="<?php echo esc_url( $yt_watch ); ?>" target="_blank" rel="noreferrer" aria-label="Ver el video de Future Island Saap">
-            <img src="<?php echo esc_url( $yt_thumb_max ); ?>" alt="" loading="lazy"
-              onerror="this.onerror=null;this.src='<?php echo esc_url( $yt_thumb_hq ); ?>'">
+          <a class="fisaap-video-facade" href="<?php echo esc_url( $video_watch ); ?>" target="_blank" rel="noreferrer" aria-label="Ver el video de Future Island Saap">
+            <?php if ( '' !== $video_thumb ) : ?><img src="<?php echo esc_url( $video_thumb ); ?>" alt="" loading="lazy"><?php endif; ?>
             <span class="fisaap-video-play" aria-hidden="true"></span>
           </a>
         </div>
         <div class="fisaap-video-caption">MIRA CÓMO FUNCIONA FUTURE ISLAND SAAP <span style="font-size:1.05em">↗</span></div>
       </div>
+      <?php endif; ?>
     </div>
   </section>
 
@@ -493,14 +523,14 @@ body:has(.fisaap){ overflow-x:hidden }
   var wrap = document.querySelector('.fisaap-video');
   var facade = wrap && wrap.querySelector('.fisaap-video-facade');
   if (!facade) return;
-  var EMBED = <?php echo json_encode( $yt_embed ); ?>;
+  var EMBED = <?php echo json_encode( $video_embed ); ?>;
   function mount(muted) {
     if (wrap.dataset.fisaapLoaded) return;
     wrap.dataset.fisaapLoaded = '1';
     var f = document.createElement('iframe');
-    f.src = EMBED + (muted ? '&mute=1' : '');
+    f.src = EMBED + (muted ? '&muted=1' : '');
     f.title = 'Future Island Saap';
-    f.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+    f.allow = 'autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share';
     f.setAttribute('allowfullscreen', '');
     f.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
     facade.replaceWith(f);

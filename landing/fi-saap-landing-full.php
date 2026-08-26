@@ -1,6 +1,6 @@
 <?php
 /**
- * [future_island_saap] — لندینگ کامل Future Island Saap به صورت فول PHP
+ * [future_island_saap] — لندینگ کامل Future Island SaaS به صورت فول PHP
  *
  * نحوهٔ استفاده:
  * ۱) این اسنیپت را در WPCode Pro به صورت «PHP Snippet» (Run Everywhere) ذخیره و فعال کنید.
@@ -77,7 +77,7 @@ function fisaap_landing_shortcode() {
 <link rel="preconnect" href="https://player.vimeo.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Newsreader:ital,wght@0,300;0,400;1,400&display=swap">
 <style>
-/* ═══ Future Island Saap — scoped styles (fisaap-) ═══ */
+/* ═══ Future Island SaaS — scoped styles (fisaap-) ═══ */
 body:has(.fisaap){ overflow-x:hidden }
 .fisaap{ background:#f4f1ec; color:#0a0908; font-family:Archivo,Helvetica,Arial,sans-serif;
   -webkit-font-smoothing:antialiased; direction:ltr; text-align:left; line-height:1.5;
@@ -345,7 +345,7 @@ body:has(.fisaap){ overflow-x:hidden }
     </div>
     <div class="fisaap-hero-content">
       <div class="fisaap-hero-kicker">YA ESTÁ AQUÍ</div>
-      <h1 id="fisaap-h-hero">FUTURE ISLAND<br>SAAP</h1>
+      <h1 id="fisaap-h-hero">FUTURE ISLAND<br>SaaS</h1>
       <div class="fisaap-hero-sub">SOCIAL &amp; CULTURAL INTELLIGENCE<br>EN TIEMPO REAL</div>
     </div>
   </section>
@@ -353,13 +353,13 @@ body:has(.fisaap){ overflow-x:hidden }
   <!-- Intro + video -->
   <section class="fisaap-intro" aria-labelledby="fisaap-h-intro">
     <div class="fisaap-intro-inner">
-      <div class="fisaap-kicker">NUESTRA PLATAFORMA SAAP (SOFTWARE AS A PRODUCT)</div>
+      <div class="fisaap-kicker">NUESTRA PLATAFORMA SaaS (SOFTWARE AS A SERVICE)</div>
       <h2 id="fisaap-h-intro" class="fisaap-serif">Descifra lo que mueve <br>a tu audiencia. <br><em>Antes que nadie.</em></h2>
-      <p class="fisaap-intro-text">Future Island Saap convierte el ruido digital en claridad estratégica. <br>Analizamos la conversación social y cultural en tiempo real para que <br>anticipes tendencias, entiendas comportamientos y tomes mejores decisiones.</p>
+      <p class="fisaap-intro-text">Future Island SaaS convierte el ruido digital en claridad estratégica. <br>Analizamos la conversación social y cultural en tiempo real para que <br>anticipes tendencias, entiendas comportamientos y tomes mejores decisiones.</p>
       <?php if ( '' !== $video_embed ) : ?>
       <div class="fisaap-video-block">
         <div class="fisaap-video">
-          <a class="fisaap-video-facade" href="<?php echo esc_url( $video_watch ); ?>" target="_blank" rel="noreferrer" aria-label="Ver el video de Future Island Saap">
+          <a class="fisaap-video-facade" href="<?php echo esc_url( $video_watch ); ?>" target="_blank" rel="noreferrer" aria-label="Ver el video de Future Island SaaS">
             <?php if ( '' !== $video_thumb ) : ?><img src="<?php echo esc_url( $video_thumb ); ?>" alt="" loading="lazy"><?php endif; ?>
             <span class="fisaap-video-play" aria-hidden="true"></span>
           </a>
@@ -430,7 +430,7 @@ body:has(.fisaap){ overflow-x:hidden }
         <div class="fisaap-product-tag">DASHBOARD · TENDENCIAS · AUDIENCIAS</div>
       </div>
       <div class="fisaap-product-frame">
-        <img src="<?php echo esc_url( $img_dash ); ?>" alt="Dashboard de Future Island Saap" loading="lazy">
+        <img src="<?php echo esc_url( $img_dash ); ?>" alt="Dashboard de Future Island SaaS" loading="lazy">
       </div>
     </div>
   </section>
@@ -442,7 +442,7 @@ body:has(.fisaap){ overflow-x:hidden }
       <div class="fisaap-cita-img" style="background-image:url('<?php echo esc_url( $img_cita ); ?>')"></div>
       <div class="fisaap-cita-body">
         <div class="fisaap-kicker">AGENDA TU MINI CITA CON LA ISLA</div>
-        <h2 id="fisaap-h-cita" class="fisaap-serif">Te mostramos en 25 minutos cómo Future Island Saap puede darte ventaja real.</h2>
+        <h2 id="fisaap-h-cita" class="fisaap-serif">Te mostramos en 25 minutos cómo Future Island SaaS puede darte ventaja real.</h2>
         <p>Una sesión personalizada para conocer tu caso, resolver dudas y enseñarte el poder de nuestra plataforma.</p>
         <a class="fisaap-btn" href="<?php echo esc_url( $book_url ); ?>">RESERVAR MINI CITA <span>→</span></a>
       </div>
@@ -484,7 +484,7 @@ body:has(.fisaap){ overflow-x:hidden }
     <div class="fisaap-close-inner">
       <h2 id="fisaap-h-close" class="fisaap-serif">MENOS SUPOSICIONES.<br>MÁS INTELIGENCIA.<br>MEJORES DECISIONES.</h2>
       <div class="fisaap-close-side">
-        <div class="fisaap-close-brand">FUTURE ISLAND SAAP</div>
+        <div class="fisaap-close-brand">FUTURE ISLAND SaaS</div>
         <p class="fisaap-serif fisaap-close-quote">El futuro no se espera.<br>Se entiende.</p>
         <a class="fisaap-close-link" href="<?php echo esc_url( $site_url ); ?>">WWW.FUTURE-ISLAND.CLUB</a>
       </div>
@@ -497,7 +497,7 @@ body:has(.fisaap){ overflow-x:hidden }
       <div class="fisaap-demo-head">
         <div class="fisaap-kicker">SOLICITA TU DEMO</div>
         <h2 id="fisaap-h-demo" class="fisaap-serif">Agenda tu demo en vivo.</h2>
-        <p class="fisaap-demo-note">25 minutos, sin compromiso. Elige el horario que mejor te venga y te mostramos Future Island Saap aplicado a tu marca.</p>
+        <p class="fisaap-demo-note">25 minutos, sin compromiso. Elige el horario que mejor te venga y te mostramos Future Island SaaS aplicado a tu marca.</p>
       </div>
       <div class="fisaap-calendly">
         <!-- Calendly inline widget begin -->
@@ -529,7 +529,7 @@ body:has(.fisaap){ overflow-x:hidden }
     wrap.dataset.fisaapLoaded = '1';
     var f = document.createElement('iframe');
     f.src = EMBED + (muted ? '&muted=1' : '');
-    f.title = 'Future Island Saap';
+    f.title = 'Future Island SaaS';
     f.allow = 'autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share';
     f.setAttribute('allowfullscreen', '');
     f.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');

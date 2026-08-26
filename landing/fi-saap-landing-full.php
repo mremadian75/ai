@@ -364,7 +364,7 @@ body:has(.fisaap){ overflow-x:hidden }
             <span class="fisaap-video-play" aria-hidden="true"></span>
           </a>
         </div>
-        <div class="fisaap-video-caption">MIRA CÓMO FUNCIONA FUTURE ISLAND SAAP <span style="font-size:1.05em">↗</span></div>
+        <div class="fisaap-video-caption">MIRA QUÉ ESTÁ MOVIENDO A TU AUDIENCIA <span style="font-size:1.05em">↗</span></div>
       </div>
       <?php endif; ?>
     </div>

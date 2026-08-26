@@ -484,9 +484,11 @@ body:has(.fisaap){ overflow-x:hidden }
 <script>
 /* لود هوشمند ویدیو (الگوی façade):
    - همه‌جا اول فقط بندانگشتی نمایش داده می‌شود (لود فوری صفحه).
-   - دسکتاپ: وقتی سکشن به ویوپورت نزدیک شد، پلیر با اتوپلی بی‌صدا سوار می‌شود.
-   - موبایل (و کاربرانِ reduced-motion): با لمس/کلیک، پخش با صدا شروع می‌شود.
-   - بدون JS: لینک به خود یوتیوب باز می‌شود. */
+   - دسکتاپ و موبایل: وقتی سکشن به ویوپورت نزدیک شد، پلیر با اتوپلی بی‌صدا
+     سوار می‌شود (playsinline برای iOS). اگر دستگاه اتوپلی را بلاک کند
+     (مثل Low Power Mode)، پلیر با دکمهٔ پلی خودش نمایش داده می‌شود.
+   - کلیک/لمس روی بندانگشتی قبل از سوار شدن پلیر: پخش با صدا.
+   - کاربران reduced-motion: فقط با کلیک؛ بدون JS: لینک به خود یوتیوب. */
 (function () {
   var wrap = document.querySelector('.fisaap-video');
   var facade = wrap && wrap.querySelector('.fisaap-video-facade');
@@ -504,13 +506,16 @@ body:has(.fisaap){ overflow-x:hidden }
     facade.replaceWith(f);
   }
   facade.addEventListener('click', function (e) { e.preventDefault(); mount(false); });
-  var autoOk = window.matchMedia('(min-width: 641px)').matches &&
-    !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var autoOk = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if (autoOk && 'IntersectionObserver' in window) {
     var io = new IntersectionObserver(function (es) {
       es.forEach(function (en) { if (en.isIntersecting) { io.disconnect(); mount(true); } });
     }, { rootMargin: '200px 0px' });
-    io.observe(wrap);
+    // پلیر فقط بعد از لود کامل صفحه شروع به آماده شدن می‌کند تا هیچ‌وقت
+    // با عکس هیرو و فونت‌ها رقابت نکند
+    var arm = function () { io.observe(wrap); };
+    if (document.readyState === 'complete') arm();
+    else window.addEventListener('load', arm);
   }
 })();
 /* اسکرول‌ریویل سکشن «Cómo funciona» — بدون JS یا با reduced-motion همه‌چیز از اول دیده می‌شود */

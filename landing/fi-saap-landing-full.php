@@ -32,12 +32,20 @@ function fisaap_landing_shortcode() {
 	$calendly_url = 'https://calendly.com/mahan-future-island/25min?hide_event_type_details=1&hide_gdpr_banner=1';
 	// ───────────────────────────────────────────────────────────────────────
 
-	$video_src = 'https://www.youtube.com/embed/' . rawurlencode( $video_id ) . '?rel=0&autoplay=1&mute=1&playsinline=1';
+	// ویدیو با الگوی façade لود می‌شود: اول فقط تصویر بندانگشتی (سبک و فوری)،
+	// پلیر واقعی در دسکتاپ وقتی سکشن نزدیک ویوپورت شد (اتوپلی بی‌صدا) و در
+	// موبایل با لمس کاربر (پخش با صدا — چون با ژست کاربر مجاز است) سوار می‌شود.
+	$yt_embed     = 'https://www.youtube.com/embed/' . rawurlencode( $video_id ) . '?rel=0&playsinline=1&autoplay=1';
+	$yt_thumb_max = 'https://i.ytimg.com/vi/' . rawurlencode( $video_id ) . '/maxresdefault.jpg';
+	$yt_thumb_hq  = 'https://i.ytimg.com/vi/' . rawurlencode( $video_id ) . '/hqdefault.jpg';
+	$yt_watch     = 'https://www.youtube.com/watch?v=' . rawurlencode( $video_id );
 
 	ob_start();
 	?>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://i.ytimg.com">
+<link rel="preconnect" href="https://www.youtube.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Newsreader:ital,wght@0,300;0,400;1,400&display=swap">
 <style>
 /* ═══ Future Island Saap — scoped styles (fisaap-) ═══ */
@@ -122,6 +130,14 @@ body:has(.fisaap){ overflow-x:hidden }
 .fisaap-video{ position:relative; width:100%; aspect-ratio:16/8.6; background:#000; border-radius:10px;
   overflow:hidden; box-shadow:0 1px 2px rgba(10,9,8,.14) }
 .fisaap-video iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; display:block }
+.fisaap-video-facade{ position:absolute; inset:0; display:block; cursor:pointer }
+.fisaap-video-facade img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block }
+.fisaap-video-play{ position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  width:64px; height:64px; border-radius:50%; background:rgba(10,9,8,.85);
+  display:flex; align-items:center; justify-content:center; transition:transform .2s, background .2s }
+.fisaap-video-play::after{ content:""; width:0; height:0; border-left:18px solid #f4f1ec;
+  border-top:11px solid transparent; border-bottom:11px solid transparent; margin-left:5px }
+.fisaap-video-facade:hover .fisaap-video-play{ transform:translate(-50%,-50%) scale(1.06); background:#0a0908 }
 .fisaap-video-caption{ display:flex; justify-content:center; align-items:center; gap:9px;
   font-size:clamp(10px,.85vw,12.5px); font-weight:600; letter-spacing:.09em; color:#3b3731 }
 
@@ -226,6 +242,7 @@ body:has(.fisaap){ overflow-x:hidden }
   .fisaap-intro h2{ font-size:31px; line-height:1.12 }
   .fisaap-intro-text{ font-size:14px; line-height:1.8 }
   .fisaap-video{ aspect-ratio:16/9; border-radius:8px }
+  .fisaap-video-play{ width:56px; height:56px }
   .fisaap-video-caption{ font-size:10.5px; text-align:center; line-height:1.6 }
   /* Steps: آیکون کوچک کنار متن، بدون شکستن ردیف */
   .fisaap-steps{ padding:40px 20px 46px }
@@ -312,9 +329,11 @@ body:has(.fisaap){ overflow-x:hidden }
       <p class="fisaap-intro-text">Future Island Saap convierte el ruido digital en claridad estratégica. <br>Analizamos la conversación social y cultural en tiempo real para que <br>anticipes tendencias, entiendas comportamientos y tomes mejores decisiones.</p>
       <div class="fisaap-video-block">
         <div class="fisaap-video">
-          <iframe src="<?php echo esc_url( $video_src ); ?>" title="Future Island Saap"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+          <a class="fisaap-video-facade" href="<?php echo esc_url( $yt_watch ); ?>" target="_blank" rel="noreferrer" aria-label="Ver el video de Future Island Saap">
+            <img src="<?php echo esc_url( $yt_thumb_max ); ?>" alt="" loading="lazy"
+              onerror="this.onerror=null;this.src='<?php echo esc_url( $yt_thumb_hq ); ?>'">
+            <span class="fisaap-video-play" aria-hidden="true"></span>
+          </a>
         </div>
         <div class="fisaap-video-caption">MIRA CÓMO FUNCIONA FUTURE ISLAND SAAP <span style="font-size:1.05em">↗</span></div>
       </div>
@@ -463,6 +482,37 @@ body:has(.fisaap){ overflow-x:hidden }
 
 <script type="text/javascript" src="https://assets.calendly.com/assets/external/widget.js" async></script>
 <script>
+/* لود هوشمند ویدیو (الگوی façade):
+   - همه‌جا اول فقط بندانگشتی نمایش داده می‌شود (لود فوری صفحه).
+   - دسکتاپ: وقتی سکشن به ویوپورت نزدیک شد، پلیر با اتوپلی بی‌صدا سوار می‌شود.
+   - موبایل (و کاربرانِ reduced-motion): با لمس/کلیک، پخش با صدا شروع می‌شود.
+   - بدون JS: لینک به خود یوتیوب باز می‌شود. */
+(function () {
+  var wrap = document.querySelector('.fisaap-video');
+  var facade = wrap && wrap.querySelector('.fisaap-video-facade');
+  if (!facade) return;
+  var EMBED = <?php echo json_encode( $yt_embed ); ?>;
+  function mount(muted) {
+    if (wrap.dataset.fisaapLoaded) return;
+    wrap.dataset.fisaapLoaded = '1';
+    var f = document.createElement('iframe');
+    f.src = EMBED + (muted ? '&mute=1' : '');
+    f.title = 'Future Island Saap';
+    f.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+    f.setAttribute('allowfullscreen', '');
+    f.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+    facade.replaceWith(f);
+  }
+  facade.addEventListener('click', function (e) { e.preventDefault(); mount(false); });
+  var autoOk = window.matchMedia('(min-width: 641px)').matches &&
+    !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (autoOk && 'IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (en) { if (en.isIntersecting) { io.disconnect(); mount(true); } });
+    }, { rootMargin: '200px 0px' });
+    io.observe(wrap);
+  }
+})();
 /* اسکرول‌ریویل سکشن «Cómo funciona» — بدون JS یا با reduced-motion همه‌چیز از اول دیده می‌شود */
 (function () {
   var root = document.querySelector('.fisaap');

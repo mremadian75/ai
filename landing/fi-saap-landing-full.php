@@ -518,7 +518,7 @@ body:has(.fisaap){ overflow-x:hidden }
      سوار می‌شود (playsinline برای iOS). اگر دستگاه اتوپلی را بلاک کند
      (مثل Low Power Mode)، پلیر با دکمهٔ پلی خودش نمایش داده می‌شود.
    - کلیک/لمس روی بندانگشتی قبل از سوار شدن پلیر: پخش با صدا.
-   - کاربران reduced-motion: فقط با کلیک؛ بدون JS: لینک به خود یوتیوب. */
+   - کاربران reduced-motion: فقط با کلیک؛ بدون JS: لینک به خود ویمئو. */
 (function () {
   var wrap = document.querySelector('.fisaap-video');
   var facade = wrap && wrap.querySelector('.fisaap-video-facade');
